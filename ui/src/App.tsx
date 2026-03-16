@@ -6,7 +6,6 @@ import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
 import { useWorkflow } from './hooks/useWorkflow'
-import { detectBrandFromUrl } from './constants/brands'
 import type {
   AppState,
   WorkflowResult,
@@ -111,7 +110,7 @@ function App() {
   }, [])
 
   const handlePartialRegenerate = useCallback(async (
-    op: 'image_only' | 'caption_only',
+    op: WorkflowOperation,
     localTitleMode: TitleMode,
     localCustomTitle: string,
     localCaptionTitleMode: CaptionTitleMode,
