@@ -18,7 +18,6 @@ export function ArticlePage() {
     prepareThumbnail,
     generateThumbnail,
     reviseThumbnail,
-    skipThumbnail,
     finish,
     reset,
     isLoading,

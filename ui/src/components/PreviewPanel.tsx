@@ -21,7 +21,6 @@ export function PreviewPanel({
   result,
   errorMessage,
   onApprove,
-  onRegenerate,
   onReset,
   onPartialRegenerate,
   titleMode,

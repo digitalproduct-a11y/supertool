@@ -17,7 +17,6 @@ export function ResultPreview({
   customTitle,
   captionTitleMode,
   isRunning,
-  onApprove,
   onPartialRegenerate,
 }: ResultPreviewProps) {
   const [caption, setCaption] = useState(result.caption ?? '')

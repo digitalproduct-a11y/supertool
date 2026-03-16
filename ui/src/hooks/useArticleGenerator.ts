@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type {
   ArticleState,
-  ArticleGeneratorState,
   ArticleContext,
   ContentAngle,
   ProductSummary,
