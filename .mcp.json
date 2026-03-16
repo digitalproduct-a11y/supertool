@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["n8n-mcp"],
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://astroproduct.app.n8n.cloud",
+        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWY1YmY2My1iMWFmLTRlZTItYWY0NC0wNGVhOWNkMGYzNmYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiMTE4MGQzYzMtYzg2Yy00Y2M2LWE2NDUtMjM2MzExNjc0NTAyIiwiaWF0IjoxNzczMjIxODcxfQ.vWNwXZoJLKcA92YrMhMBeQ91LdBsyEDrfd1Ucn9SN9Q"
+      }
+    }
+  }
+}

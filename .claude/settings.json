@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__n8n-mcp__n8n_list_workflows",
+      "mcp__n8n-mcp__n8n_get_workflow",
+      "Bash(jq -r .[0].text)",
+      "Bash(python3:*)",
+      "Read(//Users/ylyiyany/Documents/n8n-builder/**)",
+      "mcp__n8n-mcp__tools_documentation",
+      "mcp__n8n-mcp__n8n_update_partial_workflow",
+      "mcp__n8n-mcp__n8n_validate_workflow",
+      "mcp__n8n-mcp__search_nodes",
+      "mcp__n8n-mcp__search_templates",
+      "mcp__n8n-mcp__get_node",
+      "mcp__n8n-mcp__n8n_create_workflow",
+      "mcp__n8n-mcp__n8n_test_workflow",
+      "mcp__n8n-mcp__n8n_executions",
+      "mcp__claude_ai_n8n__execute_workflow",
+      "Bash(jq '[.[] | .text] | add | fromjson | .data.nodes[] | select\\(.name | test\\(\"\"cloudinary|binary|upload|prep\"\"; \"\"i\"\"\\)\\) | {name: .name, type: .type, parameters: .parameters}' /Users/ylyiyany/.claude/projects/-Users-ylyiyany-Documents-n8n-builder/79b9d412-a200-4192-9336-e18c3740ed5a/tool-results/mcp-n8n-mcp-n8n_get_workflow-1773373426479.txt)",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm run:*)",
+      "Bash(/Users/ylyiyany/Documents/n8n-builder/ui/.env:*)",
+      "Bash(curl -s -X POST https://astroproduct.app.n8n.cloud/webhook/article-to-fb-photo -H \"Content-Type: application/json\" -d '{\"\"url\"\":\"\"https://www.astroawani.com/test\"\",\"\"brand\"\":\"\"Astro Awani\"\"}' -w \"\\\\n\\\\nHTTP STATUS: %{http_code}\")",
+      "Bash(curl -s -X POST \"https://astroproduct.app.n8n.cloud/webhook/8496b56c-c5a7-4f5e-8036-057931ac7398\" -H \"Content-Type: application/json\" -d '{\"\"url\"\":\"\"https://www.astroawani.com/test\"\",\"\"brand\"\":\"\"Astro Awani\"\"}' -w \"\\\\n\\\\nHTTP STATUS: %{http_code}\" --max-time 15)",
+      "Bash(jq \".data.nodes[] | select\\(.name == \"\"Webhook\"\" or .name == \"\"Format Article JSON\"\" or .name == \"\"Respond - Success\"\"\\)\")",
+      "Bash(head -3 grep -o 'Respond.*Success.*responseCode\\\\|responseBody\\\\|success.*imageUrl\\\\|imageUrl.*caption' /Users/ylyiyany/.claude/projects/-Users-ylyiyany-Documents-n8n-builder/463d42e5-4cb9-4f3a-ae28-9720846c9b2c/tool-results/mcp-n8n-mcp-n8n_get_workflow-1773634089303.txt)",
+      "Bash(find /Users/ylyiyany/Documents/n8n-builder -maxdepth 2 -name package.json -o -name vite.config.* -o -name next.config.*)",
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
