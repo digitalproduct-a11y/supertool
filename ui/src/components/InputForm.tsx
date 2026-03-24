@@ -61,7 +61,7 @@ export function InputForm({
           <button
             type="button"
             onClick={() => setShowSupportedSites(true)}
-            className="text-blue-600 hover:text-blue-800 underline text-xs font-medium transition"
+            className="text-neutral-500 hover:text-neutral-800 underline text-xs font-medium transition"
             title="Check supported domains"
           >
             Check supported domains
@@ -75,7 +75,7 @@ export function InputForm({
             placeholder="https://www.astroawani.com/..."
             disabled={disabled}
             required
-            className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 transition"
+            className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 transition"
           />
           {url && (
             <button
@@ -89,13 +89,16 @@ export function InputForm({
         </div>
 
         {url && detectedBrand && (
-          <div className="mt-2 inline-flex items-center gap-2 text-xs text-green-700">
-            <span className="font-medium">Website detected ✓: {detectedBrand}</span>
+          <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-green-700 animate-slide-down">
+            <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="font-medium">{detectedBrand} detected</span>
           </div>
         )}
         {url && !detectedBrand && (
-          <div className="mt-2 text-xs text-red-500">
-            Website not detected ✕: please check list of supported websites
+          <div className="mt-2 text-xs text-red-500 animate-slide-down">
+            Domain not supported — check the list of supported websites
           </div>
         )}
       </div>
@@ -111,7 +114,7 @@ export function InputForm({
             onChange={(e) => onBrandChange(e.target.value)}
             disabled={disabled}
             required
-            className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 bg-white transition appearance-none cursor-pointer"
+            className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 bg-white transition appearance-none cursor-pointer"
           >
             <option value="">Select a brand...</option>
             {BRANDS.map((b) => (
@@ -160,7 +163,7 @@ export function InputForm({
             value={customTitle}
             onChange={(e) => onCustomTitleChange(e.target.value)}
             placeholder="Enter custom title"
-            className="mt-2 w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+            className="mt-2 w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
           />
         )}
       </div>
@@ -197,7 +200,7 @@ export function InputForm({
       <button
         type="submit"
         disabled={disabled || !url.trim() || !brand || !detectedBrand || (titleMode === 'custom' && !customTitle.trim())}
-        className="w-full py-3 px-6 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-xl transition text-sm"
+        className="w-full py-3 px-6 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium rounded-xl transition text-sm active:scale-[0.98]"
       >
         Generate Facebook Post
       </button>

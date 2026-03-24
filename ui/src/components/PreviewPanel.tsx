@@ -29,12 +29,12 @@ export function PreviewPanel({
   isRunning,
 }: PreviewPanelProps) {
   return (
-    <div className="bg-gray-50 rounded-2xl p-6 min-h-96 flex flex-col">
+    <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 min-h-96 flex flex-col">
       {state === 'idle' && (
         <div className="flex-1 flex items-center justify-center text-center">
           <div>
             <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4"
+              className="w-16 h-16 text-gray-300 mx-auto mb-4 animate-breathe"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -46,7 +46,7 @@ export function PreviewPanel({
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <p className="text-gray-500 text-sm">Generated image will appear here</p>
+            <p className="text-gray-400 text-sm">Generated image will appear here</p>
           </div>
         </div>
       )}
@@ -66,15 +66,17 @@ export function PreviewPanel({
       )}
 
       {state === 'result' && result && (
-        <ResultPreview
-          result={result}
-          titleMode={titleMode}
-          customTitle={customTitle}
-          captionTitleMode={captionTitleMode}
-          isRunning={isRunning}
-          onApprove={onApprove}
-          onPartialRegenerate={onPartialRegenerate}
-        />
+        <div className="animate-fade-slide-up">
+          <ResultPreview
+            result={result}
+            titleMode={titleMode}
+            customTitle={customTitle}
+            captionTitleMode={captionTitleMode}
+            isRunning={isRunning}
+            onApprove={onApprove}
+            onPartialRegenerate={onPartialRegenerate}
+          />
+        </div>
       )}
 
       {state === 'error' && (

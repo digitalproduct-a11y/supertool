@@ -113,14 +113,14 @@ export function ResultPreview({
       <div className="flex gap-2">
         <button
           onClick={handleDownload}
-          className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-lg transition text-sm"
+          className="flex-1 py-2 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white font-medium rounded-xl transition text-sm active:scale-[0.97]"
           disabled={isRunning}
         >
           Download
         </button>
         <button
           onClick={() => setEditingImageTitle(!editingImageTitle)}
-          className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition text-sm disabled:opacity-50"
+          className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm disabled:opacity-50 active:scale-[0.97]"
           disabled={isRunning}
         >
           Edit Image Title
@@ -138,7 +138,7 @@ export function ResultPreview({
                 type="button"
                 onClick={() => setLocalTitleMode(tm)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                  localTitleMode === tm ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                  localTitleMode === tm ? 'bg-neutral-950 text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 {tm === 'original' ? 'Original' : tm === 'ai' ? 'AI ✨' : 'Custom'}
@@ -158,7 +158,7 @@ export function ResultPreview({
               value={localCustomTitle}
               onChange={(e) => setLocalCustomTitle(e.target.value)}
               placeholder="Enter custom title"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
             />
           )}
 
@@ -166,14 +166,14 @@ export function ResultPreview({
             <button
               onClick={handleConfirmImageTitle}
               disabled={isRunning || (localTitleMode === 'custom' && !localCustomTitle.trim())}
-              className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-lg transition text-sm"
+              className="flex-1 py-2 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white font-medium rounded-xl transition text-sm"
             >
               Confirm
             </button>
             <button
               onClick={handleCancelImageTitle}
               disabled={isRunning}
-              className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition text-sm"
+              className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm"
             >
               Cancel
             </button>
@@ -202,20 +202,25 @@ export function ResultPreview({
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             rows={8}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent font-sans leading-relaxed"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed"
           />
         )}
 
         <div className="flex gap-2">
           <button
+            key={copied ? 'copied' : 'copy'}
             onClick={copyCaption}
-            className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition text-sm"
+            className={`flex-1 py-2 px-4 text-white font-medium rounded-xl transition text-sm active:scale-[0.97] ${
+              copied
+                ? 'bg-green-500 hover:bg-green-600 animate-pop'
+                : 'bg-neutral-950 hover:bg-neutral-800'
+            }`}
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? '✓ Copied!' : 'Copy'}
           </button>
           <button
             onClick={() => setEditingCaption(!editingCaption)}
-            className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition text-sm disabled:opacity-50"
+            className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm disabled:opacity-50 active:scale-[0.97]"
             disabled={isRunning}
           >
             Readjust Caption
@@ -234,7 +239,7 @@ export function ResultPreview({
                 type="button"
                 onClick={() => setLocalCaptionTitleMode(ctm)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                  localCaptionTitleMode === ctm ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                  localCaptionTitleMode === ctm ? 'bg-neutral-950 text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 {ctm === 'original' ? 'Original' : 'AI ✨'}
@@ -251,14 +256,14 @@ export function ResultPreview({
             <button
               onClick={handleConfirmCaption}
               disabled={isRunning}
-              className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-lg transition text-sm"
+              className="flex-1 py-2 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white font-medium rounded-xl transition text-sm"
             >
               Confirm
             </button>
             <button
               onClick={handleCancelCaption}
               disabled={isRunning}
-              className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition text-sm"
+              className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm"
             >
               Cancel
             </button>

@@ -4,7 +4,71 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: #f8f9fa;
+  background: #f7f7f6;
+}
+
+/* ── Delight animations ────────────────────────────────────── */
+
+@keyframes fade-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(1.06); }
+}
+
+@keyframes draw-check {
+  from { stroke-dashoffset: 30; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes step-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-slide-up {
+  animation: fade-slide-up 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.2s ease-out both;
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.animate-step-enter {
+  animation: step-enter 0.3s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+.animate-pop {
+  animation: pop 0.3s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-slide-up,
+  .animate-slide-down,
+  .animate-breathe,
+  .animate-step-enter,
+  .animate-pop {
+    animation: none !important;
+  }
 }

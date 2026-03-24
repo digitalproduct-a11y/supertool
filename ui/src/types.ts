@@ -45,10 +45,10 @@ export interface HistoryItem {
 }
 
 export const PROGRESS_STEPS = [
-  { label: 'Validating brand', duration: 6000 },
-  { label: 'Fetching article', duration: 8000 },
-  { label: 'Generating image', duration: 10000 },
-  { label: 'Creating caption', duration: 10000 },
+  { label: 'Checking your brand', subtitle: 'Confirming brand voice and settings', duration: 6000 },
+  { label: 'Reading the article', subtitle: 'Pulling the story and key details', duration: 8000 },
+  { label: 'Designing your image', subtitle: 'Composing the visual layout', duration: 10000 },
+  { label: 'Writing the caption', subtitle: 'Crafting your post copy', duration: 10000 },
 ] as const
 
 // Shopee Article Generator types

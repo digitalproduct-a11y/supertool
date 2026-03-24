@@ -36,12 +36,16 @@ export function ProgressSteps({ isComplete }: ProgressStepsProps) {
         const isActive = i === currentStep && !isComplete
 
         return (
-          <div key={step.label} className="flex items-center gap-3">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+          <div
+            key={step.label}
+            className="flex items-start gap-3 animate-step-enter"
+            style={{ animationDelay: `${i * 90}ms` }}
+          >
+            <div className={`w-6 h-6 mt-0.5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
               isDone
                 ? 'bg-green-500 text-white'
                 : isActive
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-neutral-950 text-white'
                 : 'bg-gray-100 text-gray-400'
             }`}>
               {isDone ? (
@@ -54,12 +58,17 @@ export function ProgressSteps({ isComplete }: ProgressStepsProps) {
                 <div className="w-2 h-2 rounded-full bg-gray-300" />
               )}
             </div>
-            <span className={`text-sm font-medium transition-colors ${
-              isDone ? 'text-green-600' : isActive ? 'text-indigo-700' : 'text-gray-400'
-            }`}>
-              {step.label}
-              {isActive && <span className="ml-1 animate-pulse">...</span>}
-            </span>
+            <div>
+              <span className={`text-sm font-medium transition-colors ${
+                isDone ? 'text-green-600' : isActive ? 'text-neutral-950' : 'text-gray-400'
+              }`}>
+                {step.label}
+                {isActive && <span className="ml-1 animate-pulse">…</span>}
+              </span>
+              {isActive && 'subtitle' in step && (
+                <p className="text-xs text-gray-400 mt-0.5 animate-slide-down">{step.subtitle}</p>
+              )}
+            </div>
           </div>
         )
       })}

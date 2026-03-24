@@ -162,7 +162,7 @@ function App() {
   // Render article page if selected
   if (activeTool === 'thumbnail') {
     return (
-      <div className="min-h-screen bg-gray-50 flex md:gap-0">
+      <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
         <ArticlePage />
       </div>
@@ -170,24 +170,24 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex md:gap-0">
+    <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
       {/* Sidebar */}
       <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
 
       {/* Main content */}
-      <main className="flex-1 pt-20 md:pt-0 px-4 md:px-8 py-8">
+      <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Article to FB Post Generator</h1>
-            <p className="text-gray-500 mt-1">Turn any article into a Facebook image &amp; caption</p>
+            <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
+            <p className="text-neutral-500 mt-1 text-sm">Turn any article into a Facebook image &amp; caption</p>
           </div>
 
           {/* Split pane: inputs on left, preview on right */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
             {/* Left: Input form + history */}
             <div>
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
                 <InputForm
                   url={url}
                   onUrlChange={setUrl}
@@ -233,11 +233,11 @@ function App() {
           {/* Approval confirmation */}
           {state === 'approved' && (
             <div className="mt-8">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
                 <div className="text-center space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+                  <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto animate-fade-slide-up">
                     <svg
-                      className="w-6 h-6 text-green-500"
+                      className="w-7 h-7 text-green-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -247,18 +247,23 @@ function App() {
                         strokeLinejoin="round"
                         strokeWidth={3}
                         d="M5 13l4 4L19 7"
+                        style={{
+                          strokeDasharray: 30,
+                          strokeDashoffset: 30,
+                          animation: 'draw-check 0.45s cubic-bezier(0.25, 1, 0.5, 1) 0.2s forwards',
+                        }}
                       />
                     </svg>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-800">Approved!</p>
+                  <div className="animate-fade-slide-up" style={{ animationDelay: '0.3s' }}>
+                    <p className="font-semibold text-gray-800">Done! Post is ready.</p>
                     <p className="text-sm text-gray-500 mt-1">
                       Image downloaded &amp; caption copied to clipboard
                     </p>
                   </div>
                   <button
                     onClick={handleReset}
-                    className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition"
+                    className="px-6 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition active:scale-[0.97]"
                   >
                     Generate another post
                   </button>
