@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
-import type { AffiliateLinksState, BrandsListResponse } from '../types'
+import { BRANDS } from '../constants/brands'
+import type { AffiliateLinksState } from '../types'
 
-const BRANDS_URL = import.meta.env.VITE_AFFILIATE_BRANDS_URL as string
 const TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1J6JokZsSRvtHK98gZF77Y16oBwP7mzyL/export?format=xlsx'
 
 export function AffiliateLinksPage() {
@@ -14,27 +14,13 @@ export function AffiliateLinksPage() {
   const [brandsLoading, setBrandsLoading] = useState(true)
   const { run } = useAffiliateLinks()
 
-  // Fetch brands on mount
+  // Load brands from shared constant
   useEffect(() => {
-    const fetchBrands = async () => {
-      try {
-        const response = await fetch(BRANDS_URL)
-        if (response.ok) {
-          const data = (await response.json()) as BrandsListResponse
-          setBrands(data.brands || [])
-          if (data.brands && data.brands.length > 0) {
-            setSelectedBrand(data.brands[0])
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch brands:', err)
-        setBrands([])
-      } finally {
-        setBrandsLoading(false)
-      }
+    setBrands([...BRANDS])
+    if (BRANDS.length > 0) {
+      setSelectedBrand(BRANDS[0])
     }
-
-    fetchBrands()
+    setBrandsLoading(false)
   }, [])
 
   const handleFile = async (selectedFile: File) => {
