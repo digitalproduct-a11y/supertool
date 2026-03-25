@@ -51,96 +51,21 @@ export const PROGRESS_STEPS = [
   { label: 'Writing the caption', subtitle: 'Crafting your post copy', duration: 10000 },
 ] as const
 
-// Shopee Article Generator types
-export type ArticleState =
-  | 'idle'
-  | 'processing_products'
-  | 'angle_selection'
-  | 'generating_article'
-  | 'review_draft'
-  | 'revising_article'
-  | 'thumbnail_prompt'
-  | 'generating_thumbnail'
-  | 'thumbnail_result'
-  | 'revising_thumbnail'
-  | 'done'
-  | 'error'
+// Shopee Affiliate Links tool types
+export type AffiliateLinksState = 'idle' | 'loading' | 'result' | 'error'
 
-export interface ContentAngle {
-  title: string
-  category: string
-  game_plan: string
+export interface BrandsListResponse {
+  brands: string[]
 }
 
-export interface ProductSummary {
-  name: string
-  price: string
-  rating: string
-  affiliateLink: string
-  imageUrl: string
-}
-
-export interface ArticleContext {
-  brand: string
-  articleTitle: string
-  productName: string
-  imageUrl: string
-  productFeatures: string
-}
-
-export interface ArticleGeneratorState {
-  state: ArticleState
-  products: ProductSummary[]
-  angles: ContentAngle[]
-  context: ArticleContext | null
-  articleHtml: string
-  articleTitle: string
-  thumbnailPrompt: string
-  thumbnailUrl: string
-  errorMessage: string
-}
-
-export interface ProcessProductsResponse {
+export interface AffiliateLinksResult {
   success: true
-  products: ProductSummary[]
-  angles: ContentAngle[]
-  context: ArticleContext
+  filename: string
 }
 
-export interface GenerateArticleResponse {
-  success: true
-  article_html: string
-  article_title: string
-  context: ArticleContext
-}
-
-export interface PrepareThumbnailResponse {
-  success: true
-  prompt: string
-  context: ArticleContext
-}
-
-export interface GenerateThumbnailResponse {
-  success: true
-  thumbnail_url: string
-}
-
-export interface ReviseThumbnailResponse {
-  success: true
-  thumbnail_url: string
-  prompt: string
-}
-
-export interface ArticleError {
+export interface AffiliateLinksError {
   success: false
-  error: 'execution_error' | 'validation_error'
   message: string
 }
 
-export type ArticleResponse =
-  | ProcessProductsResponse
-  | GenerateArticleResponse
-  | PrepareThumbnailResponse
-  | GenerateThumbnailResponse
-  | ReviseThumbnailResponse
-  | ArticleError
+export type AffiliateLinksResponse = AffiliateLinksResult | AffiliateLinksError
