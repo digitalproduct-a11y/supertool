@@ -1,43 +1,28 @@
-import { useState, useRef, useEffect } from 'react'
-import type { WorkflowResult, TitleMode, CaptionTitleMode, WorkflowOperation } from '../types'
+import { useState, useEffect } from 'react'
+import type { WorkflowResult } from '../types'
 
 interface ResultPreviewProps {
   result: WorkflowResult
-  titleMode: TitleMode
-  customTitle: string
-  captionTitleMode: CaptionTitleMode
   isRunning: boolean
-  onApprove: (caption: string) => void
-  onPartialRegenerate: (op: WorkflowOperation, titleMode: TitleMode, customTitle: string, captionTitleMode: CaptionTitleMode) => void
+  articleUrl: string
+  onPostDraft?: (url: string, brand: string) => Promise<{success: boolean, message: string}>
 }
 
 export function ResultPreview({
   result,
-  titleMode,
-  customTitle,
-  captionTitleMode,
   isRunning,
-  onPartialRegenerate,
+  articleUrl,
+  onPostDraft,
 }: ResultPreviewProps) {
   const [caption, setCaption] = useState(result.caption ?? '')
   const [copied, setCopied] = useState(false)
-  const [editingImageTitle, setEditingImageTitle] = useState(false)
-  const [editingCaption, setEditingCaption] = useState(false)
-  const [localTitleMode, setLocalTitleMode] = useState<TitleMode>(titleMode)
-  const [localCustomTitle, setLocalCustomTitle] = useState(customTitle)
-  const [localCaptionTitleMode, setLocalCaptionTitleMode] = useState<CaptionTitleMode>(captionTitleMode)
-  const [loadingSection, setLoadingSection] = useState<'image' | 'caption' | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
+  const [draftMessage, setDraftMessage] = useState('')
 
   // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
   useEffect(() => {
     setCaption(result.caption ?? '')
   }, [result.caption])
-
-  // Clear loading section indicator once the request finishes
-  useEffect(() => {
-    if (!isRunning) setLoadingSection(null)
-  }, [isRunning])
 
   async function handleDownload() {
     try {
@@ -53,224 +38,115 @@ export function ResultPreview({
     }
   }
 
-  async function copyCaption() {
-    await navigator.clipboard.writeText(caption)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  function handleCopy() {
+    navigator.clipboard.writeText(caption).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
   }
 
-  function handleConfirmImageTitle() {
-    setLoadingSection('image')
-    onPartialRegenerate('image_only', localTitleMode, localCustomTitle, localCaptionTitleMode)
-    setEditingImageTitle(false)
-  }
-
-  function handleConfirmCaption() {
-    setLoadingSection('caption')
-    onPartialRegenerate('caption_only', localTitleMode, localCustomTitle, localCaptionTitleMode)
-    setEditingCaption(false)
-  }
-
-  function handleCancelImageTitle() {
-    setEditingImageTitle(false)
-    setLocalTitleMode(titleMode)
-    setLocalCustomTitle(customTitle)
-  }
-
-  function handleCancelCaption() {
-    setEditingCaption(false)
-    setLocalCaptionTitleMode(captionTitleMode)
+  async function handlePostDraftClick() {
+    if (!onPostDraft || !articleUrl) return
+    setDraftState('posting')
+    setDraftMessage('')
+    try {
+      const response = await onPostDraft(articleUrl, result.brand)
+      if (response.success) {
+        setDraftState('done')
+        setDraftMessage(`✓ Draft posted to Facebook!`)
+        setTimeout(() => {
+          setDraftState('idle')
+          setDraftMessage('')
+        }, 3000)
+      } else {
+        setDraftState('error')
+        setDraftMessage("Couldn't post draft. Please try again.")
+      }
+    } catch {
+      setDraftState('error')
+      setDraftMessage("Couldn't post draft. Please try again.")
+    }
   }
 
   return (
     <div className="space-y-4">
-      {/* Image label */}
-      <label className="text-sm font-medium text-gray-700 block">Image</label>
-
-      {/* Image preview */}
-      <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-square flex items-center justify-center relative">
-        {loadingSection === 'image' ? (
-          <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
-            <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+      {/* Image with download overlay */}
+      <div className="relative bg-neutral-50 rounded-xl overflow-hidden border border-gray-200">
+        <img
+          src={result.imageUrl}
+          alt="Generated Facebook image"
+          className="w-full aspect-[4/5] object-cover"
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).src = ''
+          }}
+        />
+        <div className="absolute top-3 right-3">
+          <button
+            onClick={handleDownload}
+            className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            <span className="text-sm font-medium">Regenerating image…</span>
-          </div>
-        ) : (
-          <img
-            src={result.imageUrl}
-            alt="Generated Facebook image"
-            className="w-full h-full object-contain"
-            onError={(e) => {
-              ;(e.target as HTMLImageElement).src = ''
-            }}
-          />
-        )}
-      </div>
-
-      {/* Image actions */}
-      <div className="flex gap-2">
-        <button
-          onClick={handleDownload}
-          className="flex-1 py-2 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white font-medium rounded-xl transition text-sm active:scale-[0.97]"
-          disabled={isRunning}
-        >
-          Download
-        </button>
-        <button
-          onClick={() => setEditingImageTitle(!editingImageTitle)}
-          className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm disabled:opacity-50 active:scale-[0.97]"
-          disabled={isRunning}
-        >
-          Edit Image Title
-        </button>
-      </div>
-
-      {/* Edit image title inline */}
-      {editingImageTitle && (
-        <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <label className="text-xs font-medium text-gray-700 block">Image Title</label>
-          <div className="flex gap-1 bg-white rounded-lg p-1 w-fit">
-            {(['original', 'ai', 'custom'] as const).map((tm) => (
-              <button
-                key={tm}
-                type="button"
-                onClick={() => setLocalTitleMode(tm)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                  localTitleMode === tm ? 'bg-neutral-950 text-white' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {tm === 'original' ? 'Original' : tm === 'ai' ? 'AI ✨' : 'Custom'}
-              </button>
-            ))}
-          </div>
-
-          <p className="text-xs text-gray-500">
-            {localTitleMode === 'original' && "Uses the article's headline as-is"}
-            {localTitleMode === 'ai' && "AI generates the headline according to your brand voice"}
-            {localTitleMode === 'custom' && "Enter your custom headline below"}
-          </p>
-
-          {localTitleMode === 'custom' && (
-            <input
-              type="text"
-              value={localCustomTitle}
-              onChange={(e) => setLocalCustomTitle(e.target.value)}
-              placeholder="Enter custom title"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
-            />
-          )}
-
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleConfirmImageTitle}
-              disabled={isRunning || (localTitleMode === 'custom' && !localCustomTitle.trim())}
-              className="flex-1 py-2 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white font-medium rounded-xl transition text-sm"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={handleCancelImageTitle}
-              disabled={isRunning}
-              className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm"
-            >
-              Cancel
-            </button>
-          </div>
+            Download
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Caption section */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700 block">Caption</label>
-          <p className="text-xs text-gray-400">{caption.length} characters</p>
-        </div>
-
-        {loadingSection === 'caption' ? (
-          <div className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center gap-2 text-gray-400" style={{minHeight: '10rem'}}>
-            <svg className="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
-            <span className="text-sm">Regenerating caption…</span>
+          <label className="text-sm font-medium text-gray-700">Caption</label>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-gray-400">{caption.length} characters</p>
+            <button onClick={handleCopy} title="Copy caption" className="text-neutral-400 hover:text-neutral-700 transition">
+              {copied
+                ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              }
+            </button>
           </div>
-        ) : (
-          <textarea
-            ref={textareaRef}
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            rows={8}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed"
-          />
-        )}
-
-        <div className="flex gap-2">
-          <button
-            key={copied ? 'copied' : 'copy'}
-            onClick={copyCaption}
-            className={`flex-1 py-2 px-4 text-white font-medium rounded-xl transition text-sm active:scale-[0.97] ${
-              copied
-                ? 'bg-green-500 hover:bg-green-600 animate-pop'
-                : 'bg-neutral-950 hover:bg-neutral-800'
-            }`}
-          >
-            {copied ? '✓ Copied!' : 'Copy'}
-          </button>
-          <button
-            onClick={() => setEditingCaption(!editingCaption)}
-            className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm disabled:opacity-50 active:scale-[0.97]"
-            disabled={isRunning}
-          >
-            Readjust Caption
-          </button>
         </div>
+
+        <textarea
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          rows={8}
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed"
+        />
       </div>
 
-      {/* Edit caption inline */}
-      {editingCaption && (
-        <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <label className="text-xs font-medium text-gray-700 block">Caption Title</label>
-          <div className="flex gap-1 bg-white rounded-lg p-1 w-fit">
-            {(['original', 'ai'] as const).map((ctm) => (
-              <button
-                key={ctm}
-                type="button"
-                onClick={() => setLocalCaptionTitleMode(ctm)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                  localCaptionTitleMode === ctm ? 'bg-neutral-950 text-white' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {ctm === 'original' ? 'Original' : 'AI ✨'}
-              </button>
-            ))}
-          </div>
-
-          <p className="text-xs text-gray-500">
-            {localCaptionTitleMode === 'original' && "Uses the article's headline in the caption"}
-            {localCaptionTitleMode === 'ai' && "AI rewrites the headline in the caption"}
-          </p>
-
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleConfirmCaption}
-              disabled={isRunning}
-              className="flex-1 py-2 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white font-medium rounded-xl transition text-sm"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={handleCancelCaption}
-              disabled={isRunning}
-              className="flex-1 py-2 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition text-sm"
-            >
-              Cancel
-            </button>
-          </div>
+      {/* Create Draft button */}
+      {onPostDraft && (
+        <div className="pt-2">
+          <button
+            onClick={handlePostDraftClick}
+            disabled={draftState === 'posting' || isRunning}
+            className={`w-full py-3 px-4 font-medium rounded-xl transition text-sm ${
+              draftState === 'done'
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white'
+            }`}
+          >
+            {draftState === 'posting' ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Posting draft…
+              </span>
+            ) : draftState === 'done' ? (
+              draftMessage || '✓ Draft posted!'
+            ) : (
+              `Create Draft on ${result.brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
+            )}
+          </button>
+          {draftState === 'error' && draftMessage && (
+            <p className="text-xs text-red-500 text-center mt-1">{draftMessage}</p>
+          )}
         </div>
       )}
-
     </div>
   )
 }

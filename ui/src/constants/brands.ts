@@ -31,9 +31,9 @@ export const BRANDS = [
   'XUAN',
   'Zayan',
 ] as const
- 
+
 export type BrandName = (typeof BRANDS)[number]
- 
+
 export const DOMAIN_TO_BRAND: Record<string, { brand: BrandName; language: string; template: string }> = {
   'astroawani.com': { brand: 'Astro Awani', language: 'BM', template: 'Astro Awani' },
   'international.astroawani.com': { brand: 'Astro Awani', language: 'EN', template: 'Astro Awani' },
@@ -62,7 +62,7 @@ export const DOMAIN_TO_BRAND: Record<string, { brand: BrandName; language: strin
   'melody.syok.my': { brand: 'Melody', language: 'BM', template: 'Melody' },
   'impiana.my': { brand: 'Impiana', language: 'BM', template: 'Impiana' },
 }
- 
+
 export function extractDomainFromUrl(url: string): string | null {
   try {
     const { hostname } = new URL(url)
@@ -71,31 +71,31 @@ export function extractDomainFromUrl(url: string): string | null {
     return null
   }
 }
- 
+
 function lookupByUrl(url: string): { brand: BrandName; language: string; template: string } | null {
   try {
     const { hostname, pathname } = new URL(url)
     const host = hostname.replace('www.', '')
     const firstSegment = pathname.split('/').filter(Boolean)[0]
- 
+
     // Check path-qualified key first (e.g., 'era.je/sabah')
     if (firstSegment) {
       const pathKey = `${host}/${firstSegment}`
       if (DOMAIN_TO_BRAND[pathKey]) return DOMAIN_TO_BRAND[pathKey]
     }
- 
+
     // Fall back to hostname-only key
     return DOMAIN_TO_BRAND[host] ?? null
   } catch {
     return null
   }
 }
- 
+
 export function detectBrandFromUrl(url: string): BrandName | null {
   const info = lookupByUrl(url)
   return info?.brand ?? null
 }
- 
+
 export function detectBrandInfoFromUrl(url: string): { brand: BrandName; language: string; template: string } | null {
   return lookupByUrl(url)
 }

@@ -182,6 +182,24 @@ function App() {
     }
   }, [url, brand, result, run])
 
+  const handlePostDraft = useCallback(async (articleUrl: string, brandName: string) => {
+    const webhookUrl = import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined
+    if (!webhookUrl) {
+      return { success: false, message: 'Post draft webhook not configured' }
+    }
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: articleUrl, brand: brandName }),
+      })
+      const data = await response.json()
+      return { success: data.success ?? false, message: data.message ?? 'Unknown error' }
+    } catch (err) {
+      return { success: false, message: err instanceof Error ? err.message : 'Request failed' }
+    }
+  }, [])
+
   // Render tool pages
   if (activeTool === 'home') {
     return (
@@ -289,10 +307,12 @@ function App() {
                 state={state === 'approved' ? 'idle' : state}
                 result={result}
                 errorMessage={errorMessage}
+                articleUrl={url}
                 onApprove={handleApprove}
                 onRegenerate={handleRegenerate}
                 onReset={handleReset}
                 onPartialRegenerate={handlePartialRegenerate}
+                onPostDraft={handlePostDraft}
                 titleMode={titleMode}
                 customTitle={customTitle}
                 captionTitleMode={captionTitleMode}

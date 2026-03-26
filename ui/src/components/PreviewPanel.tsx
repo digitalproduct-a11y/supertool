@@ -6,10 +6,12 @@ interface PreviewPanelProps {
   state: 'idle' | 'loading' | 'result' | 'error'
   result: WorkflowResult | null
   errorMessage: string
+  articleUrl: string
   onApprove: (caption: string) => void
   onRegenerate: () => void
   onReset: () => void
   onPartialRegenerate: (op: WorkflowOperation, titleMode: TitleMode, customTitle: string, captionTitleMode: CaptionTitleMode) => void
+  onPostDraft?: (url: string, brand: string) => Promise<{success: boolean, message: string}>
   titleMode: TitleMode
   customTitle: string
   captionTitleMode: CaptionTitleMode
@@ -20,9 +22,11 @@ export function PreviewPanel({
   state,
   result,
   errorMessage,
+  articleUrl,
   onApprove,
   onReset,
   onPartialRegenerate,
+  onPostDraft,
   titleMode,
   customTitle,
   captionTitleMode,
@@ -69,12 +73,9 @@ export function PreviewPanel({
         <div className="animate-fade-slide-up">
           <ResultPreview
             result={result}
-            titleMode={titleMode}
-            customTitle={customTitle}
-            captionTitleMode={captionTitleMode}
             isRunning={isRunning}
-            onApprove={onApprove}
-            onPartialRegenerate={onPartialRegenerate}
+            articleUrl={articleUrl}
+            onPostDraft={onPostDraft}
           />
         </div>
       )}
