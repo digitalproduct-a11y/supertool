@@ -211,23 +211,6 @@ function App() {
     )
   }
 
-  if (activeTool === 'trending-news') {
-    return (
-      <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
-        <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
-        <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-10">
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Trending News to FB Photos</h1>
-              <p className="text-neutral-500 mt-1 text-sm">Coming soon</p>
-            </div>
-          </div>
-        </main>
-        <SuggestButton />
-      </div>
-    )
-  }
-
   if (activeTool === 'affiliate-links') {
     return (
       <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
