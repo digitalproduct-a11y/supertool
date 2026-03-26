@@ -21,7 +21,7 @@ import type {
 
 function App() {
   // Tool selection
-  const [activeTool, setActiveTool] = useState<'home' | 'fb-post' | 'affiliate-links'  | 'trending-spike'>('home')
+  const [activeTool, setActiveTool] = useState<'home' | 'fb-post' | 'affiliate-links' | 'article-generator' | 'trending-spike'>('home')
 
   // UI state
   const [state, setState] = useState<AppState>('idle')
