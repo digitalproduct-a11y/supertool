@@ -188,7 +188,7 @@ function App() {
 //         <ArticleGeneratorPage />
 //       </div>
 //     )
-  }
+//   }
 
   if (activeTool === 'trending-spike') {
     return (
