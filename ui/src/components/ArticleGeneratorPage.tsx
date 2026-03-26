@@ -3,9 +3,6 @@ import { useArticleGenerator } from '../hooks/useArticleGenerator'
 import type {
   ArticleGeneratorState,
   ArticleGeneratorStep,
-  BrandVoice,
-  Product,
-  SuggestedAngle,
 } from '../types'
 import { BRANDS } from '../constants/brands'
 
