@@ -71,7 +71,7 @@ export interface AffiliateLinksError {
 export type AffiliateLinksResponse = AffiliateLinksResult | AffiliateLinksError
 
 // Article Generator tool types
-export type ArticleGeneratorStep = 'input' | 'processing' | 'angle-selection' | 'writing' | 'article' | 'thumbnail-choice' | 'thumbnail-prompt' | 'thumbnail-result'
+export type ArticleGeneratorStep = 'input' | 'pick-angle' | 'review-article' | 'thumbnail' | 'done'
 
 export interface BrandVoice {
   language: string

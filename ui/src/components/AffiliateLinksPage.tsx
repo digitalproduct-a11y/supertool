@@ -1,27 +1,16 @@
-import { useState, useEffect } from 'react'
-import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
+import { useState } from 'react'
 import { BRANDS } from '../constants/brands'
+import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
 import type { AffiliateLinksState } from '../types'
 
 const TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1J6JokZsSRvtHK98gZF77Y16oBwP7mzyL/export?format=xlsx'
 
 export function AffiliateLinksPage() {
   const [pageState, setPageState] = useState<AffiliateLinksState>('idle')
-  const [brands, setBrands] = useState<string[]>([])
-  const [selectedBrand, setSelectedBrand] = useState('')
+  const [selectedBrand, setSelectedBrand] = useState(BRANDS[0] || '')
   const [errorMessage, setErrorMessage] = useState('')
   const [dragOver, setDragOver] = useState(false)
-  const [brandsLoading, setBrandsLoading] = useState(true)
   const { run } = useAffiliateLinks()
-
-  // Load brands from shared constant
-  useEffect(() => {
-    setBrands([...BRANDS])
-    if (BRANDS.length > 0) {
-      setSelectedBrand(BRANDS[0])
-    }
-    setBrandsLoading(false)
-  }, [])
 
   const handleFile = async (selectedFile: File) => {
     if (!selectedBrand) {
@@ -70,6 +59,7 @@ export function AffiliateLinksPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Affiliate Links</h1>
           <p className="text-neutral-500 mt-1 text-sm">Upload an Excel file with Shopee links and get back a processed file with affiliate data</p>
+          <div className="mt-4 h-[3px] w-24 rounded-full" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
         <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
@@ -93,23 +83,17 @@ export function AffiliateLinksPage() {
               {/* Brand Selector */}
               <div>
                 <label className="block text-sm font-medium text-neutral-950 mb-2">Brand *</label>
-                {brandsLoading ? (
-                  <div className="h-10 bg-neutral-100 rounded-lg animate-pulse" />
-                ) : brands.length === 0 ? (
-                  <div className="p-3 bg-yellow-50 text-yellow-800 text-sm rounded-lg">Failed to load brands. Please try again.</div>
-                ) : (
-                  <select
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white hover:border-neutral-300 focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
-                  >
-                    {brands.map((brand) => (
-                      <option key={brand} value={brand}>
-                        {brand}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white hover:border-neutral-300 focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
+                >
+                  {BRANDS.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* File Upload */}

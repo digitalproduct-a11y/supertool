@@ -11,9 +11,11 @@ export function useAffiliateLinks() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('brand', brand)
 
-      const response = await fetch(WEBHOOK_URL, {
+      const url = new URL(WEBHOOK_URL)
+      url.searchParams.append('brand', brand)
+
+      const response = await fetch(url.toString(), {
         method: 'POST',
         body: formData,
         signal: AbortSignal.timeout(180_000),

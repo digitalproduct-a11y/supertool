@@ -42,6 +42,11 @@ body {
   100% { transform: scale(1); }
 }
 
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 .animate-fade-slide-up {
   animation: fade-slide-up 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
 }
@@ -62,13 +67,28 @@ body {
   animation: pop 0.3s cubic-bezier(0.25, 1, 0.5, 1) both;
 }
 
+.animate-fade {
+  animation: fade 0.5s ease-in-out both;
+}
+
+@keyframes pulse-strong {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.animate-pulse-strong {
+  animation: pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-slide-up,
   .animate-slide-down,
   .animate-breathe,
   .animate-step-enter,
-  .animate-pop {
+  .animate-pop,
+  .animate-fade,
+  .animate-pulse-strong {
     animation: none !important;
   }
 }
