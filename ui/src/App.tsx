@@ -4,6 +4,8 @@ import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
 import { AffiliateLinksPage } from './components/AffiliateLinksPage'
 import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
+import { ArticlePage } from './components/ArticlePage'
+import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -20,7 +22,7 @@ import type {
 
 function App() {
   // Tool selection
-  const [activeTool, setActiveTool] = useState<'home' | 'fb-post' | 'affiliate-links' | 'article-generator'>('home')
+  const [activeTool, setActiveTool] = useState<'home' | 'fb-post' | 'affiliate-links' | 'article-generator' | 'trending-spike'>('home')
 
   // UI state
   const [state, setState] = useState<AppState>('idle')
@@ -161,6 +163,7 @@ function App() {
     }
   }, [url, brand, result, run])
 
+  // Render tool pages
   if (activeTool === 'home') {
     return (
       <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
@@ -184,6 +187,15 @@ function App() {
       <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
         <ArticleGeneratorPage />
+      </div>
+    )
+  }
+
+  if (activeTool === 'trending-spike') {
+    return (
+      <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
+        <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
+        <TrendingSpikePage />
       </div>
     )
   }

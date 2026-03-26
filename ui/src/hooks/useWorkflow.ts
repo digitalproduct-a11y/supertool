@@ -6,11 +6,11 @@ interface UseWorkflowReturn {
   isRunning: boolean
 }
 
-export function useWorkflow(): UseWorkflowReturn {
+export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
   const [isRunning, setIsRunning] = useState(false)
 
   async function run(request: WorkflowRequest): Promise<WorkflowResponse> {
-    const webhookUrl = import.meta.env.VITE_WEBHOOK_URL
+    const webhookUrl = webhookUrlOverride || import.meta.env.VITE_WEBHOOK_URL
     if (!webhookUrl) {
       return {
         success: false,

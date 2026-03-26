@@ -33,7 +33,7 @@ export type BrandName = (typeof BRANDS)[number]
 
 export const DOMAIN_TO_BRAND: Record<string, { brand: BrandName; language: string; template: string }> = {
   'astroawani.com': { brand: 'Astro Awani', language: 'BM', template: 'Astro Awani' },
-  'english.astroawani.com': { brand: 'Astro Awani', language: 'EN', template: 'Astro Awani' },
+  'international.astroawani.com': { brand: 'Astro Awani', language: 'EN', template: 'Astro Awani' },
   'stadiumastro.com': { brand: 'Stadium Astro', language: 'BM', template: 'Stadium Astro' },
   'english.stadiumastro.com': { brand: 'Stadium Astro', language: 'EN', template: 'Astro Arena' },
   'astroulagam.com.my': { brand: 'Astro Ulagam', language: 'BM', template: 'Astro Ulagam' },

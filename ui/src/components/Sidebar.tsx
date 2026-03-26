@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-type ToolId = 'home' | 'fb-post' | 'affiliate-links' | 'article-generator'
+type ToolId = 'home' | 'fb-post' | 'affiliate-links' | 'article-generator' | 'trending-spike'
 
 interface SidebarProps {
   activeTool?: ToolId
@@ -15,6 +15,7 @@ export function Sidebar({ activeTool = 'home', onToolChange }: SidebarProps) {
     { id: 'fb-post' as const, label: 'Article to FB Post' },
     { id: 'affiliate-links' as const, label: 'Shopee Affiliate Links' },
     { id: 'article-generator' as const, label: 'Article Generator' },
+    { id: 'trending-spike' as const, label: 'Trending Spike to FB Post' },
   ]
 
   const handleToolClick = (toolId: ToolId) => {
@@ -28,6 +29,7 @@ export function Sidebar({ activeTool = 'home', onToolChange }: SidebarProps) {
       'fb-post': 'Article to FB Post',
       'affiliate-links': 'Shopee Affiliate Links',
       'article-generator': 'Shopee Article Generator',
+      'trending-spike': 'Trending Spike to FB Post',
     }
     const toolName = toolNames[activeTool ?? 'home']
     const subject = encodeURIComponent(`Feedback: ${toolName}`)
