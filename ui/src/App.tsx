@@ -244,7 +244,7 @@ function App() {
   return (
     <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
       {/* Sidebar */}
-      <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
+      <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
 
       {/* Main content */}
       <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">

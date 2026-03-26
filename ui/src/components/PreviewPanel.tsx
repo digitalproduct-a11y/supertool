@@ -23,13 +23,13 @@ export function PreviewPanel({
   result,
   errorMessage,
   articleUrl,
-  onApprove,
+  onApprove: _onApprove,
   onReset,
-  onPartialRegenerate,
+  onPartialRegenerate: _onPartialRegenerate,
   onPostDraft,
-  titleMode,
-  customTitle,
-  captionTitleMode,
+  titleMode: _titleMode,
+  customTitle: _customTitle,
+  captionTitleMode: _captionTitleMode,
   isRunning,
 }: PreviewPanelProps) {
   return (

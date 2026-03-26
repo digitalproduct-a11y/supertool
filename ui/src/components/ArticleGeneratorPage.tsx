@@ -44,7 +44,6 @@ export function ArticleGeneratorPage() {
   const [showThumbnailGen, setShowThumbnailGen] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('Great things coming together...')
   const [currentStep, setCurrentStep] = useState(0)
-  const [expandedProduct, setExpandedProduct] = useState<number | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
 
   const { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error } =
@@ -421,7 +420,6 @@ export function ArticleGeneratorPage() {
                 Shopee Product Links (Min 3 required)
               </label>
               {productLinks.map((link, idx) => {
-                const isRequired = idx < 3
                 const isValid = link.trim() === '' || isValidShopeeLink(link)
                 const isFilled = link.trim() !== ''
 
