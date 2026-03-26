@@ -106,7 +106,7 @@ export function InputForm({
       {/* Brand selector */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Brand to generate for
+          Brand To Generate For
         </label>
         <div className="relative">
           <select
@@ -202,7 +202,7 @@ export function InputForm({
         disabled={disabled || !url.trim() || !brand || !detectedBrand || (titleMode === 'custom' && !customTitle.trim())}
         className="w-full py-3 px-6 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium rounded-xl transition text-sm active:scale-[0.98]"
       >
-        Generate Facebook Post
+        Generate Facebook Post Asset
       </button>
 
       {/* Supported sites modal */}

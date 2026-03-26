@@ -101,6 +101,7 @@ function ImageThumb({ url, alt, aspectRatio = 'square' }: { url?: string; alt: s
       <img
         src={url}
         alt={alt}
+        referrerPolicy="no-referrer"
         className={aspectRatio === 'video'
           ? 'w-full aspect-video object-cover rounded-lg border border-neutral-100 hover:opacity-90 transition'
           : 'w-16 h-16 rounded-lg object-cover border border-neutral-100 hover:opacity-90 transition'
@@ -166,6 +167,9 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
+  const [caption, setCaption] = useState('')
+  const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
+  const [draftMessage, setDraftMessage] = useState('')
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
@@ -182,6 +186,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       })
       if (data.success) {
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
+        setCaption(data.caption ?? '')
       } else {
         setError(data.message || 'Generation failed.')
       }
@@ -204,6 +209,39 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     } catch { /* ignore */ }
   }
 
+  async function handlePostDraftClick() {
+    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
+    if (!webhookUrl) {
+      setDraftMessage('Draft posting is not available right now.')
+      setDraftState('error')
+      return
+    }
+    setDraftState('posting')
+    setDraftMessage('')
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: source.articleUrl, brand }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDraftState('done')
+        setDraftMessage('✓ Draft posted to Facebook!')
+        setTimeout(() => {
+          setDraftState('idle')
+          setDraftMessage('')
+        }, 3000)
+      } else {
+        setDraftState('error')
+        setDraftMessage("Couldn't post draft. Please try again.")
+      }
+    } catch {
+      setDraftState('error')
+      setDraftMessage("Couldn't post draft. Please try again.")
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Back nav */}
@@ -219,7 +257,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-5">
           {/* Article URL */}
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wide">Article URL</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Article URL</label>
             <a
               href={source.articleUrl}
               target="_blank"
@@ -232,7 +270,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
           {/* Brand */}
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wide">Brand</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
             <select
               value={brand}
               onChange={e => setBrand(e.target.value)}
@@ -245,19 +283,19 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
           {/* Title mode */}
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-2 uppercase tracking-wide">Image title</label>
-            <div className="flex gap-2 flex-wrap">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Image Title</label>
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
               {(['original', 'ai', 'custom'] as TitleMode[]).map(m => (
                 <button
                   key={m}
                   onClick={() => setTitleMode(m)}
-                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                     titleMode === m
-                      ? 'bg-neutral-950 text-white border-neutral-950'
-                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  {m === 'original' ? 'Original' : m === 'ai' ? 'AI title' : 'Custom'}
+                  {m === 'original' ? 'Original' : m === 'ai' ? 'AI ✨' : 'Custom'}
                 </button>
               ))}
             </div>
@@ -274,19 +312,19 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
           {/* Caption title mode */}
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-2 uppercase tracking-wide">Caption title</label>
-            <div className="flex gap-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Caption Title</label>
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
               {(['original', 'ai'] as CaptionTitleMode[]).map(m => (
                 <button
                   key={m}
                   onClick={() => setCaptionTitleMode(m)}
-                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                     captionTitleMode === m
-                      ? 'bg-neutral-950 text-white border-neutral-950'
-                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  {m === 'original' ? 'Original' : 'AI title'}
+                  {m === 'original' ? 'Original' : 'AI ✨'}
                 </button>
               ))}
             </div>
@@ -301,7 +339,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
             disabled={!brand || isGenerating}
             className="w-full py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white rounded-xl text-sm font-semibold transition active:scale-[0.98]"
           >
-            {isGenerating ? 'Generating…' : result ? 'Generate again' : 'Generate FB Post'}
+            {isGenerating ? 'Generating…' : result ? 'Generate again' : 'Generate Facebook Post Asset'}
           </button>
         </div>
 
@@ -333,12 +371,48 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                 </div>
               </div>
               {/* Caption */}
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3 mb-1">
-                  <span className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Caption</span>
-                  <CopyButton text={result.caption} />
+              <div className="p-5 space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-gray-700">Caption</span>
+                    <CopyButton text={caption} />
+                  </div>
+                  <textarea
+                    value={caption}
+                    onChange={e => setCaption(e.target.value)}
+                    rows={8}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed"
+                  />
                 </div>
-                <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">{result.caption}</p>
+                {/* Create Draft button */}
+                <div>
+                  <button
+                    onClick={handlePostDraftClick}
+                    disabled={draftState === 'posting'}
+                    className={`w-full py-3 px-4 font-medium rounded-xl transition text-sm ${
+                      draftState === 'done'
+                        ? 'bg-green-500 hover:bg-green-600 text-white'
+                        : 'bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white'
+                    }`}
+                  >
+                    {draftState === 'posting' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Posting draft…
+                      </span>
+                    ) : draftState === 'done' ? (
+                      draftMessage || '✓ Draft posted!'
+                    ) : (
+                      `Create Draft on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
+                    )}
+                  </button>
+                  {draftState === 'error' && draftMessage && (
+                    <p className="text-xs text-red-500 text-center mt-1">{draftMessage}</p>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
@@ -456,7 +530,7 @@ export function TrendingSpikePage() {
           category: a.category || '',
           type: a.type || '',
           title: a.title || '',
-          imageUrl: a.image || '',
+          imageUrl: (a.image && !a.image.includes('sponsor-logos')) ? a.image : '',
           caption: a.caption || '',
           status: 'idle' as const,
         })))
@@ -574,7 +648,7 @@ export function TrendingSpikePage() {
                       <tr className="border-b border-neutral-100 text-left text-xs font-medium text-neutral-400 uppercase tracking-wide">
                         <th className="px-6 py-3 whitespace-nowrap">Received</th>
                         <th className="px-4 py-3">Article</th>
-                        <th className="px-4 py-3">Brand</th>
+                        <th className="px-4 py-3">Source</th>
                         <th className="px-4 py-3 whitespace-nowrap">Concurrent viewers</th>
                         <th className="px-4 py-3"></th>
                       </tr>
@@ -615,7 +689,7 @@ export function TrendingSpikePage() {
                               onClick={() => handleGeneratePost(item)}
                               className="px-3.5 py-1.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-semibold transition active:scale-[0.97] whitespace-nowrap"
                             >
-                              Generate FB Post
+                              Generate
                             </button>
                           </td>
                         </tr>
@@ -670,7 +744,7 @@ export function TrendingSpikePage() {
                 >
                   {isFetchingTrending ? (
                     <span className="flex items-center gap-2"><Spinner /> Fetching…</span>
-                  ) : 'Refresh'}
+                  ) : '↻ Refresh'}
                 </button>
               </div>
               {fetchError && (
@@ -678,11 +752,46 @@ export function TrendingSpikePage() {
               )}
             </div>
 
+            {/* Skeleton while fetching */}
+            {isFetchingTrending && trendingItems.length === 0 && (
+              <div className="space-y-6">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+                    <div className="px-6 py-4 border-b border-neutral-100">
+                      <div className="h-3 bg-neutral-100 rounded animate-pulse w-24" />
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {[1, 2, 3].map(j => (
+                        <div key={j} className="flex items-center gap-4 animate-pulse">
+                          <div className="w-48 aspect-video rounded-lg bg-neutral-100 shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 bg-neutral-100 rounded w-3/4" />
+                            <div className="h-3 bg-neutral-100 rounded w-1/2" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Trending articles by type */}
             {trendingItems.length > 0 && (
               <>
-                {(['Entertainment', 'News', 'Sport'] as const).map(type => {
-                  const items = trendingItems.filter(i => i.type.toLowerCase() === type.toLowerCase())
+                {(['News', 'Sport', 'Entertainment'] as const).map(type => {
+                  let items = trendingItems.filter(i => i.type.toLowerCase() === type.toLowerCase())
+                  // For Entertainment, sort by preferred sources
+                  if (type === 'Entertainment') {
+                    const entertainmentOrder = ['Gempak', 'Rojak Daily', 'XUAN', 'Astro Ulagam']
+                    items = [...items].sort((a, b) => {
+                      const ai = entertainmentOrder.findIndex(s => s.toLowerCase() === a.source.toLowerCase())
+                      const bi = entertainmentOrder.findIndex(s => s.toLowerCase() === b.source.toLowerCase())
+                      const av = ai === -1 ? 999 : ai
+                      const bv = bi === -1 ? 999 : bi
+                      return av - bv
+                    })
+                  }
                   if (items.length === 0) return null
                   return (
                     <div key={type} className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
@@ -695,8 +804,8 @@ export function TrendingSpikePage() {
                           <thead>
                             <tr className="border-b border-neutral-100 text-left text-xs font-medium text-neutral-400 uppercase tracking-wide">
                               <th className="px-6 py-3">Image</th>
+                              <th className="px-4 py-3">Article</th>
                               <th className="px-4 py-3">Source</th>
-                              <th className="px-4 py-3">Title / URL</th>
                               <th className="px-4 py-3">Action</th>
                             </tr>
                           </thead>
@@ -706,28 +815,35 @@ export function TrendingSpikePage() {
                                 <td className="px-6 py-4 w-48">
                                   <ImageThumb url={item.imageUrl} alt={item.title || item.url} aspectRatio="video" />
                                 </td>
+                                <td className="px-4 py-4 max-w-[280px]">
+                                  <div className="flex items-start gap-1.5">
+                                    <span className="text-neutral-800 font-medium line-clamp-2 leading-snug text-sm flex-1">
+                                      {item.title || item.url}
+                                    </span>
+                                    <a
+                                      href={item.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="shrink-0 mt-0.5 text-neutral-400 hover:text-neutral-700 transition"
+                                      title="Open article"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                      </svg>
+                                    </a>
+                                  </div>
+                                </td>
                                 <td className="px-4 py-4">
                                   <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium whitespace-nowrap capitalize">
                                     {item.source}
                                   </span>
-                                </td>
-                                <td className="px-4 py-4 max-w-[240px]">
-                                  {item.title ? (
-                                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-neutral-800 hover:text-neutral-500 font-medium line-clamp-2 leading-snug transition">
-                                      {item.title}
-                                    </a>
-                                  ) : (
-                                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-neutral-600 text-xs line-clamp-2 break-all transition">
-                                      {item.url}
-                                    </a>
-                                  )}
                                 </td>
                                 <td className="px-4 py-4">
                                   <button
                                     onClick={() => handleTrendingGeneratePost(item)}
                                     className="px-3 py-1.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-semibold transition active:scale-[0.97] whitespace-nowrap"
                                   >
-                                    Generate FB Post
+                                    Generate
                                   </button>
                                 </td>
                               </tr>

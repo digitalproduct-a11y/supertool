@@ -93,6 +93,7 @@ export interface Product {
   shopName: string
   affiliateLink: string
   productFeatures: string
+  shopTypeLabel?: string
 }
 
 export interface SuggestedAngle {

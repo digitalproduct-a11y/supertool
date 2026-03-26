@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BRANDS } from '../constants/brands'
+import { BRANDS, type BrandName } from '../constants/brands'
 import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
 import type { AffiliateLinksState } from '../types'
 
@@ -7,7 +7,7 @@ const TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1J6JokZsSRvtHK98gZF
 
 export function AffiliateLinksPage() {
   const [pageState, setPageState] = useState<AffiliateLinksState>('idle')
-  const [selectedBrand, setSelectedBrand] = useState(BRANDS[0] || '')
+  const [selectedBrand, setSelectedBrand] = useState<BrandName>(BRANDS[0])
   const [errorMessage, setErrorMessage] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const { run } = useAffiliateLinks()
@@ -85,7 +85,7 @@ export function AffiliateLinksPage() {
                 <label className="block text-sm font-medium text-neutral-950 mb-2">Brand *</label>
                 <select
                   value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  onChange={(e) => setSelectedBrand(e.target.value as BrandName)}
                   className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white hover:border-neutral-300 focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
                 >
                   {BRANDS.map((brand) => (

@@ -182,29 +182,30 @@ function App() {
     }
   }, [url, brand, result, run])
 
+  const handlePostDraft = useCallback(async (articleUrl: string, brandName: string) => {
+    const webhookUrl = import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined
+    if (!webhookUrl) {
+      return { success: false, message: 'Post draft webhook not configured' }
+    }
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: articleUrl, brand: brandName }),
+      })
+      const data = await response.json()
+      return { success: data.success ?? false, message: data.message ?? 'Unknown error' }
+    } catch (err) {
+      return { success: false, message: err instanceof Error ? err.message : 'Request failed' }
+    }
+  }, [])
+
   // Render tool pages
   if (activeTool === 'home') {
     return (
       <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
         <HomePage onToolSelect={setActiveTool} />
-        <SuggestButton />
-      </div>
-    )
-  }
-
-  if (activeTool === 'trending-news') {
-    return (
-      <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
-        <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
-        <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-10">
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Trending News to FB Photos</h1>
-              <p className="text-neutral-500 mt-1 text-sm">Coming soon</p>
-            </div>
-          </div>
-        </main>
         <SuggestButton />
       </div>
     )
@@ -243,7 +244,7 @@ function App() {
   return (
     <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
       {/* Sidebar */}
-      <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
+      <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
 
       {/* Main content */}
       <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
@@ -289,10 +290,12 @@ function App() {
                 state={state === 'approved' ? 'idle' : state}
                 result={result}
                 errorMessage={errorMessage}
+                articleUrl={url}
                 onApprove={handleApprove}
                 onRegenerate={handleRegenerate}
                 onReset={handleReset}
                 onPartialRegenerate={handlePartialRegenerate}
+                onPostDraft={handlePostDraft}
                 titleMode={titleMode}
                 customTitle={customTitle}
                 captionTitleMode={captionTitleMode}
