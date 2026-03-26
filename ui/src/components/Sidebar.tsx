@@ -1,25 +1,35 @@
 import { useState } from 'react'
 
+type ToolId = 'home' | 'fb-post' | 'affiliate-links' | 'article-generator'
+
 interface SidebarProps {
-  activeTool?: 'fb-post' | 'thumbnail'
-  onToolChange?: (id: 'fb-post' | 'thumbnail') => void
+  activeTool?: ToolId
+  onToolChange?: (id: ToolId) => void
 }
 
-export function Sidebar({ activeTool = 'fb-post', onToolChange }: SidebarProps) {
+export function Sidebar({ activeTool = 'home', onToolChange }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const tools = [
+    { id: 'home' as const, label: 'Home' },
     { id: 'fb-post' as const, label: 'Article to FB Post' },
-    { id: 'thumbnail' as const, label: 'Shopee Article' },
+    { id: 'affiliate-links' as const, label: 'Shopee Affiliate Links' },
+    { id: 'article-generator' as const, label: 'Article Generator' },
   ]
 
-  const handleToolClick = (toolId: 'fb-post' | 'thumbnail') => {
+  const handleToolClick = (toolId: ToolId) => {
     onToolChange?.(toolId)
     setIsOpen(false)
   }
 
   const handleFeedback = () => {
-    const toolName = activeTool === 'fb-post' ? 'Article to FB Post' : 'Shopee Article'
+    const toolNames: Record<ToolId, string> = {
+      home: 'Astro Tools',
+      'fb-post': 'Article to FB Post',
+      'affiliate-links': 'Shopee Affiliate Links',
+      'article-generator': 'Shopee Article Generator',
+    }
+    const toolName = toolNames[activeTool ?? 'home']
     const subject = encodeURIComponent(`Feedback: ${toolName}`)
     const body = encodeURIComponent(`Hi team, I have some feedback about the tool ${toolName}.\n\n[Insert your feedback here]`)
     window.location.href = `mailto:digitalproduct@astro.com.my?subject=${subject}&body=${body}`
@@ -60,7 +70,12 @@ export function Sidebar({ activeTool = 'fb-post', onToolChange }: SidebarProps) 
       >
         {/* Header */}
         <div className="px-5 py-6 border-b border-white/8">
-          <span className="text-[15px] font-semibold text-white tracking-tight">Astro Tools</span>
+          <button
+            onClick={() => handleToolClick('home')}
+            className="text-[15px] font-semibold text-white tracking-tight hover:text-white/80 transition-colors"
+          >
+            Astro Tools
+          </button>
         </div>
 
         {/* Nav */}

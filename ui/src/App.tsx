@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
-import { ArticlePage } from './components/ArticlePage'
+import { HomePage } from './components/HomePage'
+import { AffiliateLinksPage } from './components/AffiliateLinksPage'
+import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -18,7 +20,7 @@ import type {
 
 function App() {
   // Tool selection
-  const [activeTool, setActiveTool] = useState<'fb-post' | 'thumbnail'>('fb-post')
+  const [activeTool, setActiveTool] = useState<'home' | 'fb-post' | 'affiliate-links' | 'article-generator'>('home')
 
   // UI state
   const [state, setState] = useState<AppState>('idle')
@@ -159,12 +161,29 @@ function App() {
     }
   }, [url, brand, result, run])
 
-  // Render article page if selected
-  if (activeTool === 'thumbnail') {
+  if (activeTool === 'home') {
     return (
       <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
-        <ArticlePage />
+        <HomePage onToolSelect={setActiveTool} />
+      </div>
+    )
+  }
+
+  if (activeTool === 'affiliate-links') {
+    return (
+      <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
+        <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
+        <AffiliateLinksPage />
+      </div>
+    )
+  }
+
+  if (activeTool === 'article-generator') {
+    return (
+      <div className="min-h-screen bg-[#f7f7f6] flex md:gap-0">
+        <Sidebar activeTool={activeTool} onToolChange={setActiveTool} />
+        <ArticleGeneratorPage />
       </div>
     )
   }

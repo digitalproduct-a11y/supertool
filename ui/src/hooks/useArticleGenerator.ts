@@ -1,249 +1,88 @@
 import { useState } from 'react'
 import type {
-  ArticleState,
-  ArticleContext,
-  ContentAngle,
-  ProductSummary,
-  ArticleResponse,
-  ArticleError,
+  ArticleIntakeResponse,
+  ArticleGenerateResponse,
+  ThumbnailPromptResponse,
+  ThumbnailGenerateResponse,
 } from '../types'
 
+const INTAKE_WEBHOOK_URL = import.meta.env.VITE_ARTICLE_INTAKE_WEBHOOK_URL as string
+const GENERATE_WEBHOOK_URL = import.meta.env.VITE_ARTICLE_GENERATE_WEBHOOK_URL as string
+const THUMBNAIL_PROMPT_WEBHOOK_URL = import.meta.env.VITE_ARTICLE_THUMBNAIL_PROMPT_WEBHOOK_URL as string
+const THUMBNAIL_GENERATE_WEBHOOK_URL = import.meta.env.VITE_ARTICLE_THUMBNAIL_GENERATE_WEBHOOK_URL as string
+
 export function useArticleGenerator() {
-  const [state, setState] = useState<ArticleState>('idle')
-  const [products, setProducts] = useState<ProductSummary[]>([])
-  const [angles, setAngles] = useState<ContentAngle[]>([])
-  const [context, setContext] = useState<ArticleContext | null>(null)
-  const [articleHtml, setArticleHtml] = useState('')
-  const [articleTitle, setArticleTitle] = useState('')
-  const [thumbnailPrompt, setThumbnailPrompt] = useState('')
-  const [thumbnailUrl, setThumbnailUrl] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const webhookUrl = import.meta.env.VITE_ARTICLE_WEBHOOK_URL
-
-  const handleError = (message: string) => {
-    setErrorMessage(message)
-    setState('error')
-  }
-
-  const makeRequest = async (step: string, payload: any) => {
-    if (!webhookUrl) {
-      handleError('VITE_ARTICLE_WEBHOOK_URL is not configured.')
-      return null
-    }
-
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 180_000) // 3 min
-
+  const callWebhook = async <T>(
+    url: string,
+    body: Record<string, unknown>,
+    timeout = 180000,
+  ): Promise<T | null> => {
     try {
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step, ...payload }),
-        signal: controller.signal,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeout),
       })
 
-      const data: ArticleResponse = await response.json()
-      return data
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        handleError('Request timed out. The workflow may still be running — please try again.')
-      } else {
-        handleError('Network error. Please check your connection and try again.')
+      if (!response.ok) {
+        throw new Error(`Request failed (${response.status})`)
       }
+
+      return await response.json()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message)
       return null
+    }
+  }
+
+  const intake = async (brand: string, links: string[]): Promise<ArticleIntakeResponse | null> => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      return await callWebhook<ArticleIntakeResponse>(INTAKE_WEBHOOK_URL, { brand, links })
     } finally {
-      clearTimeout(timeout)
+      setIsLoading(false)
     }
   }
 
-  const processProducts = async (brand: string, shopeeLinks: string[]) => {
-    if (!brand.trim() || shopeeLinks.length === 0) {
-      handleError('Please provide a brand and at least one Shopee link.')
-      return
+  const generate = async (body: Record<string, unknown>): Promise<ArticleGenerateResponse | null> => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      return await callWebhook<ArticleGenerateResponse>(GENERATE_WEBHOOK_URL, body)
+    } finally {
+      setIsLoading(false)
     }
-
-    setState('processing_products')
-    setErrorMessage('')
-
-    const data = await makeRequest('process_products', {
-      brand: brand.trim(),
-      shopee_links: shopeeLinks.map((l) => l.trim()).filter(Boolean),
-    })
-
-    if (!data || !data.success) {
-      handleError((data as ArticleError)?.message || 'Failed to process products.')
-      return
-    }
-
-    const result = data as any
-    setProducts(result.products)
-    setAngles(result.angles)
-    setContext(result.context)
-    setState('angle_selection')
   }
 
-  const generateArticle = async (selectedAngle: string) => {
-    if (!context) {
-      handleError('Missing context. Please start over.')
-      return
+  const thumbnailPrompt = async (
+    body: Record<string, unknown>,
+  ): Promise<ThumbnailPromptResponse | null> => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      return await callWebhook<ThumbnailPromptResponse>(THUMBNAIL_PROMPT_WEBHOOK_URL, body)
+    } finally {
+      setIsLoading(false)
     }
-
-    setState('generating_article')
-    setErrorMessage('')
-
-    const data = await makeRequest('generate_article', {
-      context,
-      selected_angle: selectedAngle,
-    })
-
-    if (!data || !data.success) {
-      handleError((data as ArticleError)?.message || 'Failed to generate article.')
-      return
-    }
-
-    const result = data as any
-    setArticleHtml(result.article_html)
-    setArticleTitle(result.article_title)
-    setContext(result.context)
-    setState('review_draft')
   }
 
-  const reviseArticle = async (feedback: string) => {
-    if (!context) {
-      handleError('Missing context.')
-      return
+  const thumbnailGenerate = async (
+    body: Record<string, unknown>,
+  ): Promise<ThumbnailGenerateResponse | null> => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      return await callWebhook<ThumbnailGenerateResponse>(THUMBNAIL_GENERATE_WEBHOOK_URL, body)
+    } finally {
+      setIsLoading(false)
     }
-
-    setState('revising_article')
-    setErrorMessage('')
-
-    const data = await makeRequest('revise_article', {
-      context,
-      article_html: articleHtml,
-      article_title: articleTitle,
-      feedback: feedback.trim(),
-    })
-
-    if (!data || !data.success) {
-      handleError((data as ArticleError)?.message || 'Failed to revise article.')
-      return
-    }
-
-    const result = data as any
-    setArticleHtml(result.article_html)
-    setArticleTitle(result.article_title)
-    setState('review_draft')
   }
 
-  const prepareThumbnail = async () => {
-    if (!context) {
-      handleError('Missing context.')
-      return
-    }
-
-    setState('thumbnail_prompt')
-    setErrorMessage('')
-
-    const data = await makeRequest('prepare_thumbnail', { context })
-
-    if (!data || !data.success) {
-      handleError((data as ArticleError)?.message || 'Failed to prepare thumbnail.')
-      return
-    }
-
-    const result = data as any
-    setThumbnailPrompt(result.prompt)
-    setContext(result.context)
-  }
-
-  const generateThumbnail = async (prompt: string) => {
-    setState('generating_thumbnail')
-    setErrorMessage('')
-
-    const data = await makeRequest('generate_thumbnail', { prompt: prompt.trim() })
-
-    if (!data || !data.success) {
-      handleError((data as ArticleError)?.message || 'Failed to generate thumbnail.')
-      return
-    }
-
-    const result = data as any
-    setThumbnailUrl(result.thumbnail_url)
-    setState('thumbnail_result')
-  }
-
-  const reviseThumbnail = async (feedback: string) => {
-    if (!context) {
-      handleError('Missing context.')
-      return
-    }
-
-    setState('revising_thumbnail')
-    setErrorMessage('')
-
-    const data = await makeRequest('revise_thumbnail', {
-      context,
-      feedback: feedback.trim(),
-    })
-
-    if (!data || !data.success) {
-      handleError((data as ArticleError)?.message || 'Failed to revise thumbnail.')
-      return
-    }
-
-    const result = data as any
-    setThumbnailUrl(result.thumbnail_url)
-    setThumbnailPrompt(result.prompt)
-    setState('thumbnail_result')
-  }
-
-  const skipThumbnail = () => {
-    setState('done')
-  }
-
-  const finish = () => {
-    setState('done')
-  }
-
-  const reset = () => {
-    setState('idle')
-    setProducts([])
-    setAngles([])
-    setContext(null)
-    setArticleHtml('')
-    setArticleTitle('')
-    setThumbnailPrompt('')
-    setThumbnailUrl('')
-    setErrorMessage('')
-  }
-
-  const isLoading =
-    state === 'processing_products' ||
-    state === 'generating_article' ||
-    state === 'revising_article' ||
-    state === 'generating_thumbnail' ||
-    state === 'revising_thumbnail'
-
-  return {
-    state,
-    products,
-    angles,
-    context,
-    articleHtml,
-    articleTitle,
-    thumbnailPrompt,
-    thumbnailUrl,
-    errorMessage,
-    processProducts,
-    generateArticle,
-    reviseArticle,
-    prepareThumbnail,
-    generateThumbnail,
-    reviseThumbnail,
-    skipThumbnail,
-    finish,
-    reset,
-    isLoading,
-  }
+  return { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error }
 }
