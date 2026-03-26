@@ -14,7 +14,7 @@ export function Sidebar({ activeTool = 'home', onToolChange }: SidebarProps) {
     { id: 'home' as const, label: 'Home' },
     { id: 'fb-post' as const, label: 'Article to FB Post' },
     { id: 'affiliate-links' as const, label: 'Shopee Affiliate Links' },
-    { id: 'article-generator' as const, label: 'Article Generator' },
+    // { id: 'article-generator' as const, label: 'Article Generator' }, // Temporarily disabled due to build errors
     { id: 'trending-spike' as const, label: 'Trending Spike to FB Post' },
   ]
 
