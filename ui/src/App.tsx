@@ -9,6 +9,7 @@ import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
+import { GuideModal } from './components/ds/GuideModal'
 import { useWorkflow } from './hooks/useWorkflow'
 import type {
   AppState,
@@ -437,8 +438,32 @@ function FbPostPage() {
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
-          <p className="text-neutral-500 mt-1 text-sm">Turn any article into a Facebook image &amp; caption</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
+              <p className="text-neutral-500 mt-1 text-sm">Turn any article into a Facebook image &amp; caption</p>
+            </div>
+            <GuideModal title="How to use Article to FB Post">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-neutral-950 mb-3">Step-by-step guide</h3>
+                  <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
+                    <li><strong>Paste an article URL</strong> — supports Astro Awani, mStar, and other approved domains</li>
+                    <li><strong>Select a brand</strong> — choose the brand the post is for</li>
+                    <li><strong>Choose Image Title mode</strong> — Original uses the article headline, AI rewrites it, or enter a Custom title</li>
+                    <li><strong>Choose Caption Title mode</strong> — Original or AI-rewritten title in the caption</li>
+                    <li><strong>Click Generate</strong> — the image and caption will appear on the right</li>
+                    <li><strong>Download &amp; copy</strong> — download the image and copy the caption for scheduling</li>
+                  </ol>
+                </div>
+                <div className="p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
+                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
+                  <p className="text-xs text-neutral-700">Use "Check supported domains" to see which news sites are compatible before pasting a URL.</p>
+                </div>
+              </div>
+            </GuideModal>
+          </div>
+          <div className="mt-3 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">

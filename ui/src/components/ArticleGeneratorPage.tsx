@@ -527,6 +527,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
               History{history.length > 0 ? ` (${history.length})` : ''}
             </button>
           </div>
+          <div className="mt-3 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
         {/* Stepper */}
