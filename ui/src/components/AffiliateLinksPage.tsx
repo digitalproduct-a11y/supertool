@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BRANDS, type BrandName } from '../constants/brands'
+import { Spinner } from './ds/Spinner'
 import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
 import type { AffiliateLinksState } from '../types'
 
@@ -59,10 +60,10 @@ export function AffiliateLinksPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Affiliate Links</h1>
           <p className="text-neutral-500 mt-1 text-sm">Upload an Excel file with Shopee links and get back a processed file with affiliate data</p>
-          <div className="mt-4 h-[3px] w-24 rounded-full" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
+          <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
+        <div className="glass-card rounded-2xl p-6 space-y-6">
           {pageState === 'idle' && (
             <>
               {/* Template Download */}
@@ -127,7 +128,7 @@ export function AffiliateLinksPage() {
 
           {pageState === 'loading' && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <div className="w-8 h-8 border-2 border-neutral-200 border-t-neutral-950 rounded-full animate-spin" />
+              <Spinner size="md" />
               <div className="text-center">
                 <p className="text-sm font-medium text-neutral-700">Processing your file…</p>
                 <p className="text-xs text-neutral-500 mt-1">This may take 1–2 minutes</p>

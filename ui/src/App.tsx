@@ -211,9 +211,19 @@ function App() {
   }, [])
 
   // Render tool pages
+  // Shared background blob decorations
+  const Blobs = () => (
+    <>
+      <div className="fixed pointer-events-none z-[-1] w-[600px] h-[600px] rounded-full opacity-40 animate-blob" style={{ top: '-10%', left: '-5%', background: 'radial-gradient(ellipse, rgba(0,85,238,0.15) 0%, transparent 70%)' }} />
+      <div className="fixed pointer-events-none z-[-1] w-[500px] h-[500px] rounded-full opacity-40 animate-blob" style={{ top: '50%', right: '-8%', animationDelay: '6s', background: 'radial-gradient(ellipse, rgba(255,63,191,0.12) 0%, transparent 70%)' }} />
+      <div className="fixed pointer-events-none z-[-1] w-[400px] h-[400px] rounded-full opacity-40 animate-blob" style={{ bottom: '-5%', left: '30%', animationDelay: '12s', background: 'radial-gradient(ellipse, rgba(0,229,212,0.10) 0%, transparent 70%)' }} />
+    </>
+  )
+
   if (activeTool === 'home') {
     return (
-      <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+      <div className={`min-h-screen app-bg transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+        <Blobs />
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
         <HomePage onToolSelect={setActiveTool} />
         <SuggestButton />
@@ -223,7 +233,8 @@ function App() {
 
   if (activeTool === 'affiliate-links') {
     return (
-      <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+      <div className={`min-h-screen app-bg transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+        <Blobs />
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
         <AffiliateLinksPage />
         <SuggestButton />
@@ -233,7 +244,8 @@ function App() {
 
   if (activeTool === 'article-generator') {
     return (
-      <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+      <div className={`min-h-screen app-bg transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+        <Blobs />
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
         <ArticleGeneratorPage />
         <SuggestButton />
@@ -243,7 +255,8 @@ function App() {
 
   if (activeTool === 'trending-news') {
     return (
-      <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+      <div className={`min-h-screen app-bg transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+        <Blobs />
         <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
         <TrendingSpikePage />
         <SuggestButton />
@@ -252,7 +265,8 @@ function App() {
   }
 
   return (
-    <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+    <div className={`min-h-screen app-bg transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
+      <Blobs />
       <Sidebar activeTool={activeTool} onToolChange={setActiveTool} isCollapsed={isSidebarCollapsed} onCollapsedChange={setIsSidebarCollapsed} />
 
       <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
@@ -261,13 +275,17 @@ function App() {
           <div className="mb-8">
             <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
             <p className="text-neutral-500 mt-1 text-sm">Turn any article into a Facebook image &amp; caption</p>
+            <div
+              className="mt-4 h-[3px] rounded-full animate-stripe-grow"
+              style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
+            />
           </div>
 
           {/* Split pane: inputs on left, preview on right */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
             {/* Left: Input form + history */}
             <div>
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+              <div className="glass-card rounded-2xl p-6">
                 <InputForm
                   url={url}
                   onUrlChange={setUrl}
@@ -315,7 +333,7 @@ function App() {
           {/* Approval confirmation */}
           {state === 'approved' && (
             <div className="mt-8">
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+              <div className="glass-card rounded-2xl p-6">
                 <div className="text-center space-y-4">
                   <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto animate-fade-slide-up">
                     <svg

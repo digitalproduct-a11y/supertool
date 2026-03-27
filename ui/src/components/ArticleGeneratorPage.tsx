@@ -483,7 +483,7 @@ export function ArticleGeneratorPage() {
 
         {/* Step: Input */}
         {state.step === 'input' && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
+          <div className="glass-card rounded-2xl p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium text-neutral-900 mb-2">Brand</label>
               <select
@@ -579,7 +579,7 @@ export function ArticleGeneratorPage() {
 
         {/* Step: Pick Angle */}
         {state.step === 'pick-angle' && isLoading && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
+          <div className="glass-card rounded-2xl p-10 text-center space-y-6">
             <div className="text-4xl animate-search-bounce inline-block">🔍</div>
             <div className="flex justify-center gap-2">
               {LOADING_STEPS.map((_, idx) => (
@@ -643,7 +643,7 @@ export function ArticleGeneratorPage() {
 
             {/* Brand + Theme Combined */}
             {state.brand && state.overallTheme && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+              <div className="glass-card rounded-2xl p-6">
                 <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-3">Article Focus</p>
                 <p className="text-sm font-medium text-neutral-900">
                   Writing about <span className="font-semibold text-neutral-900">"{state.overallTheme}"</span> for <span className="font-semibold text-neutral-900">{state.brand}</span>
@@ -727,7 +727,7 @@ export function ArticleGeneratorPage() {
             )}
 
             {/* Content Angles */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4">
+            <div className="glass-card rounded-2xl p-6 space-y-4">
               <h2 className="text-sm font-semibold text-neutral-900">Pick an angle here</h2>
               <div className="space-y-2">
                 {state.suggestedAngles?.map((angle) => {
@@ -800,7 +800,7 @@ export function ArticleGeneratorPage() {
 
         {/* Step: Review Article */}
         {state.step === 'review-article' && isLoading && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
+          <div className="glass-card rounded-2xl p-10 text-center space-y-6">
             <div className="text-4xl animate-write-bounce inline-block">✏️</div>
             <div className="flex justify-center gap-2">
               {ARTICLE_LOADING_STEPS.map((_, idx) => (
@@ -834,7 +834,7 @@ export function ArticleGeneratorPage() {
             </div>
 
             {/* Full HTML preview in iframe for style isolation */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+            <div className="glass-card rounded-2xl overflow-hidden">
               <iframe
                 srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;color:#111;margin:0;padding:24px}img{max-width:100%;height:auto;border-radius:8px}h1,h2,h3{font-weight:700;line-height:1.3}a{color:#0055EE}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;border:1px solid #e5e5e5}p{margin:0 0 1em}</style></head><body>${state.articleHtml || ''}</body></html>`}
                 className="w-full border-0"
@@ -874,7 +874,7 @@ export function ArticleGeneratorPage() {
 
         {/* Step: Thumbnail */}
         {state.step === 'thumbnail' && !state.thumbnailUrl && !showThumbnailGen && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4 text-center">
+          <div className="glass-card rounded-2xl p-6 space-y-4 text-center">
             <p className="text-sm text-neutral-700">Generate a thumbnail for this article?</p>
             <div className="flex gap-2">
               <button
@@ -895,7 +895,7 @@ export function ArticleGeneratorPage() {
         )}
 
         {state.step === 'thumbnail' && showThumbnailGen && !state.thumbnailUrl && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4">
+          <div className="glass-card rounded-2xl p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-neutral-900 mb-2">Image Prompt</label>
               <textarea
@@ -918,7 +918,7 @@ export function ArticleGeneratorPage() {
         )}
 
         {state.step === 'thumbnail' && isLoading && showThumbnailGen && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 text-center space-y-4">
+          <div className="glass-card rounded-2xl p-6 text-center space-y-4">
             <div className="w-12 h-12 rounded-full border-4 border-neutral-200 border-t-neutral-950 animate-spin mx-auto" />
             <p className="text-sm font-medium text-neutral-900">Generating thumbnail...</p>
           </div>
@@ -926,7 +926,7 @@ export function ArticleGeneratorPage() {
 
         {state.step === 'thumbnail' && state.thumbnailUrl && state.thumbnailUrl !== 'skipped' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+            <div className="glass-card rounded-2xl p-6">
               <img
                 src={state.thumbnailUrl}
                 alt="Generated thumbnail"
@@ -955,7 +955,7 @@ export function ArticleGeneratorPage() {
         {state.step === 'done' && (
           <div className="space-y-4 animate-fade-slide-up">
             {/* Success banner */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 text-center space-y-3">
+            <div className="glass-card rounded-2xl p-6 text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto">
                 <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -977,7 +977,7 @@ export function ArticleGeneratorPage() {
 
             {/* Thumbnail if generated */}
             {state.thumbnailUrl && state.thumbnailUrl !== 'skipped' && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4 space-y-3">
+              <div className="glass-card rounded-2xl p-4 space-y-3">
                 <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Thumbnail</p>
                 <img
                   src={state.thumbnailUrl}

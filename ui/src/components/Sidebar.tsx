@@ -120,7 +120,7 @@ export function Sidebar({ activeTool = 'home', onToolChange, isCollapsed, onColl
         aria-label="Main navigation"
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 fixed left-0 top-0 h-screen bg-zinc-900 z-40 flex flex-col overflow-hidden
+        } md:translate-x-0 fixed left-0 top-0 h-screen glass-sidebar z-40 flex flex-col overflow-hidden
         transition-transform duration-300 md:transition-[width] md:duration-300 w-60 ${isCollapsed ? 'md:w-0' : 'md:w-60'}`}
       >
         {/* Inner wrapper — fixed width so content doesn't reflow during transition */}
@@ -131,7 +131,7 @@ export function Sidebar({ activeTool = 'home', onToolChange, isCollapsed, onColl
               onClick={() => handleToolClick('home')}
               className="text-[15px] font-semibold text-white tracking-tight hover:text-white/80 transition-colors"
             >
-              KULT Digital Kit
+              <span className="glitch-text" data-text="KULT Digital Kit">KULT Digital Kit</span>
             </button>
             <button
               onClick={handleClose}
@@ -141,6 +141,12 @@ export function Sidebar({ activeTool = 'home', onToolChange, isCollapsed, onColl
               <IconLayoutSidebar className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Rainbow separator under header */}
+          <div
+            className="mx-5 h-[1px] rounded-full"
+            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
+          />
 
           {/* Nav */}
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
@@ -172,7 +178,7 @@ export function Sidebar({ activeTool = 'home', onToolChange, isCollapsed, onColl
                         onClick={() => handleToolClick(tool.id as ToolId)}
                         className={`w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2.5 ${
                           activeTool === tool.id
-                            ? 'bg-white/15 text-white'
+                            ? 'bg-white/20 text-white shadow-[0_1px_4px_rgba(255,255,255,0.08)]'
                             : 'text-neutral-300 hover:bg-white/8 hover:text-white'
                         }`}
                       >
@@ -187,7 +193,8 @@ export function Sidebar({ activeTool = 'home', onToolChange, isCollapsed, onColl
           </nav>
 
           {/* Footer */}
-          <div className="px-3 pb-4 pt-3 space-y-0.5">
+          <div className="mx-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-1" />
+          <div className="px-3 pb-4 pt-2 space-y-0.5">
             <button
               onClick={handleFeedback}
               className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"

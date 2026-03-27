@@ -33,7 +33,7 @@ export function PreviewPanel({
   isRunning,
 }: PreviewPanelProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 min-h-96 flex flex-col">
+    <div className="glass-card rounded-2xl p-6 min-h-96 flex flex-col">
       {state === 'idle' && (
         <div className="flex-1 flex items-center justify-center text-center">
           <div>

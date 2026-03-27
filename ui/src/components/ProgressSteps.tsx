@@ -41,29 +41,32 @@ export function ProgressSteps({ isComplete }: ProgressStepsProps) {
             className="flex items-start gap-3 animate-step-enter"
             style={{ animationDelay: `${i * 90}ms` }}
           >
-            <div className={`w-6 h-6 mt-0.5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-              isDone
-                ? 'bg-green-500 text-white'
-                : isActive
-                ? 'bg-neutral-950 text-white'
-                : 'bg-gray-100 text-gray-400'
-            }`}>
+            <div
+              className={`w-6 h-6 mt-0.5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+                isDone
+                  ? 'bg-green-500 text-white'
+                  : isActive
+                  ? 'text-white'
+                  : 'bg-gray-100 text-gray-400'
+              }`}
+              style={isActive ? { background: 'linear-gradient(135deg, #FF3FBF, #0055EE, #00E5D4)', boxShadow: '0 0 8px rgba(0,85,238,0.4)' } : undefined}
+            >
               {isDone ? (
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
               ) : isActive ? (
-                <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_4px_rgba(255,255,255,0.9)]" />
               ) : (
                 <div className="w-2 h-2 rounded-full bg-gray-300" />
               )}
             </div>
             <div>
               <span className={`text-sm font-medium transition-colors ${
-                isDone ? 'text-green-600' : isActive ? 'text-neutral-950' : 'text-gray-400'
+                isDone ? 'text-green-600' : isActive ? 'text-rainbow' : 'text-gray-400'
               }`}>
                 {step.label}
-                {isActive && <span className="ml-1 animate-pulse">…</span>}
+                {isActive && <span className="ml-1 animate-pulse-strong">…</span>}
               </span>
               {isActive && 'subtitle' in step && (
                 <p className="text-xs text-gray-400 mt-0.5 animate-slide-down">{step.subtitle}</p>
