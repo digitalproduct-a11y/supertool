@@ -88,7 +88,6 @@ export function ArticleGeneratorPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [articleStep, setArticleStep] = useState(0)
   const [articleLoadingMessage, setArticleLoadingMessage] = useState(ARTICLE_QUOTES[0])
-  const [expandedProduct, setExpandedProduct] = useState<number | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
 
   const { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error } =
