@@ -47,6 +47,9 @@ export function InputForm({
     onUrlChange(newUrl)
     const detected = detectBrandFromUrl(newUrl)
     if (detected) onBrandChange(detected)
+    // After URL change, brand always auto-aligns (or is empty) → reset to Original
+    onTitleModeChange('original')
+    onCaptionTitleModeChange('original')
   }
 
   return (
@@ -111,7 +114,18 @@ export function InputForm({
         <div className="relative">
           <select
             value={brand}
-            onChange={(e) => onBrandChange(e.target.value)}
+            onChange={(e) => {
+              const newBrand = e.target.value
+              onBrandChange(newBrand)
+              // If manually selected brand doesn't match URL domain, pre-select AI; otherwise Original
+              if (detectedBrand && newBrand !== detectedBrand) {
+                onTitleModeChange('ai')
+                onCaptionTitleModeChange('ai')
+              } else {
+                onTitleModeChange('original')
+                onCaptionTitleModeChange('original')
+              }
+            }}
             disabled={disabled}
             required
             className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 bg-white transition appearance-none cursor-pointer"

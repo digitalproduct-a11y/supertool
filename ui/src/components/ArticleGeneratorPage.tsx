@@ -31,6 +31,7 @@ import type {
   ArticleGeneratorStep,
 } from '../types'
 import { BRANDS } from '../constants/brands'
+import { GuideModal } from './ds/GuideModal'
 
 const STEPS: { step: ArticleGeneratorStep; label: string; shortLabel: string }[] = [
   { step: 'input', label: 'Input', shortLabel: 'Input' },
@@ -442,15 +443,73 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">
-              Shopee Article Generator
-            </h1>
-            <p className="text-neutral-500 mt-1 text-sm">
-              Write engaging Shopee product articles from links
-            </p>
-            <div className="mt-4 h-[3px] w-24 rounded-full" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
+        <div className="mb-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">
+                Shopee Article Generator
+              </h1>
+              <p className="text-neutral-500 mt-1 text-sm">
+                Write engaging Shopee product articles from links
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+            <GuideModal title="How to use Shopee Article Generator">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-neutral-950 mb-3">Step-by-step guide</h3>
+                  <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
+                    <li><strong>Step 1 — Input:</strong>
+                      <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
+                        <li>Paste Shopee product links (shopee.com.my URLs)</li>
+                        <li>Select the brand for the article</li>
+                        <li>Click <strong>Next</strong></li>
+                      </ul>
+                    </li>
+                    <li><strong>Step 2 — Pick Angle:</strong>
+                      <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
+                        <li>Review AI-suggested editorial angles</li>
+                        <li>Pick one or write your own custom angle</li>
+                        <li>Click <strong>Next</strong></li>
+                      </ul>
+                    </li>
+                    <li><strong>Step 3 — Review Article:</strong>
+                      <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
+                        <li>Read the generated article (it's in the brand's voice)</li>
+                        <li>Affiliate links are already embedded</li>
+                        <li>Click <strong>Request Revision</strong> to refine, or <strong>Next</strong> to continue</li>
+                      </ul>
+                    </li>
+                    <li><strong>Step 4 — Thumbnail:</strong>
+                      <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
+                        <li>Review the AI-generated thumbnail image</li>
+                        <li>Regenerate if needed</li>
+                        <li>Click <strong>Done</strong></li>
+                      </ul>
+                    </li>
+                    <li><strong>Done:</strong>
+                      <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
+                        <li>Copy the article content and use it in your CMS</li>
+                        <li>Download the thumbnail for your article header</li>
+                      </ul>
+                    </li>
+                  </ol>
+                </div>
+                <div className="p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
+                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
+                  <p className="text-xs text-neutral-700">Use the Restart button to start over with different products or brand at any point.</p>
+                </div>
+              </div>
+            </GuideModal>
+            {state.step !== 'input' && state.step !== 'done' && (
+              <button
+                onClick={() => setShowRestartConfirm(true)}
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition border border-blue-300 hover:border-blue-400 whitespace-nowrap"
+              >
+                🔄 Restart
+              </button>
+            )}
+            </div>
           </div>
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 mt-0.5 flex-shrink-0">
             {state.step !== 'input' && state.step !== 'done' && (

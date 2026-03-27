@@ -3,6 +3,7 @@ import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
 import { Spinner } from './ds/Spinner'
+import { GuideModal } from './ds/GuideModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ interface TrendingItem {
   title?: string
   caption?: string
   errorMessage?: string
+  publishedAt?: string
 }
 
 interface GeneratedPost {
@@ -147,10 +149,14 @@ interface GenerateViewProps {
 }
 
 function GenerateView({ source, onBack }: GenerateViewProps) {
+  // Check if URL domain matches the source brand
+  const detectedBrand = detectBrandFromUrl(source.articleUrl)
+  const isBrandMismatch = !!detectedBrand && source.brand && detectedBrand !== source.brand
+
   const [brand, setBrand] = useState(source.brand || '')
-  const [titleMode, setTitleMode] = useState<TitleMode>('original')
+  const [titleMode, setTitleMode] = useState<TitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [customTitle, setCustomTitle] = useState('')
-  const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
+  const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
@@ -260,7 +266,18 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
             <select
               value={brand}
-              onChange={e => setBrand(e.target.value)}
+              onChange={e => {
+                const newBrand = e.target.value
+                setBrand(newBrand)
+                // If manually selected brand doesn't match URL domain, pre-select AI; otherwise Original
+                if (detectedBrand && newBrand !== detectedBrand) {
+                  setTitleMode('ai')
+                  setCaptionTitleMode('ai')
+                } else {
+                  setTitleMode('original')
+                  setCaptionTitleMode('original')
+                }
+              }}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 bg-white"
             >
               <option value="">Select brand</option>
@@ -510,7 +527,7 @@ export function TrendingSpikePage() {
     try {
       const data = await callWebhook({ type: 'fetch-trending' })
       if (data.success && Array.isArray(data.articles)) {
-        setTrendingItems(data.articles.map((a: { url: string; source: string; category: string; type: string; title?: string; image?: string; caption?: string }) => ({
+        setTrendingItems(data.articles.map((a: { url: string; source: string; category: string; type: string; title?: string; image?: string; caption?: string; publishedAt?: string }) => ({
           id: crypto.randomUUID(),
           url: a.url,
           source: a.source || a.category || 'Unknown',
@@ -519,6 +536,7 @@ export function TrendingSpikePage() {
           title: a.title || '',
           imageUrl: (a.image && !a.image.includes('sponsor-logos')) ? a.image : '',
           caption: a.caption || '',
+          publishedAt: a.publishedAt || '',
           status: 'idle' as const,
         })))
       } else {
@@ -539,8 +557,42 @@ export function TrendingSpikePage() {
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Trending Spike to FB Post</h1>
-          <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from spike or trending articles</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Trending Spike to FB Post</h1>
+              <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from spike or trending articles</p>
+            </div>
+            <GuideModal title="How to use Trending Spike to FB Post">
+              <div className="space-y-4">
+                <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
+                  <li><strong>Click "Refresh Inbox"</strong> — load the latest spike articles from Chartbeat alerts</li>
+                  <li><strong>Select articles</strong> — pick one or more articles you want to create FB posts for</li>
+                  <li><strong>Set parameters for each:</strong>
+                    <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
+                      <li>Brand: auto-detected or manually selected</li>
+                      <li>Title mode: Original, AI Rewrite, or Custom</li>
+                    </ul>
+                  </li>
+                  <li><strong>Click "Generate"</strong> — watch the status update for each article (idle → generating → done/error)</li>
+                  <li><strong>Review results</strong> — each article shows its generated image and caption</li>
+                  <li><strong>Re-generate or Approve:</strong>
+                    <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
+                      <li>Re-generate: update the image or caption</li>
+                      <li>Approve: image downloads, caption copies to clipboard</li>
+                    </ul>
+                  </li>
+                </ol>
+                <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
+                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
+                  <p className="text-xs text-neutral-700">Use the Trending tab for articles from other monitoring sources, or the Spike tab for real-time Chartbeat alerts.</p>
+                </div>
+              </div>
+            </GuideModal>
+          </div>
+          <div
+            className="mt-4 h-[3px] rounded-full animate-stripe-grow"
+            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
+          />
         </div>
 
         {/* Tabs — hide when in generate view */}
@@ -804,9 +856,14 @@ export function TrendingSpikePage() {
                                 </td>
                                 <td className="px-4 py-4 max-w-[280px]">
                                   <div className="flex items-start gap-1.5">
-                                    <span className="text-neutral-800 font-medium line-clamp-2 leading-snug text-sm flex-1">
-                                      {item.title || item.url}
-                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="text-neutral-800 font-medium line-clamp-2 leading-snug text-sm block">
+                                        {item.title || item.url}
+                                      </span>
+                                      {item.publishedAt && (
+                                        <span className="text-[11px] text-neutral-400 mt-0.5 block">{item.publishedAt}</span>
+                                      )}
+                                    </div>
                                     <a
                                       href={item.url}
                                       target="_blank"

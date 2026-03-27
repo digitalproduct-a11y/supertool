@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BRANDS, type BrandName } from '../constants/brands'
 import { Spinner } from './ds/Spinner'
+import { GuideModal } from './ds/GuideModal'
 import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
 import type { AffiliateLinksState } from '../types'
 
@@ -58,8 +59,28 @@ export function AffiliateLinksPage() {
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Affiliate Links</h1>
-          <p className="text-neutral-500 mt-1 text-sm">Upload an Excel file with Shopee links and get back a processed file with affiliate data</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Affiliate Links</h1>
+              <p className="text-neutral-500 mt-1 text-sm">Upload an Excel file with Shopee links and get back a processed file with affiliate data</p>
+            </div>
+            <GuideModal title="How to use Shopee Affiliate Links">
+              <div className="space-y-4">
+                <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
+                  <li><strong>Select a brand</strong> — choose from the dropdown menu</li>
+                  <li><strong>Download the template</strong> — if you don't already have one, get the Excel template to see the expected format</li>
+                  <li><strong>Fill in Shopee URLs</strong> — place one Shopee product URL per row in the template</li>
+                  <li><strong>Upload the file</strong> — drag and drop the filled Excel file, or click to browse</li>
+                  <li><strong>Wait for processing</strong> — the tool extracts product data and adds affiliate tags</li>
+                  <li><strong>Download the result</strong> — your processed file auto-downloads with all affiliate links and product data included</li>
+                </ol>
+                <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
+                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
+                  <p className="text-xs text-neutral-700">Make sure you're uploading Shopee product URLs (shopee.com.my). One URL per row in the template.</p>
+                </div>
+              </div>
+            </GuideModal>
+          </div>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 

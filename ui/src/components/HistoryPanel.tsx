@@ -10,6 +10,15 @@ const ITEMS_PER_PAGE = 2
 export function HistoryPanel({ items }: HistoryPanelProps) {
   const [page, setPage] = useState(0)
   const [isExpanded, setIsExpanded] = useState(typeof window !== 'undefined' && window.innerWidth >= 768)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
+  function toggleCaption(id: string) {
+    setExpandedItems(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   if (items.length === 0) return null
 
@@ -64,7 +73,15 @@ export function HistoryPanel({ items }: HistoryPanelProps) {
                   <div className="text-xs text-gray-400 mb-1">
                     {item.timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' })} at {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div className="text-sm text-gray-700 leading-relaxed">{item.caption}</div>
+                  <div className={`text-sm text-gray-700 leading-relaxed ${expandedItems.has(item.id) ? '' : 'line-clamp-2'}`}>
+                    {item.caption}
+                  </div>
+                  <button
+                    onClick={() => toggleCaption(item.id)}
+                    className="text-xs text-neutral-400 hover:text-neutral-600 mt-1.5 font-medium transition"
+                  >
+                    {expandedItems.has(item.id) ? 'Show less' : 'Show more'}
+                  </button>
                 </div>
                 <div className="flex flex-col gap-1.5 flex-shrink-0">
                   <button

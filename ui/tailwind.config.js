@@ -24,7 +24,7 @@ export default {
         },
         'stripe-grow': {
           'from': { width: '0', opacity: '0' },
-          'to':   { width: '96px', opacity: '1' },
+          'to':   { width: '100%', opacity: '1' },
         },
       },
     },
