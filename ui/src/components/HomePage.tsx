@@ -6,6 +6,8 @@ import {
   IconStack2,
   IconLink,
   IconFileText,
+  IconActivity,
+  IconBrain,
 } from '@tabler/icons-react'
 
 type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
@@ -64,7 +66,7 @@ const sections: Section[] = [
   },
   {
     label: 'Affiliate',
-    description: 'Earn extra revenue by creating affiliate content faster.',
+    description: 'Generate affiliate content faster and drive more commissions.',
     tools: [
       {
         id: 'affiliate-links',
@@ -75,10 +77,32 @@ const sections: Section[] = [
       },
       {
         id: 'article-generator',
-        label: 'Affiliate Article Generator',
+        label: 'Affiliate Article Editor',
         description: 'Write engaging Shopee product articles from links',
         color: '#F05A35',
         icon: IconFileText,
+      },
+    ],
+  },
+  {
+    label: 'Brand Intelligence',
+    description: 'Monitor brand performance and generate content ideas with AI.',
+    tools: [
+      {
+        id: 'affiliate-links',
+        label: 'Brand Health Check',
+        description: 'Connect to Sporut Social and get live brand stats',
+        color: '#00E5D4',
+        icon: IconActivity,
+        comingSoon: true,
+      },
+      {
+        id: 'affiliate-links',
+        label: 'Idea Agent',
+        description: 'AI-powered content idea generation for your brand',
+        color: '#00E5D4',
+        icon: IconBrain,
+        comingSoon: true,
       },
     ],
   },
@@ -95,8 +119,8 @@ export function HomePage({ onToolSelect }: HomePageProps) {
 
         {/* Hero */}
         <div className="mb-10">
-          <h1 className="text-3xl font-bold text-neutral-950 tracking-tight leading-tight">
-            Built to help you create faster.
+          <h1 className="font-display text-4xl font-bold text-neutral-950 tracking-tight leading-tight">
+            Built to help you create faster and smarter.
           </h1>
           <p className="text-neutral-500 mt-3 text-sm max-w-md">
             Tools for content editors and social media managers. Generate posts, captions, and affiliate content in seconds.
@@ -110,72 +134,69 @@ export function HomePage({ onToolSelect }: HomePageProps) {
 
         {/* Sections */}
         <div className="space-y-12">
-          {sections.map((section) => (
-            <div key={section.label}>
-              {/* Section header */}
-              <div className="mb-5">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-600">
-                  {section.label}
-                </p>
-                {section.description && (
-                  <p className="text-sm text-neutral-500 mt-0.5">{section.description}</p>
-                )}
-              </div>
+          {sections.map((section) => {
+            return (
+              <div key={section.label}>
+                {/* Section header */}
+                <div className="mb-5">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-neutral-600">
+                    {section.label}
+                  </p>
+                  {section.description && (
+                    <p className="text-sm text-neutral-500 mt-0.5">{section.description}</p>
+                  )}
+                </div>
 
-              {/* Cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {section.tools.map((tool) => {
-                  const Icon = tool.icon
+                {/* Cards grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {section.tools.map((tool) => {
+                    const Icon = tool.icon
 
-                  if (tool.comingSoon) {
+                    if (tool.comingSoon) {
+                      return (
+                        <div
+                          key={tool.label}
+                          className="bg-white rounded-xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.06)] cursor-default"
+                        >
+                          <div className="px-5 pt-5 pb-2 flex items-center justify-between">
+                            <Icon className="w-8 h-8 opacity-25" style={{ color: tool.color }} />
+                            <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-100/80 rounded px-2 py-0.5">
+                              Soon
+                            </span>
+                          </div>
+                          <div className="p-5">
+                            <h2 className="font-display text-base font-semibold text-neutral-400">{tool.label}</h2>
+                            <p className="text-xs text-neutral-300 mt-1">{tool.description}</p>
+                          </div>
+                        </div>
+                      )
+                    }
+
                     return (
-                      <div
+                      <button
                         key={tool.label}
-                        className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.06)] cursor-default"
+                        onClick={() => onToolSelect(tool.id)}
+                        className="bg-white rounded-xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_28px_rgba(0,0,0,0.12)] hover:scale-[1.01] transition-all duration-200 text-left group"
                       >
-                        {/* Icon */}
                         <div className="px-5 pt-5 pb-2 flex items-center justify-between">
-                          <Icon className="w-8 h-8 opacity-25" style={{ color: tool.color }} />
-                          <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-100/80 rounded px-2 py-0.5">
-                            Soon
+                          <Icon className="w-9 h-9" style={{ color: tool.color }} />
+                          <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
                           </span>
                         </div>
-                        {/* Body */}
                         <div className="p-5">
-                          <h2 className="text-sm font-semibold text-neutral-400">{tool.label}</h2>
-                          <p className="text-xs text-neutral-300 mt-1">{tool.description}</p>
-                          <span className="inline-block mt-4 text-xs font-medium text-neutral-300">
-                            Open →
-                          </span>
+                          <h2 className="font-display text-base font-semibold text-neutral-950">{tool.label}</h2>
+                          <p className="text-xs text-neutral-500 mt-1">{tool.description}</p>
                         </div>
-                      </div>
+                      </button>
                     )
-                  }
-
-                  return (
-                    <button
-                      key={tool.label}
-                      onClick={() => onToolSelect(tool.id)}
-                      className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_28px_rgba(0,0,0,0.12)] hover:scale-[1.01] transition-all duration-200 text-left group"
-                    >
-                      {/* Icon */}
-                      <div className="px-5 pt-5 pb-2">
-                        <Icon className="w-9 h-9" style={{ color: tool.color }} />
-                      </div>
-                      {/* Body */}
-                      <div className="p-5">
-                        <h2 className="text-sm font-semibold text-neutral-950">{tool.label}</h2>
-                        <p className="text-xs text-neutral-500 mt-1">{tool.description}</p>
-                        <span className="inline-block mt-4 text-xs font-medium text-neutral-950 group-hover:translate-x-0.5 transition-transform">
-                          Open →
-                        </span>
-                      </div>
-                    </button>
-                  )
-                })}
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </main>

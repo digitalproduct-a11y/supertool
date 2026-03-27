@@ -9,6 +9,8 @@ import {
   IconLayoutSidebar,
   IconHeart,
   IconStack2,
+  IconActivity,
+  IconBrain,
 } from '@tabler/icons-react'
 
 type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
@@ -45,7 +47,14 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     section: 'Affiliate',
     items: [
       { id: 'affiliate-links', label: 'Shopee Affiliate Links', icon: IconLink },
-      { id: 'article-generator', label: 'Affiliate Article Generator', icon: IconFileText },
+      { id: 'article-generator', label: 'Affiliate Article Editor', icon: IconFileText },
+    ],
+  },
+  {
+    section: 'Brand Intelligence',
+    items: [
+      { id: 'brand-health', label: 'Brand Health Check', icon: IconActivity, comingSoon: true },
+      { id: 'idea-agent', label: 'Idea Agent', icon: IconBrain, comingSoon: true },
     ],
   },
 ]
@@ -70,7 +79,7 @@ export function Sidebar({ activeTool = 'home', onToolChange, isCollapsed, onColl
       'fb-post': 'Article to FB Photos',
       'trending-news': 'Trending News to FB Photos',
       'affiliate-links': 'Shopee Affiliate Links',
-      'article-generator': 'Affiliate Article Generator',
+      'article-generator': 'Affiliate Article Editor',
     }
     const toolName = toolNames[activeTool ?? 'home']
     const subject = encodeURIComponent(`Feedback: ${toolName}`)
@@ -188,6 +197,9 @@ export function Sidebar({ activeTool = 'home', onToolChange, isCollapsed, onColl
               </svg>
               Send feedback
             </button>
+          <p className="px-3 pt-2 text-[11px] text-neutral-400">
+            Made with ♥ by Digital team
+          </p>
           </div>
         </div>
       </aside>
