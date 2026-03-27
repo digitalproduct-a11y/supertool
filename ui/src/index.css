@@ -106,8 +106,8 @@ button:hover .glitch-text::after {
 /* ── Delight animations ────────────────────────────────────── */
 
 @keyframes shimmer {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(100%); }
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
 }
 
 @keyframes fade-slide-up {
