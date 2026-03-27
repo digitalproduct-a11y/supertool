@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { IconRotate } from '@tabler/icons-react'
 import { useArticleGenerator } from '../hooks/useArticleGenerator'
 import type {
   ArticleGeneratorState,
@@ -6,12 +7,12 @@ import type {
 } from '../types'
 import { BRANDS } from '../constants/brands'
 
-const STEPS: { step: ArticleGeneratorStep; label: string }[] = [
-  { step: 'input', label: 'Input' },
-  { step: 'pick-angle', label: 'Pick Angle' },
-  { step: 'review-article', label: 'Review Article' },
-  { step: 'thumbnail', label: 'Thumbnail' },
-  { step: 'done', label: 'Done' },
+const STEPS: { step: ArticleGeneratorStep; label: string; shortLabel: string }[] = [
+  { step: 'input', label: 'Input', shortLabel: 'Input' },
+  { step: 'pick-angle', label: 'Pick Angle', shortLabel: 'Angle' },
+  { step: 'review-article', label: 'Review Article', shortLabel: 'Article' },
+  { step: 'thumbnail', label: 'Thumbnail', shortLabel: 'Thumb' },
+  { step: 'done', label: 'Done', shortLabel: 'Done' },
 ]
 
 const isValidShopeeLink = (url: string): boolean => {
@@ -22,6 +23,14 @@ const isValidShopeeLink = (url: string): boolean => {
   } catch {
     return false
   }
+}
+
+const ANGLE_CATEGORIES: Record<number, { label: string; emoji: string; bgColor: string; textColor: string }> = {
+  1: { label: 'PERSONAL EXPERIENCE', emoji: '💭', bgColor: 'bg-purple-50', textColor: 'text-purple-700' },
+  2: { label: 'USE-CASE / PROBLEM-SOLVER', emoji: '🔧', bgColor: 'bg-orange-50', textColor: 'text-orange-700' },
+  3: { label: 'BUDGET VS VALUE', emoji: '💰', bgColor: 'bg-emerald-50', textColor: 'text-emerald-700' },
+  4: { label: 'GIFT GUIDE', emoji: '🎁', bgColor: 'bg-rose-50', textColor: 'text-rose-700' },
+  5: { label: 'THE SHORTLIST', emoji: '⭐', bgColor: 'bg-amber-50', textColor: 'text-amber-700' },
 }
 
 const LOADING_STEPS = [
@@ -65,7 +74,7 @@ const ARTICLE_QUOTES = [
   'Write place, write time...',
 ]
 
-export function ArticleGeneratorPage() {
+export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebarCollapsed?: boolean }) {
   const [state, setState] = useState<ArticleGeneratorState>({
     step: 'input',
     brand: '',
@@ -83,6 +92,7 @@ export function ArticleGeneratorPage() {
   const [imagePromptText, setImagePromptText] = useState('')
   const [showRestartConfirm, setShowRestartConfirm] = useState(false)
   const [showRevisionModal, setShowRevisionModal] = useState(false)
+  const [showApproveModal, setShowApproveModal] = useState(false)
   const [showThumbnailGen, setShowThumbnailGen] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('Great things coming together...')
   const [currentStep, setCurrentStep] = useState(0)
@@ -241,8 +251,8 @@ export function ArticleGeneratorPage() {
     }
   }, [state, generate])
 
-  const handleArticleApprove = useCallback(async () => {
-    setState((s) => ({ ...s, step: 'thumbnail' }))
+  const handleArticleApprove = useCallback(() => {
+    setShowApproveModal(true)
   }, [])
 
   const handleArticleRevise = useCallback(async () => {
@@ -368,9 +378,10 @@ export function ArticleGeneratorPage() {
           {state.step !== 'input' && state.step !== 'done' && (
             <button
               onClick={() => setShowRestartConfirm(true)}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition border border-blue-300 hover:border-blue-400 whitespace-nowrap mt-0.5"
+              className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800 px-3 py-1.5 rounded-lg hover:bg-neutral-100 transition border border-neutral-200 hover:border-neutral-300 whitespace-nowrap mt-0.5"
             >
-              🔄 Restart
+              <IconRotate className="w-3.5 h-3.5" />
+              Restart
             </button>
           )}
         </div>
@@ -395,7 +406,10 @@ export function ArticleGeneratorPage() {
                   >
                     {isCompleted ? '✓' : idx + 1}
                   </div>
-                  <p className="mt-1 text-center text-neutral-600 font-medium truncate">{s.label}</p>
+                  <p className="mt-1 text-center text-neutral-600 font-medium truncate">
+                    <span className="md:hidden">{s.shortLabel}</span>
+                    <span className="hidden md:inline">{s.label}</span>
+                  </p>
                 </div>
               )
             })}
@@ -468,6 +482,31 @@ export function ArticleGeneratorPage() {
                   className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showApproveModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900">Article approved!</h3>
+                <p className="text-sm text-neutral-500 mt-1">Would you like to generate a thumbnail image for this article?</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'done' })) }}
+                  className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
+                >
+                  Skip, I'm done
+                </button>
+                <button
+                  onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'thumbnail' })); handleThumbnailGenerate() }}
+                  className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
+                >
+                  Yes, generate
                 </button>
               </div>
             </div>
@@ -731,14 +770,7 @@ export function ArticleGeneratorPage() {
               <h2 className="text-sm font-semibold text-neutral-900">Pick an angle here</h2>
               <div className="space-y-2">
                 {state.suggestedAngles?.map((angle) => {
-                  const angleCategories: Record<number, { label: string; emoji: string; bgColor: string; textColor: string }> = {
-                    1: { label: 'PERSONAL EXPERIENCE', emoji: '💭', bgColor: 'bg-purple-50', textColor: 'text-purple-700' },
-                    2: { label: 'USE-CASE / PROBLEM-SOLVER', emoji: '🔧', bgColor: 'bg-orange-50', textColor: 'text-orange-700' },
-                    3: { label: 'BUDGET VS VALUE', emoji: '💰', bgColor: 'bg-emerald-50', textColor: 'text-emerald-700' },
-                    4: { label: 'GIFT GUIDE', emoji: '🎁', bgColor: 'bg-rose-50', textColor: 'text-rose-700' },
-                    5: { label: 'THE SHORTLIST', emoji: '⭐', bgColor: 'bg-amber-50', textColor: 'text-amber-700' },
-                  }
-                  const categoryData = angleCategories[angle.id]
+                  const categoryData = ANGLE_CATEGORIES[angle.id]
                   return (
                     <button
                       key={angle.id}
@@ -827,35 +859,80 @@ export function ArticleGeneratorPage() {
 
         {state.step === 'review-article' && !isLoading && (
           <div className="space-y-4">
-            {/* Article title label */}
-            <div className="px-1">
-              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">Article Preview</p>
-              <h2 className="text-lg font-semibold text-neutral-950">{state.articleTitle}</h2>
+            {/* Step heading */}
+            <div>
+              <h2 className="text-2xl font-semibold text-neutral-950 mb-1">Review your article</h2>
+              <p className="text-sm text-neutral-600">Read through the draft below. Approve it or request changes.</p>
             </div>
 
-            {/* Full HTML preview in iframe for style isolation */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+            {/* Title box */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)]">
+              <div className="px-7 pt-4 pb-2 border-b border-neutral-100 flex items-center justify-between">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Title</p>
+                {state.selectedAngle && ANGLE_CATEGORIES[state.selectedAngle] && (() => {
+                  const cat = ANGLE_CATEGORIES[state.selectedAngle!]
+                  return (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-xs text-neutral-400">Angle:</span>
+                      <span className={`inline-flex items-center gap-1 ${cat.bgColor} ${cat.textColor} px-2 py-0.5 rounded-full text-[10px] font-semibold`}>
+                        {cat.emoji} {cat.label}
+                      </span>
+                    </span>
+                  )
+                })()}
+                {!state.selectedAngle && state.customAngle && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-xs text-neutral-400">Angle:</span>
+                    <span className="inline-flex items-center gap-1 bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                      ✏️ CUSTOM ANGLE
+                    </span>
+                  </span>
+                )}
+              </div>
+              <div className="px-7 py-5">
+                <h2 className="text-lg font-semibold text-neutral-950">{state.articleTitle}</h2>
+              </div>
+            </div>
+
+            {/* Article body box */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)]">
+              <div className="px-7 pt-4 pb-2 border-b border-neutral-100 rounded-t-2xl flex items-center justify-between">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Article</p>
+                {state.articleHtml && (
+                  <p className="text-xs text-neutral-400">
+                    {state.articleHtml.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length} words
+                  </p>
+                )}
+              </div>
               <iframe
-                srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;color:#111;margin:0;padding:24px}img{max-width:100%;height:auto;border-radius:8px}h1,h2,h3{font-weight:700;line-height:1.3}a{color:#0055EE}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;border:1px solid #e5e5e5}p{margin:0 0 1em}</style></head><body>${state.articleHtml || ''}</body></html>`}
-                className="w-full border-0"
-                style={{ minHeight: '600px', height: 'auto' }}
+                srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box}html,body{margin:0;padding:0;overflow:hidden}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;color:#111;padding:0}img{max-width:100%;height:auto;border-radius:8px;display:block}h1,h2,h3{font-weight:700;line-height:1.3}a{color:#0055EE}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;border:1px solid #e5e5e5}p{margin:0 0 1em}</style></head><body>${state.articleHtml || ''}</body></html>`}
+                className="w-full border-0 rounded-b-2xl"
+                scrolling="no"
+                style={{ display: 'block', minHeight: '200px' }}
                 title="Article preview"
                 onLoad={(e) => {
                   const iframe = e.currentTarget
-                  try {
-                    const doc = iframe.contentDocument
-                    if (doc) {
-                      iframe.style.height = doc.documentElement.scrollHeight + 'px'
+                  const resize = () => {
+                    try {
+                      const body = iframe.contentDocument?.body
+                      if (body) iframe.style.height = body.scrollHeight + 48 + 'px'
+                    } catch {
+                      iframe.style.height = '2000px'
                     }
-                  } catch {
-                    iframe.style.height = '700px'
                   }
+                  resize()
+                  setTimeout(resize, 300)
+                  setTimeout(resize, 1000)
                 }}
               />
             </div>
 
-            {/* Action buttons */}
-            <div className="flex gap-3">
+            {/* Spacer so content isn't hidden behind sticky bar */}
+            <div className="h-20" />
+
+            {/* Sticky action bar */}
+            <div className={`fixed bottom-0 right-0 z-40 bg-white/90 backdrop-blur border-t border-neutral-200 px-4 py-3 transition-[left] duration-300 ${isSidebarCollapsed ? 'left-0' : 'left-0 md:left-60'}`}>
+              <div className="max-w-2xl mx-auto flex gap-3">
               <button
                 onClick={() => setShowRevisionModal(true)}
                 className="flex-1 px-4 py-3 border border-neutral-300 text-neutral-700 rounded-xl font-medium hover:bg-neutral-50 transition text-sm"
@@ -868,31 +945,12 @@ export function ArticleGeneratorPage() {
               >
                 Approve ✓
               </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Step: Thumbnail */}
-        {state.step === 'thumbnail' && !state.thumbnailUrl && !showThumbnailGen && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4 text-center">
-            <p className="text-sm text-neutral-700">Generate a thumbnail for this article?</p>
-            <div className="flex gap-2">
-              <button
-                onClick={handleThumbnailGenerate}
-                disabled={isLoading}
-                className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                {isLoading ? 'Generating...' : 'Yes, generate'}
-              </button>
-              <button
-                onClick={handleThumbnailSkip}
-                className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 transition"
-              >
-                Skip
-              </button>
-            </div>
-          </div>
-        )}
 
         {state.step === 'thumbnail' && showThumbnailGen && !state.thumbnailUrl && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4">
