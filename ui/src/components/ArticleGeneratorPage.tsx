@@ -448,7 +448,17 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                 Write engaging Shopee product articles from links
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setShowHistoryDrawer(true)
+                requestAnimationFrame(() => requestAnimationFrame(() => setHistoryDrawerOpen(true)))
+              }}
+              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors border border-neutral-200 hover:border-neutral-400 rounded-lg px-3 py-1.5 shrink-0 bg-neutral-50 hover:bg-neutral-100"
+            >
+              <IconHistory className="w-4 h-4" />
+              History{history.length > 0 ? ` (${history.length})` : ''}
+            </button>
             <GuideModal title="How to use Shopee Article Generator">
               <div className="space-y-4">
                 <div>
@@ -499,33 +509,13 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
             {state.step !== 'input' && state.step !== 'done' && (
               <button
                 onClick={() => setShowRestartConfirm(true)}
-                className="text-xs font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition border border-blue-300 hover:border-blue-400 whitespace-nowrap"
+                className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors border border-neutral-200 hover:border-neutral-400 rounded-lg px-3 py-1.5 shrink-0 bg-neutral-50 hover:bg-neutral-100"
               >
-                🔄 Restart
-              </button>
-            )}
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 mt-0.5 flex-shrink-0">
-            {state.step !== 'input' && state.step !== 'done' && (
-              <button
-                onClick={() => setShowRestartConfirm(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800 px-3 py-1.5 rounded-lg hover:bg-neutral-100 transition border border-neutral-200 hover:border-neutral-300 whitespace-nowrap"
-              >
-                <IconRotate className="w-3.5 h-3.5" />
+                <IconRotate className="w-4 h-4" />
                 Restart
               </button>
             )}
-            <button
-              onClick={() => {
-                setShowHistoryDrawer(true)
-                requestAnimationFrame(() => requestAnimationFrame(() => setHistoryDrawerOpen(true)))
-              }}
-              className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800 px-3 py-1.5 rounded-lg hover:bg-neutral-100 transition border border-neutral-200 hover:border-neutral-300 whitespace-nowrap"
-            >
-              <IconHistory className="w-3.5 h-3.5" />
-              History{history.length > 0 ? ` (${history.length})` : ''}
-            </button>
+            </div>
           </div>
           <div className="mt-3 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
@@ -539,15 +529,13 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
               const isActive = idx === currentIdx
               return (
                 <div key={s.step} className="flex flex-col items-center flex-1 min-w-0">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition ${
-                      isCompleted
-                        ? 'bg-green-500 text-white'
-                        : isActive
-                          ? 'bg-neutral-950 text-white'
-                          : 'bg-neutral-200 text-neutral-500'
-                    }`}
-                  >
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition ${
+                    isCompleted
+                      ? 'bg-green-500 text-white'
+                      : isActive
+                        ? 'bg-neutral-950 text-white'
+                        : 'bg-neutral-200 text-neutral-500'
+                  }`}>
                     {isCompleted ? '✓' : idx + 1}
                   </div>
                   <p className="mt-1 text-center text-neutral-600 font-medium truncate">

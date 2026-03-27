@@ -20,6 +20,7 @@ interface TrendingItem {
   id: string
   url: string
   source: string
+  brand: string
   category: string
   type: string
   status: 'idle' | 'generating' | 'done' | 'error'
@@ -82,6 +83,18 @@ async function callGenerateWebhook(body: Record<string, unknown>) {
   } finally {
     clearTimeout(timeout)
   }
+}
+
+// ─── Brand name formatter ─────────────────────────────────────────────────────
+
+const ALL_CAPS_BRANDS = new Set(['xuan'])
+
+function formatBrandName(brand: string): string {
+  return brand.split(' ').map(word =>
+    ALL_CAPS_BRANDS.has(word.toLowerCase())
+      ? word.toUpperCase()
+      : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ')
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -454,6 +467,8 @@ export function TrendingSpikePage() {
   const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([])
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
   const [fetchError, setFetchError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
 
   // ── Spike inbox: load ─────────────────────────────────────────────────────
   const handleLoadInbox = useCallback(async () => {
@@ -527,10 +542,11 @@ export function TrendingSpikePage() {
     try {
       const data = await callWebhook({ type: 'fetch-trending' })
       if (data.success && Array.isArray(data.articles)) {
-        setTrendingItems(data.articles.map((a: { url: string; source: string; category: string; type: string; title?: string; image?: string; caption?: string; publishedAt?: string }) => ({
+        setTrendingItems(data.articles.map((a: { url: string; source: string; brand?: string; category: string; type: string; title?: string; image?: string; caption?: string; publishedAt?: string }) => ({
           id: crypto.randomUUID(),
           url: a.url,
           source: a.source || a.category || 'Unknown',
+          brand: a.brand || a.source || '',
           category: a.category || '',
           type: a.type || '',
           title: a.title || '',
@@ -552,7 +568,7 @@ export function TrendingSpikePage() {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
+    <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-28">
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
@@ -642,8 +658,8 @@ export function TrendingSpikePage() {
             <div className="glass-card rounded-2xl p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-sm font-semibold text-neutral-700">Spike news from Gmail</h2>
-                  <p className="text-xs text-neutral-400 mt-1">Chartbeat spike alerts received in Gmail — click "Generate FB Post" to create an FB post for any article</p>
+                  <h2 className="text-sm font-semibold text-neutral-700">Chartbeat Spike Alerts</h2>
+                  <p className="text-xs text-neutral-400 mt-1">Articles currently experiencing a traffic spike — act fast and turn them into FB posts while they're trending.</p>
                 </div>
                 <button
                   onClick={handleLoadInbox}
@@ -748,7 +764,7 @@ export function TrendingSpikePage() {
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-neutral-600">No spike articles yet</p>
-                <p className="text-xs text-neutral-400 mt-1">Chartbeat spike emails from Gmail will appear here once set up</p>
+                <p className="text-xs text-neutral-400 mt-1">No spike alerts at the moment — check back when articles are trending</p>
               </div>
             )}
           </div>
@@ -769,43 +785,96 @@ export function TrendingSpikePage() {
 
         {activeTab === 'trending' && trendingView === 'list' && (
           <div className="space-y-6">
-            {/* Fetch button */}
-            <div className="glass-card rounded-2xl p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-neutral-700">Daily Trending Content Hub</h2>
-                  <p className="text-xs text-neutral-400 mt-1">Get a curated list of trending stories daily at 10AM from Astro brands — helping your team react faster and create high-performing posts.</p>
+            {/* Info banner */}
+            <div className="glass-card rounded-2xl p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-                <button
-                  onClick={handleFetchTrending}
-                  disabled={isFetchingTrending}
-                  className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white rounded-xl text-sm font-semibold transition whitespace-nowrap active:scale-[0.97]"
-                >
-                  {isFetchingTrending ? (
-                    <span className="flex items-center gap-2"><Spinner size="sm" /> Fetching…</span>
-                  ) : '↻ Refresh'}
-                </button>
+                <div>
+                  <p className="text-sm font-semibold text-neutral-800">Refreshes daily at 10AM</p>
+                  <p className="text-xs text-neutral-400 mt-0.5">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
+                </div>
               </div>
               {fetchError && (
                 <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{fetchError}</p>
               )}
             </div>
 
+            {/* Search + Brand filter */}
+            {trendingItems.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search articles..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent placeholder:text-neutral-400"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {/* Brand chips */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="flex items-center gap-1 bg-neutral-100 rounded-full p-1">
+                    {Array.from(new Set(trendingItems.map(i => i.brand).filter(Boolean))).sort().map(brand => {
+                      const active = selectedSources.has(brand)
+                      return (
+                        <button
+                          key={brand}
+                          onClick={() => setSelectedSources(prev => {
+                            const next = new Set(prev)
+                            active ? next.delete(brand) : next.add(brand)
+                            return next
+                          })}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition whitespace-nowrap ${
+                            active
+                              ? 'bg-white text-neutral-950 shadow-sm'
+                              : 'text-neutral-500 hover:text-neutral-800'
+                          }`}
+                        >
+                          {formatBrandName(brand)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {selectedSources.size > 0 && (
+                    <button onClick={() => setSelectedSources(new Set())} className="text-xs text-neutral-400 hover:text-neutral-600 transition px-1">
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Skeleton while fetching */}
             {isFetchingTrending && trendingItems.length === 0 && (
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="glass-card rounded-2xl overflow-hidden">
-                    <div className="px-6 py-4 border-b border-white/40">
-                      <div className="h-3 skeleton-shimmer rounded w-24" />
+                    <div className="px-4 py-3 border-b border-white/40">
+                      <div className="h-3 skeleton-shimmer rounded w-20" />
                     </div>
-                    <div className="p-4 space-y-3">
-                      {[1, 2, 3].map(j => (
-                        <div key={j} className="flex items-center gap-4">
-                          <div className="w-48 aspect-video rounded-lg skeleton-shimmer shrink-0" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-3 skeleton-shimmer rounded w-3/4" />
-                            <div className="h-3 skeleton-shimmer rounded w-1/2" />
+                    <div className="p-3 space-y-3">
+                      {[1, 2, 3, 4, 5].map(j => (
+                        <div key={j} className="flex gap-2.5">
+                          <div className="w-16 h-16 rounded-lg skeleton-shimmer shrink-0" />
+                          <div className="flex-1 space-y-1.5 py-1">
+                            <div className="h-2.5 skeleton-shimmer rounded w-full" />
+                            <div className="h-2.5 skeleton-shimmer rounded w-3/4" />
+                            <div className="h-2.5 skeleton-shimmer rounded w-1/2" />
                           </div>
                         </div>
                       ))}
@@ -815,90 +884,86 @@ export function TrendingSpikePage() {
               </div>
             )}
 
-            {/* Trending articles by type */}
+            {/* Trending articles — 3-column layout */}
             {trendingItems.length > 0 && (
-              <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 {(['News', 'Sport', 'Entertainment'] as const).map(type => {
-                  let items = trendingItems.filter(i => i.type.toLowerCase() === type.toLowerCase())
-                  // For Entertainment, sort by preferred sources
+                  const q = searchQuery.trim().toLowerCase()
+                  let items = trendingItems.filter(i => {
+                    if (i.type.toLowerCase() !== type.toLowerCase()) return false
+                    if (selectedSources.size > 0 && !selectedSources.has(i.brand)) return false
+                    if (q && !(i.title ?? i.url).toLowerCase().includes(q)) return false
+                    return true
+                  })
                   if (type === 'Entertainment') {
                     const entertainmentOrder = ['Gempak', 'Rojak Daily', 'XUAN', 'Astro Ulagam']
                     items = [...items].sort((a, b) => {
                       const ai = entertainmentOrder.findIndex(s => s.toLowerCase() === a.source.toLowerCase())
                       const bi = entertainmentOrder.findIndex(s => s.toLowerCase() === b.source.toLowerCase())
-                      const av = ai === -1 ? 999 : ai
-                      const bv = bi === -1 ? 999 : bi
-                      return av - bv
+                      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
                     })
                   }
+                  // Sort newest first within each column
+                  items = [...items].sort((a, b) => {
+                    const ta = a.publishedAt ?? ''
+                    const tb = b.publishedAt ?? ''
+                    return tb.localeCompare(ta)
+                  })
                   if (items.length === 0) return null
+                  const emoji = type === 'News' ? '📰' : type === 'Sport' ? '⚽' : '🎬'
                   return (
                     <div key={type} className="glass-card rounded-2xl overflow-hidden">
-                      <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-neutral-700">{type}</h2>
-                        <span className="text-xs text-neutral-400">{items.length} articles</span>
+                      <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-neutral-700">{emoji} {type}</h2>
+                        <span className="text-xs text-neutral-400">{items.length}</span>
                       </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-neutral-100 text-left text-xs font-medium text-neutral-400 uppercase tracking-wide">
-                              <th className="px-6 py-3">Image</th>
-                              <th className="px-4 py-3">Article</th>
-                              <th className="px-4 py-3">Source</th>
-                              <th className="px-4 py-3">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {items.map(item => (
-                              <tr key={item.id} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
-                                <td className="px-6 py-4 w-48">
-                                  <ImageThumb url={item.imageUrl} alt={item.title || item.url} aspectRatio="video" />
-                                </td>
-                                <td className="px-4 py-4 max-w-[280px]">
-                                  <div className="flex items-start gap-1.5">
-                                    <div className="flex-1 min-w-0">
-                                      <span className="text-neutral-800 font-medium line-clamp-2 leading-snug text-sm block">
-                                        {item.title || item.url}
-                                      </span>
-                                      {item.publishedAt && (
-                                        <span className="text-[11px] text-neutral-400 mt-0.5 block">{item.publishedAt}</span>
-                                      )}
-                                    </div>
-                                    <a
-                                      href={item.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="shrink-0 mt-0.5 text-neutral-400 hover:text-neutral-700 transition"
-                                      title="Open article"
-                                    >
-                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                      </svg>
-                                    </a>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4">
-                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium whitespace-nowrap capitalize">
-                                    {item.source}
+                      <div className="divide-y divide-neutral-50">
+                        {items.map(item => (
+                          <div key={item.id} className="p-3 hover:bg-neutral-50/50 transition-colors">
+                            <div className="flex gap-2.5">
+                              <div className="w-24 shrink-0">
+                                <ImageThumb url={item.imageUrl} alt={item.title || item.url} aspectRatio="video" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start gap-1">
+                                  <span className="text-neutral-800 font-medium text-xs line-clamp-2 leading-snug flex-1">
+                                    {item.title || item.url}
                                   </span>
-                                </td>
-                                <td className="px-4 py-4">
+                                  <a
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="shrink-0 text-neutral-300 hover:text-neutral-600 transition mt-0.5"
+                                    title="Open article"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </a>
+                                </div>
+                                <div className="flex items-center justify-between mt-1.5 gap-2">
+                                  <div className="min-w-0">
+                                    <span className="text-[10px] text-neutral-400 font-medium capitalize block truncate">{item.source}</span>
+                                    {item.publishedAt && (
+                                      <span className="text-[10px] text-neutral-300 block truncate">{item.publishedAt}</span>
+                                    )}
+                                  </div>
                                   <button
                                     onClick={() => handleTrendingGeneratePost(item)}
-                                    className="px-3 py-1.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-semibold transition active:scale-[0.97] whitespace-nowrap"
+                                    className="shrink-0 px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-[10px] font-semibold transition active:scale-[0.97]"
                                   >
                                     Generate
                                   </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )
                 })}
-              </>
+              </div>
             )}
 
             {/* Empty state */}
