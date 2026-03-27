@@ -1,5 +1,30 @@
-import { useState, useCallback, useEffect } from 'react'
-import { IconRotate } from '@tabler/icons-react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { useBlocker } from 'react-router-dom'
+import { IconRotate, IconUserCircle, IconTool, IconCoins, IconGift, IconListCheck, IconFileText, IconHistory } from '@tabler/icons-react'
+
+interface ArticleHistoryItem {
+  id: string
+  timestamp: number
+  brand: string
+  articleTitle: string
+  articleHtml: string
+  thumbnailUrl?: string
+}
+
+const HISTORY_KEY = 'article-generator-history'
+const HISTORY_LIMIT = 10
+
+function relativeTime(ts: number): string {
+  const diff = Date.now() - ts
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days === 1) return 'Yesterday'
+  return `${days}d ago`
+}
 import { useArticleGenerator } from '../hooks/useArticleGenerator'
 import type {
   ArticleGeneratorState,
@@ -25,12 +50,12 @@ const isValidShopeeLink = (url: string): boolean => {
   }
 }
 
-const ANGLE_CATEGORIES: Record<number, { label: string; emoji: string; bgColor: string; textColor: string }> = {
-  1: { label: 'PERSONAL EXPERIENCE', emoji: '💭', bgColor: 'bg-purple-50', textColor: 'text-purple-700' },
-  2: { label: 'USE-CASE / PROBLEM-SOLVER', emoji: '🔧', bgColor: 'bg-orange-50', textColor: 'text-orange-700' },
-  3: { label: 'BUDGET VS VALUE', emoji: '💰', bgColor: 'bg-emerald-50', textColor: 'text-emerald-700' },
-  4: { label: 'GIFT GUIDE', emoji: '🎁', bgColor: 'bg-rose-50', textColor: 'text-rose-700' },
-  5: { label: 'THE SHORTLIST', emoji: '⭐', bgColor: 'bg-amber-50', textColor: 'text-amber-700' },
+const ANGLE_CATEGORIES: Record<number, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
+  1: { label: 'PERSONAL EXPERIENCE', icon: IconUserCircle, color: '#FF3FBF' },
+  2: { label: 'USE-CASE / PROBLEM-SOLVER', icon: IconTool, color: '#F05A35' },
+  3: { label: 'BUDGET VS VALUE', icon: IconCoins, color: '#00C9B8' },
+  4: { label: 'GIFT GUIDE', icon: IconGift, color: '#0055EE' },
+  5: { label: 'THE SHORTLIST', icon: IconListCheck, color: '#FF3FBF' },
 }
 
 const LOADING_STEPS = [
@@ -90,18 +115,79 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
   const [feedbackText, setFeedbackText] = useState('')
   const [customAngleText, setCustomAngleText] = useState('')
   const [imagePromptText, setImagePromptText] = useState('')
+  const [thumbnailFeedback, setThumbnailFeedback] = useState('')
+  const [thumbnailPhase, setThumbnailPhase] = useState<'prompt' | 'image' | 'done'>('prompt')
+  const [showThumbnailRevisionModal, setShowThumbnailRevisionModal] = useState(false)
   const [showRestartConfirm, setShowRestartConfirm] = useState(false)
+  const [showStartAnotherConfirm, setShowStartAnotherConfirm] = useState(false)
   const [showRevisionModal, setShowRevisionModal] = useState(false)
   const [showApproveModal, setShowApproveModal] = useState(false)
-  const [showThumbnailGen, setShowThumbnailGen] = useState(false)
+
   const [loadingMessage, setLoadingMessage] = useState('Great things coming together...')
   const [currentStep, setCurrentStep] = useState(0)
   const [articleStep, setArticleStep] = useState(0)
   const [articleLoadingMessage, setArticleLoadingMessage] = useState(ARTICLE_QUOTES[0])
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false)
+  const [copiedTitle, setCopiedTitle] = useState(false)
+  const [copiedHtml, setCopiedHtml] = useState(false)
+  const [expandedArticle, setExpandedArticle] = useState(false)
+
+  const [history, setHistory] = useState<ArticleHistoryItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(HISTORY_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch { return [] }
+  })
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false)
+  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false)
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
+  const [copiedHistoryTitle, setCopiedHistoryTitle] = useState<string | null>(null)
+  const [copiedHistoryHtml, setCopiedHistoryHtml] = useState<string | null>(null)
+  const recordedForSession = useRef(false)
 
   const { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error } =
     useArticleGenerator()
+
+  // Warn on browser refresh/close when mid-flow
+  useEffect(() => {
+    const dangerSteps = ['pick-angle', 'review-article', 'thumbnail']
+    if (!dangerSteps.includes(state.step)) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [state.step])
+
+  // Block in-app navigation (sidebar clicks) when mid-flow
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      ['pick-angle', 'review-article', 'thumbnail'].includes(state.step) &&
+      currentLocation.pathname !== nextLocation.pathname
+  )
+
+  // Record to history once per session when reaching done
+  useEffect(() => {
+    if (state.step !== 'done') return
+    if (recordedForSession.current) return
+    if (!state.articleTitle || !state.articleHtml) return
+    recordedForSession.current = true
+    const item: ArticleHistoryItem = {
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      brand: state.brand,
+      articleTitle: state.articleTitle,
+      articleHtml: state.articleHtml,
+      thumbnailUrl: state.thumbnailUrl && state.thumbnailUrl !== 'skipped' ? state.thumbnailUrl : undefined,
+    }
+    setHistory((prev) => {
+      const updated = [item, ...prev].slice(0, HISTORY_LIMIT)
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)) } catch {}
+      return updated
+    })
+  }, [state.step])
 
   useEffect(() => {
     if (state.step !== 'pick-angle' || !isLoading) return
@@ -170,8 +256,26 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     setCustomAngleText('')
     setImagePromptText('')
     setShowRestartConfirm(false)
+    setShowStartAnotherConfirm(false)
     setShowThumbnailGen(false)
+    setThumbnailLoaded(false)
+    recordedForSession.current = false
   }, [])
+
+  const handleThumbnailDownload = useCallback(async () => {
+    if (!state.thumbnailUrl) return
+    try {
+      const res = await fetch(state.thumbnailUrl)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `thumbnail_${Date.now()}.jpg`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch {
+      window.open(state.thumbnailUrl, '_blank')
+    }
+  }, [state.thumbnailUrl])
 
   const handleAddProduct = useCallback(() => {
     if (productLinks.length < 8) {
@@ -288,8 +392,10 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     }
   }, [state, generate])
 
-  const handleThumbnailGenerate = useCallback(async () => {
-    setState((s) => ({ ...s, isLoading: true }))
+  const handleThumbnailGenerate = useCallback(async (feedback?: string) => {
+    // Phase 1: generate prompt
+    setThumbnailPhase('prompt')
+    setState((s) => ({ ...s, isLoading: true, imagePrompt: undefined, thumbnailUrl: undefined }))
 
     const body = {
       brand: state.brand,
@@ -297,71 +403,42 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       clean_product_names: state.products?.map((p) => p.cleanProductName) || [],
       image_urls: state.products?.map((p) => p.imageUrl) || [],
       product_features: state.products?.map((p) => p.productFeatures).join(', ') || '',
-      user_feedback: null,
+      user_feedback: feedback || null,
     }
 
     const promptResult = await thumbnailPrompt(body)
-    if (promptResult) {
-      setImagePromptText(promptResult.image_prompt)
-      setState((s) => ({
-        ...s,
-        imagePrompt: promptResult.image_prompt,
-        isLoading: false,
-      }))
-      setShowThumbnailGen(true)
-    } else {
-      setState((s) => ({
-        ...s,
-        isLoading: false,
-        error: 'Failed to generate thumbnail prompt. Please try again.',
-      }))
+    if (!promptResult) {
+      setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail prompt. Please try again.' }))
+      return
     }
-  }, [state, thumbnailPrompt])
+
+    const prompt = promptResult.image_prompt
+    setImagePromptText(prompt)
+    setState((s) => ({ ...s, imagePrompt: prompt }))
+
+    // Phase 2: auto-generate image
+    setThumbnailPhase('image')
+    const imageResult = await thumbnailGenerate({ prompt })
+    if (imageResult) {
+      setThumbnailPhase('done')
+      setState((s) => ({ ...s, thumbnailUrl: imageResult.thumbnail_url, isLoading: false }))
+    } else {
+      setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail. Please try again.' }))
+    }
+  }, [state, thumbnailPrompt, thumbnailGenerate])
 
   const handleThumbnailSkip = useCallback(() => {
     setState((s) => ({ ...s, step: 'done', thumbnailUrl: 'skipped' }))
   }, [])
 
-  const handleThumbnailPromptSubmit = useCallback(async () => {
-    setState((s) => ({ ...s, isLoading: true }))
-    const body = { prompt: imagePromptText.trim() }
-    const result = await thumbnailGenerate(body)
-    if (result) {
-      setState((s) => ({
-        ...s,
-        thumbnailUrl: result.thumbnail_url,
-        isLoading: false,
-      }))
-      setShowThumbnailGen(false)
-    } else {
-      setState((s) => ({
-        ...s,
-        isLoading: false,
-        error: 'Failed to generate thumbnail. Please try again.',
-      }))
-    }
-  }, [imagePromptText, thumbnailGenerate])
-
   const handleThumbnailRegenerate = useCallback(async () => {
-    setState((s) => ({ ...s, isLoading: true }))
-    const body = { prompt: imagePromptText.trim() }
-    const result = await thumbnailGenerate(body)
-    if (result) {
-      setState((s) => ({
-        ...s,
-        thumbnailUrl: result.thumbnail_url,
-        isLoading: false,
-      }))
-    } else {
-      setState((s) => ({
-        ...s,
-        isLoading: false,
-        error: 'Failed to regenerate thumbnail. Please try again.',
-      }))
-    }
-  }, [imagePromptText, thumbnailGenerate])
+    const feedback = thumbnailFeedback.trim()
+    setThumbnailFeedback('')
+    await handleThumbnailGenerate(feedback || undefined)
+  }, [thumbnailFeedback, handleThumbnailGenerate])
 
   return (
+    <>
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -375,15 +452,27 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
             </p>
             <div className="mt-4 h-[3px] w-24 rounded-full" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
           </div>
-          {state.step !== 'input' && state.step !== 'done' && (
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 mt-0.5 flex-shrink-0">
+            {state.step !== 'input' && state.step !== 'done' && (
+              <button
+                onClick={() => setShowRestartConfirm(true)}
+                className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800 px-3 py-1.5 rounded-lg hover:bg-neutral-100 transition border border-neutral-200 hover:border-neutral-300 whitespace-nowrap"
+              >
+                <IconRotate className="w-3.5 h-3.5" />
+                Restart
+              </button>
+            )}
             <button
-              onClick={() => setShowRestartConfirm(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800 px-3 py-1.5 rounded-lg hover:bg-neutral-100 transition border border-neutral-200 hover:border-neutral-300 whitespace-nowrap mt-0.5"
+              onClick={() => {
+                setShowHistoryDrawer(true)
+                requestAnimationFrame(() => requestAnimationFrame(() => setHistoryDrawerOpen(true)))
+              }}
+              className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800 px-3 py-1.5 rounded-lg hover:bg-neutral-100 transition border border-neutral-200 hover:border-neutral-300 whitespace-nowrap"
             >
-              <IconRotate className="w-3.5 h-3.5" />
-              Restart
+              <IconHistory className="w-3.5 h-3.5" />
+              History{history.length > 0 ? ` (${history.length})` : ''}
             </button>
-          )}
+          </div>
         </div>
 
         {/* Stepper */}
@@ -421,97 +510,12 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
               return (
                 <div
                   key={idx}
-                  className={`flex-1 ${
-                    isCompleted ? 'bg-green-500' : idx === currentIdx ? 'bg-neutral-950' : 'bg-neutral-200'
-                  }`}
+                  className={`flex-1 ${isCompleted ? 'bg-green-500' : idx === currentIdx ? 'bg-neutral-950' : 'bg-neutral-200'}`}
                 />
               )
             })}
           </div>
         </div>
-
-        {/* Restart confirmation modal */}
-        {showRestartConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
-              <h3 className="text-lg font-semibold text-neutral-900 mb-2">Clear all and start over?</h3>
-              <p className="text-sm text-neutral-600 mb-6">This will reset all your progress and take you back to the beginning.</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleRestart}
-                  className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition"
-                >
-                  Yes, restart
-                </button>
-                <button
-                  onClick={() => setShowRestartConfirm(false)}
-                  className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showRevisionModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900">Request a revision</h3>
-                <p className="text-sm text-neutral-500 mt-1">Tell the editor what to change or improve.</p>
-              </div>
-              <textarea
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="e.g., Make the intro punchier, emphasise the price difference more..."
-                className="w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 resize-none"
-                rows={4}
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowRevisionModal(false); handleArticleRevise() }}
-                  disabled={!feedbackText.trim()}
-                  className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
-                >
-                  Submit revision
-                </button>
-                <button
-                  onClick={() => setShowRevisionModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showApproveModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900">Article approved!</h3>
-                <p className="text-sm text-neutral-500 mt-1">Would you like to generate a thumbnail image for this article?</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'done' })) }}
-                  className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
-                >
-                  Skip, I'm done
-                </button>
-                <button
-                  onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'thumbnail' })); handleThumbnailGenerate() }}
-                  className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
-                >
-                  Yes, generate
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Error message */}
         {error && (
@@ -525,18 +529,23 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium text-neutral-900 mb-2">Brand</label>
-              <select
-                value={state.brand}
-                onChange={(e) => setState((s) => ({ ...s, brand: e.target.value }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950"
-              >
-                <option value="">Select a brand...</option>
-                {BRANDS.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={state.brand}
+                  onChange={(e) => setState((s) => ({ ...s, brand: e.target.value }))}
+                  className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                >
+                  <option value="">Select a brand...</option>
+                  {BRANDS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -555,7 +564,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                           Product {idx + 1}
                         </label>
                         {isFilled && !isValid && (
-                          <span className="text-xs text-red-500">Invalid URL</span>
+                          <span className="text-xs text-red-500">Please use a Shopee link (e.g. shopee.com.my/...)</span>
                         )}
                         {isFilled && isValid && <span className="text-xs text-green-500">✓</span>}
                       </div>
@@ -564,7 +573,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                         value={link}
                         onChange={(e) => handleLinkChange(idx, e.target.value)}
                         placeholder="https://shopee.com.my/product/..."
-                        className={`w-full px-3 py-2 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 transition ${
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition ${
                           !isValid && isFilled
                             ? 'border-red-300 focus:ring-red-500'
                             : 'border-neutral-300 focus:ring-neutral-950'
@@ -600,7 +609,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
               )}
               {validFilledLinks.length < filledLinks.length && (
                 <p className="text-xs text-red-600 mt-2">
-                  {filledLinks.length - validFilledLinks.length} link(s) are invalid
+                  {filledLinks.length - validFilledLinks.length} link(s) are invalid - Only shopee.com.my links are accepted
                 </p>
               )}
             </div>
@@ -624,13 +633,8 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
               {LOADING_STEPS.map((_, idx) => (
                 <div
                   key={idx}
-                  className={`h-2 rounded-full transition-all duration-700 ${
-                    idx < currentStep
-                      ? 'bg-green-500 w-4'
-                      : idx === currentStep
-                      ? 'bg-neutral-900 w-4 animate-pulse-strong'
-                      : 'bg-neutral-200 w-2'
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-700 ${idx < currentStep ? 'bg-green-500 w-4' : idx === currentStep ? 'w-4 animate-pulse-strong' : 'bg-neutral-200 w-2'}`}
+                  style={idx === currentStep ? { background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' } : undefined}
                 />
               ))}
             </div>
@@ -651,123 +655,45 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
               <p className="text-sm text-neutral-600">Select how you'd like to approach this article, or create your own</p>
             </div>
 
-            {/* Products Carousel */}
-            <div>
-              <h2 className="text-sm font-semibold text-neutral-900 mb-3">Products we're writing about</h2>
-              <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 md:-mx-0 md:px-0">
-                {state.products?.map((p, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedProduct(idx)}
-                    className="flex-shrink-0 w-48 bg-white rounded-xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden hover:shadow-[0_4px_32px_rgba(0,0,0,0.12)] transition text-left"
-                  >
-                    <img
-                      src={p.imageUrl}
-                      alt={p.cleanProductName}
-                      className="w-full aspect-square object-cover"
-                    />
-                    <div className="p-3 space-y-2">
-                      <h3 className="text-xs font-semibold text-neutral-900 line-clamp-2">
-                        {p.cleanProductName}
-                      </h3>
-                      <p className="text-sm font-bold text-neutral-950">RM {p.priceMin}</p>
-                      {p.shopTypeLabel === 'Verified Seller' && (
-                        <p className="text-xs text-green-600 font-medium">✓ Verified Seller</p>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Brand + Theme Combined */}
+            {/* Theme */}
             {state.brand && state.overallTheme && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-3">Article Focus</p>
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4">
+                <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Article Focus</p>
                 <p className="text-sm font-medium text-neutral-900">
-                  Writing about <span className="font-semibold text-neutral-900">"{state.overallTheme}"</span> for <span className="font-semibold text-neutral-900">{state.brand}</span>
+                  <span className="font-semibold">"{state.overallTheme}"</span> for <span className="font-semibold">{state.brand}</span>
                 </p>
               </div>
             )}
 
-            {/* Product Detail Modal */}
-            {selectedProduct !== null && state.products && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                  <div className="sticky top-0 bg-white border-b border-neutral-200 p-4 flex justify-between items-center">
-                    <h2 className="text-lg font-semibold text-neutral-900">Product Details</h2>
+            {/* Products — compact chip strip */}
+            {state.products && state.products.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">Products ({state.products.length})</p>
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:-mx-0 md:px-0">
+                  {state.products.map((p, idx) => (
                     <button
-                      onClick={() => setSelectedProduct(null)}
-                      className="text-neutral-500 hover:text-neutral-700 text-2xl"
+                      key={idx}
+                      onClick={() => setSelectedProduct(idx)}
+                      className="flex-shrink-0 flex items-center gap-2 bg-white rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.08)] px-3 py-2 hover:shadow-[0_2px_16px_rgba(0,0,0,0.12)] transition text-left"
                     >
-                      ✕
+                      <img
+                        src={p.imageUrl}
+                        alt={p.cleanProductName}
+                        className="w-8 h-8 rounded-md object-cover flex-shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-neutral-900 truncate max-w-[120px]">{p.cleanProductName}</p>
+                        <p className="text-xs text-neutral-500">RM {p.priceMin}</p>
+                      </div>
                     </button>
-                  </div>
-
-                  <div className="p-6 space-y-6">
-                    <img
-                      src={state.products[selectedProduct].imageUrl}
-                      alt={state.products[selectedProduct].cleanProductName}
-                      className="w-full aspect-square object-cover rounded-lg"
-                    />
-
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
-                          {state.products[selectedProduct].cleanProductName}
-                        </h3>
-                        <p className="text-xl font-bold text-neutral-950">RM {state.products[selectedProduct].priceMin}</p>
-                      </div>
-
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="flex items-center gap-1">⭐ {state.products[selectedProduct].ratingStar}</span>
-                        <span className="text-neutral-500">•</span>
-                        <span>{state.products[selectedProduct].sales} sold</span>
-                      </div>
-
-                      <div className="bg-neutral-50 rounded-lg p-4 space-y-3">
-                        <div>
-                          <p className="text-xs font-medium text-neutral-500 mb-1">Shop</p>
-                          <p className="font-semibold text-neutral-900">{state.products[selectedProduct].shopName}</p>
-                        </div>
-                        {state.products[selectedProduct].shopTypeLabel && (
-                          <div>
-                            <p className="text-xs font-medium text-neutral-500 mb-1">Seller Status</p>
-                            <p className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
-                              {state.products[selectedProduct].shopTypeLabel}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {state.products[selectedProduct].productFeatures && (
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-neutral-900">Features</h4>
-                          <p className="text-sm text-neutral-700 whitespace-pre-line">
-                            {state.products[selectedProduct].productFeatures}
-                          </p>
-                        </div>
-                      )}
-
-                      {state.products[selectedProduct].affiliateLink && (
-                        <a
-                          href={state.products[selectedProduct].affiliateLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full px-4 py-3 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-center"
-                        >
-                          Check affiliate link
-                        </a>
-                      )}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
 
             {/* Content Angles */}
             <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4">
-              <h2 className="text-sm font-semibold text-neutral-900">Pick an angle here</h2>
+              <h2 className="text-sm font-semibold text-neutral-900">Pick an article angle</h2>
               <div className="space-y-2">
                 {state.suggestedAngles?.map((angle) => {
                   const categoryData = ANGLE_CATEGORIES[angle.id]
@@ -781,21 +707,33 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                           customAngle: undefined,
                         }))
                       }
-                      className={`w-full text-left p-4 rounded-lg border-2 transition ${
-                        state.selectedAngle === angle.id
-                          ? 'border-neutral-950 bg-neutral-50'
-                          : 'border-neutral-200 hover:border-neutral-300'
-                      }`}
+                      className="w-full text-left p-4 rounded-lg border-2 transition"
+                      style={{
+                        borderColor: state.selectedAngle === angle.id ? (categoryData?.color ?? '#171717') : undefined,
+                        backgroundColor: state.selectedAngle === angle.id ? `${categoryData?.color ?? '#171717'}08` : undefined,
+                      }}
                     >
                       <div className="flex items-start gap-3">
-                        <span className="text-xs font-bold text-neutral-500 mt-0.5">[{angle.id}]</span>
-                        <div className="flex-1">
-                          {categoryData && (
-                            <div className={`inline-block ${categoryData.bgColor} ${categoryData.textColor} px-2.5 py-1 rounded-full text-xs font-semibold mb-2`}>
-                              <span className="mr-1">{categoryData.emoji}</span>
-                              {categoryData.label}
-                            </div>
+                        {/* Radio indicator */}
+                        <div className="mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors"
+                          style={{
+                            borderColor: state.selectedAngle === angle.id ? (categoryData?.color ?? '#171717') : '#d4d4d4',
+                          }}
+                        >
+                          {state.selectedAngle === angle.id && (
+                            <div className="w-2 h-2 rounded-full" style={{ background: categoryData?.color ?? '#171717' }} />
                           )}
+                        </div>
+                        <div className="flex-1">
+                          {categoryData && (() => {
+                            const Icon = categoryData.icon
+                            return (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold mb-2" style={{ background: `${categoryData.color}18`, color: categoryData.color }}>
+                                <Icon className="w-3 h-3 flex-shrink-0" />
+                                {categoryData.label}
+                              </div>
+                            )
+                          })()}
                           <p className="text-sm font-medium text-neutral-900">{angle.title}</p>
                           <p className="text-xs text-neutral-500 mt-1">{angle.description}</p>
                         </div>
@@ -838,13 +776,8 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
               {ARTICLE_LOADING_STEPS.map((_, idx) => (
                 <div
                   key={idx}
-                  className={`h-2 rounded-full transition-all duration-700 ${
-                    idx < articleStep
-                      ? 'bg-green-500 w-4'
-                      : idx === articleStep
-                      ? 'bg-neutral-900 w-4 animate-pulse-strong'
-                      : 'bg-neutral-200 w-2'
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-700 ${idx < articleStep ? 'bg-green-500 w-4' : idx === articleStep ? 'w-4 animate-pulse-strong' : 'bg-neutral-200 w-2'}`}
+                  style={idx === articleStep ? { background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' } : undefined}
                 />
               ))}
             </div>
@@ -874,8 +807,9 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                   return (
                     <span className="flex items-center gap-1.5">
                       <span className="text-xs text-neutral-400">Angle:</span>
-                      <span className={`inline-flex items-center gap-1 ${cat.bgColor} ${cat.textColor} px-2 py-0.5 rounded-full text-[10px] font-semibold`}>
-                        {cat.emoji} {cat.label}
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${cat.color}18`, color: cat.color }}>
+                        {(() => { const Icon = cat.icon; return <Icon className="w-3 h-3 flex-shrink-0" /> })()}
+                        {cat.label}
                       </span>
                     </span>
                   )
@@ -943,7 +877,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                 onClick={handleArticleApprove}
                 className="flex-1 px-4 py-3 bg-neutral-950 text-white rounded-xl font-medium hover:bg-neutral-800 transition text-sm"
               >
-                Approve ✓
+                Approve
               </button>
               </div>
             </div>
@@ -951,118 +885,617 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         )}
 
         {/* Step: Thumbnail */}
-
-        {state.step === 'thumbnail' && showThumbnailGen && !state.thumbnailUrl && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-900 mb-2">Image Prompt</label>
-              <textarea
-                value={imagePromptText}
-                onChange={(e) => setImagePromptText(e.target.value)}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-neutral-950"
-                rows={4}
-              />
-              <p className="text-xs text-neutral-500 mt-1">Edit the prompt if needed before generating</p>
-            </div>
-
-            <button
-              onClick={handleThumbnailPromptSubmit}
-              disabled={!imagePromptText.trim() || isLoading}
-              className="w-full px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {isLoading ? 'Generating...' : 'Generate Thumbnail'}
-            </button>
-          </div>
-        )}
-
-        {state.step === 'thumbnail' && isLoading && showThumbnailGen && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full border-4 border-neutral-200 border-t-neutral-950 animate-spin mx-auto" />
-            <p className="text-sm font-medium text-neutral-900">Generating thumbnail...</p>
-          </div>
-        )}
-
-        {state.step === 'thumbnail' && state.thumbnailUrl && state.thumbnailUrl !== 'skipped' && (
+        {state.step === 'thumbnail' && (
+          <>
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
-              <img
-                src={state.thumbnailUrl}
-                alt="Generated thumbnail"
-                className="w-full rounded-lg mb-4"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleThumbnailRegenerate}
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  {isLoading ? 'Regenerating...' : 'Regenerate'}
-                </button>
-                <button
-                  onClick={() => setState((s) => ({ ...s, step: 'done' }))}
-                  className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition"
-                >
-                  Done
-                </button>
-              </div>
+            {/* Step heading */}
+            <div>
+              <h2 className="text-2xl font-semibold text-neutral-950 mb-1">Generate thumbnail</h2>
+              <p className="text-sm text-neutral-600">Review the generated image. Regenerate with feedback or mark as done.</p>
+            </div>
+
+            {/* Image card — shimmer while loading, image when done */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+              {/* Placeholder — stays visible until image has actually loaded */}
+              {(!state.thumbnailUrl || state.thumbnailUrl === 'skipped' || !thumbnailLoaded) && (
+                <div className="w-full aspect-video bg-neutral-100 relative overflow-hidden">
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <div className="w-8 h-8 rounded-full border-[3px] border-neutral-300 border-t-neutral-700 animate-spin" />
+                    <p className="text-xs text-neutral-500 font-medium">Generating image...</p>
+                  </div>
+                </div>
+              )}
+              {/* Image — hidden until loaded to prevent height-collapse scroll jump */}
+              {state.thumbnailUrl && state.thumbnailUrl !== 'skipped' && (
+                <img
+                  src={state.thumbnailUrl}
+                  alt="Generated thumbnail"
+                  className={`w-full ${thumbnailLoaded ? 'animate-fade-slide-up' : 'hidden'}`}
+                  onLoad={() => setThumbnailLoaded(true)}
+                />
+              )}
+            </div>
+
+            {/* Spacer so content isn't hidden behind sticky bar */}
+            <div className="h-20" />
+          </div>
+
+          {/* Sticky action bar */}
+          <div className={`fixed bottom-0 right-0 z-40 bg-white/90 backdrop-blur border-t border-neutral-200 px-4 py-3 transition-[left] duration-300 ${isSidebarCollapsed ? 'left-0' : 'left-0 md:left-60'}`}>
+            <div className="max-w-2xl mx-auto flex gap-3">
+              <button
+                onClick={() => setShowThumbnailRevisionModal(true)}
+                disabled={!state.thumbnailUrl || state.thumbnailUrl === 'skipped'}
+                className="flex-1 px-4 py-3 border border-neutral-300 text-neutral-700 rounded-xl font-medium hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
+              >
+                Regenerate
+              </button>
+              <button
+                onClick={() => setState((s) => ({ ...s, step: 'done' }))}
+                disabled={!state.thumbnailUrl || state.thumbnailUrl === 'skipped'}
+                className="flex-1 px-4 py-3 bg-neutral-950 text-white rounded-xl font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
+              >
+                Done
+              </button>
             </div>
           </div>
+          </>
         )}
 
         {/* Step: Done */}
         {state.step === 'done' && (
-          <div className="space-y-4 animate-fade-slide-up">
-            {/* Success banner */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto">
-                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-semibold text-neutral-900">Article ready!</p>
-                <p className="text-sm text-neutral-500 mt-0.5">{state.articleTitle}</p>
-              </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(state.articleHtml || '')
-                }}
-                className="w-full px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
-              >
-                Copy HTML
-              </button>
+          <>
+          <div className="space-y-6 animate-fade-slide-up">
+            {/* Heading */}
+            <div>
+              <h2 className="text-2xl font-semibold text-neutral-950 mb-1">Article ready!</h2>
+              <p className="text-sm text-neutral-600">Your article is ready to publish. Copy the content below.</p>
             </div>
 
-            {/* Thumbnail if generated */}
+            {/* Thumbnail with download overlay */}
             {state.thumbnailUrl && state.thumbnailUrl !== 'skipped' && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4 space-y-3">
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Thumbnail</p>
-                <img
-                  src={state.thumbnailUrl}
-                  alt="Article thumbnail"
-                  className="w-full rounded-lg"
-                />
-                <a
-                  href={state.thumbnailUrl}
-                  download="thumbnail.png"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg text-sm font-medium text-center hover:bg-neutral-50 transition"
-                >
-                  Download thumbnail
-                </a>
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+                <div className="relative">
+                  <img
+                    src={state.thumbnailUrl}
+                    alt="Article thumbnail"
+                    className="w-full"
+                  />
+                  <div className="absolute top-3 right-3">
+                    <button
+                      onClick={handleThumbnailDownload}
+                      className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
-            <button
-              onClick={handleRestart}
-              className="w-full px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
-            >
-              Start another article
-            </button>
+            {/* Title section */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Title</p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(state.articleTitle || '')
+                    setCopiedTitle(true)
+                    setTimeout(() => setCopiedTitle(false), 2000)
+                  }}
+                  title="Copy title"
+                  className="text-neutral-400 hover:text-neutral-700 transition"
+                >
+                  {copiedTitle
+                    ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  }
+                </button>
+              </div>
+              <p className="text-base font-semibold text-neutral-950">{state.articleTitle}</p>
+            </div>
+
+            {/* Article HTML section */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Article</p>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(state.articleHtml || '')
+                    setCopiedHtml(true)
+                    setTimeout(() => setCopiedHtml(false), 2000)
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${copiedHtml ? 'bg-green-50 text-green-600' : 'bg-neutral-950 text-white hover:bg-neutral-800'}`}
+                >
+                  {copiedHtml ? (
+                    <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Copied!</>
+                  ) : (
+                    <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy Article Full HTML</>
+                  )}
+                </button>
+              </div>
+
+              {/* CMS instruction banner */}
+              <div className="mx-5 mt-4 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-lg px-3.5 py-2.5">
+                <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+                </svg>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Use the <span className="font-semibold">Copy Article Full HTML</span> button, then paste it into your CMS using the <span className="font-semibold">Free HTML</span> block, not the regular text editor. This will preserve the styling and images.
+                </p>
+              </div>
+
+              {/* Article preview — collapsible */}
+              <div className={`relative transition-all duration-300 ${expandedArticle ? '' : 'max-h-64 overflow-hidden'}`}>
+                <iframe
+                  srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box}html,body{margin:0;padding:0;overflow:hidden}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;color:#111;padding:0}img{max-width:100%;height:auto;border-radius:8px;display:block}h1,h2,h3{font-weight:700;line-height:1.3}a{color:#0055EE}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;border:1px solid #e5e5e5}p{margin:0 0 1em}</style></head><body>${state.articleHtml || ''}</body></html>`}
+                  className="w-full border-0"
+                  scrolling="no"
+                  style={{ display: 'block', minHeight: '200px' }}
+                  title="Article preview"
+                  onLoad={(e) => {
+                    const iframe = e.currentTarget
+                    const resize = () => {
+                      try {
+                        const body = iframe.contentDocument?.body
+                        if (body) iframe.style.height = body.scrollHeight + 48 + 'px'
+                      } catch {
+                        iframe.style.height = '2000px'
+                      }
+                    }
+                    resize()
+                    setTimeout(resize, 300)
+                    setTimeout(resize, 1000)
+                  }}
+                />
+                {/* Fade overlay when collapsed */}
+                {!expandedArticle && (
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                )}
+              </div>
+
+              {/* Expand / collapse toggle */}
+              <div className="flex justify-center py-3 border-t border-neutral-100">
+                <button
+                  onClick={() => setExpandedArticle((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-900 transition"
+                >
+                  {expandedArticle ? (
+                    <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>Collapse</>
+                  ) : (
+                    <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>Expand full article</>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Spacer so content isn't hidden behind sticky bar */}
+            <div className="h-20" />
           </div>
+
+          {/* Sticky action bar */}
+          <div className={`fixed bottom-0 right-0 z-40 bg-white/90 backdrop-blur border-t border-neutral-200 px-4 py-3 transition-[left] duration-300 ${isSidebarCollapsed ? 'left-0' : 'left-0 md:left-60'}`}>
+            <div className="max-w-2xl mx-auto">
+              <button
+                onClick={() => setShowStartAnotherConfirm(true)}
+                className="w-full px-4 py-3 border border-neutral-300 text-neutral-700 rounded-xl font-medium hover:bg-neutral-50 transition text-sm"
+              >
+                Start another article
+              </button>
+            </div>
+          </div>
+          </>
         )}
       </div>
     </main>
+
+    {/* Modals — rendered outside main to avoid stacking context issues */}
+    {showRestartConfirm && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Clear all and start over?</h3>
+              <p className="text-sm text-neutral-600 mt-1">This will reset all your progress and take you back to the beginning.</p>
+            </div>
+            <button onClick={() => setShowRestartConfirm(false)} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowRestartConfirm(false)}
+              className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRestart}
+              className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
+            >
+              Yes, restart
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {blocker.state === 'blocked' && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Leave this page?</h3>
+              <p className="text-sm text-neutral-600 mt-1">Your progress will be lost if you navigate away now.</p>
+            </div>
+            <button onClick={() => blocker.reset()} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => blocker.reset()}
+              className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
+            >
+              Stay
+            </button>
+            <button
+              onClick={() => blocker.proceed()}
+              className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
+            >
+              Leave
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {showStartAnotherConfirm && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Start a new article?</h3>
+              <p className="text-sm text-neutral-600 mt-1">Your article is saved in History. Just make sure you've downloaded your thumbnail before starting fresh.</p>
+            </div>
+            <button onClick={() => setShowStartAnotherConfirm(false)} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowStartAnotherConfirm(false)}
+              className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
+            >
+              Go back
+            </button>
+            <button
+              onClick={handleRestart}
+              className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
+            >
+              Yes, start fresh
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {showRevisionModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Request a revision</h3>
+              <p className="text-sm text-neutral-500 mt-1">Tell the editor what to change or improve.</p>
+            </div>
+            <button onClick={() => setShowRevisionModal(false)} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <textarea
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            placeholder="e.g., Make the intro punchier, emphasise the price difference more..."
+            className="w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 resize-none"
+            rows={4}
+            autoFocus
+          />
+          <button
+            onClick={() => { setShowRevisionModal(false); handleArticleRevise() }}
+            disabled={!feedbackText.trim()}
+            className="w-full px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
+          >
+            Submit revision
+          </button>
+        </div>
+      </div>
+    )}
+    {showThumbnailRevisionModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Regenerate thumbnail</h3>
+              <p className="text-sm text-neutral-500 mt-1">Describe what to change about the image.</p>
+            </div>
+            <button onClick={() => setShowThumbnailRevisionModal(false)} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <textarea
+            value={thumbnailFeedback}
+            onChange={(e) => setThumbnailFeedback(e.target.value)}
+            placeholder="e.g. make the background warmer, show products from a different angle..."
+            className="w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 resize-none"
+            rows={3}
+            autoFocus
+          />
+          <button
+            onClick={() => { setShowThumbnailRevisionModal(false); handleThumbnailRegenerate() }}
+            disabled={!thumbnailFeedback.trim()}
+            className="w-full px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
+          >
+            Regenerate
+          </button>
+        </div>
+      </div>
+    )}
+    {showApproveModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Generate a thumbnail?</h3>
+              <p className="text-sm text-neutral-500 mt-1">Article approved! Want to generate a thumbnail image to go with it?</p>
+            </div>
+            <button onClick={() => setShowApproveModal(false)} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'done' })) }}
+              className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
+            >
+              Skip, I'm done
+            </button>
+            <button
+              onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'thumbnail' })); handleThumbnailGenerate() }}
+              className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
+            >
+              Yes, generate
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {selectedProduct !== null && state.products && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-neutral-200 p-4 flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-neutral-900">Product Details from Shopee</h2>
+            <button
+              onClick={() => setSelectedProduct(null)}
+              className="text-neutral-500 hover:text-neutral-700 text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="p-6 space-y-5">
+            {/* Top: image left, details right */}
+            <div className="flex gap-4 items-start">
+              <img
+                src={state.products[selectedProduct].imageUrl}
+                alt={state.products[selectedProduct].cleanProductName}
+                className="w-28 h-28 object-cover rounded-lg flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0 space-y-2">
+                <h3 className="text-base font-bold text-neutral-900 leading-snug">
+                  {state.products[selectedProduct].cleanProductName}
+                </h3>
+                <p className="text-lg font-bold text-neutral-950">RM {state.products[selectedProduct].priceMin}</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                  <div>
+                    <p className="text-xs text-neutral-400">Rating</p>
+                    <p className="font-medium text-neutral-900">★ {state.products[selectedProduct].ratingStar}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-400">Sold</p>
+                    <p className="font-medium text-neutral-900">{state.products[selectedProduct].sales}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-400">Shop</p>
+                    <p className="font-medium text-neutral-900 truncate">{state.products[selectedProduct].shopName}</p>
+                  </div>
+                  {state.products[selectedProduct].shopTypeLabel && (
+                    <div>
+                      <p className="text-xs text-neutral-400">Seller Status</p>
+                      <p className="text-xs font-medium text-green-700 bg-green-50 inline-block px-2 py-0.5 rounded-full mt-0.5">
+                        {state.products[selectedProduct].shopTypeLabel}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Affiliate link */}
+            {state.products[selectedProduct].affiliateLink && (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Affiliate Link</p>
+                <div className="flex items-center gap-2 bg-neutral-50 rounded-lg px-3 py-2">
+                  <a
+                    href={state.products[selectedProduct].affiliateLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 text-sm text-blue-600 hover:underline truncate"
+                  >
+                    {state.products[selectedProduct].affiliateLink}
+                  </a>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(state.products![selectedProduct!].affiliateLink)}
+                    className="flex-shrink-0 p-1 text-neutral-400 hover:text-neutral-700 transition"
+                    title="Copy link"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Features */}
+            {state.products[selectedProduct].productFeatures && (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Features</p>
+                <p className="text-sm text-neutral-700 whitespace-pre-line leading-relaxed">
+                  {state.products[selectedProduct].productFeatures}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* History drawer */}
+    {showHistoryDrawer && (
+      <div
+        className="fixed inset-0 z-[150]"
+        onClick={() => { setHistoryDrawerOpen(false) }}
+      >
+        {/* Backdrop */}
+        <div className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${historyDrawerOpen ? 'opacity-100' : 'opacity-0'}`} />
+        {/* Drawer */}
+        <div
+          className={`absolute right-0 top-0 h-full w-80 bg-white shadow-2xl flex flex-col transition-transform duration-300 ${historyDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          onClick={(e) => e.stopPropagation()}
+          onTransitionEnd={() => { if (!historyDrawerOpen) { setShowHistoryDrawer(false) } }}
+        >
+          {/* Drawer header */}
+          <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <IconHistory className="w-4 h-4 text-neutral-500" />
+              <h3 className="font-semibold text-neutral-900 text-sm">History</h3>
+              <span className="text-[10px] font-semibold text-neutral-400 bg-neutral-100 rounded-full px-1.5 py-0.5">{history.length}</span>
+              <span className="text-[10px] font-medium text-neutral-400">· Max 10 articles</span>
+            </div>
+            <button
+              onClick={() => { setHistoryDrawerOpen(false) }}
+              className="text-neutral-400 hover:text-neutral-600 transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto divide-y divide-neutral-100">
+            {history.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full gap-3 p-8 text-center">
+                <IconFileText className="w-8 h-8 text-neutral-200" />
+                <p className="text-sm text-neutral-400">No articles yet. Completed articles will appear here.</p>
+              </div>
+            )}
+            {history.map((item) => {
+              const isExpanded = expandedHistoryId === item.id
+              return (
+                <div key={item.id}>
+                  {/* Row */}
+                  <button
+                    onClick={() => setExpandedHistoryId(isExpanded ? null : item.id)}
+                    className="w-full p-4 flex items-start gap-3 hover:bg-neutral-50 transition text-left"
+                  >
+                    {item.thumbnailUrl ? (
+                      <img src={item.thumbnailUrl} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                        <IconFileText className="w-5 h-5 text-neutral-300" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-snug">{item.articleTitle}</p>
+                      <p className="text-[10px] text-neutral-400 mt-1">{item.brand} · {relativeTime(item.timestamp)}</p>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 text-neutral-400 flex-shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Expanded actions */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 space-y-2 animate-fade-slide-up">
+                      {item.thumbnailUrl && (
+                        <div className="relative rounded-xl overflow-hidden">
+                          <img src={item.thumbnailUrl} alt="" className="w-full" />
+                          <div className="absolute top-2 right-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(item.thumbnailUrl!)
+                                  const blob = await res.blob()
+                                  const a = document.createElement('a')
+                                  a.href = URL.createObjectURL(blob)
+                                  a.download = `thumbnail_${item.id}.jpg`
+                                  a.click()
+                                  URL.revokeObjectURL(a.href)
+                                } catch { window.open(item.thumbnailUrl, '_blank') }
+                              }}
+                              className="px-2.5 py-1 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-[10px] font-medium transition flex items-center gap-1"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                              Download
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.articleTitle)
+                          setCopiedHistoryTitle(item.id)
+                          setTimeout(() => setCopiedHistoryTitle(null), 2000)
+                        }}
+                        className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition ${copiedHistoryTitle === item.id ? 'border-green-200 bg-green-50 text-green-600' : 'border-neutral-200 text-neutral-700 hover:bg-neutral-50'}`}
+                      >
+                        {copiedHistoryTitle === item.id
+                          ? <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Copied!</>
+                          : <>Copy Title</>
+                        }
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.articleHtml)
+                          setCopiedHistoryHtml(item.id)
+                          setTimeout(() => setCopiedHistoryHtml(null), 2000)
+                        }}
+                        className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition ${copiedHistoryHtml === item.id ? 'bg-green-50 text-green-600' : 'bg-neutral-950 text-white hover:bg-neutral-800'}`}
+                      >
+                        {copiedHistoryHtml === item.id
+                          ? <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Copied!</>
+                          : <>Copy Article Full HTML</>
+                        }
+                      </button>
+                      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        <svg className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+                        </svg>
+                        <p className="text-[10px] text-amber-800 leading-relaxed">Paste into your CMS using the <span className="font-semibold">Free HTML</span> block, not the regular text editor.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

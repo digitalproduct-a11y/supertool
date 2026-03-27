@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
@@ -38,32 +38,224 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
 }
 
-function SuggestButton() {
-  const handleClick = () => {
-    const subject = encodeURIComponent('New Tool Idea')
-    const body = encodeURIComponent('Hi team, I have a new tool idea that can help me with my current workflows')
-    window.location.href = `mailto:digitalproduct@astro.com.my?subject=${subject}&body=${body}`
-  }
+const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
+
+function ConfettiBurst({ children }: { children: React.ReactNode }) {
+  const pieces = useMemo(() =>
+    Array.from({ length: 36 }, (_, i) => ({
+      id: i,
+      color: KULT_COLOURS[i % KULT_COLOURS.length],
+      x: (Math.random() - 0.5) * 340,
+      y: -(Math.random() * 220 + 60),
+      rot: Math.random() * 720 - 360,
+      w: Math.random() * 7 + 4,
+      h: Math.random() * 5 + 3,
+      delay: Math.random() * 0.5,
+      duration: Math.random() * 0.4 + 0.9,
+    }))
+  , [])
+
   return (
-    <button
-      onClick={handleClick}
-      className="fixed bottom-6 right-6 z-50 group flex items-center gap-2 px-4 py-2.5 text-white text-[13px] font-medium rounded-full shadow-lg overflow-hidden transition-shadow hover:shadow-xl"
-    >
-      {/* Gradient layer — always present */}
-      <span
-        className="absolute inset-0 rounded-full"
-        style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
-      />
-      {/* Solid overlay — fades out on hover */}
-      <span className="absolute inset-0 rounded-full bg-neutral-950 transition-opacity duration-300 group-hover:opacity-0" />
-      {/* Content */}
-      <span className="relative flex items-center gap-2">
-        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-        Suggest New Tools
-      </span>
-    </button>
+    <div className="relative" style={{ overflow: 'visible' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible' }}>
+        {pieces.map(p => (
+          <div
+            key={p.id}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '40%',
+              width: p.w,
+              height: p.h,
+              backgroundColor: p.color,
+              borderRadius: 2,
+              animation: `confetti-piece ${p.duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${p.delay}s both`,
+              '--tx': `${p.x}px`,
+              '--ty': `${p.y}px`,
+              '--rot': `${p.rot}deg`,
+            } as React.CSSProperties}
+          />
+        ))}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function SuggestButton() {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
+  const [idea, setIdea] = useState('')
+
+  const [submitted, setSubmitted] = useState(false)
+
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const emailError = emailTouched && email.trim() && !isValidEmail
+
+  const handleOpen = () => {
+    setIsExpanded(true)
+    requestAnimationFrame(() => requestAnimationFrame(() => setMounted(true)))
+  }
+
+  const handleClose = () => {
+    setMounted(false)
+    setTimeout(() => {
+      setIsExpanded(false)
+      setSubmitted(false)
+      setName('')
+      setEmail('')
+      setEmailTouched(false)
+      setIdea('')
+    }, 300)
+  }
+
+  const handleSubmit = async () => {
+    const webhookUrl = import.meta.env.VITE_SUGGEST_TOOL_WEBHOOK_URL as string | undefined
+    if (webhookUrl) {
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, idea }),
+        })
+      } catch {
+        // fail silently — still show success to user
+      }
+    }
+    setSubmitted(true)
+  }
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex items-end justify-end">
+      {/* Expanded card */}
+      {isExpanded && (
+        <div
+          className="absolute bottom-0 right-0 origin-bottom-right transition-all duration-300 ease-out"
+          style={{
+            transform: mounted ? 'scale(1)' : 'scale(0.6)',
+            opacity: mounted ? 1 : 0,
+          }}
+        >
+          {/* Gradient border wrapper */}
+          <div
+            className="animate-gradient-border rounded-2xl p-[2px] shadow-2xl"
+            style={{
+              background: 'linear-gradient(135deg, #FF3FBF, #00E5D4, #0055EE, #F05A35, #FF3FBF, #00E5D4)',
+              backgroundSize: '300% 300%',
+            }}
+          >
+            <div className="bg-white rounded-[14px] w-80 p-5">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-neutral-950">
+                    {submitted ? 'Idea received!' : 'Suggest a New Tool'}
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    {submitted ? 'Thanks for sharing — we\'ll review it soon.' : 'What would help your workflow?'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleClose}
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors -mt-0.5 -mr-0.5"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {submitted ? (
+                <ConfettiBurst>
+                  <div className="animate-fade-slide-up flex flex-col items-center py-6 gap-3">
+                    <div className="w-12 h-12 rounded-full bg-neutral-950 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M5 13l4 4L19 7"
+                          style={{ strokeDasharray: 30, strokeDashoffset: 30, animation: 'draw-check 0.4s cubic-bezier(0.25,1,0.5,1) 0.15s forwards' }}
+                        />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-neutral-950">We got it!</p>
+                      <p className="text-xs text-neutral-500 mt-0.5">We'll be in touch soon.</p>
+                    </div>
+                  </div>
+                </ConfettiBurst>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Sarah"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent placeholder:text-neutral-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">Work Email</label>
+                    <input
+                      type="email"
+                      placeholder="you@astro.com.my"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onBlur={() => setEmailTouched(true)}
+                      className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent placeholder:text-neutral-400 ${
+                        emailError
+                          ? 'border-red-300 focus:ring-red-400'
+                          : 'border-neutral-200 focus:ring-neutral-900'
+                      }`}
+                    />
+                    {emailError && (
+                      <p className="mt-1 text-xs text-red-500">Please enter a valid email address</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">Tool Idea</label>
+                    <textarea
+                      placeholder="What's the task? What would you automate or speed up? Any tools involved?"
+                      value={idea}
+                      onChange={(e) => setIdea(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent placeholder:text-neutral-400 resize-none"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!name.trim() || !isValidEmail || !idea.trim()}
+                    className="w-full py-2 rounded-lg text-sm font-semibold text-white bg-neutral-950 hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Send Idea
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pill button — hidden when card is open */}
+      {!isExpanded && (
+        <div className="suggest-pill-wrapper rounded-full">
+          <button
+            onClick={handleOpen}
+            className="suggest-pill-btn flex items-center gap-2 px-4 py-2.5 bg-neutral-950 text-white text-[13px] font-medium rounded-full shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            Suggest New Tools
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

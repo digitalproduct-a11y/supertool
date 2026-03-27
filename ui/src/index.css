@@ -105,6 +105,11 @@ button:hover .glitch-text::after {
 
 /* ── Delight animations ────────────────────────────────────── */
 
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
 @keyframes fade-slide-up {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -114,6 +119,7 @@ button:hover .glitch-text::after {
   from { opacity: 0; transform: translateY(-5px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
 
 @keyframes breathe {
   0%, 100% { opacity: 0.25; transform: scale(1); }
@@ -156,6 +162,65 @@ button:hover .glitch-text::after {
   0%, 100% { transform: translateY(0) rotate(-8deg) scale(1); }
   40%       { transform: translateY(-8px) rotate(8deg) scale(1.1); }
   60%       { transform: translateY(-3px) rotate(-4deg) scale(1.05); }
+}
+
+@keyframes confetti-piece {
+  0%   { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(var(--rot)) scale(0.5); opacity: 0; }
+}
+
+@keyframes gradient-border-spin {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-border {
+  background-size: 300% 300%;
+  animation: gradient-border-spin 3s ease infinite;
+}
+
+.suggest-pill-wrapper {
+  padding: 1.5px;
+  background: transparent;
+  background-size: 300% 300%;
+  transition: background 0.3s ease;
+}
+
+.suggest-pill-wrapper:hover {
+  background: linear-gradient(135deg, #FF3FBF, #00E5D4, #0055EE, #F05A35, #FF3FBF, #00E5D4);
+  background-size: 300% 300%;
+  animation: gradient-border-spin 3s ease infinite;
+}
+
+.suggest-pill-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.suggest-pill-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.13) 50%,
+    transparent 100%
+  );
+}
+
+.suggest-pill-btn:hover::after {
+  animation: pill-sheen 4s ease infinite;
+}
+
+@keyframes pill-sheen {
+  0%       { left: -100%; }
+  88%      { left: 160%; }
+  95%, 100% { left: 160%; }
 }
 
 @keyframes glitch-clip {
@@ -203,7 +268,11 @@ button:hover .glitch-text::after {
 }
 
 /* Respect reduced-motion preferences */
+
 @media (prefers-reduced-motion: reduce) {
+  .animate-gradient-border,
+  .suggest-pill-wrapper:hover,
+  .suggest-pill-btn::after,
   .animate-fade-slide-up,
   .animate-slide-down,
   .animate-breathe,

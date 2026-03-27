@@ -84,17 +84,22 @@ export function AffiliateLinksPage() {
               {/* Brand Selector */}
               <div>
                 <label className="block text-sm font-medium text-neutral-950 mb-2">Brand *</label>
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value as BrandName)}
-                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white hover:border-neutral-300 focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
-                >
-                  {BRANDS.map((brand) => (
-                    <option key={brand} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value as BrandName)}
+                    className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                  >
+                    {BRANDS.map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </div>
 
               {/* File Upload */}
