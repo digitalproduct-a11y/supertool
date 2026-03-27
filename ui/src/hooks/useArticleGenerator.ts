@@ -32,7 +32,9 @@ export function useArticleGenerator() {
         throw new Error(`Request failed (${response.status})`)
       }
 
-      return await response.json()
+      const data = await response.json()
+      // n8n Respond to Webhook returns an array — unwrap first item
+      return (Array.isArray(data) ? data[0] : data) as T
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       setError(message)

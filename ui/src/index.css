@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -80,6 +82,26 @@ body {
   animation: pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+@keyframes write-bounce {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  40%       { transform: translateY(-8px) rotate(5deg); }
+  60%       { transform: translateY(-4px) rotate(-2deg); }
+}
+
+.animate-write-bounce {
+  animation: write-bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes search-bounce {
+  0%, 100% { transform: translateY(0) rotate(-8deg) scale(1); }
+  40%       { transform: translateY(-8px) rotate(8deg) scale(1.1); }
+  60%       { transform: translateY(-3px) rotate(-4deg) scale(1.05); }
+}
+
+.animate-search-bounce {
+  animation: search-bounce 1.6s ease-in-out infinite;
+}
+
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-slide-up,
@@ -88,7 +110,9 @@ body {
   .animate-step-enter,
   .animate-pop,
   .animate-fade,
-  .animate-pulse-strong {
+  .animate-pulse-strong,
+  .animate-write-bounce,
+  .animate-search-bounce {
     animation: none !important;
   }
 }

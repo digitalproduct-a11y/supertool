@@ -24,6 +24,47 @@ const isValidShopeeLink = (url: string): boolean => {
   }
 }
 
+const LOADING_STEPS = [
+  'Fetching product details',
+  'Analyzing product features',
+  'Generating content angles',
+]
+
+const POSITIVE_QUOTES = [
+  'We\'re brewing something good...',
+  'Having a grate time processing...',
+  'Lettuce wait patiently...',
+  'This is un-beet-able...',
+  'Donut worry, almost there...',
+  'Time flies when you\'re having pun...',
+  'We\'re on a roll... like bread...',
+  'That\'s write, almost done...',
+  'We knead more time... just kidding!',
+  'This is im-pasta-ble to mess up...',
+]
+
+const ARTICLE_LOADING_STEPS = [
+  'Setting the scene',
+  'Writing the opening hook',
+  'Covering each product',
+  'Weaving in affiliate links',
+  'Polishing the copy',
+  'Final read-through',
+]
+
+const ARTICLE_QUOTES = [
+  'Prose before bros...',
+  'Words cannot espresso how hard we\'re working...',
+  'We\'re on a writing roll... parchment not included...',
+  'Getting write to it...',
+  'Para-graphing our way through...',
+  'Dot dot dot... just full sentences actually...',
+  'Comma comma comma, chameleon...',
+  'No pun in ten did...',
+  'Authoring our way to greatness...',
+  'Write place, write time...',
+]
+
 export function ArticleGeneratorPage() {
   const [state, setState] = useState<ArticleGeneratorState>({
     step: 'input',
@@ -41,32 +82,16 @@ export function ArticleGeneratorPage() {
   const [customAngleText, setCustomAngleText] = useState('')
   const [imagePromptText, setImagePromptText] = useState('')
   const [showRestartConfirm, setShowRestartConfirm] = useState(false)
+  const [showRevisionModal, setShowRevisionModal] = useState(false)
   const [showThumbnailGen, setShowThumbnailGen] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('Great things coming together...')
   const [currentStep, setCurrentStep] = useState(0)
+  const [articleStep, setArticleStep] = useState(0)
+  const [articleLoadingMessage, setArticleLoadingMessage] = useState(ARTICLE_QUOTES[0])
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
 
   const { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error } =
     useArticleGenerator()
-
-  const loadingSteps = [
-    'Fetching product details',
-    'Analyzing product features',
-    'Generating content angles',
-  ]
-
-  const positiveQuotes = [
-    'We\'re brewing something good...',
-    'Having a grate time processing...',
-    'Lettuce wait patiently...',
-    'This is un-beet-able...',
-    'Donut worry, almost there...',
-    'Time flies when you\'re having pun...',
-    'We\'re on a roll... like bread...',
-    'That\'s write, almost done...',
-    'We knead more time... just kidding!',
-    'This is im-pasta-ble to mess up...',
-  ]
 
   useEffect(() => {
     if (state.step !== 'pick-angle' || !isLoading) return
@@ -75,8 +100,8 @@ export function ArticleGeneratorPage() {
     let elapsedSeconds = 0
 
     const quoteInterval = setInterval(() => {
-      quoteIndex = (quoteIndex + 1) % positiveQuotes.length
-      setLoadingMessage(positiveQuotes[quoteIndex])
+      quoteIndex = (quoteIndex + 1) % POSITIVE_QUOTES.length
+      setLoadingMessage(POSITIVE_QUOTES[quoteIndex])
     }, 3000)
 
     const stepInterval = setInterval(() => {
@@ -89,7 +114,33 @@ export function ArticleGeneratorPage() {
       clearInterval(quoteInterval)
       clearInterval(stepInterval)
     }
-  }, [state.step, isLoading, positiveQuotes])
+  }, [state.step, isLoading])
+
+  useEffect(() => {
+    if (state.step !== 'review-article' || !isLoading) return
+
+    setArticleStep(0)
+    setArticleLoadingMessage(ARTICLE_QUOTES[0])
+
+    let quoteIndex = 0
+    let elapsedSeconds = 0
+
+    const quoteInterval = setInterval(() => {
+      quoteIndex = (quoteIndex + 1) % ARTICLE_QUOTES.length
+      setArticleLoadingMessage(ARTICLE_QUOTES[quoteIndex])
+    }, 5000)
+
+    const stepInterval = setInterval(() => {
+      elapsedSeconds += 1
+      const step = Math.min(Math.floor(elapsedSeconds / 20), ARTICLE_LOADING_STEPS.length - 1)
+      setArticleStep(step)
+    }, 1000)
+
+    return () => {
+      clearInterval(quoteInterval)
+      clearInterval(stepInterval)
+    }
+  }, [state.step, isLoading])
 
   const getCurrentStepIndex = () => STEPS.findIndex((s) => s.step === state.step)
 
@@ -158,7 +209,7 @@ export function ArticleGeneratorPage() {
   const handleAngleSubmit = useCallback(async () => {
     if (state.selectedAngle === undefined && !customAngleText.trim()) return
 
-    setState((s) => ({ ...s, isLoading: true }))
+    setState((s) => ({ ...s, step: 'review-article', isLoading: true }))
 
     const body = {
       brand: state.brand,
@@ -389,6 +440,40 @@ export function ArticleGeneratorPage() {
           </div>
         )}
 
+        {showRevisionModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900">Request a revision</h3>
+                <p className="text-sm text-neutral-500 mt-1">Tell the editor what to change or improve.</p>
+              </div>
+              <textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="e.g., Make the intro punchier, emphasise the price difference more..."
+                className="w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 resize-none"
+                rows={4}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowRevisionModal(false); handleArticleRevise() }}
+                  disabled={!feedbackText.trim()}
+                  className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
+                >
+                  Submit revision
+                </button>
+                <button
+                  onClick={() => setShowRevisionModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Error message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
@@ -494,36 +579,28 @@ export function ArticleGeneratorPage() {
 
         {/* Step: Pick Angle */}
         {state.step === 'pick-angle' && isLoading && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-8">
-            <div className="flex flex-col items-center justify-center space-y-8">
-              {/* Progress Steps */}
-              <div className="space-y-4">
-                {loadingSteps.map((step, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full transition ${
-                      idx <= currentStep ? 'bg-green-500 animate-pulse-strong' : 'bg-neutral-300'
-                    }`} />
-                    <span className={`text-sm font-medium transition ${
-                      idx <= currentStep ? 'text-neutral-900' : 'text-neutral-400'
-                    }`}>
-                      {step}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Quote */}
-              <div className="text-center">
-                <p
-                  key={loadingMessage}
-                  className="text-sm font-medium text-neutral-700 animate-fade"
-                >
-                  {loadingMessage}
-                </p>
-              </div>
-
-              <p className="text-xs text-neutral-500">Taking ~30 seconds to process</p>
+          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
+            <div className="text-4xl animate-search-bounce inline-block">🔍</div>
+            <div className="flex justify-center gap-2">
+              {LOADING_STEPS.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-2 rounded-full transition-all duration-700 ${
+                    idx < currentStep
+                      ? 'bg-green-500 w-4'
+                      : idx === currentStep
+                      ? 'bg-neutral-900 w-4 animate-pulse-strong'
+                      : 'bg-neutral-200 w-2'
+                  }`}
+                />
+              ))}
             </div>
+            <div>
+              <p className="text-sm font-semibold text-neutral-900">{LOADING_STEPS[currentStep]}</p>
+              <p className="text-xs text-neutral-400 mt-1">Step {currentStep + 1} of {LOADING_STEPS.length}</p>
+            </div>
+            <p key={loadingMessage} className="text-sm text-neutral-500 italic animate-fade">{loadingMessage}</p>
+            <p className="text-xs text-neutral-400">Taking ~30 seconds to process</p>
           </div>
         )}
 
@@ -569,7 +646,7 @@ export function ArticleGeneratorPage() {
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
                 <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-3">Article Focus</p>
                 <p className="text-sm font-medium text-neutral-900">
-                  Writing about <span className="font-semibold">{state.overallTheme}</span> for <span className="font-semibold">{state.brand}</span>
+                  Writing about <span className="font-semibold text-neutral-900">"{state.overallTheme}"</span> for <span className="font-semibold text-neutral-900">{state.brand}</span>
                 </p>
               </div>
             )}
@@ -723,52 +800,74 @@ export function ArticleGeneratorPage() {
 
         {/* Step: Review Article */}
         {state.step === 'review-article' && isLoading && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full border-4 border-neutral-200 border-t-neutral-950 animate-spin mx-auto" />
-            <p className="text-sm font-medium text-neutral-900">Writing your article...</p>
+          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
+            <div className="text-4xl animate-write-bounce inline-block">✏️</div>
+            <div className="flex justify-center gap-2">
+              {ARTICLE_LOADING_STEPS.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-2 rounded-full transition-all duration-700 ${
+                    idx < articleStep
+                      ? 'bg-green-500 w-4'
+                      : idx === articleStep
+                      ? 'bg-neutral-900 w-4 animate-pulse-strong'
+                      : 'bg-neutral-200 w-2'
+                  }`}
+                />
+              ))}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-neutral-900">{ARTICLE_LOADING_STEPS[articleStep]}</p>
+              <p className="text-xs text-neutral-400 mt-1">Step {articleStep + 1} of {ARTICLE_LOADING_STEPS.length}</p>
+            </div>
+            <p className="text-sm text-neutral-500 italic animate-fade">{articleLoadingMessage}</p>
+            <p className="text-xs text-neutral-400">Taking ~2 minutes to write</p>
           </div>
         )}
 
         {state.step === 'review-article' && !isLoading && (
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
-              <h2 className="text-sm font-semibold text-neutral-900 mb-4">{state.articleTitle}</h2>
-              <div
-                className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: state.articleHtml || '' }}
+            {/* Article title label */}
+            <div className="px-1">
+              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">Article Preview</p>
+              <h2 className="text-lg font-semibold text-neutral-950">{state.articleTitle}</h2>
+            </div>
+
+            {/* Full HTML preview in iframe for style isolation */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+              <iframe
+                srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;color:#111;margin:0;padding:24px}img{max-width:100%;height:auto;border-radius:8px}h1,h2,h3{font-weight:700;line-height:1.3}a{color:#0055EE}table{border-collapse:collapse;width:100%}td,th{padding:8px 12px;border:1px solid #e5e5e5}p{margin:0 0 1em}</style></head><body>${state.articleHtml || ''}</body></html>`}
+                className="w-full border-0"
+                style={{ minHeight: '600px', height: 'auto' }}
+                title="Article preview"
+                onLoad={(e) => {
+                  const iframe = e.currentTarget
+                  try {
+                    const doc = iframe.contentDocument
+                    if (doc) {
+                      iframe.style.height = doc.documentElement.scrollHeight + 'px'
+                    }
+                  } catch {
+                    iframe.style.height = '700px'
+                  }
+                }}
               />
             </div>
 
-            {/* Revision form */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 mb-2">
-                  Request revision (optional)
-                </label>
-                <textarea
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="e.g., Make it more casual, emphasize durability, add price comparison..."
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleArticleRevise}
-                  disabled={!feedbackText.trim() || isLoading}
-                  className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  {isLoading ? 'Revising...' : 'Revise'}
-                </button>
-                <button
-                  onClick={handleArticleApprove}
-                  className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition"
-                >
-                  Approve
-                </button>
-              </div>
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRevisionModal(true)}
+                className="flex-1 px-4 py-3 border border-neutral-300 text-neutral-700 rounded-xl font-medium hover:bg-neutral-50 transition text-sm"
+              >
+                Request Revision
+              </button>
+              <button
+                onClick={handleArticleApprove}
+                className="flex-1 px-4 py-3 bg-neutral-950 text-white rounded-xl font-medium hover:bg-neutral-800 transition text-sm"
+              >
+                Approve ✓
+              </button>
             </div>
           </div>
         )}
@@ -854,11 +953,52 @@ export function ArticleGeneratorPage() {
 
         {/* Step: Done */}
         {state.step === 'done' && (
-          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 text-center space-y-4">
-            <p className="text-sm font-medium text-neutral-900">✓ Article complete!</p>
+          <div className="space-y-4 animate-fade-slide-up">
+            {/* Success banner */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-neutral-900">Article ready!</p>
+                <p className="text-sm text-neutral-500 mt-0.5">{state.articleTitle}</p>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(state.articleHtml || '')
+                }}
+                className="w-full px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
+              >
+                Copy HTML
+              </button>
+            </div>
+
+            {/* Thumbnail if generated */}
+            {state.thumbnailUrl && state.thumbnailUrl !== 'skipped' && (
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4 space-y-3">
+                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Thumbnail</p>
+                <img
+                  src={state.thumbnailUrl}
+                  alt="Article thumbnail"
+                  className="w-full rounded-lg"
+                />
+                <a
+                  href={state.thumbnailUrl}
+                  download="thumbnail.png"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg text-sm font-medium text-center hover:bg-neutral-50 transition"
+                >
+                  Download thumbnail
+                </a>
+              </div>
+            )}
+
             <button
               onClick={handleRestart}
-              className="w-full px-4 py-2.5 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+              className="w-full px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
             >
               Start another article
             </button>
