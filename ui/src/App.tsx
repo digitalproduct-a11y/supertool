@@ -9,7 +9,6 @@ import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
-import { GuideModal } from './components/ds/GuideModal'
 import { useWorkflow } from './hooks/useWorkflow'
 import type {
   AppState,

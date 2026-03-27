@@ -115,9 +115,9 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
   ])
   const [feedbackText, setFeedbackText] = useState('')
   const [customAngleText, setCustomAngleText] = useState('')
-  const [imagePromptText, setImagePromptText] = useState('')
+  const [_imagePromptText, setImagePromptText] = useState('')
   const [thumbnailFeedback, setThumbnailFeedback] = useState('')
-  const [thumbnailPhase, setThumbnailPhase] = useState<'prompt' | 'image' | 'done'>('prompt')
+  const [_thumbnailPhase, setThumbnailPhase] = useState<'prompt' | 'image' | 'done'>('prompt')
   const [showThumbnailRevisionModal, setShowThumbnailRevisionModal] = useState(false)
   const [showRestartConfirm, setShowRestartConfirm] = useState(false)
   const [showStartAnotherConfirm, setShowStartAnotherConfirm] = useState(false)
@@ -258,7 +258,6 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     setImagePromptText('')
     setShowRestartConfirm(false)
     setShowStartAnotherConfirm(false)
-    setShowThumbnailGen(false)
     setThumbnailLoaded(false)
     recordedForSession.current = false
   }, [])
@@ -427,10 +426,6 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail. Please try again.' }))
     }
   }, [state, thumbnailPrompt, thumbnailGenerate])
-
-  const handleThumbnailSkip = useCallback(() => {
-    setState((s) => ({ ...s, step: 'done', thumbnailUrl: 'skipped' }))
-  }, [])
 
   const handleThumbnailRegenerate = useCallback(async () => {
     const feedback = thumbnailFeedback.trim()
