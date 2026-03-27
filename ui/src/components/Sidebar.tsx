@@ -36,7 +36,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [{ id: 'home', label: 'Home', icon: IconHome }],
   },
   {
-    section: 'FB Photo Templates',
+    section: 'Social',
     items: [
       { id: 'fb-post', label: 'Article to FB Photos', icon: IconPhoto },
       { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },

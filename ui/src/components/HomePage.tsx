@@ -31,8 +31,8 @@ interface Section {
 
 const sections: Section[] = [
   {
-    label: 'Facebook Photo Templates',
-    description: 'Turn articles and trends into ready-to-post Facebook visuals.',
+    label: 'Social',
+    description: 'Turn articles and trends into ready-to-post social platform visuals.',
     tools: [
       {
         id: 'fb-post',
