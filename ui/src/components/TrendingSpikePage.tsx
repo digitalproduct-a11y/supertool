@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
+import { Spinner } from './ds/Spinner'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,20 +131,6 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-function Spinner({ size = 4 }: { size?: number }) {
-  const sizeMap: Record<number, string> = { 3: '12px', 4: '16px', 6: '24px', 8: '32px' }
-  return (
-    <svg
-      style={{ width: sizeMap[size] || `${size * 4}px`, height: sizeMap[size] || `${size * 4}px` }}
-      className="animate-spin"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
-    </svg>
-  )
-}
 
 // ─── Generate View ────────────────────────────────────────────────────────────
 
@@ -254,7 +241,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-start">
         {/* ── Left: form ──────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-5">
+        <div className="glass-card rounded-2xl p-6 space-y-5">
           {/* Article URL */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Article URL</label>
@@ -344,7 +331,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         </div>
 
         {/* ── Right: preview ───────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           {isGenerating ? (
             <div className="flex-1 flex flex-col items-center justify-center space-y-6 p-12 h-full">
               <div>
@@ -600,7 +587,7 @@ export function TrendingSpikePage() {
         {activeTab === 'spike' && spikeView === 'list' && (
           <div className="space-y-6">
             {/* Header bar */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+            <div className="glass-card rounded-2xl p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-sm font-semibold text-neutral-700">Spike news from Gmail</h2>
@@ -612,7 +599,7 @@ export function TrendingSpikePage() {
                   className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white rounded-xl text-sm font-semibold transition whitespace-nowrap active:scale-[0.97]"
                 >
                   {isLoadingInbox ? (
-                    <span className="flex items-center gap-2"><Spinner /> Loading…</span>
+                    <span className="flex items-center gap-2"><Spinner size="sm" /> Loading…</span>
                   ) : '↻ Refresh'}
                 </button>
               </div>
@@ -623,13 +610,13 @@ export function TrendingSpikePage() {
 
             {/* Loading skeleton */}
             {isLoadingInbox && spikeInbox.length === 0 && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-4">
+              <div className="glass-card rounded-2xl p-6 space-y-4">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="flex gap-4 animate-pulse">
+                  <div key={i} className="flex gap-4">
                     <div className="flex-1 space-y-2 py-1">
-                      <div className="h-3 bg-neutral-100 rounded w-1/4" />
-                      <div className="h-3 bg-neutral-100 rounded w-3/4" />
-                      <div className="h-3 bg-neutral-100 rounded w-1/2" />
+                      <div className="h-3 skeleton-shimmer rounded w-1/4" />
+                      <div className="h-3 skeleton-shimmer rounded w-3/4" />
+                      <div className="h-3 skeleton-shimmer rounded w-1/2" />
                     </div>
                   </div>
                 ))}
@@ -638,7 +625,7 @@ export function TrendingSpikePage() {
 
             {/* Inbox table */}
             {spikeInbox.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+              <div className="glass-card rounded-2xl overflow-hidden">
                 <div className="px-6 py-4 border-b border-neutral-100">
                   <h2 className="text-sm font-semibold text-neutral-700">{spikeInbox.length} spike{spikeInbox.length > 1 ? 's' : ''} in inbox</h2>
                 </div>
@@ -702,7 +689,7 @@ export function TrendingSpikePage() {
 
             {/* Empty state */}
             {spikeInbox.length === 0 && !isLoadingInbox && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-12 text-center">
+              <div className="glass-card rounded-2xl p-12 text-center">
                 <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
                   <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -731,7 +718,7 @@ export function TrendingSpikePage() {
         {activeTab === 'trending' && trendingView === 'list' && (
           <div className="space-y-6">
             {/* Fetch button */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+            <div className="glass-card rounded-2xl p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-sm font-semibold text-neutral-700">Daily Trending Content Hub</h2>
@@ -743,7 +730,7 @@ export function TrendingSpikePage() {
                   className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white rounded-xl text-sm font-semibold transition whitespace-nowrap active:scale-[0.97]"
                 >
                   {isFetchingTrending ? (
-                    <span className="flex items-center gap-2"><Spinner /> Fetching…</span>
+                    <span className="flex items-center gap-2"><Spinner size="sm" /> Fetching…</span>
                   ) : '↻ Refresh'}
                 </button>
               </div>
@@ -756,17 +743,17 @@ export function TrendingSpikePage() {
             {isFetchingTrending && trendingItems.length === 0 && (
               <div className="space-y-6">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
-                    <div className="px-6 py-4 border-b border-neutral-100">
-                      <div className="h-3 bg-neutral-100 rounded animate-pulse w-24" />
+                  <div key={i} className="glass-card rounded-2xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-white/40">
+                      <div className="h-3 skeleton-shimmer rounded w-24" />
                     </div>
                     <div className="p-4 space-y-3">
                       {[1, 2, 3].map(j => (
-                        <div key={j} className="flex items-center gap-4 animate-pulse">
-                          <div className="w-48 aspect-video rounded-lg bg-neutral-100 shrink-0" />
+                        <div key={j} className="flex items-center gap-4">
+                          <div className="w-48 aspect-video rounded-lg skeleton-shimmer shrink-0" />
                           <div className="flex-1 space-y-2">
-                            <div className="h-3 bg-neutral-100 rounded w-3/4" />
-                            <div className="h-3 bg-neutral-100 rounded w-1/2" />
+                            <div className="h-3 skeleton-shimmer rounded w-3/4" />
+                            <div className="h-3 skeleton-shimmer rounded w-1/2" />
                           </div>
                         </div>
                       ))}
@@ -794,7 +781,7 @@ export function TrendingSpikePage() {
                   }
                   if (items.length === 0) return null
                   return (
-                    <div key={type} className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+                    <div key={type} className="glass-card rounded-2xl overflow-hidden">
                       <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
                         <h2 className="text-sm font-semibold text-neutral-700">{type}</h2>
                         <span className="text-xs text-neutral-400">{items.length} articles</span>
@@ -859,7 +846,7 @@ export function TrendingSpikePage() {
 
             {/* Empty state */}
             {trendingItems.length === 0 && !isFetchingTrending && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-12 text-center">
+              <div className="glass-card rounded-2xl p-12 text-center">
                 <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
                   <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />

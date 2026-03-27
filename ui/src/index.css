@@ -8,7 +8,99 @@ body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: #f7f7f6;
+  background: #f0eeeb;
+}
+
+/* ── App background (macOS-style soft gradient canvas) ────── */
+
+.app-bg {
+  background-color: #f0eeeb;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(0, 85, 238, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 70%, rgba(255, 63, 191, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 50% 90%, rgba(0, 229, 212, 0.05) 0%, transparent 55%);
+}
+
+/* ── Glassmorphism utilities ────────────────────────────────── */
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255,255,255,0.9) inset;
+}
+
+.glass-sidebar {
+  background: rgba(24, 24, 27, 0.90);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ── Skeleton shimmer ───────────────────────────────────────── */
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.04) 25%,
+    rgba(0,0,0,0.08) 50%,
+    rgba(0,0,0,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ── Rainbow text gradient ──────────────────────────────────── */
+
+.text-rainbow {
+  background: linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glitch brand name effect ───────────────────────────────── */
+
+.glitch-text {
+  position: relative;
+  display: inline-block;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glitch-text::before {
+  color: #FF3FBF;
+  text-shadow: 1px 0 0 #FF3FBF;
+  mix-blend-mode: screen;
+}
+
+.glitch-text::after {
+  color: #00E5D4;
+  text-shadow: -1px 0 0 #00E5D4;
+  mix-blend-mode: screen;
+  transform: translate(2px, 0);
+}
+
+button:hover .glitch-text::before {
+  opacity: 1;
+  animation: glitch-clip 0.35s steps(1) 1;
+}
+
+button:hover .glitch-text::after {
+  opacity: 1;
+  animation: glitch-clip 0.35s steps(1) 1;
+  animation-delay: 0.04s;
 }
 
 /* ── Delight animations ────────────────────────────────────── */
@@ -49,6 +141,31 @@ body {
   to   { opacity: 1; }
 }
 
+@keyframes pulse-strong {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes write-bounce {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  40%       { transform: translateY(-8px) rotate(5deg); }
+  60%       { transform: translateY(-4px) rotate(-2deg); }
+}
+
+@keyframes search-bounce {
+  0%, 100% { transform: translateY(0) rotate(-8deg) scale(1); }
+  40%       { transform: translateY(-8px) rotate(8deg) scale(1.1); }
+  60%       { transform: translateY(-3px) rotate(-4deg) scale(1.05); }
+}
+
+@keyframes glitch-clip {
+  0%, 100% { clip-path: inset(0 0 100% 0); transform: translate(0); }
+  20%       { clip-path: inset(33% 0 40% 0); transform: translate(-3px, 1px); }
+  40%       { clip-path: inset(10% 0 70% 0); transform: translate(2px, -1px); }
+  60%       { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 2px); }
+  80%       { clip-path: inset(50% 0 30% 0); transform: translate(3px, -1px); }
+}
+
 .animate-fade-slide-up {
   animation: fade-slide-up 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
 }
@@ -73,29 +190,12 @@ body {
   animation: fade 0.5s ease-in-out both;
 }
 
-@keyframes pulse-strong {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
-}
-
 .animate-pulse-strong {
   animation: pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes write-bounce {
-  0%, 100% { transform: translateY(0) rotate(-5deg); }
-  40%       { transform: translateY(-8px) rotate(5deg); }
-  60%       { transform: translateY(-4px) rotate(-2deg); }
-}
-
 .animate-write-bounce {
   animation: write-bounce 1.4s ease-in-out infinite;
-}
-
-@keyframes search-bounce {
-  0%, 100% { transform: translateY(0) rotate(-8deg) scale(1); }
-  40%       { transform: translateY(-8px) rotate(8deg) scale(1.1); }
-  60%       { transform: translateY(-3px) rotate(-4deg) scale(1.05); }
 }
 
 .animate-search-bounce {
@@ -112,7 +212,13 @@ body {
   .animate-fade,
   .animate-pulse-strong,
   .animate-write-bounce,
-  .animate-search-bounce {
+  .animate-search-bounce,
+  .animate-shimmer,
+  .skeleton-shimmer,
+  .animate-blob,
+  .animate-stripe-grow,
+  .glitch-text::before,
+  .glitch-text::after {
     animation: none !important;
   }
 }
