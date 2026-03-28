@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { IconRotate, IconUserCircle, IconTool, IconCoins, IconGift, IconListCheck, IconFileText, IconHistory } from '@tabler/icons-react'
+import { toast } from '../hooks/useToast'
 
 interface ArticleHistoryItem {
   id: string
@@ -149,6 +150,11 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
 
   const { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error } =
     useArticleGenerator()
+
+  // Toast errors from the hook
+  useEffect(() => {
+    if (error) toast.error(error)
+  }, [error])
 
   // Warn on browser refresh/close when mid-flow
   useEffect(() => {
@@ -559,13 +565,6 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
             })}
           </div>
         </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
 
         {/* Step: Input */}
         {state.step === 'input' && (

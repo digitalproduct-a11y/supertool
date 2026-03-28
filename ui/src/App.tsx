@@ -10,6 +10,7 @@ import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
 import { GuideModal } from './components/ds/GuideModal'
+import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
 import type {
   AppState,
@@ -558,6 +559,8 @@ function App() {
   }
 
   return (
+    <>
+    <ToastContainer />
     <Routes>
       <Route path="/" element={
         <Layout {...layoutProps}>
@@ -585,6 +588,7 @@ function App() {
         </Layout>
       } />
     </Routes>
+    </>
   )
 }
 

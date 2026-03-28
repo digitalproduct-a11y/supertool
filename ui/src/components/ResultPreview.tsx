@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { WorkflowResult } from '../types'
+import { toast } from '../hooks/useToast'
 
 interface ResultPreviewProps {
   result: WorkflowResult
@@ -17,7 +18,6 @@ export function ResultPreview({
   const [caption, setCaption] = useState(result.caption ?? '')
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
-  const [draftMessage, setDraftMessage] = useState('')
 
   // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
   useEffect(() => {
@@ -48,23 +48,19 @@ export function ResultPreview({
   async function handlePostDraftClick() {
     if (!onPostDraft || !articleUrl) return
     setDraftState('posting')
-    setDraftMessage('')
     try {
       const response = await onPostDraft(articleUrl, result.brand)
       if (response.success) {
         setDraftState('done')
-        setDraftMessage(`✓ Draft posted to Facebook!`)
-        setTimeout(() => {
-          setDraftState('idle')
-          setDraftMessage('')
-        }, 3000)
+        toast.success('Draft posted to Facebook!')
+        setTimeout(() => setDraftState('idle'), 3000)
       } else {
         setDraftState('error')
-        setDraftMessage("Couldn't post draft. Please try again.")
+        toast.error("Couldn't post draft. Please try again.")
       }
     } catch {
       setDraftState('error')
-      setDraftMessage("Couldn't post draft. Please try again.")
+      toast.error("Couldn't post draft. Please try again.")
     }
   }
 
@@ -137,14 +133,11 @@ export function ResultPreview({
                 Posting draft…
               </span>
             ) : draftState === 'done' ? (
-              draftMessage || '✓ Draft posted!'
+              '✓ Draft posted!'
             ) : (
               `Create Draft on ${result.brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
             )}
           </button>
-          {draftState === 'error' && draftMessage && (
-            <p className="text-xs text-red-500 text-center mt-1">{draftMessage}</p>
-          )}
         </div>
       )}
     </div>

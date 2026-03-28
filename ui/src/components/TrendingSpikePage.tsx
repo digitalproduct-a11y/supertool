@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { toast } from '../hooks/useToast'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
@@ -175,7 +176,6 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [result, setResult] = useState<GeneratedPost | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
-  const [draftMessage, setDraftMessage] = useState('')
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
@@ -218,12 +218,11 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   async function handlePostDraftClick() {
     const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
     if (!webhookUrl) {
-      setDraftMessage('Draft posting is not available right now.')
+      toast.error('Draft posting is not available right now.')
       setDraftState('error')
       return
     }
     setDraftState('posting')
-    setDraftMessage('')
     try {
       const res = await fetch(webhookUrl, {
         method: 'POST',
@@ -233,18 +232,17 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       const data = await res.json()
       if (data.success) {
         setDraftState('done')
-        setDraftMessage('✓ Draft posted to Facebook!')
+        toast.success('Draft posted to Facebook!')
         setTimeout(() => {
           setDraftState('idle')
-          setDraftMessage('')
         }, 3000)
       } else {
         setDraftState('error')
-        setDraftMessage("Couldn't post draft. Please try again.")
+        toast.error("Couldn't post draft. Please try again.")
       }
     } catch {
       setDraftState('error')
-      setDraftMessage("Couldn't post draft. Please try again.")
+      toast.error("Couldn't post draft. Please try again.")
     }
   }
 
@@ -421,14 +419,11 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                         Posting draft…
                       </span>
                     ) : draftState === 'done' ? (
-                      draftMessage || '✓ Draft posted!'
+                      '✓ Draft posted!'
                     ) : (
                       `Create Draft on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     )}
                   </button>
-                  {draftState === 'error' && draftMessage && (
-                    <p className="text-xs text-red-500 text-center mt-1">{draftMessage}</p>
-                  )}
                 </div>
               </div>
             </div>
@@ -458,7 +453,7 @@ export function TrendingSpikePage() {
   const [selectedSpike, setSelectedSpike] = useState<SpikeInboxItem | null>(null)
   const [spikeInbox, setSpikeInbox] = useState<SpikeInboxItem[]>([])
   const [isLoadingInbox, setIsLoadingInbox] = useState(false)
-  const [inboxError, setInboxError] = useState('')
+
   const [hasUnreadSpikes, setHasUnreadSpikes] = useState(false)
 
   // Trending tab state
@@ -466,14 +461,12 @@ export function TrendingSpikePage() {
   const [selectedTrending, setSelectedTrending] = useState<TrendingItem | null>(null)
   const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([])
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
-  const [fetchError, setFetchError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
 
   // ── Spike inbox: load ─────────────────────────────────────────────────────
   const handleLoadInbox = useCallback(async () => {
     setIsLoadingInbox(true)
-    setInboxError('')
     try {
       const data = await callWebhook({ type: 'get-spike-inbox' })
       if (data.success && Array.isArray(data.spikes)) {
@@ -490,10 +483,10 @@ export function TrendingSpikePage() {
           setHasUnreadSpikes(true)
         }
       } else {
-        setInboxError(data.message || 'Failed to load spike inbox.')
+        toast.error(data.message || 'Failed to load spike inbox.')
       }
     } catch (err) {
-      setInboxError(err instanceof Error ? err.message : 'Request failed.')
+      toast.error(err instanceof Error ? err.message : 'Request failed.')
     } finally {
       setIsLoadingInbox(false)
     }
@@ -538,7 +531,6 @@ export function TrendingSpikePage() {
   // ── Trending: fetch ──────────────────────────────────────────────────────
   const handleFetchTrending = useCallback(async () => {
     setIsFetchingTrending(true)
-    setFetchError('')
     try {
       const data = await callWebhook({ type: 'fetch-trending' })
       if (data.success && Array.isArray(data.articles)) {
@@ -556,10 +548,10 @@ export function TrendingSpikePage() {
           status: 'idle' as const,
         })))
       } else {
-        setFetchError('Failed to fetch trending articles.')
+        toast.error('Failed to fetch trending articles.')
       }
     } catch (err) {
-      setFetchError(err instanceof Error ? err.message : 'Request failed.')
+      toast.error(err instanceof Error ? err.message : 'Request failed.')
     } finally {
       setIsFetchingTrending(false)
     }
@@ -671,9 +663,6 @@ export function TrendingSpikePage() {
                   ) : '↻ Refresh'}
                 </button>
               </div>
-              {inboxError && (
-                <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{inboxError}</p>
-              )}
             </div>
 
             {/* Loading skeleton */}
@@ -798,9 +787,6 @@ export function TrendingSpikePage() {
                   <p className="text-xs text-neutral-400 mt-0.5">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
                 </div>
               </div>
-              {fetchError && (
-                <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{fetchError}</p>
-              )}
             </div>
 
             {/* Search + Brand filter */}

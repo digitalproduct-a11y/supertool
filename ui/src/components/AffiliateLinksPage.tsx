@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from '../hooks/useToast'
 import { BRANDS, type BrandName } from '../constants/brands'
 import { Spinner } from './ds/Spinner'
 import { GuideModal } from './ds/GuideModal'
@@ -10,26 +11,25 @@ const TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1J6JokZsSRvtHK98gZF
 export function AffiliateLinksPage() {
   const [pageState, setPageState] = useState<AffiliateLinksState>('idle')
   const [selectedBrand, setSelectedBrand] = useState<BrandName>(BRANDS[0])
-  const [errorMessage, setErrorMessage] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const { run } = useAffiliateLinks()
 
   const handleFile = async (selectedFile: File) => {
     if (!selectedBrand) {
-      setErrorMessage('Please select a brand first')
+      toast.error('Please select a brand first')
       return
     }
 
     setPageState('loading')
-    setErrorMessage('')
 
     const response = await run(selectedFile, selectedBrand)
 
     if (response.success) {
-      setPageState('result')
+      toast.success('Your file is ready and has been downloaded.')
+      setPageState('idle')
     } else {
-      setErrorMessage(response.message)
-      setPageState('error')
+      toast.error(response.message)
+      setPageState('idle')
     }
   }
 
@@ -40,19 +40,13 @@ export function AffiliateLinksPage() {
     if (droppedFile && droppedFile.name.endsWith('.xlsx')) {
       handleFile(droppedFile)
     } else {
-      setErrorMessage('Please upload an Excel (.xlsx) file')
-      setPageState('error')
+      toast.error('Please upload an Excel (.xlsx) file')
     }
   }
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) handleFile(selectedFile)
-  }
-
-  const handleReset = () => {
-    setPageState('idle')
-    setErrorMessage('')
   }
 
   return (
@@ -162,37 +156,6 @@ export function AffiliateLinksPage() {
             </div>
           )}
 
-          {pageState === 'error' && (
-            <div className="space-y-4">
-              <div className="bg-red-50 text-red-700 rounded-xl px-4 py-3 text-sm">{errorMessage}</div>
-              <button
-                onClick={handleReset}
-                className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition active:scale-[0.97]"
-              >
-                Try again
-              </button>
-            </div>
-          )}
-
-          {pageState === 'result' && (
-            <div className="space-y-4">
-              <div className="bg-green-50 text-green-700 rounded-xl px-4 py-3 text-sm flex items-start gap-3">
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <p className="font-medium">Your file is ready and has been downloaded.</p>
-                  <p className="text-xs mt-1 opacity-90">Check your Downloads folder for the processed Excel file.</p>
-                </div>
-              </div>
-              <button
-                onClick={handleReset}
-                className="w-full py-2.5 border border-neutral-200 hover:border-neutral-300 rounded-xl text-sm font-medium text-neutral-700 hover:text-neutral-950 transition-colors"
-              >
-                Process another file
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </main>
