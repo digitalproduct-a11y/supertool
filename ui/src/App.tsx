@@ -429,7 +429,8 @@ function FbPostPage() {
         body: JSON.stringify({ fb_ai_image_url: imageUrl, fb_ai_caption: caption, brand }),
       })
       const data = await response.json()
-      return { success: data.success ?? false, message: data.message ?? 'Unknown error' }
+      const success = data.success === true || data.status === 'SUCCESS'
+      return { success, message: data.message ?? 'Unknown error' }
     } catch (err) {
       return { success: false, message: err instanceof Error ? err.message : 'Request failed' }
     }

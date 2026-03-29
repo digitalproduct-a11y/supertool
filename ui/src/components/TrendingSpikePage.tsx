@@ -230,7 +230,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         body: JSON.stringify({ fb_ai_image_url: result.imageUrl, fb_ai_caption: caption, brand: result.brand }),
       })
       const data = await res.json()
-      if (data.success) {
+      if (data.success === true || data.status === 'SUCCESS') {
         setDraftState('done')
         toast.success('Draft posted to Facebook!')
         setTimeout(() => {
