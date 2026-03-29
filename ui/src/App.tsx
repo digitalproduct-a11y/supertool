@@ -417,7 +417,7 @@ function FbPostPage() {
     }
   }, [url, brand, result, run])
 
-  const handlePostDraft = useCallback(async (articleUrl: string, brandName: string) => {
+  const handlePostDraft = useCallback(async (imageUrl: string, caption: string, brand: string) => {
     const webhookUrl = import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined
     if (!webhookUrl) {
       return { success: false, message: 'Post draft webhook not configured' }
@@ -426,7 +426,7 @@ function FbPostPage() {
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: articleUrl, brand: brandName }),
+        body: JSON.stringify({ fb_ai_image_url: imageUrl, fb_ai_caption: caption, brand }),
       })
       const data = await response.json()
       return { success: data.success ?? false, message: data.message ?? 'Unknown error' }

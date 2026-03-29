@@ -217,7 +217,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
   async function handlePostDraftClick() {
     const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
-    if (!webhookUrl) {
+    if (!webhookUrl || !result) {
       toast.error('Draft posting is not available right now.')
       setDraftState('error')
       return
@@ -227,7 +227,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: source.articleUrl, brand }),
+        body: JSON.stringify({ fb_ai_image_url: result.imageUrl, fb_ai_caption: caption, brand: result.brand }),
       })
       const data = await res.json()
       if (data.success) {

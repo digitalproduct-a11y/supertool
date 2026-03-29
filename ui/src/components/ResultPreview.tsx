@@ -6,7 +6,7 @@ interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
   articleUrl: string
-  onPostDraft?: (url: string, brand: string) => Promise<{success: boolean, message: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string) => Promise<{success: boolean, message: string}>
 }
 
 export function ResultPreview({
@@ -46,10 +46,10 @@ export function ResultPreview({
   }
 
   async function handlePostDraftClick() {
-    if (!onPostDraft || !articleUrl) return
+    if (!onPostDraft) return
     setDraftState('posting')
     try {
-      const response = await onPostDraft(articleUrl, result.brand)
+      const response = await onPostDraft(result.imageUrl, caption, result.brand)
       if (response.success) {
         setDraftState('done')
         toast.success('Draft posted to Facebook!')
