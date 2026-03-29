@@ -74,7 +74,6 @@ export function PreviewPanel({
           <ResultPreview
             result={result}
             isRunning={isRunning}
-            articleUrl={articleUrl}
             onPostDraft={onPostDraft}
           />
         </div>
