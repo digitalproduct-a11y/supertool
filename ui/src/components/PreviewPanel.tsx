@@ -22,7 +22,7 @@ export function PreviewPanel({
   state,
   result,
   errorMessage,
-  articleUrl,
+  articleUrl: _articleUrl,
   onApprove: _onApprove,
   onReset,
   onPartialRegenerate: _onPartialRegenerate,
