@@ -5,14 +5,12 @@ import { toast } from '../hooks/useToast'
 interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
-  articleUrl: string
   onPostDraft?: (imageUrl: string, caption: string, brand: string) => Promise<{success: boolean, message: string, postId?: string}>
 }
 
 export function ResultPreview({
   result,
   isRunning,
-  articleUrl,
   onPostDraft,
 }: ResultPreviewProps) {
   const [caption, setCaption] = useState(result.caption ?? '')
