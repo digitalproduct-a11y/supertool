@@ -6,7 +6,7 @@ interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
   articleUrl: string
-  onPostDraft?: (imageUrl: string, caption: string, brand: string) => Promise<{success: boolean, message: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string) => Promise<{success: boolean, message: string, postId?: string}>
 }
 
 export function ResultPreview({
@@ -18,6 +18,7 @@ export function ResultPreview({
   const [caption, setCaption] = useState(result.caption ?? '')
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
+  const [draftPostId, setDraftPostId] = useState<string | null>(null)
 
   // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
   useEffect(() => {
@@ -52,8 +53,8 @@ export function ResultPreview({
       const response = await onPostDraft(result.imageUrl, caption, result.brand)
       if (response.success) {
         setDraftState('done')
+        setDraftPostId(response.postId ?? null)
         toast.success('Draft posted to Facebook!')
-        setTimeout(() => setDraftState('idle'), 3000)
       } else {
         setDraftState('error')
         toast.error("Couldn't post draft. Please try again.")
@@ -138,6 +139,11 @@ export function ResultPreview({
               `Create Draft on ${result.brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
             )}
           </button>
+          {draftPostId && (
+            <p className="mt-2 text-xs text-neutral-400 text-center">
+              Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
+            </p>
+          )}
         </div>
       )}
     </div>

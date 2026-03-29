@@ -176,6 +176,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [result, setResult] = useState<GeneratedPost | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
+  const [draftPostId, setDraftPostId] = useState<string | null>(null)
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
@@ -232,10 +233,8 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       const data = await res.json()
       if (data.success === true || data.status === 'SUCCESS') {
         setDraftState('done')
+        setDraftPostId(data.post_id as string ?? null)
         toast.success('Draft posted to Facebook!')
-        setTimeout(() => {
-          setDraftState('idle')
-        }, 3000)
       } else {
         setDraftState('error')
         toast.error("Couldn't post draft. Please try again.")
@@ -424,6 +423,11 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                       `Create Draft on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     )}
                   </button>
+                  {draftPostId && (
+                    <p className="mt-2 text-xs text-neutral-400 text-center">
+                      Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

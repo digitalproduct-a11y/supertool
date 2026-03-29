@@ -430,7 +430,7 @@ function FbPostPage() {
       })
       const data = await response.json()
       const success = data.success === true || data.status === 'SUCCESS'
-      return { success, message: data.message ?? 'Unknown error' }
+      return { success, message: String(data.message ?? 'Unknown error'), postId: data.post_id as string | undefined }
     } catch (err) {
       return { success: false, message: err instanceof Error ? err.message : 'Request failed' }
     }
