@@ -5,7 +5,7 @@ import { toast } from '../hooks/useToast'
 interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
-  onPostDraft?: (imageUrl: string, caption: string, brand: string) => Promise<{success: boolean, message: string, postId?: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string) => Promise<{success: boolean, message: string, postId?: string}>
 }
 
 export function ResultPreview({
@@ -17,6 +17,8 @@ export function ResultPreview({
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
+  const [postMode, setPostMode] = useState<'draft' | 'schedule'>('draft')
+  const [scheduledFor, setScheduledFor] = useState('')
 
   // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
   useEffect(() => {
@@ -46,22 +48,29 @@ export function ResultPreview({
 
   async function handlePostDraftClick() {
     if (!onPostDraft) return
+    if (postMode === 'schedule' && !scheduledFor) {
+      toast.error('Please pick a date and time to schedule.')
+      return
+    }
     setDraftState('posting')
     try {
-      const response = await onPostDraft(result.imageUrl, caption, result.brand)
+      const isoSchedule = postMode === 'schedule' ? new Date(scheduledFor).toISOString() : undefined
+      const response = await onPostDraft(result.imageUrl, caption, result.brand, isoSchedule)
       if (response.success) {
         setDraftState('done')
         setDraftPostId(response.postId ?? null)
-        toast.success('Draft posted to Facebook!')
+        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Draft saved to Facebook!')
       } else {
         setDraftState('error')
-        toast.error("Couldn't post draft. Please try again.")
+        toast.error(response.message || "Couldn't post. Please try again.")
       }
     } catch {
       setDraftState('error')
-      toast.error("Couldn't post draft. Please try again.")
+      toast.error("Couldn't post. Please try again.")
     }
   }
+
+  const brandLabel = result.brand.replace(/\b\w/g, c => c.toUpperCase())
 
   return (
     <div className="space-y-4">
@@ -111,9 +120,39 @@ export function ResultPreview({
         />
       </div>
 
-      {/* Create Draft button */}
+      {/* Post mode toggle + action */}
       {onPostDraft && (
-        <div className="pt-2">
+        <div className="pt-2 space-y-3">
+          {/* Draft / Schedule toggle */}
+          {draftState !== 'done' && (
+            <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
+              <button
+                onClick={() => setPostMode('draft')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'draft' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+              >
+                Draft
+              </button>
+              <button
+                onClick={() => setPostMode('schedule')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'schedule' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+              >
+                Schedule
+              </button>
+            </div>
+          )}
+
+          {/* Date/time picker (schedule mode only) */}
+          {postMode === 'schedule' && draftState !== 'done' && (
+            <input
+              type="datetime-local"
+              value={scheduledFor}
+              onChange={(e) => setScheduledFor(e.target.value)}
+              min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
+            />
+          )}
+
+          {/* Action button */}
           <button
             onClick={handlePostDraftClick}
             disabled={draftState === 'posting' || isRunning}
@@ -129,16 +168,19 @@ export function ResultPreview({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                Posting draft…
+                {postMode === 'schedule' ? 'Scheduling…' : 'Saving draft…'}
               </span>
             ) : draftState === 'done' ? (
-              '✓ Draft posted!'
+              postMode === 'schedule' ? '✓ Scheduled!' : '✓ Draft saved!'
+            ) : postMode === 'schedule' ? (
+              `Schedule on ${brandLabel}'s FB`
             ) : (
-              `Create Draft on ${result.brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
+              `Create Draft on ${brandLabel}'s FB`
             )}
           </button>
+
           {draftPostId && (
-            <p className="mt-2 text-xs text-neutral-400 text-center">
+            <p className="text-xs text-neutral-400 text-center">
               Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
             </p>
           )}

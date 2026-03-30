@@ -177,6 +177,8 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
+  const [postMode, setPostMode] = useState<'draft' | 'schedule'>('draft')
+  const [scheduledFor, setScheduledFor] = useState('')
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
@@ -223,25 +225,35 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       setDraftState('error')
       return
     }
+    if (postMode === 'schedule' && !scheduledFor) {
+      toast.error('Please pick a date and time to schedule.')
+      return
+    }
     setDraftState('posting')
     try {
+      const isoSchedule = postMode === 'schedule' ? new Date(scheduledFor).toISOString() : undefined
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fb_ai_image_url: result.imageUrl, fb_ai_caption: caption, brand: result.brand }),
+        body: JSON.stringify({
+          fb_ai_image_url: result.imageUrl,
+          fb_ai_caption: caption,
+          brand: result.brand,
+          ...(isoSchedule ? { scheduled_for: isoSchedule } : {}),
+        }),
       })
       const data = await res.json()
       if (data.success === true || data.status === 'SUCCESS') {
         setDraftState('done')
         setDraftPostId(data.post_id as string ?? null)
-        toast.success('Draft posted to Facebook!')
+        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Draft saved to Facebook!')
       } else {
         setDraftState('error')
-        toast.error("Couldn't post draft. Please try again.")
+        toast.error(data.message || "Couldn't post. Please try again.")
       }
     } catch {
       setDraftState('error')
-      toast.error("Couldn't post draft. Please try again.")
+      toast.error("Couldn't post. Please try again.")
     }
   }
 
@@ -398,8 +410,36 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed"
                   />
                 </div>
-                {/* Create Draft button */}
-                <div>
+                {/* Post mode + action */}
+                <div className="space-y-3">
+                  {/* Draft / Schedule toggle */}
+                  {draftState !== 'done' && (
+                    <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
+                      <button
+                        onClick={() => setPostMode('draft')}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'draft' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      >
+                        Draft
+                      </button>
+                      <button
+                        onClick={() => setPostMode('schedule')}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'schedule' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      >
+                        Schedule
+                      </button>
+                    </div>
+                  )}
+                  {/* Date/time picker */}
+                  {postMode === 'schedule' && draftState !== 'done' && (
+                    <input
+                      type="datetime-local"
+                      value={scheduledFor}
+                      onChange={e => setScheduledFor(e.target.value)}
+                      min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
+                    />
+                  )}
+                  {/* Action button */}
                   <button
                     onClick={handlePostDraftClick}
                     disabled={draftState === 'posting'}
@@ -415,16 +455,18 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                         </svg>
-                        Posting draft…
+                        {postMode === 'schedule' ? 'Scheduling…' : 'Saving draft…'}
                       </span>
                     ) : draftState === 'done' ? (
-                      '✓ Draft posted!'
+                      postMode === 'schedule' ? '✓ Scheduled!' : '✓ Draft saved!'
+                    ) : postMode === 'schedule' ? (
+                      `Schedule on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     ) : (
                       `Create Draft on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     )}
                   </button>
                   {draftPostId && (
-                    <p className="mt-2 text-xs text-neutral-400 text-center">
+                    <p className="text-xs text-neutral-400 text-center">
                       Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
                     </p>
                   )}
