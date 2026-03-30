@@ -6,6 +6,7 @@ import { HomePage } from './components/HomePage'
 import { AffiliateLinksPage } from './components/AffiliateLinksPage'
 import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
+import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -22,7 +23,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-photos'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -30,6 +31,7 @@ const pathToTool: Record<string, ToolId> = {
   '/trending-news-to-fb': 'trending-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',
+  '/engagement-photos': 'engagement-photos',
 }
 
 const toolToPath: Record<ToolId, string> = {
@@ -38,6 +40,7 @@ const toolToPath: Record<ToolId, string> = {
   'trending-news': '/trending-news-to-fb',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
+  'engagement-photos': '/engagement-photos',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -586,6 +589,11 @@ function App() {
       <Route path="/affiliate-article-editor" element={
         <Layout {...layoutProps} showSuggest={false}>
           <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
+        </Layout>
+      } />
+      <Route path="/engagement-photos" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage />
         </Layout>
       } />
     </Routes>

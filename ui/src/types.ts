@@ -73,6 +73,26 @@ export type AffiliateLinksResponse = AffiliateLinksResult | AffiliateLinksError
 // Article Generator tool types
 export type ArticleGeneratorStep = 'input' | 'pick-angle' | 'review-article' | 'thumbnail' | 'done'
 
+// Engagement Photos tool types
+export interface EngagementPost {
+  headline: string
+  subtitle: string
+  caption: string
+  image_url: string
+}
+
+export interface EngagementPhotosResponse {
+  success: true
+  posts: EngagementPost[]
+}
+
+export interface EngagementPhotosError {
+  success: false
+  message: string
+}
+
+export type EngagementPhotosResult = EngagementPhotosResponse | EngagementPhotosError
+
 export interface BrandVoice {
   language: string
   tone: string
