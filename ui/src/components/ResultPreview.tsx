@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
 
 interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string) => Promise<{success: boolean, message: string, postId?: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
 }
 
 export function ResultPreview({
@@ -17,13 +17,21 @@ export function ResultPreview({
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
-  const [postMode, setPostMode] = useState<'publish' | 'schedule'>('publish')
+  const [draftStatus, setDraftStatus] = useState<string | null>(null)
+  const [postMode, setPostMode] = useState<'publish' | 'schedule' | 'draft'>('publish')
   const [scheduledFor, setScheduledFor] = useState('')
+  const [extraPhotos, setExtraPhotos] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
   useEffect(() => {
     setCaption(result.caption ?? '')
   }, [result.caption])
+
+  // Reset extra photos when a new AI image is generated
+  useEffect(() => {
+    setExtraPhotos([])
+  }, [result.imageUrl])
 
   async function handleDownload() {
     try {
@@ -46,6 +54,21 @@ export function ResultPreview({
     })
   }
 
+  function handleSlotClick() {
+    if (extraPhotos.length < 9) fileInputRef.current?.click()
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setExtraPhotos(prev => [...prev, file].slice(0, 9))
+    e.target.value = ''
+  }
+
+  function removeExtraPhoto(index: number) {
+    setExtraPhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
   async function handlePostDraftClick() {
     if (!onPostDraft) return
     if (postMode === 'schedule' && !scheduledFor) {
@@ -55,11 +78,24 @@ export function ResultPreview({
     setDraftState('posting')
     try {
       const isoSchedule = postMode === 'schedule' ? new Date(scheduledFor).toISOString() : undefined
-      const response = await onPostDraft(result.imageUrl, caption, result.brand, isoSchedule)
+      const base64Extras = extraPhotos.length > 0
+        ? await Promise.all(extraPhotos.map(file => new Promise<string>((res, rej) => {
+            const reader = new FileReader()
+            reader.onload = () => res(reader.result as string)
+            reader.onerror = rej
+            reader.readAsDataURL(file)
+          })))
+        : undefined
+      const response = await onPostDraft(result.imageUrl, caption, result.brand, isoSchedule, base64Extras, postMode)
       if (response.success) {
         setDraftState('done')
         setDraftPostId(response.postId ?? null)
-        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Published to Facebook!')
+        setDraftStatus(response.status ?? null)
+        if (response.status === 'DRAFT_SAVED') {
+          toast.success('Draft saved! Review it on Zernio before publishing.')
+        } else {
+          toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Published to Facebook!')
+        }
       } else {
         setDraftState('error')
         toast.error(response.message || "Couldn't post. Please try again.")
@@ -97,6 +133,49 @@ export function ResultPreview({
         </div>
       </div>
 
+      {/* Photo strip */}
+      <div>
+        <p className="text-xs text-gray-500 mb-2">Photos <span className="text-gray-400">({1 + extraPhotos.length}/10)</span></p>
+        <div className="flex gap-2">
+          {/* Slot 0: AI-generated image (fixed) */}
+          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+            <img src={result.imageUrl} alt="AI image" className="w-full h-full object-cover" />
+            <span className="absolute bottom-0.5 left-0.5 text-[9px] font-semibold bg-black/60 text-white px-1 rounded">AI</span>
+          </div>
+
+          {/* Uploaded photo slots */}
+          {extraPhotos.map((file, i) => {
+            const url = URL.createObjectURL(file)
+            return (
+              <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" onLoad={() => URL.revokeObjectURL(url)} />
+                <button
+                  onClick={() => removeExtraPhoto(i)}
+                  className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center text-[10px] leading-none"
+                  aria-label="Remove photo"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
+
+          {/* Add slot (visible when < 4 extra photos) */}
+          {extraPhotos.length < 9 && (
+            <button
+              onClick={handleSlotClick}
+              className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 flex items-center justify-center text-gray-400 hover:text-gray-500 transition flex-shrink-0"
+              aria-label="Add photo"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      </div>
+
       {/* Caption section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -120,8 +199,8 @@ export function ResultPreview({
         />
       </div>
 
-      {/* Post mode toggle + action — hidden for now */}
-      {false && onPostDraft && (
+      {/* Post mode toggle + action */}
+      {onPostDraft && (
         <div className="pt-2 space-y-3">
           {/* Publish Now / Schedule toggle */}
           {draftState !== 'done' && (
@@ -137,6 +216,12 @@ export function ResultPreview({
                 className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'schedule' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
               >
                 Schedule
+              </button>
+              <button
+                onClick={() => setPostMode('draft')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'draft' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+              >
+                Draft
               </button>
             </div>
           )}
@@ -168,10 +253,12 @@ export function ResultPreview({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                {postMode === 'schedule' ? 'Scheduling…' : 'Publishing…'}
+                {postMode === 'draft' ? 'Saving draft…' : postMode === 'schedule' ? 'Scheduling…' : 'Publishing…'}
               </span>
             ) : draftState === 'done' ? (
-              postMode === 'schedule' ? '✓ Scheduled!' : '✓ Published!'
+              draftStatus === 'DRAFT_SAVED' ? '✓ Draft Saved' : postMode === 'schedule' ? '✓ Scheduled!' : '✓ Published!'
+            ) : postMode === 'draft' ? (
+              `Save as Draft on ${brandLabel}'s FB`
             ) : postMode === 'schedule' ? (
               `Schedule on ${brandLabel}'s FB`
             ) : (

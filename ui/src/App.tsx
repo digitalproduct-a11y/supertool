@@ -417,7 +417,7 @@ function FbPostPage() {
     }
   }, [url, brand, result, run])
 
-  const handlePostDraft = useCallback(async (imageUrl: string, caption: string, brand: string, scheduledFor?: string) => {
+  const handlePostDraft = useCallback(async (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => {
     const webhookUrl = import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined
     if (!webhookUrl) {
       return { success: false, message: 'Post draft webhook not configured' }
@@ -431,11 +431,13 @@ function FbPostPage() {
           fb_ai_caption: caption,
           brand,
           ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
+          ...(extraPhotos?.length ? { uploaded_images: extraPhotos } : {}),
+          ...(postMode === 'draft' ? { is_draft: true } : {}),
         }),
       })
       const data = await response.json()
-      const success = data.success === true || data.status === 'SUCCESS'
-      return { success, message: String(data.message ?? 'Unknown error'), postId: data.post_id as string | undefined }
+      const success = data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED'
+      return { success, message: String(data.message ?? 'Unknown error'), postId: data.post_id as string | undefined, status: data.status as string | undefined }
     } catch (err) {
       return { success: false, message: err instanceof Error ? err.message : 'Request failed' }
     }

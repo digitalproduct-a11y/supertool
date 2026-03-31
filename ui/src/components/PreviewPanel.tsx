@@ -10,7 +10,7 @@ interface PreviewPanelProps {
   onRegenerate: () => void
   onReset: () => void
   onPartialRegenerate: (op: WorkflowOperation, titleMode: TitleMode, customTitle: string, captionTitleMode: CaptionTitleMode) => void
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string) => Promise<{success: boolean, message: string, postId?: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
   titleMode: TitleMode
   customTitle: string
   captionTitleMode: CaptionTitleMode
