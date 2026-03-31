@@ -8,10 +8,6 @@ import {
   IconLink,
   IconFileText,
   IconLayoutSidebar,
-  IconHeart,
-  IconStack2,
-  IconActivity,
-  IconBrain,
 } from '@tabler/icons-react'
 
 type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
