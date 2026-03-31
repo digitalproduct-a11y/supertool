@@ -72,7 +72,7 @@ const sections: Section[] = [
   },
   {
     label: 'Coming Soon',
-    description: 'Monitor brand performance and generate content ideas with AI.',
+    description: 'Coming soon AI tools',
     tools: [
       {
         id: 'affiliate-links',
