@@ -503,7 +503,6 @@ function FbPostPage() {
               state={state === 'approved' ? 'idle' : state}
               result={result}
               errorMessage={errorMessage}
-              articleUrl={url}
               onApprove={handleApprove}
               onRegenerate={handleRegenerate}
               onReset={handleReset}

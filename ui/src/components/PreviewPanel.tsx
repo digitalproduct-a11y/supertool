@@ -6,7 +6,6 @@ interface PreviewPanelProps {
   state: 'idle' | 'loading' | 'result' | 'error'
   result: WorkflowResult | null
   errorMessage: string
-  articleUrl: string
   onApprove: (caption: string) => void
   onRegenerate: () => void
   onReset: () => void
