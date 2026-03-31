@@ -60,6 +60,14 @@ export function AffiliateLinksPage() {
             </div>
             <GuideModal title="How to use Shopee Affiliate Links">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1RCS4_W0c4SdHf8jCmWNAM2_LCtZHnG3w/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Shopee Affiliate Links walkthrough video"
+                  />
+                </div>
                 <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
                   <li><strong>Select a brand</strong> — choose from the dropdown menu</li>
                   <li><strong>Download the template</strong> — if you don't already have one, get the Excel template to see the expected format</li>

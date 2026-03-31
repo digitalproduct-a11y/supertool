@@ -454,6 +454,14 @@ function FbPostPage() {
             </div>
             <GuideModal title="How to use Article to FB Post">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1k6kXTcFNUjHofeKiL3W68n5-EkYaqViY/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Article to FB Photo walkthrough video"
+                  />
+                </div>
                 <div>
                   <h3 className="font-semibold text-neutral-950 mb-3">Step-by-step guide</h3>
                   <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">

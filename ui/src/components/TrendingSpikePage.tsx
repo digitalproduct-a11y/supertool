@@ -618,6 +618,14 @@ export function TrendingSpikePage() {
             </div>
             <GuideModal title="How to use Trending Spike to FB Post">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1nExBvjJeMHR0cCkyYrIl3r2LAo4zIUzA/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Trending News to FB Photo walkthrough video"
+                  />
+                </div>
                 <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
                   <li><strong>Click "Refresh Inbox"</strong> — load the latest spike articles from Chartbeat alerts</li>
                   <li><strong>Select articles</strong> — pick one or more articles you want to create FB posts for</li>

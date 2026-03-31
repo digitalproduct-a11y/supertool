@@ -441,7 +441,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">
                 Shopee Article Generator
@@ -450,7 +450,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                 Write engaging Shopee product articles from links
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => {
                 setShowHistoryDrawer(true)
