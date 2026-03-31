@@ -109,11 +109,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     isLoading: false,
   })
 
-  const [productLinks, setProductLinks] = useState<string[]>([
-    'https://shopee.com.my/Russell-Taylors-Digital-Low-Sugar-Rice-Cooker-(1.8L)-RC10-i.66336205.18483902789?extraParams=%7B%22display_model_id%22%3A109575560766%2C%22model_selection_logic%22%3A3%7D',
-    'https://shopee.com.my/-TOP-SALE-Panasonic-1L-1.8L-2.8L-Conventional-Rice-Cooker-SR-Y10G-SR-Y18G-SR-Y18FG-SR-E28-(Periuk-Nasi-%E7%94%B5%E9%A5%AD%E9%94%A5)-i.26881612.1295853816?extraParams=%7B%22display_model_id%22%3A97650596808%2C%22model_selection_logic%22%3A3%7D',
-    'https://shopee.com.my/Philips-HD4719-Spherical-Pot-Digital-Rice-Cooker-1.8L-FreshDefense-Tech-48hr-Fresh-Delicious-Rice-HD4719-32-i.175347531.29781796629?extraParams=%7B%22display_model_id%22%3A208378878980%2C%22model_selection_logic%22%3A3%7D',
-  ])
+  const [productLinks, setProductLinks] = useState<string[]>(['', '', ''])
   const [feedbackText, setFeedbackText] = useState('')
   const [customAngleText, setCustomAngleText] = useState('')
   const [_imagePromptText, setImagePromptText] = useState('')
