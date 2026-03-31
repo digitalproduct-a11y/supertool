@@ -120,8 +120,8 @@ export function ResultPreview({
         />
       </div>
 
-      {/* Post mode toggle + action */}
-      {onPostDraft && (
+      {/* Post mode toggle + action — hidden for now */}
+      {false && onPostDraft && (
         <div className="pt-2 space-y-3">
           {/* Publish Now / Schedule toggle */}
           {draftState !== 'done' && (

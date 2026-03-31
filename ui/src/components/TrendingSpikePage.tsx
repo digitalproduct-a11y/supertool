@@ -410,8 +410,8 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed"
                   />
                 </div>
-                {/* Post mode + action */}
-                <div className="space-y-3">
+                {/* Post mode + action — hidden for now */}
+                {false && <div className="space-y-3">
                   {/* Publish Now / Schedule toggle */}
                   {draftState !== 'done' && (
                     <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
@@ -470,7 +470,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                       Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
                     </p>
                   )}
-                </div>
+                </div>}
               </div>
             </div>
           ) : (
