@@ -177,7 +177,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
-  const [postMode, setPostMode] = useState<'draft' | 'schedule'>('draft')
+  const [postMode, setPostMode] = useState<'publish' | 'schedule'>('publish')
   const [scheduledFor, setScheduledFor] = useState('')
 
   const handleGenerate = useCallback(async () => {
@@ -246,7 +246,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       if (data.success === true || data.status === 'SUCCESS') {
         setDraftState('done')
         setDraftPostId(data.post_id as string ?? null)
-        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Draft saved to Facebook!')
+        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Published to Facebook!')
       } else {
         setDraftState('error')
         toast.error(data.message || "Couldn't post. Please try again.")
@@ -412,14 +412,14 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                 </div>
                 {/* Post mode + action */}
                 <div className="space-y-3">
-                  {/* Draft / Schedule toggle */}
+                  {/* Publish Now / Schedule toggle */}
                   {draftState !== 'done' && (
                     <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
                       <button
-                        onClick={() => setPostMode('draft')}
-                        className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'draft' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+                        onClick={() => setPostMode('publish')}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'publish' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
                       >
-                        Draft
+                        Publish Now
                       </button>
                       <button
                         onClick={() => setPostMode('schedule')}
@@ -455,14 +455,14 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                         </svg>
-                        {postMode === 'schedule' ? 'Scheduling…' : 'Saving draft…'}
+                        {postMode === 'schedule' ? 'Scheduling…' : 'Publishing…'}
                       </span>
                     ) : draftState === 'done' ? (
-                      postMode === 'schedule' ? '✓ Scheduled!' : '✓ Draft saved!'
+                      postMode === 'schedule' ? '✓ Scheduled!' : '✓ Published!'
                     ) : postMode === 'schedule' ? (
                       `Schedule on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     ) : (
-                      `Create Draft on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
+                      `Publish on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     )}
                   </button>
                   {draftPostId && (

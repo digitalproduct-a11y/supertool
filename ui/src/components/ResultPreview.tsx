@@ -17,7 +17,7 @@ export function ResultPreview({
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
-  const [postMode, setPostMode] = useState<'draft' | 'schedule'>('draft')
+  const [postMode, setPostMode] = useState<'publish' | 'schedule'>('publish')
   const [scheduledFor, setScheduledFor] = useState('')
 
   // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
@@ -59,7 +59,7 @@ export function ResultPreview({
       if (response.success) {
         setDraftState('done')
         setDraftPostId(response.postId ?? null)
-        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Draft saved to Facebook!')
+        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Published to Facebook!')
       } else {
         setDraftState('error')
         toast.error(response.message || "Couldn't post. Please try again.")
@@ -123,14 +123,14 @@ export function ResultPreview({
       {/* Post mode toggle + action */}
       {onPostDraft && (
         <div className="pt-2 space-y-3">
-          {/* Draft / Schedule toggle */}
+          {/* Publish Now / Schedule toggle */}
           {draftState !== 'done' && (
             <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
               <button
-                onClick={() => setPostMode('draft')}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'draft' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+                onClick={() => setPostMode('publish')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'publish' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
               >
-                Draft
+                Publish Now
               </button>
               <button
                 onClick={() => setPostMode('schedule')}
@@ -168,14 +168,14 @@ export function ResultPreview({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                {postMode === 'schedule' ? 'Scheduling…' : 'Saving draft…'}
+                {postMode === 'schedule' ? 'Scheduling…' : 'Publishing…'}
               </span>
             ) : draftState === 'done' ? (
-              postMode === 'schedule' ? '✓ Scheduled!' : '✓ Draft saved!'
+              postMode === 'schedule' ? '✓ Scheduled!' : '✓ Published!'
             ) : postMode === 'schedule' ? (
               `Schedule on ${brandLabel}'s FB`
             ) : (
-              `Create Draft on ${brandLabel}'s FB`
+              `Publish on ${brandLabel}'s FB`
             )}
           </button>
 
