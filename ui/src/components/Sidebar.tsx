@@ -40,8 +40,6 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'fb-post', label: 'Article to FB Photos', icon: IconPhoto },
       { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },
-      { id: 'engagement-photos', label: 'Engagement Photos Generator', icon: IconHeart, comingSoon: true },
-      { id: 'photo-carousels', label: 'Article to Photo Carousels', icon: IconStack2, comingSoon: true },
     ],
   },
   {
@@ -49,13 +47,6 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'affiliate-links', label: 'Shopee Affiliate Links', icon: IconLink },
       { id: 'article-generator', label: 'Affiliate Article Editor', icon: IconFileText },
-    ],
-  },
-  {
-    section: 'Brand Intelligence',
-    items: [
-      { id: 'brand-health', label: 'Brand Health Check', icon: IconActivity, comingSoon: true },
-      { id: 'idea-agent', label: 'Idea Agent', icon: IconBrain, comingSoon: true },
     ],
   },
 ]
