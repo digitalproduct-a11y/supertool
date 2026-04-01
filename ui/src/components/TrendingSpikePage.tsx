@@ -625,26 +625,16 @@ export function TrendingSpikePage() {
                   />
                 </div>
                 <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                  <li><strong>Click "Refresh Inbox"</strong> — load the latest spike articles from Chartbeat alerts</li>
-                  <li><strong>Select articles</strong> — pick one or more articles you want to create FB posts for</li>
-                  <li><strong>Set parameters for each:</strong>
-                    <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                      <li>Brand: auto-detected or manually selected</li>
-                      <li>Title mode: Original, AI Rewrite, or Custom</li>
-                    </ul>
-                  </li>
-                  <li><strong>Click "Generate"</strong> — watch the status update for each article (idle → generating → done/error)</li>
-                  <li><strong>Review results</strong> — each article shows its generated image and caption</li>
-                  <li><strong>Re-generate or Approve:</strong>
-                    <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                      <li>Re-generate: update the image or caption</li>
-                      <li>Approve: image downloads, caption copies to clipboard</li>
-                    </ul>
-                  </li>
+                  <li><strong>Select an article</strong> — Pick one article you want to create a Facebook post for.</li>
+                  <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
+                  <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
+                  <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
+                  <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
+                  <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
                 </ol>
                 <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
                   <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                  <p className="text-xs text-neutral-700">Use the Trending tab for articles from other monitoring sources, or the Spike tab for real-time Chartbeat alerts.</p>
+                  <p className="text-xs text-neutral-700">Use the Trending tab for articles from other monitoring sources. Use the Spike tab for real-time Chartbeat alerts.</p>
                 </div>
               </div>
             </GuideModal>
