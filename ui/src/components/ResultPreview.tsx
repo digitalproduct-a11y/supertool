@@ -133,48 +133,6 @@ export function ResultPreview({
         </div>
       </div>
 
-      {/* Photo strip */}
-      <div>
-        <p className="text-xs text-gray-500 mb-2">Photos <span className="text-gray-400">({1 + extraPhotos.length}/10)</span></p>
-        <div className="flex gap-2">
-          {/* Slot 0: AI-generated image (fixed) */}
-          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-            <img src={result.imageUrl} alt="AI image" className="w-full h-full object-cover" />
-            <span className="absolute bottom-0.5 left-0.5 text-[9px] font-semibold bg-black/60 text-white px-1 rounded">AI</span>
-          </div>
-
-          {/* Uploaded photo slots */}
-          {extraPhotos.map((file, i) => {
-            const url = URL.createObjectURL(file)
-            return (
-              <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-                <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" onLoad={() => URL.revokeObjectURL(url)} />
-                <button
-                  onClick={() => removeExtraPhoto(i)}
-                  className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center text-[10px] leading-none"
-                  aria-label="Remove photo"
-                >
-                  ✕
-                </button>
-              </div>
-            )
-          })}
-
-          {/* Add slot (visible when < 4 extra photos) */}
-          {extraPhotos.length < 9 && (
-            <button
-              onClick={handleSlotClick}
-              className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 flex items-center justify-center text-gray-400 hover:text-gray-500 transition flex-shrink-0"
-              aria-label="Add photo"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-      </div>
 
       {/* Caption section */}
       <div className="space-y-2">
@@ -199,80 +157,6 @@ export function ResultPreview({
         />
       </div>
 
-      {/* Post mode toggle + action */}
-      {onPostDraft && (
-        <div className="pt-2 space-y-3">
-          {/* Publish Now / Schedule toggle */}
-          {draftState !== 'done' && (
-            <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
-              <button
-                onClick={() => setPostMode('publish')}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'publish' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
-              >
-                Publish Now
-              </button>
-              <button
-                onClick={() => setPostMode('schedule')}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'schedule' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
-              >
-                Schedule
-              </button>
-              <button
-                onClick={() => setPostMode('draft')}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'draft' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
-              >
-                Draft
-              </button>
-            </div>
-          )}
-
-          {/* Date/time picker (schedule mode only) */}
-          {postMode === 'schedule' && draftState !== 'done' && (
-            <input
-              type="datetime-local"
-              value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
-              min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
-            />
-          )}
-
-          {/* Action button */}
-          <button
-            onClick={handlePostDraftClick}
-            disabled={draftState === 'posting' || isRunning}
-            className={`w-full py-3 px-4 font-medium rounded-xl transition text-sm ${
-              draftState === 'done'
-                ? 'bg-green-500 hover:bg-green-600 text-white'
-                : 'bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white'
-            }`}
-          >
-            {draftState === 'posting' ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                </svg>
-                {postMode === 'draft' ? 'Saving draft…' : postMode === 'schedule' ? 'Scheduling…' : 'Publishing…'}
-              </span>
-            ) : draftState === 'done' ? (
-              draftStatus === 'DRAFT_SAVED' ? '✓ Draft Saved' : postMode === 'schedule' ? '✓ Scheduled!' : '✓ Published!'
-            ) : postMode === 'draft' ? (
-              `Save as Draft on ${brandLabel}'s FB`
-            ) : postMode === 'schedule' ? (
-              `Schedule on ${brandLabel}'s FB`
-            ) : (
-              `Publish on ${brandLabel}'s FB`
-            )}
-          </button>
-
-          {draftPostId && (
-            <p className="text-xs text-neutral-400 text-center">
-              Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
-            </p>
-          )}
-        </div>
-      )}
     </div>
   )
 }
