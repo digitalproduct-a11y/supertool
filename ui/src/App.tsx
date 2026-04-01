@@ -450,17 +450,13 @@ function FbPostPage() {
                 <div>
                   <h3 className="font-semibold text-neutral-950 mb-3">Step-by-step guide</h3>
                   <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                    <li><strong>Paste an article URL</strong> — supports Astro Awani, mStar, and other approved domains</li>
-                    <li><strong>Select a brand</strong> — choose the brand the post is for</li>
-                    <li><strong>Choose Image Title mode</strong> — Original uses the article headline, AI rewrites it, or enter a Custom title</li>
-                    <li><strong>Choose Caption Title mode</strong> — Original or AI-rewritten title in the caption</li>
-                    <li><strong>Click Generate</strong> — the image and caption will appear on the right</li>
-                    <li><strong>Download &amp; copy</strong> — download the image and copy the caption for scheduling</li>
+                    <li><strong>Paste an article URL</strong> — Use "Check supported domains" to see which news sites are compatible before pasting a URL.</li>
+                    <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
+                    <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
+                    <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
+                    <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
+                    <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
                   </ol>
-                </div>
-                <div className="p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
-                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                  <p className="text-xs text-neutral-700">Use "Check supported domains" to see which news sites are compatible before pasting a URL.</p>
                 </div>
               </div>
             </GuideModal>

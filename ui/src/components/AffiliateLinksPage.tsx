@@ -77,12 +77,12 @@ export function AffiliateLinksPage() {
                   />
                 </div>
                 <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                  <li><strong>Select a brand</strong> — choose from the dropdown menu</li>
-                  <li><strong>Download the template</strong> — if you don't already have one, get the Excel template to see the expected format</li>
-                  <li><strong>Fill in Shopee URLs</strong> — place one Shopee product URL per row in the template</li>
-                  <li><strong>Upload the file</strong> — drag and drop the filled Excel file, or click to browse</li>
-                  <li><strong>Wait for processing</strong> — the tool extracts product data and adds affiliate tags</li>
-                  <li><strong>Download the result</strong> — your processed file auto-downloads with all affiliate links and product data included</li>
+                  <li><strong>Select a brand</strong> — Choose the brand the affiliate products are for.</li>
+                  <li><strong>Download the template</strong> — If you don't have one yet, download the Excel template to see the expected format.</li>
+                  <li><strong>Fill in Shopee URLs</strong> — Paste one Shopee product URL per row in the template.</li>
+                  <li><strong>Upload the file</strong> — Drag and drop or click to upload the filled Excel file.</li>
+                  <li><strong>Wait for processing</strong> — The tool extracts product data and adds affiliate tags.</li>
+                  <li><strong>Download the result</strong> — Your processed file will auto-download with all affiliate links and product data included.</li>
                 </ol>
                 <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
                   <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>

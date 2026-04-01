@@ -487,43 +487,44 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
                   <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
                     <li><strong>Step 1 — Input:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Paste Shopee product links (shopee.com.my URLs)</li>
-                        <li>Select the brand for the article</li>
-                        <li>Click <strong>Next</strong></li>
+                        <li>Paste Shopee product links (shopee.com.my URLs).</li>
+                        <li>Select a brand for the article.</li>
+                        <li>Click <strong>Generate Article Angles</strong> to proceed.</li>
                       </ul>
                     </li>
                     <li><strong>Step 2 — Pick Angle:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Review AI-suggested editorial angles</li>
-                        <li>Pick one or write your own custom angle</li>
-                        <li>Click <strong>Next</strong></li>
+                        <li>Review AI-suggested editorial angles.</li>
+                        <li>Pick one or write your own custom angle.</li>
+                        <li>Click <strong>Write Article</strong> to start writing.</li>
                       </ul>
                     </li>
                     <li><strong>Step 3 — Review Article:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Read the generated article (it's in the brand's voice)</li>
-                        <li>Affiliate links are already embedded</li>
-                        <li>Click <strong>Request Revision</strong> to refine, or <strong>Next</strong> to continue</li>
+                        <li>Review the generated article, written in the brand's voice.</li>
+                        <li>Affiliate links are already embedded.</li>
+                        <li>Click <strong>Request Revision</strong> to refine, or <strong>Approve</strong> to generate the article thumbnail.</li>
                       </ul>
                     </li>
                     <li><strong>Step 4 — Thumbnail:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Review the AI-generated thumbnail image</li>
-                        <li>Regenerate if needed</li>
-                        <li>Click <strong>Done</strong></li>
+                        <li>Review the AI-generated thumbnail image.</li>
+                        <li>Regenerate if needed.</li>
+                        <li>Click <strong>Done</strong> to finish.</li>
                       </ul>
                     </li>
                     <li><strong>Done:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Copy the article content and use it in your CMS</li>
-                        <li>Download the thumbnail for your article header</li>
+                        <li>Copy the article content and paste it into your website CMS.</li>
+                        <li>Download the thumbnail for your article header.</li>
+                        <li>The completed article is saved to <strong>History</strong> — access it anytime from the History button at the top.</li>
                       </ul>
                     </li>
                   </ol>
                 </div>
                 <div className="p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
                   <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                  <p className="text-xs text-neutral-700">Use the Restart button to start over with different products or brand at any point.</p>
+                  <p className="text-xs text-neutral-700">Use the Restart button to start over with different products or a different brand at any point.</p>
                 </div>
               </div>
             </GuideModal>

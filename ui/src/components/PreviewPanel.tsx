@@ -65,7 +65,7 @@ export function PreviewPanel({
 
       {state === 'result' && result && (
         <div className="animate-fade-slide-up">
-          <ResultPreview result={result} />
+          <ResultPreview result={result} isRunning={false} />
         </div>
       )}
 
