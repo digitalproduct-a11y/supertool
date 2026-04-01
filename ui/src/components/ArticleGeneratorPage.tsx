@@ -437,13 +437,13 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
 
   return (
     <>
-    <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
-      <div className="max-w-2xl mx-auto">
+    <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
                 Shopee Article Generator
               </h1>
               <p className="text-neutral-500 mt-1 text-sm">

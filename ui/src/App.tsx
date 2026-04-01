@@ -424,7 +424,7 @@ function FbPostPage() {
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
               <p className="text-neutral-500 mt-1 text-sm">Turn any article into a Facebook image &amp; caption</p>
             </div>
             <GuideModal title="How to use Article to FB Post">

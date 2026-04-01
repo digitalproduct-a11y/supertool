@@ -613,7 +613,7 @@ export function TrendingSpikePage() {
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Trending Spike to FB Post</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending Spike to FB Post</h1>
               <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from spike or trending articles</p>
             </div>
             <GuideModal title="How to use Trending Spike to FB Post">
