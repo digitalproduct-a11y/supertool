@@ -545,13 +545,6 @@ export function TrendingSpikePage() {
     }
   }, [activeTab, spikeView]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-load trending when tab is active and no data loaded yet
-  useEffect(() => {
-    if (activeTab === 'trending' && trendingView === 'list' && trendingItems.length === 0 && !isFetchingTrending) {
-      handleFetchTrending()
-    }
-  }, [activeTab, trendingView]) // eslint-disable-line react-hooks/exhaustive-deps
-
   function handleGeneratePost(spike: SpikeInboxItem) {
     // Pre-fill brand from URL if not set
     const detectedBrand = spike.brand || detectBrandFromUrl(spike.articleUrl) || ''
