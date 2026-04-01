@@ -463,6 +463,14 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
             </button>
             <GuideModal title="How to use Shopee Article Generator">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1N4mclnm0FgkQ4C0_4nC8Zf2IaFsgFQgA/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Shopee Article Generator walkthrough video"
+                  />
+                </div>
                 <div>
                   <h3 className="font-semibold text-neutral-950 mb-3">Step-by-step guide</h3>
                   <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
