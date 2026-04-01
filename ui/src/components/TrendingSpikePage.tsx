@@ -823,16 +823,25 @@ export function TrendingSpikePage() {
           <div className="space-y-6">
             {/* Info banner */}
             <div className="glass-card rounded-2xl p-5">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-800">Refreshes daily at 10AM</p>
+                    <p className="text-xs text-neutral-400 mt-0.5">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-neutral-800">Refreshes daily at 10AM</p>
-                  <p className="text-xs text-neutral-400 mt-0.5">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
-                </div>
+                <button
+                  onClick={handleFetchTrending}
+                  disabled={isFetchingTrending}
+                  className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 hover:border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition flex items-center gap-1.5"
+                >
+                  {isFetchingTrending ? <><Spinner size="sm" /> Loading…</> : '↻ Fetch Trending'}
+                </button>
               </div>
             </div>
 
