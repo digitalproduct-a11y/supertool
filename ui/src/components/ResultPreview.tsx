@@ -1,37 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import type { WorkflowResult } from '../types'
-import { toast } from '../hooks/useToast'
 
 interface ResultPreviewProps {
   result: WorkflowResult
-  isRunning: boolean
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
 }
 
 export function ResultPreview({
   result,
-  isRunning,
-  onPostDraft,
 }: ResultPreviewProps) {
   const [caption, setCaption] = useState(result.caption ?? '')
   const [copied, setCopied] = useState(false)
-  const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
-  const [draftPostId, setDraftPostId] = useState<string | null>(null)
-  const [draftStatus, setDraftStatus] = useState<string | null>(null)
-  const [postMode, setPostMode] = useState<'publish' | 'schedule' | 'draft'>('publish')
-  const [scheduledFor, setScheduledFor] = useState('')
-  const [extraPhotos, setExtraPhotos] = useState<File[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
   useEffect(() => {
     setCaption(result.caption ?? '')
   }, [result.caption])
-
-  // Reset extra photos when a new AI image is generated
-  useEffect(() => {
-    setExtraPhotos([])
-  }, [result.imageUrl])
 
   async function handleDownload() {
     try {
@@ -53,60 +36,6 @@ export function ResultPreview({
       setTimeout(() => setCopied(false), 2000)
     })
   }
-
-  function handleSlotClick() {
-    if (extraPhotos.length < 9) fileInputRef.current?.click()
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setExtraPhotos(prev => [...prev, file].slice(0, 9))
-    e.target.value = ''
-  }
-
-  function removeExtraPhoto(index: number) {
-    setExtraPhotos(prev => prev.filter((_, i) => i !== index))
-  }
-
-  async function handlePostDraftClick() {
-    if (!onPostDraft) return
-    if (postMode === 'schedule' && !scheduledFor) {
-      toast.error('Please pick a date and time to schedule.')
-      return
-    }
-    setDraftState('posting')
-    try {
-      const isoSchedule = postMode === 'schedule' ? new Date(scheduledFor).toISOString() : undefined
-      const base64Extras = extraPhotos.length > 0
-        ? await Promise.all(extraPhotos.map(file => new Promise<string>((res, rej) => {
-            const reader = new FileReader()
-            reader.onload = () => res(reader.result as string)
-            reader.onerror = rej
-            reader.readAsDataURL(file)
-          })))
-        : undefined
-      const response = await onPostDraft(result.imageUrl, caption, result.brand, isoSchedule, base64Extras, postMode)
-      if (response.success) {
-        setDraftState('done')
-        setDraftPostId(response.postId ?? null)
-        setDraftStatus(response.status ?? null)
-        if (response.status === 'DRAFT_SAVED') {
-          toast.success('Draft saved! Review it on Zernio before publishing.')
-        } else {
-          toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Published to Facebook!')
-        }
-      } else {
-        setDraftState('error')
-        toast.error(response.message || "Couldn't post. Please try again.")
-      }
-    } catch {
-      setDraftState('error')
-      toast.error("Couldn't post. Please try again.")
-    }
-  }
-
-  const brandLabel = result.brand.replace(/\b\w/g, c => c.toUpperCase())
 
   return (
     <div className="space-y-4">
