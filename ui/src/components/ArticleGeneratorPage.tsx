@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { IconRotate, IconUserCircle, IconTool, IconCoins, IconGift, IconListCheck, IconFileText, IconHistory } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
+import { trackEvent } from '../utils/analytics'
 
 interface ArticleHistoryItem {
   id: string
@@ -147,6 +148,10 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
   const { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error } =
     useArticleGenerator()
 
+  useEffect(() => {
+    trackEvent({ event_type: 'page_visit', tool_id: 'article-generator', tool_label: 'Shopee Article Generator' })
+  }, [])
+
   // Toast errors from the hook
   useEffect(() => {
     if (error) toast.error(error)
@@ -177,6 +182,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     if (recordedForSession.current) return
     if (!state.articleTitle || !state.articleHtml) return
     recordedForSession.current = true
+    trackEvent({ event_type: 'asset_generated', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand })
     const item: ArticleHistoryItem = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -301,6 +307,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     if (!state.brand || !canGenerate) return
 
     setState((s) => ({ ...s, step: 'pick-angle', links: filledLinks, isLoading: true }))
+    trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand })
 
     const result = await intake(state.brand, filledLinks)
     if (result) {
@@ -313,6 +320,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         isLoading: false,
       }))
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to process links.' })
       setState((s) => ({
         ...s,
         step: 'input',
@@ -349,6 +357,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         isLoading: false,
       }))
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate article.' })
       setState((s) => ({
         ...s,
         isLoading: false,
@@ -410,6 +419,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
 
     const promptResult = await thumbnailPrompt(body)
     if (!promptResult) {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate thumbnail prompt.' })
       setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail prompt. Please try again.' }))
       return
     }
@@ -425,6 +435,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       setThumbnailPhase('done')
       setState((s) => ({ ...s, thumbnailUrl: imageResult.thumbnail_url, isLoading: false }))
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate thumbnail.' })
       setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail. Please try again.' }))
     }
   }, [state, thumbnailPrompt, thumbnailGenerate])

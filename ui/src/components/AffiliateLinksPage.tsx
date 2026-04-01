@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, type BrandName } from '../constants/brands'
+import { trackEvent } from '../utils/analytics'
 import { Spinner } from './ds/Spinner'
 import { GuideModal } from './ds/GuideModal'
 import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
@@ -14,6 +15,10 @@ export function AffiliateLinksPage() {
   const [dragOver, setDragOver] = useState(false)
   const { run } = useAffiliateLinks()
 
+  useEffect(() => {
+    trackEvent({ event_type: 'page_visit', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links' })
+  }, [])
+
   const handleFile = async (selectedFile: File) => {
     if (!selectedBrand) {
       toast.error('Please select a brand first')
@@ -21,13 +26,16 @@ export function AffiliateLinksPage() {
     }
 
     setPageState('loading')
+    trackEvent({ event_type: 'form_submitted', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand })
 
     const response = await run(selectedFile, selectedBrand)
 
     if (response.success) {
+      trackEvent({ event_type: 'asset_generated', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand })
       toast.success('Your file is ready and has been downloaded.')
       setPageState('idle')
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand, error_message: response.message })
       toast.error(response.message)
       setPageState('idle')
     }
