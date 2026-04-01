@@ -1013,7 +1013,7 @@ export function TrendingSpikePage() {
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-neutral-600">No articles yet</p>
-                <p className="text-xs text-neutral-400 mt-1">Click "Fetch Trending" to pull current trending articles from all news sources</p>
+                <p className="text-xs text-neutral-400 mt-1">No trending articles found. Try refreshing the page.</p>
               </div>
             )}
           </div>
