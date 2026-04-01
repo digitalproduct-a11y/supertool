@@ -517,11 +517,9 @@ function FbPostPage() {
               onRegenerate={handleRegenerate}
               onReset={handleReset}
               onPartialRegenerate={handlePartialRegenerate}
-              onPostDraft={handlePostDraft}
               titleMode={titleMode}
               customTitle={customTitle}
               captionTitleMode={captionTitleMode}
-              isRunning={isRunning}
             />
           </div>
         </div>
