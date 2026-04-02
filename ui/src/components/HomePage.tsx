@@ -8,9 +8,7 @@ import {
   IconFileText,
   IconActivity,
   IconBrain,
-  IconChevronRight,
 } from '@tabler/icons-react'
-import { useKultStats } from '../hooks/useKultStats'
 
 type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
 
@@ -150,32 +148,11 @@ const sections: Section[] = [
   },
 ]
 
-const toolIcons: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  'fb-post': IconPhoto,
-  'trending-news': IconTrendingUp,
-  'affiliate-links': IconLink,
-  'article-generator': IconFileText,
-}
-
-function relativeTime(ts: number): string {
-  const diff = Date.now() - ts
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'Just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days === 1) return 'Yesterday'
-  return `${days}d ago`
-}
-
 interface HomePageProps {
   onToolSelect: (id: ToolId) => void
 }
 
 export function HomePage({ onToolSelect }: HomePageProps) {
-  const { todayCount, streak, topBrand, recentTools } = useKultStats()
-  const hasActivity = recentTools.length > 0
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
@@ -196,54 +173,7 @@ export function HomePage({ onToolSelect }: HomePageProps) {
           />
         </div>
 
-        {/* Quick Stats — only show after first use */}
-        {hasActivity && (
-          <div className="mb-10 grid grid-cols-3 gap-3">
-            <div className="glass-card rounded-2xl p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">Today</p>
-              <p className="font-display text-3xl font-bold text-neutral-950">{todayCount}</p>
-              <p className="text-xs text-neutral-400 mt-0.5">posts generated</p>
-            </div>
-            <div className="glass-card rounded-2xl p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">Streak</p>
-              <p className="font-display text-3xl font-bold text-neutral-950">{streak}</p>
-              <p className="text-xs text-neutral-400 mt-0.5">{streak === 1 ? 'day' : 'days'} active</p>
-            </div>
-            <div className="glass-card rounded-2xl p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">Top Brand</p>
-              <p className="font-display text-lg font-bold text-neutral-950 truncate leading-tight mt-1">{topBrand ?? '—'}</p>
-              <p className="text-xs text-neutral-400 mt-0.5">most used</p>
-            </div>
-          </div>
-        )}
-
-        {/* Jump back in — recent tools */}
-        {hasActivity && (
-          <div className="mb-10">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500 mb-3">Jump back in</p>
-            <div className="flex gap-3 overflow-x-auto pb-1">
-              {recentTools.map((event) => {
-                const Icon = toolIcons[event.toolId] ?? IconPhoto
-                return (
-                  <button
-                    key={`${event.toolId}-${event.timestamp}`}
-                    onClick={() => onToolSelect(event.toolId as ToolId)}
-                    className="glass-card rounded-xl p-3 flex items-center gap-3 min-w-[200px] hover:scale-[1.02] transition-all duration-200 text-left group"
-                  >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,85,238,0.08)' }}>
-                      <Icon className="w-4 h-4" style={{ color: '#0055EE' }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-neutral-900 truncate">{event.toolLabel}</p>
-                      <p className="text-[10px] text-neutral-400">{relativeTime(event.timestamp)}</p>
-                    </div>
-                    <IconChevronRight className="w-3.5 h-3.5 text-neutral-300 group-hover:text-neutral-500 transition-colors flex-shrink-0" />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        {/* Quick Stats & Jump Back In — hidden until production-ready */}
 
         {/* Sections */}
         <div className="space-y-12">
