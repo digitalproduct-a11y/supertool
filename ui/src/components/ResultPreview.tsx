@@ -62,19 +62,11 @@ export function ResultPreview({
     })
   }
 
-  function handleSlotClick() {
-    if (extraPhotos.length < 9) fileInputRef.current?.click()
-  }
-
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setExtraPhotos(prev => [...prev, file].slice(0, 9))
     e.target.value = ''
-  }
-
-  function removeExtraPhoto(index: number) {
-    setExtraPhotos(prev => prev.filter((_, i) => i !== index))
   }
 
   function handleReplaceAiImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -85,13 +77,6 @@ export function ResultPreview({
     setReplacementPreviewUrl(URL.createObjectURL(file))
     setAiImageRemoved(false)
     e.target.value = ''
-  }
-
-  function handleRemoveAiImage() {
-    if (replacementPreviewUrl) URL.revokeObjectURL(replacementPreviewUrl)
-    setAiImageRemoved(true)
-    setReplacementAiPhoto(null)
-    setReplacementPreviewUrl(null)
   }
 
   function handleRestoreAiImage() {
@@ -184,73 +169,9 @@ export function ResultPreview({
         )}
       </div>
 
-      {/* Photo strip */}
-      <div>
-        <p className="text-xs text-gray-500 mb-2">Photos <span className="text-gray-400">({(aiImageRemoved ? 0 : 1) + extraPhotos.length}/10)</span></p>
-        <div className="flex gap-2">
-          {/* Slot 0: AI-generated or replacement image */}
-          {!aiImageRemoved && (
-            <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group">
-              <img
-                src={replacementPreviewUrl || result.imageUrl}
-                alt="AI image"
-                className="w-full h-full object-cover"
-              />
-              <span className="absolute bottom-0.5 left-0.5 text-[9px] font-semibold bg-black/60 text-white px-1 rounded">
-                {replacementPreviewUrl ? 'Replaced' : 'AI'}
-              </span>
-              {/* Remove button */}
-              <button
-                onClick={handleRemoveAiImage}
-                className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center text-[10px] leading-none opacity-0 group-hover:opacity-100 transition"
-                aria-label="Remove photo"
-              >
-                ✕
-              </button>
-              {/* Replace button */}
-              <button
-                onClick={() => replaceInputRef.current?.click()}
-                className="absolute top-0.5 left-0.5 w-4 h-4 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center text-[10px] leading-none opacity-0 group-hover:opacity-100 transition"
-                aria-label="Replace photo"
-              >
-                ↺
-              </button>
-            </div>
-          )}
-
-          {/* Uploaded photo slots */}
-          {extraPhotos.map((file, i) => {
-            const url = URL.createObjectURL(file)
-            return (
-              <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-                <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" onLoad={() => URL.revokeObjectURL(url)} />
-                <button
-                  onClick={() => removeExtraPhoto(i)}
-                  className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center text-[10px] leading-none"
-                  aria-label="Remove photo"
-                >
-                  ✕
-                </button>
-              </div>
-            )
-          })}
-
-          {/* Add slot */}
-          {extraPhotos.length < 9 && (
-            <button
-              onClick={handleSlotClick}
-              className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 flex items-center justify-center text-gray-400 hover:text-gray-500 transition flex-shrink-0"
-              aria-label="Add photo"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-        <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplaceAiImage} />
-      </div>
+      {/* Hidden file inputs for photo upload */}
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplaceAiImage} />
 
       {/* Caption section */}
       <div className="space-y-2">
