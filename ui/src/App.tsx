@@ -6,6 +6,7 @@ import { HomePage } from './components/HomePage'
 import { AffiliateLinksPage } from './components/AffiliateLinksPage'
 import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
+import { AnalyticsDashboardPage } from './components/AnalyticsDashboardPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -584,6 +585,11 @@ function App() {
       <Route path="/affiliate-article-editor" element={
         <Layout {...layoutProps} showSuggest={false}>
           <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
+        </Layout>
+      } />
+      <Route path="/analytics" element={
+        <Layout {...layoutProps} showSuggest={false}>
+          <AnalyticsDashboardPage />
         </Layout>
       } />
     </Routes>
