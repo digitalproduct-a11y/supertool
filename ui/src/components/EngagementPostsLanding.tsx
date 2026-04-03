@@ -9,7 +9,7 @@ interface Topic {
   id: 'engagement-photos' | 'coming-soon-1' | 'coming-soon-2' | 'coming-soon-3' | 'coming-soon-4'
   label: string
   description: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
   color: string
   comingSoon?: boolean
 }

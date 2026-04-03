@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useBlocker } from 'react-router-dom'
-import type { EngagementIdea, Brand } from '../types'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
-import { Button } from './ds/Button'
 import { BRANDS } from '../constants/brands'
 import IdeaCard from './IdeaCard'
 import { IconChevronLeft } from '@tabler/icons-react'
-
-const DEFAULT_PHOTO_PUBLIC_ID = 'placeholder_bxywkp'
 
 const TEMPLATE_IMAGES = [
   'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775189927/epl-post-challenge_1_byvuse.jpg',
@@ -93,13 +89,6 @@ export function EngagementPhotosPage() {
     setLoadingMessage(LOADING_QUOTES[0])
   }
 
-  const handleRefreshIdeas = async () => {
-    if (!selectedBrand) return
-    await refresh(selectedBrand, 'en')
-    setSelectedIdeas(new Set())
-    setCurrentLoadingStep(0)
-  }
-
   const handleUpdateIdea = (ideaId: string, field: 'headline' | 'subtitle' | 'caption', value: string) => {
     setIdeas(
       ideas.map((idea) => (idea.id === ideaId ? { ...idea, [field]: value } : idea))
@@ -110,30 +99,6 @@ export function EngagementPhotosPage() {
     setIdeas(
       ideas.map((idea) => (idea.id === ideaId ? { ...idea, photo_url: photo.url, photo_public_id: photo.publicId } : idea))
     )
-  }
-
-  const handleConfirmAndRender = () => {
-    if (selectedIdeas.size === 0) {
-      alert('Please select at least one idea')
-      return
-    }
-
-    const ideasToRender = ideas.filter((idea) => selectedIdeas.has(idea.id))
-
-    const allValid = ideasToRender.every(
-      (idea) =>
-        idea.headline.trim() &&
-        idea.subtitle.trim() &&
-        idea.caption.trim() &&
-        idea.photo_url
-    )
-
-    if (!allValid) {
-      alert('Please fill in all fields (headline, subtitle, caption) and select a photo for each post.')
-      return
-    }
-
-    // All ideas are ready — stay on review stage
   }
 
   return (

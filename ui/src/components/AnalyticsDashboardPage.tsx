@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts'
 import { IconAlertTriangle, IconChartBar } from '@tabler/icons-react'
-import { useAnalyticsData, type RawEvent, type DatePreset, type DateRange } from '../hooks/useAnalyticsData'
+import { useAnalyticsData, type DatePreset, type DateRange } from '../hooks/useAnalyticsData'
 import { Spinner } from './ds/Spinner'
 
 const CHART_COLORS = ['#0055EE', '#FF3FBF', '#00E5D4', '#F05A35']
@@ -207,7 +207,7 @@ export function AnalyticsDashboardPage() {
                     />
                     <Tooltip
                       contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
-                      formatter={(value: number) => [value, 'Page visits']}
+                      formatter={(value) => [value as number, 'Page visits']}
                     />
                     <Bar dataKey="visits" radius={[0, 6, 6, 0]} maxBarSize={28}>
                       {trafficData.map((_, i) => (

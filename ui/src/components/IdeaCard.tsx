@@ -39,7 +39,7 @@ export default function IdeaCard({
   const [showPhotoModal, setShowPhotoModal] = useState(false)
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
-  const brandLogoId = BRAND_LOGO_IDS[selectedBrand] || 'stadium_astro_logo'
+  const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
 
   const buildPreviewUrl = (headline: string, subtitle: string, photoPublicId: string | null) => {
     const enc = (t: string) => encodeURIComponent(encodeURIComponent(t))
@@ -66,8 +66,6 @@ export default function IdeaCard({
   const subtitleValid = subtitleChars > 0 && subtitleChars <= 70
   const captionValid = captionChars > 0 && captionChars <= 600
   const photoValid = !!idea.photo_url
-
-  const allValid = headlineValid && subtitleValid && captionValid && photoValid
 
   return (
     <>
