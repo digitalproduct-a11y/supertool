@@ -12,7 +12,7 @@ import {
 } from '@tabler/icons-react'
 import { useKultStats } from '../hooks/useKultStats'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts'
 
 interface Tool {
   id: ToolId
@@ -49,12 +49,11 @@ const sections: Section[] = [
         icon: IconTrendingUp,
       },
       {
-        id: 'fb-post',
+        id: 'engagement-posts',
         label: 'Engagement Photos Generator',
         description: 'Create engagement-driving photo posts',
         color: '#0055EE',
         icon: IconHeart,
-        comingSoon: true,
       },
       {
         id: 'fb-post',

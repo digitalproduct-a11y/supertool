@@ -1,17 +1,85 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useBlocker } from 'react-router-dom'
 import type { EngagementIdea, Brand } from '../types'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
 import { Button } from './ds/Button'
 import { BRANDS } from '../constants/brands'
 import IdeaCard from './IdeaCard'
+import { IconChevronLeft } from '@tabler/icons-react'
 
-const TEMPLATE_SAMPLE = 'https://res.cloudinary.com/dymmqtqyg/image/upload/v1774940173/07f3adde-12c6-4d01-b3c5-948f720e5d32_grc7ae.webp'
+const DEFAULT_PHOTO_PUBLIC_ID = 'placeholder_bxywkp'
+
+const TEMPLATE_IMAGES = [
+  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775189927/epl-post-challenge_1_byvuse.jpg',
+  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775199810/epl-post-debate_sqjs6z.jpg',
+  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775199812/epl-post-quiz_c1piip.jpg',
+]
+
+
+const LOADING_STEPS = [
+  'Scanning latest EPL news',
+  'Curating top stories',
+  'Generating 5 post ideas',
+]
+
+const LOADING_QUOTES = [
+  'VAR checking the vibes...',
+  'Consulting the dugout...',
+  'Asking the fans...',
+  'Reading the match report...',
+]
 
 export function EngagementPhotosPage() {
-  const { ideas, setIdeas, isLoading, isRendering, error, generate, refresh, render } = useEngagementPhotos()
-  const [selectedBrand, setSelectedBrand] = useState<string>('Stadium Astro')
+  const navigate = useNavigate()
+  const { ideas, setIdeas, isLoading, error, generate, refresh, photosByPlayerClub } = useEngagementPhotos()
+  const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
+  const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
+  const [loadingMessage, setLoadingMessage] = useState(LOADING_QUOTES[0])
   const [selectedIdeas, setSelectedIdeas] = useState<Set<string>>(new Set())
-  const [stage, setStage] = useState<'brand-select' | 'review' | 'rendered'>('brand-select')
+
+  // Block in-app navigation (sidebar clicks) when in review stage
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      stage === 'review' &&
+      currentLocation.pathname !== nextLocation.pathname
+  )
+
+  // Loading animation: step advance (20s, 20s, then stay on step 3)
+  useEffect(() => {
+    if (!isLoading) return
+    setCurrentLoadingStep(0)
+
+    const timer1 = setTimeout(() => setCurrentLoadingStep(1), 20000)
+    const timer2 = setTimeout(() => setCurrentLoadingStep(2), 40000)
+
+    return () => {
+      clearTimeout(timer1)
+      clearTimeout(timer2)
+    }
+  }, [isLoading])
+
+  // Loading animation: quote cycle every 4s
+  useEffect(() => {
+    if (!isLoading) return
+    const interval = setInterval(() => {
+      setLoadingMessage(LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)])
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [isLoading])
+
+  // Prevent accidental navigation during review/loading
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (stage === 'review') {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [stage])
 
   const handleGenerateIdeas = async () => {
     if (!selectedBrand) {
@@ -19,25 +87,17 @@ export function EngagementPhotosPage() {
       return
     }
     setStage('review')
-    // Language would come from data table in real implementation
     await generate(selectedBrand, 'en')
     setSelectedIdeas(new Set())
+    setCurrentLoadingStep(0)
+    setLoadingMessage(LOADING_QUOTES[0])
   }
 
   const handleRefreshIdeas = async () => {
     if (!selectedBrand) return
     await refresh(selectedBrand, 'en')
     setSelectedIdeas(new Set())
-  }
-
-  const handleSelectIdea = (ideaId: string) => {
-    const newSelected = new Set(selectedIdeas)
-    if (newSelected.has(ideaId)) {
-      newSelected.delete(ideaId)
-    } else {
-      newSelected.add(ideaId)
-    }
-    setSelectedIdeas(newSelected)
+    setCurrentLoadingStep(0)
   }
 
   const handleUpdateIdea = (ideaId: string, field: 'headline' | 'subtitle' | 'caption', value: string) => {
@@ -46,21 +106,20 @@ export function EngagementPhotosPage() {
     )
   }
 
-  const handlePhotoSelected = (ideaId: string, photoUrl: string) => {
+  const handlePhotoSelected = (ideaId: string, photo: { url: string; publicId: string }) => {
     setIdeas(
-      ideas.map((idea) => (idea.id === ideaId ? { ...idea, photo_url: photoUrl } : idea))
+      ideas.map((idea) => (idea.id === ideaId ? { ...idea, photo_url: photo.url, photo_public_id: photo.publicId } : idea))
     )
   }
 
-  const handleConfirmAndRender = async () => {
-    if (!selectedBrand || selectedIdeas.size === 0) {
+  const handleConfirmAndRender = () => {
+    if (selectedIdeas.size === 0) {
       alert('Please select at least one idea')
       return
     }
 
     const ideasToRender = ideas.filter((idea) => selectedIdeas.has(idea.id))
 
-    // Validate all conditions
     const allValid = ideasToRender.every(
       (idea) =>
         idea.headline.trim() &&
@@ -74,206 +133,185 @@ export function EngagementPhotosPage() {
       return
     }
 
-    // Mock brand logo URL — would come from data table
-    const brandLogoUrl = 'https://via.placeholder.com/200x100?text=' + selectedBrand.replace(' ', '+')
-
-    await render(ideasToRender, brandLogoUrl)
-    setStage('rendered')
+    // All ideas are ready — stay on review stage
   }
 
-  if (stage === 'brand-select') {
-    return (
-      <div className="min-h-screen bg-white p-6">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-neutral-950">EPL Engagement Posts</h1>
-            <p className="text-sm text-neutral-600">Create engaging sports posts with AI-generated ideas</p>
-          </div>
-
-          <div className="glass-card rounded-2xl p-6 space-y-5">
-            {/* Brand Selector */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Brand</label>
-              <div className="relative">
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition appearance-none cursor-pointer"
-                >
-                  {BRANDS.map((brand) => (
-                    <option key={brand} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Template Sample */}
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Template Sample</p>
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                <img
-                  src={TEMPLATE_SAMPLE}
-                  alt="Template sample"
-                  className="w-full rounded-lg bg-gray-200"
-                />
-                <p className="text-xs text-gray-500">
-                  This is a sample poster format. Your fully rendered version will appear after you confirm all details.
-                </p>
-              </div>
-            </div>
-
-            {/* Generate Button */}
-            <Button
-              onClick={handleGenerateIdeas}
-              disabled={!selectedBrand || isLoading}
-              className="w-full"
-            >
-              {isLoading ? 'Generating Ideas...' : 'Generate Ideas'}
-            </Button>
-
-            {error && (
-              <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (stage === 'review') {
-    return (
-      <div className="min-h-screen bg-white p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex justify-between items-start gap-6">
-            <div>
-              <h1 className="text-2xl font-semibold text-neutral-950">Review Ideas</h1>
-              <p className="text-sm text-neutral-600">Edit and select ideas to render</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleRefreshIdeas}
-                disabled={isLoading}
-                className="px-4 py-2 text-neutral-500 hover:text-neutral-900 underline text-xs font-medium transition disabled:text-gray-400"
-              >
-                ↺ Refresh Ideas
-              </button>
-              <Button
-                onClick={handleConfirmAndRender}
-                disabled={selectedIdeas.size === 0 || isRendering}
-              >
-                {isRendering ? 'Rendering...' : 'Confirm & Render Selected'}
-              </Button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {ideas.map((idea) => (
-              <IdeaCard
-                key={idea.id}
-                idea={idea}
-                isSelected={selectedIdeas.has(idea.id)}
-                onSelect={() => handleSelectIdea(idea.id)}
-                onUpdateField={handleUpdateIdea}
-                onPhotoSelected={handlePhotoSelected}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // stage === 'rendered'
   return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex justify-between items-start gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-neutral-950">Rendered Posts</h1>
-            <p className="text-sm text-neutral-600">Download, copy, or share your posts</p>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="bg-white sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={() => navigate('/engagement-photos')}
+              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
+            >
+              <IconChevronLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-2xl font-semibold text-neutral-950">Engagement Posts: EPL</h1>
           </div>
-          <button
-            onClick={() => setStage('brand-select')}
-            className="px-4 py-2 text-neutral-500 hover:text-neutral-900 underline text-xs font-medium transition"
-          >
-            ← Start Over
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {ideas
-            .filter((idea) => selectedIdeas.has(idea.id))
-            .map((idea) => (
-              <div key={idea.id} className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
-                {/* Rendered Image */}
-                <div className="aspect-[4/5] bg-gray-200 overflow-hidden">
-                  {idea.image_url ? (
-                    <img
-                      src={idea.image_url}
-                      alt={idea.headline}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border border-gray-200 border-t-neutral-900" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Caption & Actions */}
-                <div className="p-4 space-y-3">
-                  <textarea
-                    value={idea.caption}
-                    className="w-full h-20 p-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
-                    readOnly
-                  />
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        if (idea.image_url) {
-                          const link = document.createElement('a')
-                          link.href = idea.image_url
-                          link.download = `epl-post-${idea.type}.jpg`
-                          link.click()
-                        }
-                      }}
-                      className="flex-1 px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-medium transition active:scale-[0.98]"
-                    >
-                      ↓ Download
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(idea.caption)
-                      }}
-                      className="flex-1 px-3 py-2 border border-gray-200 hover:bg-gray-50 rounded-lg text-xs font-medium transition"
-                    >
-                      ⎘ Copy
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <p className="text-sm text-neutral-600">Create engaging sports posts featuring Premier League players</p>
+          <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
       </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+        {stage === 'brand-select' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
+            {/* LEFT: Brand Selector (spans 2 columns) */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
+                  {/* Brand Selector */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                    <div className="relative">
+                      <select
+                        value={selectedBrand}
+                        onChange={(e) => setSelectedBrand(e.target.value)}
+                        className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                      >
+                        <option value="">Select a brand...</option>
+                        {BRANDS.map((brand) => (
+                          <option key={brand} value={brand}>
+                            {brand}
+                          </option>
+                        ))}
+                      </select>
+                      <svg
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleGenerateIdeas}
+                    disabled={!selectedBrand || isLoading}
+                    className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+                  >
+                    {isLoading ? 'Generating Ideas...' : 'Generate Ideas'}
+                  </button>
+
+                  {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
+              </div>
+            </div>
+
+            {/* RIGHT: Stacked Cards (1 column, 1080x1350 aspect ratio) */}
+            <div>
+              <div className="relative overflow-visible rounded-3xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] aspect-[1080/1350]">
+                <div className="carousel-stack">
+                  {TEMPLATE_IMAGES.map((img, idx) => (
+                    <div key={idx} className="carousel-stack-item overflow-hidden">
+                      <img src={img} alt={`Template ${idx + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {stage === 'review' && isLoading && (
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
+                <div className="text-4xl inline-block animate-bounce">⚽</div>
+                <div className="flex justify-center gap-2">
+                  {LOADING_STEPS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`h-2 rounded-full transition-all duration-700 ${
+                        idx < currentLoadingStep
+                          ? 'bg-green-500 w-4'
+                          : idx === currentLoadingStep
+                            ? 'w-4 animate-pulse'
+                            : 'bg-neutral-200 w-2'
+                      }`}
+                      style={
+                        idx === currentLoadingStep
+                          ? { background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">{LOADING_STEPS[currentLoadingStep]}</p>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Step {currentLoadingStep + 1} of {LOADING_STEPS.length}
+                  </p>
+                </div>
+                <p key={loadingMessage} className="text-sm text-neutral-500 italic animate-fade">
+                  {loadingMessage}
+                </p>
+                <p className="text-xs text-neutral-400">Taking ~30 seconds to process</p>
+              </div>
+        )}
+
+        {stage === 'review' && !isLoading && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold text-neutral-950">Review Ideas</h2>
+              <p className="text-sm text-neutral-600">Edit ideas and download your posts</p>
+            </div>
+
+            {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
+
+            <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+              {ideas.map((idea, idx) => (
+                <div key={idea.id} className="border rounded-2xl p-4 bg-white border-gray-200">
+                  <IdeaCard
+                    idea={idea}
+                    onUpdateField={handleUpdateIdea}
+                    onPhotoSelected={handlePhotoSelected}
+                    selectedBrand={selectedBrand}
+                    index={idx}
+                    cachedPhotos={photosByPlayerClub}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Spacer so content isn't hidden behind sticky bar */}
+            <div className="h-24" />
+          </div>
+        )}
+
+      </div>
+
+      {/* Navigation blocker modal */}
+      {blocker.state === 'blocked' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900">Leave this page?</h3>
+                <p className="text-sm text-neutral-600 mt-1">Your progress will be lost if you navigate away now.</p>
+              </div>
+              <button onClick={() => blocker.reset()} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => blocker.reset()}
+                className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
+              >
+                Stay
+              </button>
+              <button
+                onClick={() => blocker.proceed()}
+                className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

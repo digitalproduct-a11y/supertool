@@ -7,6 +7,7 @@ import { AffiliateLinksPage } from './components/AffiliateLinksPage'
 import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
+import { EngagementPostsLanding } from './components/EngagementPostsLanding'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -23,7 +24,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-photos'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -31,7 +32,8 @@ const pathToTool: Record<string, ToolId> = {
   '/trending-news-to-fb': 'trending-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',
-  '/engagement-photos': 'engagement-photos',
+  '/engagement-photos': 'engagement-posts',
+  '/engagement-photos/epl': 'engagement-photos',
 }
 
 const toolToPath: Record<ToolId, string> = {
@@ -40,7 +42,8 @@ const toolToPath: Record<ToolId, string> = {
   'trending-news': '/trending-news-to-fb',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
-  'engagement-photos': '/engagement-photos',
+  'engagement-posts': '/engagement-photos',
+  'engagement-photos': '/engagement-photos/epl',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -592,6 +595,11 @@ function App() {
         </Layout>
       } />
       <Route path="/engagement-photos" element={
+        <Layout {...layoutProps}>
+          <EngagementPostsLanding onSelectTopic={(id) => navigate(toolToPath[id])} />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/epl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage />
         </Layout>

@@ -32,7 +32,18 @@
       "Bash(git remote:*)",
       "Bash(git add:*)",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__n8n-mcp__n8n_health_check",
+      "mcp__n8n-mcp__n8n_delete_workflow",
+      "mcp__n8n-mcp__n8n_update_full_workflow",
+      "Read(//Users/ylyiyany/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/skills/brainstorming/**)",
+      "mcp__claude_ai_n8n__search_nodes",
+      "mcp__claude_ai_n8n__get_node_types",
+      "mcp__claude_ai_n8n__validate_workflow",
+      "WebSearch",
+      "Read(//Users/ylyiyany/.claude/**)",
+      "mcp__n8n-mcp__n8n_autofix_workflow",
+      "Read(//temp/readonly/**)"
     ]
   }
 }
