@@ -25,6 +25,7 @@ export interface AnalyticsEvent {
   tool_label: string
   brand?: string
   error_message?: string
+  step?: string
 }
 
 export function trackEvent(event: AnalyticsEvent): void {

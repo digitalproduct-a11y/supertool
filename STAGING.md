@@ -1,12 +1,21 @@
 # Launch Staging Instructions
 
-## Option 1 — Local dev with staging webhooks
+  ┌────────────┬─────────────┬───────────────────────────┐
+  │            │ npm run dev │    npm run dev:staging    │
+  ├────────────┼─────────────┼───────────────────────────┤
+  │ Env loaded │ .env.local  │ .env.staging → .env.local │
+  ├────────────┼─────────────┼───────────────────────────┤
+  │ Webhooks   │ Production  │ Staging                   │
+  └────────────┴─────────────┴───────────────────────────┘
+
+
+## Local dev with staging webhooks
 Create a .env.staging file (you already have it), then run:
 
 cd super-tool/ui
 cp .env.staging .env.local.staging
 Vite doesn't auto-load .env.staging, so the easiest way is to temporarily swap your .env.local:
-
+s
 ### Back up production env
 cp .env.local .env.local.production
 
@@ -20,7 +29,7 @@ npm run dev
 cp .env.local.production .env.local
 
 
-## Option 2 — Use Vercel Preview URL (recommended)
+## Use Vercel Preview URL
 Since you already set up Vercel Preview env vars, just push any change to the staging branch and Vercel auto-deploys it with staging webhooks:
 
 cd super-tool
@@ -32,3 +41,4 @@ Vercel will give you a URL like:
 https://supertool-git-staging-digitalproduct-a11y.vercel.app
 
 Find it in Vercel dashboard → Deployments → filter by staging branch.
+

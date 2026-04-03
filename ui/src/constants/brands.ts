@@ -7,7 +7,6 @@ export const BRANDS = [
   'Era Sarawak',
   'Gegar',
   'Gempak',
-  'Goxuan',
   'Hitz',
   'Hotspot',
   'Impiana',
@@ -15,10 +14,8 @@ export const BRANDS = [
   'Lite',
   'Maskulin',
   'Media Hiburan',
-  'Melody',
   'Mingguan Wanita',
   'Mix',
-  'My',
   'Nona',
   'Pa&Ma',
   'Raaga',
@@ -37,7 +34,7 @@ export type BrandName = (typeof BRANDS)[number]
 export const DOMAIN_TO_BRAND: Record<string, { brand: BrandName; language: string; template: string }> = {
   'astroawani.com': { brand: 'Astro Awani', language: 'BM', template: 'Astro Awani' },
   'international.astroawani.com': { brand: 'Astro Awani', language: 'EN', template: 'Astro Awani' },
-  'stadiumastro.com': { brand: 'Stadium Astro', language: 'BM', template: 'Stadium Astro' },
+  'stadiumastro.com': { brand: 'Astro Arena', language: 'BM', template: 'Astro Arena' },
   'english.stadiumastro.com': { brand: 'Stadium Astro', language: 'EN', template: 'Astro Arena' },
   'astroulagam.com.my': { brand: 'Astro Ulagam', language: 'BM', template: 'Astro Ulagam' },
   'gempak.com': { brand: 'Gempak', language: 'BM', template: 'Gempak' },
@@ -57,9 +54,7 @@ export const DOMAIN_TO_BRAND: Record<string, { brand: BrandName; language: strin
   'hitz.com.my': { brand: 'Hitz', language: 'BM', template: 'Hitz' },
   'mix.my': { brand: 'Mix', language: 'BM', template: 'Mix' },
   'raaga.my': { brand: 'Raaga', language: 'BM', template: 'Raaga' },
-  'my.syok.my': { brand: 'My', language: 'BM', template: 'My' },
-  'goxuan.syok.my': { brand: 'Goxuan', language: 'BM', template: 'Goxuan' },
-  'melody.syok.my': { brand: 'Melody', language: 'BM', template: 'Melody' },
+  'sinar.my': { brand: 'Sinar', language: 'BM', template: 'Sinar' },
   'impiana.my': { brand: 'Impiana', language: 'BM', template: 'Impiana' },
 }
 

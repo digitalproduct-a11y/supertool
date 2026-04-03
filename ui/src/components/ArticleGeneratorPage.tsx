@@ -149,7 +149,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     useArticleGenerator()
 
   useEffect(() => {
-    trackEvent({ event_type: 'page_visit', tool_id: 'article-generator', tool_label: 'Shopee Article Generator' })
+    trackEvent({ event_type: 'page_visit', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', step: 'input' })
   }, [])
 
   // Toast errors from the hook
@@ -176,13 +176,32 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       currentLocation.pathname !== nextLocation.pathname
   )
 
+  // Track page visits for each step
+  useEffect(() => {
+    if (state.step === 'pick-angle' && !state.isLoading) {
+      trackEvent({ event_type: 'page_visit', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'pick-angle' })
+    }
+  }, [state.step, state.isLoading])
+
+  useEffect(() => {
+    if (state.step === 'review-article' && !state.isLoading) {
+      trackEvent({ event_type: 'page_visit', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'review-article' })
+    }
+  }, [state.step, state.isLoading])
+
+  useEffect(() => {
+    if (state.step === 'thumbnail') {
+      trackEvent({ event_type: 'page_visit', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'thumbnail' })
+    }
+  }, [state.step])
+
   // Record to history once per session when reaching done
   useEffect(() => {
     if (state.step !== 'done') return
     if (recordedForSession.current) return
     if (!state.articleTitle || !state.articleHtml) return
     recordedForSession.current = true
-    trackEvent({ event_type: 'asset_generated', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand })
+    trackEvent({ event_type: 'asset_generated', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'done' })
     const item: ArticleHistoryItem = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -307,7 +326,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     if (!state.brand || !canGenerate) return
 
     setState((s) => ({ ...s, step: 'pick-angle', links: filledLinks, isLoading: true }))
-    trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand })
+    trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'input' })
 
     const result = await intake(state.brand, filledLinks)
     if (result) {
@@ -320,7 +339,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         isLoading: false,
       }))
     } else {
-      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to process links.' })
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'input', error_message: 'Failed to process links.' })
       setState((s) => ({
         ...s,
         step: 'input',
@@ -334,6 +353,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     if (state.selectedAngle === undefined && !customAngleText.trim()) return
 
     setState((s) => ({ ...s, step: 'review-article', isLoading: true }))
+    trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'pick-angle' })
 
     const body = {
       brand: state.brand,
@@ -357,7 +377,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         isLoading: false,
       }))
     } else {
-      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate article.' })
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'pick-angle', error_message: 'Failed to generate article.' })
       setState((s) => ({
         ...s,
         isLoading: false,
@@ -372,6 +392,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
 
   const handleArticleRevise = useCallback(async () => {
     setState((s) => ({ ...s, isLoading: true }))
+    trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'review-article', error_message: 'revision' })
 
     const body = {
       brand: state.brand,
@@ -395,6 +416,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       }))
       setFeedbackText('')
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'review-article', error_message: 'Failed to regenerate article.' })
       setState((s) => ({
         ...s,
         isLoading: false,
@@ -419,7 +441,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
 
     const promptResult = await thumbnailPrompt(body)
     if (!promptResult) {
-      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate thumbnail prompt.' })
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'thumbnail', error_message: 'Failed to generate thumbnail prompt.' })
       setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail prompt. Please try again.' }))
       return
     }
@@ -435,7 +457,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       setThumbnailPhase('done')
       setState((s) => ({ ...s, thumbnailUrl: imageResult.thumbnail_url, isLoading: false }))
     } else {
-      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate thumbnail.' })
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'thumbnail', error_message: 'Failed to generate thumbnail.' })
       setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail. Please try again.' }))
     }
   }, [state, thumbnailPrompt, thumbnailGenerate])
@@ -1293,7 +1315,11 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
             autoFocus
           />
           <button
-            onClick={() => { setShowThumbnailRevisionModal(false); handleThumbnailRegenerate() }}
+            onClick={() => {
+              trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'thumbnail', error_message: 'regenerate' })
+              setShowThumbnailRevisionModal(false)
+              handleThumbnailRegenerate()
+            }}
             disabled={!thumbnailFeedback.trim()}
             className="w-full px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition text-sm"
           >
@@ -1316,13 +1342,22 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'done' })) }}
+              onClick={() => {
+                trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'review-article', error_message: 'approved-skip' })
+                setShowApproveModal(false)
+                setState((s) => ({ ...s, step: 'done' }))
+              }}
               className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition text-sm"
             >
               Skip, I'm done
             </button>
             <button
-              onClick={() => { setShowApproveModal(false); setState((s) => ({ ...s, step: 'thumbnail' })); handleThumbnailGenerate() }}
+              onClick={() => {
+                trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, step: 'review-article', error_message: 'approved-with-thumbnail' })
+                setShowApproveModal(false)
+                setState((s) => ({ ...s, step: 'thumbnail' }))
+                handleThumbnailGenerate()
+              }}
               className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm"
             >
               Yes, generate

@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl } from '../constants/brands'
+import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl, detectBrandInfoFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
 
 interface InputFormProps {
@@ -47,9 +47,15 @@ export function InputForm({
     onUrlChange(newUrl)
     const detected = detectBrandFromUrl(newUrl)
     if (detected) onBrandChange(detected)
-    // After URL change, brand always auto-aligns (or is empty) → reset to Original
-    onTitleModeChange('original')
-    onCaptionTitleModeChange('original')
+    // English Stadium Astro → auto-select AI for both title modes
+    const info = detectBrandInfoFromUrl(newUrl)
+    if (info?.brand === 'Stadium Astro' && info?.language === 'EN') {
+      onTitleModeChange('ai')
+      onCaptionTitleModeChange('ai')
+    } else {
+      onTitleModeChange('original')
+      onCaptionTitleModeChange('original')
+    }
   }
 
   return (
@@ -244,7 +250,15 @@ export function InputForm({
             <div className="space-y-2">
               {Object.entries(DOMAIN_TO_BRAND).map(([domain, info]) => (
                 <div key={domain} className="text-sm text-gray-700">
-                  • <span className="font-medium">{info.brand}</span> ({domain})
+                  • <span className="font-medium">{info.brand}</span>{' '}
+                  <a
+                    href={`https://${domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    ({domain})
+                  </a>
                 </div>
               ))}
             </div>
