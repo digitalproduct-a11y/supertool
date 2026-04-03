@@ -27,12 +27,12 @@ const LOADING_QUOTES = [
 
 export function EngagementPhotosPage() {
   const navigate = useNavigate()
-  const { ideas, setIdeas, isLoading, error, generate, refresh, photosByPlayerClub } = useEngagementPhotos()
+  const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState(LOADING_QUOTES[0])
-  const [selectedIdeas, setSelectedIdeas] = useState<Set<string>>(new Set())
+  const [selectedIdeas] = useState<Set<string>>(new Set())
 
   // Block in-app navigation (sidebar clicks) when in review stage
   const blocker = useBlocker(
