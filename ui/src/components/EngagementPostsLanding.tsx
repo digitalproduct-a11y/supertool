@@ -77,14 +77,14 @@ const sections: Section[] = [
 export function EngagementPostsLanding({ onSelectTopic }: EngagementPostsLandingProps) {
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Hero */}
         <div className="mb-10">
-          <h1 className="font-display text-4xl font-bold text-neutral-950 tracking-tight leading-tight">
+          <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
             Engagement Posts
           </h1>
-          <p className="text-neutral-500 mt-3 text-sm max-w-md">
+          <p className="text-neutral-500 mt-1 text-sm">
             Create captivating social media content across different topics and industries.
           </p>
           {/* KULT gradient stripe — animated grow */}
