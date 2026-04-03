@@ -6,31 +6,25 @@ interface PreviewPanelProps {
   state: 'idle' | 'loading' | 'result' | 'error'
   result: WorkflowResult | null
   errorMessage: string
-  articleUrl: string
   onApprove: (caption: string) => void
   onRegenerate: () => void
   onReset: () => void
   onPartialRegenerate: (op: WorkflowOperation, titleMode: TitleMode, customTitle: string, captionTitleMode: CaptionTitleMode) => void
-  onPostDraft?: (imageUrl: string, caption: string, brand: string) => Promise<{success: boolean, message: string, postId?: string}>
   titleMode: TitleMode
   customTitle: string
   captionTitleMode: CaptionTitleMode
-  isRunning: boolean
 }
 
 export function PreviewPanel({
   state,
   result,
   errorMessage,
-  articleUrl: _articleUrl,
   onApprove: _onApprove,
   onReset,
   onPartialRegenerate: _onPartialRegenerate,
-  onPostDraft,
   titleMode: _titleMode,
   customTitle: _customTitle,
   captionTitleMode: _captionTitleMode,
-  isRunning,
 }: PreviewPanelProps) {
   return (
     <div className="glass-card rounded-2xl p-6 min-h-96 flex flex-col">
@@ -71,11 +65,7 @@ export function PreviewPanel({
 
       {state === 'result' && result && (
         <div className="animate-fade-slide-up">
-          <ResultPreview
-            result={result}
-            isRunning={isRunning}
-            onPostDraft={onPostDraft}
-          />
+          <ResultPreview result={result} isRunning={false} />
         </div>
       )}
 

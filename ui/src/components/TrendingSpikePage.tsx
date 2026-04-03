@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
+import { trackEvent } from '../utils/analytics'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
 import { Spinner } from './ds/Spinner'
@@ -177,11 +178,16 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
+  const [postMode, setPostMode] = useState<'publish' | 'schedule'>('publish')
+  const [scheduledFor, setScheduledFor] = useState('')
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
     setIsGenerating(true)
     setError('')
+
+    trackEvent({ event_type: 'form_submitted', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand })
+
     try {
       const data = await callGenerateWebhook({
         url: source.articleUrl,
@@ -192,13 +198,17 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         caption_title_mode: captionTitleMode,
       })
       if (data.success) {
+        trackEvent({ event_type: 'asset_generated', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand })
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
         setCaption(data.caption ?? '')
       } else {
+        trackEvent({ event_type: 'generation_failed', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand, error_message: data.message || 'Generation failed.' })
         setError(data.message || 'Generation failed.')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Request failed.')
+      const errorMsg = err instanceof Error ? err.message : 'Request failed.'
+      trackEvent({ event_type: 'generation_failed', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand, error_message: errorMsg })
+      setError(errorMsg)
     } finally {
       setIsGenerating(false)
     }
@@ -223,25 +233,35 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       setDraftState('error')
       return
     }
+    if (postMode === 'schedule' && !scheduledFor) {
+      toast.error('Please pick a date and time to schedule.')
+      return
+    }
     setDraftState('posting')
     try {
+      const isoSchedule = postMode === 'schedule' ? new Date(scheduledFor).toISOString() : undefined
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fb_ai_image_url: result.imageUrl, fb_ai_caption: caption, brand: result.brand }),
+        body: JSON.stringify({
+          fb_ai_image_url: result.imageUrl,
+          fb_ai_caption: caption,
+          brand: result.brand,
+          ...(isoSchedule ? { scheduled_for: isoSchedule } : {}),
+        }),
       })
       const data = await res.json()
       if (data.success === true || data.status === 'SUCCESS') {
         setDraftState('done')
         setDraftPostId(data.post_id as string ?? null)
-        toast.success('Draft posted to Facebook!')
+        toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Published to Facebook!')
       } else {
         setDraftState('error')
-        toast.error("Couldn't post draft. Please try again.")
+        toast.error(data.message || "Couldn't post. Please try again.")
       }
     } catch {
       setDraftState('error')
-      toast.error("Couldn't post draft. Please try again.")
+      toast.error("Couldn't post. Please try again.")
     }
   }
 
@@ -398,8 +418,36 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed"
                   />
                 </div>
-                {/* Create Draft button */}
-                <div>
+                {/* Post mode + action — hidden for now */}
+                {false && <div className="space-y-3">
+                  {/* Publish Now / Schedule toggle */}
+                  {draftState !== 'done' && (
+                    <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
+                      <button
+                        onClick={() => setPostMode('publish')}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'publish' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      >
+                        Publish Now
+                      </button>
+                      <button
+                        onClick={() => setPostMode('schedule')}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'schedule' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      >
+                        Schedule
+                      </button>
+                    </div>
+                  )}
+                  {/* Date/time picker */}
+                  {postMode === 'schedule' && draftState !== 'done' && (
+                    <input
+                      type="datetime-local"
+                      value={scheduledFor}
+                      onChange={e => setScheduledFor(e.target.value)}
+                      min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
+                    />
+                  )}
+                  {/* Action button */}
                   <button
                     onClick={handlePostDraftClick}
                     disabled={draftState === 'posting'}
@@ -415,20 +463,22 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                         </svg>
-                        Posting draft…
+                        {postMode === 'schedule' ? 'Scheduling…' : 'Publishing…'}
                       </span>
                     ) : draftState === 'done' ? (
-                      '✓ Draft posted!'
+                      postMode === 'schedule' ? '✓ Scheduled!' : '✓ Published!'
+                    ) : postMode === 'schedule' ? (
+                      `Schedule on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     ) : (
-                      `Create Draft on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
+                      `Publish on ${brand.replace(/\b\w/g, c => c.toUpperCase())}'s FB`
                     )}
                   </button>
                   {draftPostId && (
-                    <p className="mt-2 text-xs text-neutral-400 text-center">
+                    <p className="text-xs text-neutral-400 text-center">
                       Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
                     </p>
                   )}
-                </div>
+                </div>}
               </div>
             </div>
           ) : (
@@ -451,6 +501,10 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
 export function TrendingSpikePage() {
   const [activeTab, setActiveTab] = useState<'spike' | 'trending'>('trending')
+
+  useEffect(() => {
+    trackEvent({ event_type: 'page_visit', tool_id: 'trending-news', tool_label: 'Trending News to FB' })
+  }, [])
 
   // Spike tab state
   const [spikeView, setSpikeView] = useState<'list' | 'generate'>('list')
@@ -496,19 +550,17 @@ export function TrendingSpikePage() {
     }
   }, [activeTab])
 
+  // Fetch trending articles once on page mount
+  useEffect(() => {
+    handleFetchTrending()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-load inbox when spike tab is active
   useEffect(() => {
     if (activeTab === 'spike' && spikeView === 'list' && spikeInbox.length === 0 && !isLoadingInbox) {
       handleLoadInbox()
     }
   }, [activeTab, spikeView]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-load trending when tab is active and no data loaded yet
-  useEffect(() => {
-    if (activeTab === 'trending' && trendingView === 'list' && trendingItems.length === 0 && !isFetchingTrending) {
-      handleFetchTrending()
-    }
-  }, [activeTab, trendingView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleGeneratePost(spike: SpikeInboxItem) {
     // Pre-fill brand from URL if not set
@@ -571,32 +623,30 @@ export function TrendingSpikePage() {
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Trending Spike to FB Post</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending Spike to FB Post</h1>
               <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from spike or trending articles</p>
             </div>
             <GuideModal title="How to use Trending Spike to FB Post">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1nExBvjJeMHR0cCkyYrIl3r2LAo4zIUzA/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Trending News to FB Photo walkthrough video"
+                  />
+                </div>
                 <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                  <li><strong>Click "Refresh Inbox"</strong> — load the latest spike articles from Chartbeat alerts</li>
-                  <li><strong>Select articles</strong> — pick one or more articles you want to create FB posts for</li>
-                  <li><strong>Set parameters for each:</strong>
-                    <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                      <li>Brand: auto-detected or manually selected</li>
-                      <li>Title mode: Original, AI Rewrite, or Custom</li>
-                    </ul>
-                  </li>
-                  <li><strong>Click "Generate"</strong> — watch the status update for each article (idle → generating → done/error)</li>
-                  <li><strong>Review results</strong> — each article shows its generated image and caption</li>
-                  <li><strong>Re-generate or Approve:</strong>
-                    <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                      <li>Re-generate: update the image or caption</li>
-                      <li>Approve: image downloads, caption copies to clipboard</li>
-                    </ul>
-                  </li>
+                  <li><strong>Select an article</strong> — Pick one article you want to create a Facebook post for.</li>
+                  <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
+                  <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
+                  <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
+                  <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
+                  <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
                 </ol>
                 <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
                   <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                  <p className="text-xs text-neutral-700">Use the Trending tab for articles from other monitoring sources, or the Spike tab for real-time Chartbeat alerts.</p>
+                  <p className="text-xs text-neutral-700">Use the Trending tab for articles from other monitoring sources. Use the Spike tab for real-time Chartbeat alerts.</p>
                 </div>
               </div>
             </GuideModal>
@@ -965,7 +1015,7 @@ export function TrendingSpikePage() {
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-neutral-600">No articles yet</p>
-                <p className="text-xs text-neutral-400 mt-1">Click "Fetch Trending" to pull current trending articles from all news sources</p>
+                <p className="text-xs text-neutral-400 mt-1">No trending articles found. Try refreshing the page.</p>
               </div>
             )}
           </div>

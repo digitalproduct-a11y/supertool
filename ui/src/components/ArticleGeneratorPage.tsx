@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { IconRotate, IconUserCircle, IconTool, IconCoins, IconGift, IconListCheck, IconFileText, IconHistory } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
+import { trackEvent } from '../utils/analytics'
 
 interface ArticleHistoryItem {
   id: string
@@ -109,11 +110,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     isLoading: false,
   })
 
-  const [productLinks, setProductLinks] = useState<string[]>([
-    'https://shopee.com.my/Russell-Taylors-Digital-Low-Sugar-Rice-Cooker-(1.8L)-RC10-i.66336205.18483902789?extraParams=%7B%22display_model_id%22%3A109575560766%2C%22model_selection_logic%22%3A3%7D',
-    'https://shopee.com.my/-TOP-SALE-Panasonic-1L-1.8L-2.8L-Conventional-Rice-Cooker-SR-Y10G-SR-Y18G-SR-Y18FG-SR-E28-(Periuk-Nasi-%E7%94%B5%E9%A5%AD%E9%94%A5)-i.26881612.1295853816?extraParams=%7B%22display_model_id%22%3A97650596808%2C%22model_selection_logic%22%3A3%7D',
-    'https://shopee.com.my/Philips-HD4719-Spherical-Pot-Digital-Rice-Cooker-1.8L-FreshDefense-Tech-48hr-Fresh-Delicious-Rice-HD4719-32-i.175347531.29781796629?extraParams=%7B%22display_model_id%22%3A208378878980%2C%22model_selection_logic%22%3A3%7D',
-  ])
+  const [productLinks, setProductLinks] = useState<string[]>(['', '', ''])
   const [feedbackText, setFeedbackText] = useState('')
   const [customAngleText, setCustomAngleText] = useState('')
   const [_imagePromptText, setImagePromptText] = useState('')
@@ -151,6 +148,10 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
   const { intake, generate, thumbnailPrompt, thumbnailGenerate, isLoading, error } =
     useArticleGenerator()
 
+  useEffect(() => {
+    trackEvent({ event_type: 'page_visit', tool_id: 'article-generator', tool_label: 'Shopee Article Generator' })
+  }, [])
+
   // Toast errors from the hook
   useEffect(() => {
     if (error) toast.error(error)
@@ -181,6 +182,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     if (recordedForSession.current) return
     if (!state.articleTitle || !state.articleHtml) return
     recordedForSession.current = true
+    trackEvent({ event_type: 'asset_generated', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand })
     const item: ArticleHistoryItem = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -305,6 +307,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
     if (!state.brand || !canGenerate) return
 
     setState((s) => ({ ...s, step: 'pick-angle', links: filledLinks, isLoading: true }))
+    trackEvent({ event_type: 'form_submitted', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand })
 
     const result = await intake(state.brand, filledLinks)
     if (result) {
@@ -317,6 +320,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         isLoading: false,
       }))
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to process links.' })
       setState((s) => ({
         ...s,
         step: 'input',
@@ -353,6 +357,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         isLoading: false,
       }))
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate article.' })
       setState((s) => ({
         ...s,
         isLoading: false,
@@ -414,6 +419,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
 
     const promptResult = await thumbnailPrompt(body)
     if (!promptResult) {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate thumbnail prompt.' })
       setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail prompt. Please try again.' }))
       return
     }
@@ -429,6 +435,7 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
       setThumbnailPhase('done')
       setState((s) => ({ ...s, thumbnailUrl: imageResult.thumbnail_url, isLoading: false }))
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-generator', tool_label: 'Shopee Article Generator', brand: state.brand, error_message: 'Failed to generate thumbnail.' })
       setState((s) => ({ ...s, isLoading: false, error: 'Failed to generate thumbnail. Please try again.' }))
     }
   }, [state, thumbnailPrompt, thumbnailGenerate])
@@ -441,20 +448,20 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
 
   return (
     <>
-    <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
-      <div className="max-w-2xl mx-auto">
+    <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
                 Shopee Article Generator
               </h1>
               <p className="text-neutral-500 mt-1 text-sm">
                 Write engaging Shopee product articles from links
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => {
                 setShowHistoryDrawer(true)
@@ -467,48 +474,57 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
             </button>
             <GuideModal title="How to use Shopee Article Generator">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1N4mclnm0FgkQ4C0_4nC8Zf2IaFsgFQgA/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Shopee Article Generator walkthrough video"
+                  />
+                </div>
                 <div>
                   <h3 className="font-semibold text-neutral-950 mb-3">Step-by-step guide</h3>
                   <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
                     <li><strong>Step 1 — Input:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Paste Shopee product links (shopee.com.my URLs)</li>
-                        <li>Select the brand for the article</li>
-                        <li>Click <strong>Next</strong></li>
+                        <li>Paste Shopee product links (shopee.com.my URLs).</li>
+                        <li>Select a brand for the article.</li>
+                        <li>Click <strong>Generate Article Angles</strong> to proceed.</li>
                       </ul>
                     </li>
                     <li><strong>Step 2 — Pick Angle:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Review AI-suggested editorial angles</li>
-                        <li>Pick one or write your own custom angle</li>
-                        <li>Click <strong>Next</strong></li>
+                        <li>Review AI-suggested editorial angles.</li>
+                        <li>Pick one or write your own custom angle.</li>
+                        <li>Click <strong>Write Article</strong> to start writing.</li>
                       </ul>
                     </li>
                     <li><strong>Step 3 — Review Article:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Read the generated article (it's in the brand's voice)</li>
-                        <li>Affiliate links are already embedded</li>
-                        <li>Click <strong>Request Revision</strong> to refine, or <strong>Next</strong> to continue</li>
+                        <li>Review the generated article, written in the brand's voice.</li>
+                        <li>Affiliate links are already embedded.</li>
+                        <li>Click <strong>Request Revision</strong> to refine, or <strong>Approve</strong> to generate the article thumbnail.</li>
                       </ul>
                     </li>
                     <li><strong>Step 4 — Thumbnail:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Review the AI-generated thumbnail image</li>
-                        <li>Regenerate if needed</li>
-                        <li>Click <strong>Done</strong></li>
+                        <li>Review the AI-generated thumbnail image.</li>
+                        <li>Regenerate if needed.</li>
+                        <li>Click <strong>Done</strong> to finish.</li>
                       </ul>
                     </li>
                     <li><strong>Done:</strong>
                       <ul className="list-disc list-inside mt-1 ml-4 space-y-1">
-                        <li>Copy the article content and use it in your CMS</li>
-                        <li>Download the thumbnail for your article header</li>
+                        <li>Copy the article content and paste it into your website CMS.</li>
+                        <li>Download the thumbnail for your article header.</li>
+                        <li>The completed article is saved to <strong>History</strong> — access it anytime from the History button at the top.</li>
                       </ul>
                     </li>
                   </ol>
                 </div>
                 <div className="p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
                   <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                  <p className="text-xs text-neutral-700">Use the Restart button to start over with different products or brand at any point.</p>
+                  <p className="text-xs text-neutral-700">Use the Restart button to start over with different products or a different brand at any point.</p>
                 </div>
               </div>
             </GuideModal>

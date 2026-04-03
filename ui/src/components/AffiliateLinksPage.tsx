@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, type BrandName } from '../constants/brands'
+import { trackEvent } from '../utils/analytics'
 import { Spinner } from './ds/Spinner'
 import { GuideModal } from './ds/GuideModal'
 import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
@@ -14,6 +15,10 @@ export function AffiliateLinksPage() {
   const [dragOver, setDragOver] = useState(false)
   const { run } = useAffiliateLinks()
 
+  useEffect(() => {
+    trackEvent({ event_type: 'page_visit', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links' })
+  }, [])
+
   const handleFile = async (selectedFile: File) => {
     if (!selectedBrand) {
       toast.error('Please select a brand first')
@@ -21,13 +26,16 @@ export function AffiliateLinksPage() {
     }
 
     setPageState('loading')
+    trackEvent({ event_type: 'form_submitted', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand })
 
     const response = await run(selectedFile, selectedBrand)
 
     if (response.success) {
+      trackEvent({ event_type: 'asset_generated', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand })
       toast.success('Your file is ready and has been downloaded.')
       setPageState('idle')
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand, error_message: response.message })
       toast.error(response.message)
       setPageState('idle')
     }
@@ -50,23 +58,31 @@ export function AffiliateLinksPage() {
   }
 
   return (
-    <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
-      <div className="max-w-3xl mx-auto">
+    <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Affiliate Links</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Affiliate Links</h1>
               <p className="text-neutral-500 mt-1 text-sm">Upload an Excel file with Shopee links and get back a processed file with affiliate data</p>
             </div>
             <GuideModal title="How to use Shopee Affiliate Links">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1RCS4_W0c4SdHf8jCmWNAM2_LCtZHnG3w/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Shopee Affiliate Links walkthrough video"
+                  />
+                </div>
                 <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                  <li><strong>Select a brand</strong> — choose from the dropdown menu</li>
-                  <li><strong>Download the template</strong> — if you don't already have one, get the Excel template to see the expected format</li>
-                  <li><strong>Fill in Shopee URLs</strong> — place one Shopee product URL per row in the template</li>
-                  <li><strong>Upload the file</strong> — drag and drop the filled Excel file, or click to browse</li>
-                  <li><strong>Wait for processing</strong> — the tool extracts product data and adds affiliate tags</li>
-                  <li><strong>Download the result</strong> — your processed file auto-downloads with all affiliate links and product data included</li>
+                  <li><strong>Select a brand</strong> — Choose the brand the affiliate products are for.</li>
+                  <li><strong>Download the template</strong> — If you don't have one yet, download the Excel template to see the expected format.</li>
+                  <li><strong>Fill in Shopee URLs</strong> — Paste one Shopee product URL per row in the template.</li>
+                  <li><strong>Upload the file</strong> — Drag and drop or click to upload the filled Excel file.</li>
+                  <li><strong>Wait for processing</strong> — The tool extracts product data and adds affiliate tags.</li>
+                  <li><strong>Download the result</strong> — Your processed file will auto-download with all affiliate links and product data included.</li>
                 </ol>
                 <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
                   <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>

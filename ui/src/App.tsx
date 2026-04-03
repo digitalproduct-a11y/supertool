@@ -14,6 +14,8 @@ import { HistoryPanel } from './components/HistoryPanel'
 import { GuideModal } from './components/ds/GuideModal'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
+import { useKultStats } from './hooks/useKultStats'
+import { setKultLogger, trackEvent } from './utils/analytics'
 import type {
   AppState,
   WorkflowResult,
@@ -306,6 +308,10 @@ function FbPostPage() {
   const { run, isRunning } = useWorkflow()
 
   useEffect(() => {
+    trackEvent({ event_type: 'page_visit', tool_id: 'article-to-fb', tool_label: 'Article to FB Post' })
+  }, [])
+
+  useEffect(() => {
     if (state === 'result' && window.innerWidth < 768) {
       setTimeout(() => {
         document.getElementById('preview-panel')?.scrollIntoView({ behavior: 'smooth' })
@@ -321,6 +327,8 @@ function FbPostPage() {
     setResult(null)
     setErrorMessage('')
 
+    trackEvent({ event_type: 'form_submitted', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand })
+
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
@@ -333,6 +341,7 @@ function FbPostPage() {
     const response = await run(request)
 
     if (response.success) {
+      trackEvent({ event_type: 'asset_generated', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand })
       setResult(response)
       setState('result')
       const item: HistoryItem = {
@@ -345,6 +354,7 @@ function FbPostPage() {
       }
       setHistory((h) => [item, ...h])
     } else {
+      trackEvent({ event_type: 'generation_failed', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand, error_message: response.message })
       setErrorMessage(response.message)
       setState('error')
     }
@@ -423,24 +433,6 @@ function FbPostPage() {
     }
   }, [url, brand, result, run])
 
-  const handlePostDraft = useCallback(async (imageUrl: string, caption: string, brand: string) => {
-    const webhookUrl = import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined
-    if (!webhookUrl) {
-      return { success: false, message: 'Post draft webhook not configured' }
-    }
-    try {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fb_ai_image_url: imageUrl, fb_ai_caption: caption, brand }),
-      })
-      const data = await response.json()
-      const success = data.success === true || data.status === 'SUCCESS'
-      return { success, message: String(data.message ?? 'Unknown error'), postId: data.post_id as string | undefined }
-    } catch (err) {
-      return { success: false, message: err instanceof Error ? err.message : 'Request failed' }
-    }
-  }, [])
 
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
@@ -448,25 +440,29 @@ function FbPostPage() {
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
               <p className="text-neutral-500 mt-1 text-sm">Turn any article into a Facebook image &amp; caption</p>
             </div>
             <GuideModal title="How to use Article to FB Post">
               <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1k6kXTcFNUjHofeKiL3W68n5-EkYaqViY/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Article to FB Photo walkthrough video"
+                  />
+                </div>
                 <div>
                   <h3 className="font-semibold text-neutral-950 mb-3">Step-by-step guide</h3>
                   <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                    <li><strong>Paste an article URL</strong> — supports Astro Awani, mStar, and other approved domains</li>
-                    <li><strong>Select a brand</strong> — choose the brand the post is for</li>
-                    <li><strong>Choose Image Title mode</strong> — Original uses the article headline, AI rewrites it, or enter a Custom title</li>
-                    <li><strong>Choose Caption Title mode</strong> — Original or AI-rewritten title in the caption</li>
-                    <li><strong>Click Generate</strong> — the image and caption will appear on the right</li>
-                    <li><strong>Download &amp; copy</strong> — download the image and copy the caption for scheduling</li>
+                    <li><strong>Paste an article URL</strong> — Use "Check supported domains" to see which news sites are compatible before pasting a URL.</li>
+                    <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
+                    <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
+                    <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
+                    <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
+                    <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
                   </ol>
-                </div>
-                <div className="p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
-                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                  <p className="text-xs text-neutral-700">Use "Check supported domains" to see which news sites are compatible before pasting a URL.</p>
                 </div>
               </div>
             </GuideModal>
@@ -504,16 +500,13 @@ function FbPostPage() {
               state={state === 'approved' ? 'idle' : state}
               result={result}
               errorMessage={errorMessage}
-              articleUrl={url}
               onApprove={handleApprove}
               onRegenerate={handleRegenerate}
               onReset={handleReset}
               onPartialRegenerate={handlePartialRegenerate}
-              onPostDraft={handlePostDraft}
               titleMode={titleMode}
               customTitle={customTitle}
               captionTitleMode={captionTitleMode}
-              isRunning={isRunning}
             />
           </div>
         </div>
@@ -559,6 +552,11 @@ function FbPostPage() {
 function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const { logEvent } = useKultStats()
+
+  useEffect(() => {
+    setKultLogger(logEvent)
+  }, [logEvent])
 
   const layoutProps = {
     isSidebarCollapsed,

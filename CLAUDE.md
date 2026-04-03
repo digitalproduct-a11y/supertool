@@ -89,6 +89,10 @@ These activate automatically based on the task at hand:
 ## Output
 Always push workflow changes directly to the n8n instance using MCP. After pushing, confirm what was done and note any assumptions made or anything the user should verify.
 
+## Deployment Rules
+- **On `staging` branch**: always deploy automatically — `git push origin staging` triggers a Vercel Preview deployment, no confirmation needed.
+- **On `main` branch**: ALWAYS ask the user before deploying to production. Never run `git push origin main` without explicit approval.
+
 ## Boundaries
 - Never read, access, or run commands on files outside of /Users/ylyiyany/Documents/n8n-builder/ without explicit user permission.
 - Exception: if MCP server or n8n connectivity troubleshooting genuinely requires it, ask the user first before accessing anything outside this folder.
