@@ -300,7 +300,6 @@ export function EngagementPhotosPage() {
       )}
 
       </div>
-    </div>
   </main>
-)
+  )
 }
