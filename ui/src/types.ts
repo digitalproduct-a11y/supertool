@@ -73,6 +73,75 @@ export type AffiliateLinksResponse = AffiliateLinksResult | AffiliateLinksError
 // Article Generator tool types
 export type ArticleGeneratorStep = 'input' | 'pick-angle' | 'review-article' | 'thumbnail' | 'done'
 
+// Engagement Photos tool types
+export interface EngagementPost {
+  headline: string
+  subtitle: string
+  caption: string
+  image_url: string
+}
+
+export interface EngagementPhotosResponse {
+  success: true
+  posts: EngagementPost[]
+}
+
+export interface EngagementPhotosError {
+  success: false
+  message: string
+}
+
+export type EngagementPhotosResult = EngagementPhotosResponse | EngagementPhotosError
+
+// Engagement Photos post formats
+export type PostFormat = 'challenge' | 'debate' | 'nostalgia' | 'quiz' | 'hot_take'
+export type IdeaStatus = 'draft' | 'selected' | 'rendered'
+
+export interface Brand {
+  id: string
+  name: string
+  language: string
+  tone: string
+  voice: string
+  writing_style: string
+  logo_url: string
+}
+
+export interface EngagementIdea {
+  id: string
+  type: PostFormat
+  headline: string
+  subtitle: string
+  caption: string
+  player: string
+  club?: string
+  photo_url: string | null
+  photo_public_id: string | null
+  status: IdeaStatus
+  context?: string
+}
+
+export interface EngagementIdeaRequest {
+  brand: string
+  language: string
+}
+
+export interface EngagementIdeaResponse {
+  success: true
+  ideas: EngagementIdea[]
+}
+
+export interface EngagementRenderRequest {
+  ideas: EngagementIdea[]
+  brand_logo_url: string
+  template_id: string
+}
+
+export interface EngagementRenderResponse {
+  success: true
+  ideas: EngagementIdea[]
+}
+
 export interface BrandVoice {
   language: string
   tone: string

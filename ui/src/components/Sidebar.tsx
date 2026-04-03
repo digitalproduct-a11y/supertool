@@ -8,9 +8,10 @@ import {
   IconLink,
   IconFileText,
   IconLayoutSidebar,
+  IconHeart,
 } from '@tabler/icons-react'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos'
 
 interface NavItem {
   id: ToolId | string
@@ -36,6 +37,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'fb-post', label: 'Article to FB Photos', icon: IconPhoto },
       { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },
+      { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
     ],
   },
   {
@@ -53,6 +55,8 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'trending-news': 'Trending News to FB Photos',
   'affiliate-links': 'Shopee Affiliate Links',
   'article-generator': 'Affiliate Article Editor',
+  'engagement-posts': 'Engagement Posts',
+  'engagement-photos': 'EPL Engagement Posts',
 }
 
 const floatingBtnClass = 'fixed top-4 left-4 z-50 p-2 rounded-lg bg-zinc-900 text-neutral-500 hover:text-neutral-200 hover:bg-white/8 transition-all duration-300'

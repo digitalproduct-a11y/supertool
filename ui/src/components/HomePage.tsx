@@ -10,7 +10,7 @@ import {
   IconBrain,
 } from '@tabler/icons-react'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts'
 
 interface Tool {
   id: ToolId
@@ -45,6 +45,13 @@ const sections: Section[] = [
         description: 'Turn trending news into Facebook-ready visuals',
         color: '#0055EE',
         icon: IconTrendingUp,
+      },
+      {
+        id: 'engagement-posts',
+        label: 'Engagement Photos Generator',
+        description: 'Create engagement-driving photo posts',
+        color: '#0055EE',
+        icon: IconHeart,
       },
     ],
   },
@@ -86,14 +93,6 @@ const sections: Section[] = [
         description: 'AI-powered content idea generation for your brand',
         color: '#00E5D4',
         icon: IconBrain,
-        comingSoon: true,
-      },
-      {
-        id: 'fb-post',
-        label: 'Engagement Photos Generator',
-        description: 'Create engagement-driving photo posts',
-        color: '#0055EE',
-        icon: IconHeart,
         comingSoon: true,
       },
       {
