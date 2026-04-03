@@ -32,7 +32,7 @@ export function EngagementPhotosPage() {
   const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState(LOADING_QUOTES[0])
-  const [selectedIdeas] = useState<Set<string>>(new Set())
+  const [, setSelectedIdeas] = useState<Set<string>>(new Set())
 
   // Block in-app navigation (sidebar clicks) when in review stage
   const blocker = useBlocker(
