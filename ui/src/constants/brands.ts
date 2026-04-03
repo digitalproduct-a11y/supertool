@@ -99,3 +99,37 @@ export function detectBrandFromUrl(url: string): BrandName | null {
 export function detectBrandInfoFromUrl(url: string): { brand: BrandName; language: string; template: string } | null {
   return lookupByUrl(url)
 }
+
+export const BRAND_LOGO_IDS: Record<BrandName, string> = {
+  'Astro Awani': 'astro_awani_logo',
+  'Astro Arena': 'astro_arena_logo',
+  'Astro Ulagam': 'astro_ulagam_logo',
+  'Era': 'era_logo',
+  'Era Sabah': 'era_sabah_logo',
+  'Era Sarawak': 'era_sarawak_logo',
+  'Gegar': 'gegar_logo',
+  'Gempak': 'gempak_logo',
+  'Goxuan': 'goxuan_logo',
+  'Hitz': 'hitz_logo',
+  'Hotspot': 'hotspot_logo',
+  'Impiana': 'impiana_logo',
+  'Keluarga': 'keluarga_logo',
+  'Lite': 'lite_logo',
+  'Maskulin': 'maskulin_logo',
+  'Media Hiburan': 'media_hiburan_logo',
+  'Melody': 'melody_logo',
+  'Mingguan Wanita': 'mingguan_wanita_logo',
+  'Mix': 'mix_logo',
+  'My': 'my_logo',
+  'Nona': 'nona_logo',
+  'Pa&Ma': 'pa_ma_logo',
+  'Raaga': 'raaga_logo',
+  'Rasa': 'rasa_logo',
+  'Remaja': 'remaja_logo',
+  'Roda Panas': 'roda_panas_logo',
+  'Rojak Daily': 'rojak_daily_logo',
+  'Sinar': 'sinar_logo',
+  'Stadium Astro': 'stadium_astro_logo',
+  'XUAN': 'xuan_logo',
+  'Zayan': 'zayan_logo',
+}
