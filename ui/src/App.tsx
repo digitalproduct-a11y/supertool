@@ -4,6 +4,7 @@ import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
 import { AffiliateLinksPage } from './components/AffiliateLinksPage'
+import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { AnalyticsDashboardPage } from './components/AnalyticsDashboardPage'
@@ -27,7 +28,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -37,6 +38,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
+  '/shopee-top-products': 'shopee-top-products',
 }
 
 const toolToPath: Record<ToolId, string> = {
@@ -47,6 +49,7 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-photos',
   'engagement-photos': '/engagement-photos/epl',
+  'shopee-top-products': '/shopee-top-products',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -586,6 +589,11 @@ function App() {
       <Route path="/affiliate-links" element={
         <Layout {...layoutProps}>
           <AffiliateLinksPage />
+        </Layout>
+      } />
+      <Route path="/shopee-top-products" element={
+        <Layout {...layoutProps}>
+          <ShopeeTopProductsPage />
         </Layout>
       } />
       <Route path="/affiliate-article-editor" element={
