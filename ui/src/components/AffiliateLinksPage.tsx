@@ -161,7 +161,7 @@ export function AffiliateLinksPage() {
               <Spinner size="md" />
               <div className="text-center">
                 <p className="text-sm font-medium text-neutral-700">Processing your file…</p>
-                <p className="text-xs text-neutral-500 mt-1">This may take 1–2 minutes</p>
+                <p className="text-xs text-neutral-500 mt-1">This may take up to 5 minutes</p>
               </div>
             </div>
           )}

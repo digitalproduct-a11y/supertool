@@ -18,7 +18,7 @@ export function useAffiliateLinks() {
       const response = await fetch(url.toString(), {
         method: 'POST',
         body: formData,
-        signal: AbortSignal.timeout(600_000), //10 mins
+        signal: AbortSignal.timeout(1200_000), //20 mins
       })
 
       if (!response.ok) {
