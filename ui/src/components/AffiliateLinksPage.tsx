@@ -58,7 +58,7 @@ export function AffiliateLinksPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Affiliate Links</h1>
-              <p className="text-neutral-500 mt-1 text-sm">Upload an Excel file with Shopee links and get back a processed file with affiliate data</p>
+              <p className="text-neutral-500 mt-1 text-sm">Upload an Excel file with up to 50 Shopee links and get back a processed file with affiliate data.</p>
             </div>
             <GuideModal title="How to use Shopee Affiliate Links">
               <div className="space-y-4">
