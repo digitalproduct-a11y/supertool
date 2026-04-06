@@ -16,11 +16,7 @@ A web app for generating and managing content across multiple platforms (Faceboo
    npm install
    ```
 
-2. **Set up environment files** — copy from example and add your webhook URLs:
-   ```bash
-   cp .env.example .env.production  # for production webhooks
-   cp .env.example .env.staging     # for staging webhooks
-   ```
+2. **Set up environment files** — create `.env.production` and `.env.staging` with your webhook URLs.
 
 ## Local Development
 
@@ -80,8 +76,6 @@ All variables are prefixed with `VITE_` and include:
 - Webhook URLs for n8n workflows (article generator, trending spike, post publisher, etc.)
 - Cloudinary credentials for image uploads
 - Analytics and feedback webhook URLs
-
-See `ui/.env.example` for the complete list of required variables.
 
 ### Managing Env Vars in Vercel
 For deployed environments (main and staging branches), env vars are set in the **Vercel dashboard** under Project Settings → Environment Variables, scoped per branch. Local `.env.*` files are for development only.
