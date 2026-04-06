@@ -16,10 +16,10 @@ export const BRANDS = [
   "Media Hiburan",
   "Mingguan Wanita",
   "Meletop",
-  // "Mix",//
+  "Mix",
   "Nona",
   "Pa&Ma",
-  //"Raaga",//
+  "Raaga",
   "Rasa",
   "Remaja",
   "Roda Panas",
@@ -152,6 +152,8 @@ export const BRAND_LOGO_IDS: Record<BrandName, string> = {
   Lite: "lite_logo",
   Maskulin: "maskulin_logo",
   "Media Hiburan": "media_hiburan_logo",
+  Meletop: "meletop_logo",
+  Goxuan: "goxuan_logo",
   "Mingguan Wanita": "mingguan_wanita_logo",
   Mix: "mix_logo",
   Nona: "nona_logo",
