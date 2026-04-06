@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
-import { trackEvent } from '../utils/analytics'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
 import { Spinner } from './ds/Spinner'
@@ -186,8 +185,6 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     setIsGenerating(true)
     setError('')
 
-    trackEvent({ event_type: 'form_submitted', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand })
-
     try {
       const data = await callGenerateWebhook({
         url: source.articleUrl,
@@ -198,16 +195,13 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         caption_title_mode: captionTitleMode,
       })
       if (data.success) {
-        trackEvent({ event_type: 'asset_generated', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand })
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
         setCaption(data.caption ?? '')
       } else {
-        trackEvent({ event_type: 'generation_failed', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand, error_message: data.message || 'Generation failed.' })
         setError(data.message || 'Generation failed.')
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Request failed.'
-      trackEvent({ event_type: 'generation_failed', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand, error_message: errorMsg })
       setError(errorMsg)
     } finally {
       setIsGenerating(false)
@@ -502,9 +496,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 export function TrendingSpikePage() {
   const [activeTab, setActiveTab] = useState<'spike' | 'trending'>('trending')
 
-  useEffect(() => {
-    trackEvent({ event_type: 'page_visit', tool_id: 'trending-news', tool_label: 'Trending News to FB' })
-  }, [])
+  useEffect(() => {}, [])
 
   // Spike tab state
   const [spikeView, setSpikeView] = useState<'list' | 'generate'>('list')

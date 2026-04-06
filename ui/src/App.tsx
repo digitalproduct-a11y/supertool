@@ -16,8 +16,6 @@ import { HistoryPanel } from './components/HistoryPanel'
 import { GuideModal } from './components/ds/GuideModal'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
-import { useKultStats } from './hooks/useKultStats'
-import { setKultLogger, trackEvent } from './utils/analytics'
 import type {
   AppState,
   WorkflowResult,
@@ -311,9 +309,7 @@ function FbPostPage() {
 
   const { run, isRunning } = useWorkflow()
 
-  useEffect(() => {
-    trackEvent({ event_type: 'page_visit', tool_id: 'article-to-fb', tool_label: 'Article to FB Post' })
-  }, [])
+  useEffect(() => {}, [])
 
   useEffect(() => {
     if (state === 'result' && window.innerWidth < 768) {
@@ -331,8 +327,6 @@ function FbPostPage() {
     setResult(null)
     setErrorMessage('')
 
-    trackEvent({ event_type: 'form_submitted', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand })
-
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
@@ -345,7 +339,6 @@ function FbPostPage() {
     const response = await run(request)
 
     if (response.success) {
-      trackEvent({ event_type: 'asset_generated', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand })
       setResult(response)
       setState('result')
       const item: HistoryItem = {
@@ -358,7 +351,6 @@ function FbPostPage() {
       }
       setHistory((h) => [item, ...h])
     } else {
-      trackEvent({ event_type: 'generation_failed', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand, error_message: response.message })
       setErrorMessage(response.message)
       setState('error')
     }
@@ -556,11 +548,7 @@ function FbPostPage() {
 function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const { logEvent } = useKultStats()
 
-  useEffect(() => {
-    setKultLogger(logEvent)
-  }, [logEvent])
 
   const layoutProps = {
     isSidebarCollapsed,

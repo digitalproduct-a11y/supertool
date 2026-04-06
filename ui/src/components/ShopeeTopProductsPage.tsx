@@ -4,7 +4,6 @@ import { BRANDS, type BrandName } from '../constants/brands'
 import { GuideModal } from './ds/GuideModal'
 import { Spinner } from './ds/Spinner'
 import { useShopeeTopProducts, type ShopeeTopProduct } from '../hooks/useShopeeTopProducts'
-import { trackEvent } from '../utils/analytics'
 
 const GENERATE_URL = import.meta.env.VITE_SHOPEE_TOP_PRODUCTS_GENERATE_URL as string
 
@@ -60,7 +59,6 @@ export function ShopeeTopProductsPage() {
     if (selected.size === 0 || !selectedBrand) return
     setIsGenerating(true)
     setGenerateError(null)
-    trackEvent({ event_type: 'form_submitted', tool_id: 'shopee-top-products', tool_label: 'Shopee Top Products', brand: selectedBrand })
     try {
       const res = await fetch(`${GENERATE_URL}?brand=${encodeURIComponent(selectedBrand)}`, {
         method: 'POST',
@@ -80,12 +78,10 @@ export function ShopeeTopProductsPage() {
         a.download = filename
         a.click()
         window.URL.revokeObjectURL(objectUrl)
-        trackEvent({ event_type: 'asset_generated', tool_id: 'shopee-top-products', tool_label: 'Shopee Top Products', brand: selectedBrand })
         setSelected(new Set())
       } else {
         const data = await res.json()
         setGenerateError(data.message ?? 'Failed to generate affiliate links.')
-        trackEvent({ event_type: 'generation_failed', tool_id: 'shopee-top-products', tool_label: 'Shopee Top Products', brand: selectedBrand, error_message: data.message })
       }
     } catch (e) {
       setGenerateError(e instanceof Error ? e.message : 'Something went wrong.')
