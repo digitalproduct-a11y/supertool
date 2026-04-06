@@ -81,6 +81,8 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+dist-ssr
+*.local
 
 # Gatsby files
 .cache/
@@ -122,8 +124,12 @@ dist
 # TernJS port file
 .tern-port
 
-# Stores VSCode versions used for testing VSCode extensions
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
 .vscode-test
+.idea
+.DS_Store
 
 # yarn v3
 .pnp.*
