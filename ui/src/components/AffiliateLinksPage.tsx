@@ -12,7 +12,7 @@ export function AffiliateLinksPage() {
   const [pageState, setPageState] = useState<AffiliateLinksState>('idle')
   const [selectedBrand, setSelectedBrand] = useState<BrandName>(BRANDS[0])
   const [dragOver, setDragOver] = useState(false)
-  const { run } = useAffiliateLinks()
+  const { run, progress } = useAffiliateLinks()
 
   useEffect(() => {}, [])
 
@@ -160,8 +160,12 @@ export function AffiliateLinksPage() {
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <Spinner size="md" />
               <div className="text-center">
-                <p className="text-sm font-medium text-neutral-700">Processing your file…</p>
-                <p className="text-xs text-neutral-500 mt-1">This may take 1–2 minutes</p>
+                <p className="text-sm font-medium text-neutral-700">
+                  {progress
+                    ? `Processing batch ${progress.current} of ${progress.total}…`
+                    : 'Preparing…'}
+                </p>
+                <p className="text-xs text-neutral-500 mt-1">This may take a few minutes for large files</p>
               </div>
             </div>
           )}
