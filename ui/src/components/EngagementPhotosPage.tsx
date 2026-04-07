@@ -72,7 +72,6 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     }
     setStage('review')
     await generate(selectedBrand, 'en', webhookUrl)
-    setSelectedIdeas(new Set())
     setCurrentLoadingStep(0)
     setLoadingMessage(config.loadingQuotes[0])
   }
