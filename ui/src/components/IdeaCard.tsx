@@ -37,32 +37,6 @@ export default function IdeaCard({
   cachedPhotos,
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-
-  async function handleCustomUpload(file: File) {
-    setIsUploading(true)
-    setUploadError(null)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_ENGAGEMENT_UPLOAD_PRESET)
-      const defaultTags = idea.club ? `${idea.player}, ${idea.club}` : idea.player
-      formData.append('tags', defaultTags)
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: 'POST', body: formData }
-      )
-      if (!res.ok) throw new Error(`Upload failed (${res.status})`)
-      const data = await res.json()
-      onPhotoSelected(idea.id, { url: data.secure_url, publicId: data.public_id })
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed.')
-    } finally {
-      setIsUploading(false)
-    }
-  }
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
@@ -127,30 +101,10 @@ export default function IdeaCard({
 
         <button
           onClick={() => setShowPhotoModal(true)}
-          className="w-full px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-medium transition active:scale-[0.98] mb-2"
+          className="w-full px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-medium transition active:scale-[0.98] mb-4"
         >
           {idea.photo_url ? 'Change Photo' : 'Select Photo'}
         </button>
-        <label className={`w-full flex items-center justify-center px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-neutral-700 rounded-lg text-xs font-medium transition mb-4 ${isUploading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-          {isUploading ? (
-            <>
-              <span className="inline-block w-3 h-3 border border-neutral-600 border-t-transparent rounded-full animate-spin mr-2" />
-              Uploading…
-            </>
-          ) : 'Upload Custom Photo'}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            disabled={isUploading}
-            onChange={e => {
-              const f = e.target.files?.[0]
-              if (f) handleCustomUpload(f)
-              e.target.value = ''
-            }}
-          />
-        </label>
-        {uploadError && <p className="text-xs text-red-600 mb-3">{uploadError}</p>}
         {!photoValid && <p className="text-xs text-yellow-600 font-medium mb-4">Please select photo to proceed</p>}
 
         {/* Text Fields */}
