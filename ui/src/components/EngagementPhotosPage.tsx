@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useBlocker } from 'react-router-dom'
-import type { EngagementIdea, Brand } from '../types'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
-import { Button } from './ds/Button'
 import { BRANDS } from '../constants/brands'
 import IdeaCard from './IdeaCard'
 import { IconChevronLeft } from '@tabler/icons-react'

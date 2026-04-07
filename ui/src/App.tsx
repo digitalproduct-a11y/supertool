@@ -26,7 +26,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'engagement-ucl' | 'engagement-worldcup'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'engagement-ucl' | 'engagement-worldcup' | 'scheduled-posts' | 'shopee-top-products'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -38,6 +38,8 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-photos/epl': 'engagement-photos',
   '/engagement-photos/ucl': 'engagement-ucl',
   '/engagement-photos/worldcup': 'engagement-worldcup',
+  '/scheduled-posts': 'scheduled-posts',
+  '/shopee-top-products': 'shopee-top-products',
 }
 
 const toolToPath: Record<ToolId, string> = {
@@ -50,6 +52,8 @@ const toolToPath: Record<ToolId, string> = {
   'engagement-photos': '/engagement-photos/epl',
   'engagement-ucl': '/engagement-photos/ucl',
   'engagement-worldcup': '/engagement-photos/worldcup',
+  'scheduled-posts': '/scheduled-posts',
+  'shopee-top-products': '/shopee-top-products',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
