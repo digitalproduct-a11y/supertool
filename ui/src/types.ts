@@ -1,5 +1,4 @@
 export type AppState = 'idle' | 'loading' | 'result' | 'error' | 'approved'
-export type WorkflowMode = 'own_brand' | 'cross_brand'
 export type TitleMode = 'original' | 'ai' | 'custom'
 export type CaptionTitleMode = 'original' | 'ai'
 export type WorkflowOperation = 'full' | 'image_only' | 'caption_only'
@@ -7,11 +6,11 @@ export type WorkflowOperation = 'full' | 'image_only' | 'caption_only'
 export interface WorkflowRequest {
   url: string
   brand: string
-  mode: WorkflowMode
   title_mode: TitleMode
   custom_title?: string
   caption_title_mode: CaptionTitleMode
   operation?: WorkflowOperation
+  custom_image?: string
   // For partial regenerations — pass through existing values
   imageUrl?: string
   caption?: string
@@ -72,6 +71,18 @@ export type AffiliateLinksResponse = AffiliateLinksResult | AffiliateLinksError
 
 // Article Generator tool types
 export type ArticleGeneratorStep = 'input' | 'pick-angle' | 'review-article' | 'thumbnail' | 'done'
+
+// Topic config for multi-topic engagement posts
+export interface TopicConfig {
+  id: string
+  label: string
+  webhookEnvVar: string
+  uploadPresetEnvVar: string
+  templateImages: [string, string, string]
+  loadingSteps: [string, string, string]
+  loadingQuotes: string[]
+  downloadPrefix: string
+}
 
 // Engagement Photos tool types
 export interface EngagementPost {

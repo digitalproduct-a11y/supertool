@@ -13,6 +13,8 @@ interface PreviewPanelProps {
   titleMode: TitleMode
   customTitle: string
   captionTitleMode: CaptionTitleMode
+  onCustomImageUpload?: (file: File) => void
+  isImageGenerating?: boolean
 }
 
 export function PreviewPanel({
@@ -25,6 +27,8 @@ export function PreviewPanel({
   titleMode: _titleMode,
   customTitle: _customTitle,
   captionTitleMode: _captionTitleMode,
+  onCustomImageUpload,
+  isImageGenerating,
 }: PreviewPanelProps) {
   return (
     <div className="glass-card rounded-2xl p-6 min-h-96 flex flex-col">
@@ -65,7 +69,7 @@ export function PreviewPanel({
 
       {state === 'result' && result && (
         <div className="animate-fade-slide-up">
-          <ResultPreview result={result} isRunning={false} />
+          <ResultPreview result={result} isRunning={false} onCustomImageUpload={onCustomImageUpload} isImageGenerating={isImageGenerating} />
         </div>
       )}
 

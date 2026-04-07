@@ -37,21 +37,21 @@ export function useEngagementPhotos() {
     }
   }
 
-  const generate = async (brand: string, language: string) => {
+  const generate = async (brand: string, language: string, webhookUrl?: string) => {
     setIsLoading(true)
     setError(null)
     setIdeas([])
 
     try {
-      const webhookUrl = import.meta.env.VITE_EPL_IDEA_GENERATION_WEBHOOK_URL
-      if (!webhookUrl) {
+      const url = webhookUrl || import.meta.env.VITE_EPL_IDEA_GENERATION_WEBHOOK_URL
+      if (!url) {
         throw new Error('Webhook URL not configured')
       }
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3 * 60 * 1000)
 
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brand, language }),
@@ -99,8 +99,8 @@ export function useEngagementPhotos() {
     }
   }
 
-  const refresh = async (brand: string, language: string) => {
-    return generate(brand, language)
+  const refresh = async (brand: string, language: string, webhookUrl?: string) => {
+    return generate(brand, language, webhookUrl)
   }
 
   const render = async (selectedIdeas: EngagementIdea[], brandLogoUrl: string) => {

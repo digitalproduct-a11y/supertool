@@ -43,7 +43,15 @@
       "WebSearch",
       "Read(//Users/ylyiyany/.claude/**)",
       "mcp__n8n-mcp__n8n_autofix_workflow",
-      "Read(//temp/readonly/**)"
+      "Read(//temp/readonly/**)",
+      "mcp__claude_ai_n8n__create_workflow_from_code",
+      "mcp__claude_ai_n8n__get_workflow_details",
+      "mcp__claude_ai_n8n__archive_workflow",
+      "mcp__claude_ai_n8n__search_workflows"
+    ],
+    "additionalDirectories": [
+      "/Users/ylyiyany/Documents/fb-project",
+      "/Users/ylyiyany/.claude"
     ]
   }
 }

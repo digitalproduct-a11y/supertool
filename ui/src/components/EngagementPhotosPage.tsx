@@ -4,36 +4,23 @@ import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
 import { BRANDS } from '../constants/brands'
 import IdeaCard from './IdeaCard'
 import { IconChevronLeft } from '@tabler/icons-react'
-import { GuideModal } from './ds/GuideModal'
+import { TOPIC_CONFIGS } from '../constants/topics'
 
-const TEMPLATE_IMAGES = [
-  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775189927/epl-post-challenge_1_byvuse.jpg',
-  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775199810/epl-post-debate_sqjs6z.jpg',
-  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775199812/epl-post-quiz_c1piip.jpg',
-]
+interface EngagementPhotosPageProps {
+  topic?: string
+}
 
+export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProps) {
+  const config = TOPIC_CONFIGS[topic] || TOPIC_CONFIGS.epl
+  const webhookUrl = import.meta.env[config.webhookEnvVar] as string | undefined
+  const uploadPreset = import.meta.env[config.uploadPresetEnvVar] as string | undefined
 
-const LOADING_STEPS = [
-  'Scanning latest EPL news',
-  'Curating top stories',
-  'Generating 5 post ideas',
-]
-
-const LOADING_QUOTES = [
-  'VAR checking the vibes...',
-  'Consulting the dugout...',
-  'Asking the fans...',
-  'Reading the match report...',
-]
-
-export function EngagementPhotosPage() {
   const navigate = useNavigate()
   const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
-  const [loadingMessage, setLoadingMessage] = useState(LOADING_QUOTES[0])
-  const [, setSelectedIdeas] = useState<Set<string>>(new Set())
+  const [loadingMessage, setLoadingMessage] = useState(config.loadingQuotes[0])
 
   // Block in-app navigation (sidebar clicks) when in review stage
   const blocker = useBlocker(
@@ -60,7 +47,7 @@ export function EngagementPhotosPage() {
   useEffect(() => {
     if (!isLoading) return
     const interval = setInterval(() => {
-      setLoadingMessage(LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)])
+      setLoadingMessage(config.loadingQuotes[Math.floor(Math.random() * config.loadingQuotes.length)])
     }, 4000)
     return () => clearInterval(interval)
   }, [isLoading])
@@ -84,10 +71,9 @@ export function EngagementPhotosPage() {
       return
     }
     setStage('review')
-    await generate(selectedBrand, 'en')
-    setSelectedIdeas(new Set())
+    await generate(selectedBrand, 'en', webhookUrl)
     setCurrentLoadingStep(0)
-    setLoadingMessage(LOADING_QUOTES[0])
+    setLoadingMessage(config.loadingQuotes[0])
   }
 
   const handleUpdateIdea = (ideaId: string, field: 'headline' | 'subtitle' | 'caption', value: string) => {
@@ -103,46 +89,26 @@ export function EngagementPhotosPage() {
   }
 
   return (
-    <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-28">
-      <div className="max-w-6xl mx-auto">
-
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/engagement-photos')}
-                className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
-              >
-                <IconChevronLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Engagement Posts: EPL</h1>
-                <p className="text-neutral-500 mt-1 text-sm">Create engaging sports posts featuring Premier League players</p>
-              </div>
-            </div>
-            <GuideModal title="How to use Engagement Posts: EPL">
-              <ol className="space-y-4 text-sm text-neutral-700">
-                <li><strong>Select a brand</strong> — Choose the brand you're creating content for. This controls the AI tone, writing style, and the logo on the image.</li>
-                <li><strong>Generate Ideas</strong> — Click Generate Ideas. The AI produces 5 EPL-themed post ideas, each with a headline, subtitle, caption, and suggested player.</li>
-                <li><strong>Review &amp; edit each post</strong> — Edit the text fields directly. Limits: Headline ≤35 chars (on image), Subtitle ≤70 chars (on image), Caption ≤600 chars (social copy).</li>
-                <li><strong>Select a photo</strong> — Player photos are pre-fetched automatically. Click Select Photo to choose one, or upload your own.</li>
-                <li><strong>Download</strong> — Once headline, subtitle, and photo are filled, the Download button activates. Downloads as a 1080×1350 JPG.</li>
-              </ol>
-              <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
-                <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Post formats</p>
-                <p className="text-xs text-neutral-700">🏆 Challenge · 💬 Debate · 🕐 Nostalgia · 🧠 Quiz · 🔥 Hot Take</p>
-              </div>
-            </GuideModal>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="bg-white sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={() => navigate('/engagement-photos')}
+              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
+            >
+              <IconChevronLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
           </div>
-          <div
-            className="mt-4 h-[3px] rounded-full animate-stripe-grow"
-            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
-          />
+          <p className="text-sm text-neutral-600">Create engaging sports posts featuring {config.label} players</p>
+          <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
+      </div>
 
-        {/* Content */}
-        <div>
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {stage === 'brand-select' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
             {/* LEFT: Brand Selector (spans 2 columns) */}
@@ -191,7 +157,7 @@ export function EngagementPhotosPage() {
             <div>
               <div className="relative overflow-visible rounded-3xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] aspect-[1080/1350]">
                 <div className="carousel-stack">
-                  {TEMPLATE_IMAGES.map((img, idx) => (
+                  {config.templateImages.map((img, idx) => (
                     <div key={idx} className="carousel-stack-item overflow-hidden">
                       <img src={img} alt={`Template ${idx + 1}`} className="w-full h-full object-cover" />
                     </div>
@@ -206,7 +172,7 @@ export function EngagementPhotosPage() {
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
                 <div className="text-4xl inline-block animate-bounce">⚽</div>
                 <div className="flex justify-center gap-2">
-                  {LOADING_STEPS.map((_, idx) => (
+                  {config.loadingSteps.map((_, idx) => (
                     <div
                       key={idx}
                       className={`h-2 rounded-full transition-all duration-700 ${
@@ -225,9 +191,9 @@ export function EngagementPhotosPage() {
                   ))}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-neutral-900">{LOADING_STEPS[currentLoadingStep]}</p>
+                  <p className="text-sm font-semibold text-neutral-900">{config.loadingSteps[currentLoadingStep]}</p>
                   <p className="text-xs text-neutral-400 mt-1">
-                    Step {currentLoadingStep + 1} of {LOADING_STEPS.length}
+                    Step {currentLoadingStep + 1} of {config.loadingSteps.length}
                   </p>
                 </div>
                 <p key={loadingMessage} className="text-sm text-neutral-500 italic animate-fade">
@@ -256,6 +222,8 @@ export function EngagementPhotosPage() {
                     selectedBrand={selectedBrand}
                     index={idx}
                     cachedPhotos={photosByPlayerClub}
+                    downloadPrefix={config.downloadPrefix}
+                    uploadPreset={uploadPreset}
                   />
                 </div>
               ))}
@@ -298,8 +266,6 @@ export function EngagementPhotosPage() {
           </div>
         </div>
       )}
-
-      </div>
-  </main>
+    </div>
   )
 }

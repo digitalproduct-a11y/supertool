@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { IconPhoto } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
@@ -148,6 +149,24 @@ function CopyButton({ text }: { text: string }) {
 }
 
 
+async function encodeImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1200
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(objectUrl)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+    }
+    img.src = objectUrl
+  })
+}
+
 // ─── Generate View ────────────────────────────────────────────────────────────
 
 interface GenerateSource {
@@ -170,10 +189,17 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [brand, setBrand] = useState(source.brand || '')
   const [titleMode, setTitleMode] = useState<TitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [customTitle, setCustomTitle] = useState('')
+
+  const handleTitleModeChange = (mode: TitleMode) => {
+    setTitleMode(mode)
+    if (mode !== 'custom') setCustomTitle('')
+  }
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isImageGenerating, setIsImageGenerating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
+  const [customImage, setCustomImage] = useState<File | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
@@ -186,17 +212,20 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     setError('')
 
     try {
+      const customImageBase64 = customImage ? await encodeImage(customImage) : undefined
       const data = await callGenerateWebhook({
         url: source.articleUrl,
         brand,
-        mode: 'own_brand',
+
         title_mode: titleMode,
         custom_title: titleMode === 'custom' ? customTitle : undefined,
         caption_title_mode: captionTitleMode,
+        custom_image: customImageBase64,
       })
       if (data.success) {
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
         setCaption(data.caption ?? '')
+        setCustomImage(null)
       } else {
         setError(data.message || 'Generation failed.')
       }
@@ -205,6 +234,28 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       setError(errorMsg)
     } finally {
       setIsGenerating(false)
+    }
+  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode, customImage])
+
+  const handleCustomImageUpload = useCallback(async (file: File) => {
+    setIsImageGenerating(true)
+    try {
+      const customImageBase64 = await encodeImage(file)
+      const data = await callGenerateWebhook({
+        url: source.articleUrl,
+        brand,
+
+        title_mode: titleMode,
+        custom_title: titleMode === 'custom' ? customTitle : undefined,
+        caption_title_mode: captionTitleMode,
+        custom_image: customImageBase64,
+        operation: 'image_only',
+      })
+      if (data.success && data.imageUrl) {
+        setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl } : prev)
+      }
+    } finally {
+      setIsImageGenerating(false)
     }
   }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode])
 
@@ -316,7 +367,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
               {(['original', 'ai', 'custom'] as TitleMode[]).map(m => (
                 <button
                   key={m}
-                  onClick={() => setTitleMode(m)}
+                  onClick={() => handleTitleModeChange(m)}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                     titleMode === m
                       ? 'bg-white text-gray-900 shadow-sm'
@@ -385,21 +436,38 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
             <div>
               {/* Image */}
               <div className="relative bg-neutral-50">
-                <img src={result.imageUrl} alt={result.title} className="w-full aspect-[4/5] object-cover" />
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <button
-                    onClick={handleDownload}
-                    className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download
-                  </button>
-                </div>
+                {isImageGenerating ? (
+                  <div className="w-full aspect-[4/5] animate-pulse bg-neutral-200" />
+                ) : (
+                  <>
+                    <img src={result.imageUrl} alt={result.title} className="w-full aspect-[4/5] object-cover" />
+                    <div className="absolute top-3 right-3 flex gap-2">
+                      <button
+                        onClick={handleDownload}
+                        className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
               {/* Caption */}
               <div className="p-5 space-y-3">
+                {/* Custom image upload */}
+                <label className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors ${isImageGenerating ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <IconPhoto size={16} />
+                  Upload Custom Image
+                  <input type="file" accept="image/*" className="hidden" disabled={isImageGenerating}
+                    onChange={e => {
+                      const f = e.target.files?.[0] ?? null
+                      if (f) handleCustomImageUpload(f)
+                      e.target.value = ''
+                    }} />
+                </label>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm font-medium text-gray-700">Caption</span>
@@ -412,6 +480,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed"
                   />
                 </div>
+
                 {/* Post mode + action — hidden for now */}
                 {false && <div className="space-y-3">
                   {/* Publish Now / Schedule toggle */}

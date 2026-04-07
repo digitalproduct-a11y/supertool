@@ -26,6 +26,8 @@ interface IdeaCardProps {
   selectedBrand: string
   index: number
   cachedPhotos?: Record<string, any[]>
+  downloadPrefix?: string
+  uploadPreset?: string
 }
 
 export default function IdeaCard({
@@ -35,6 +37,8 @@ export default function IdeaCard({
   selectedBrand,
   index,
   cachedPhotos,
+  downloadPrefix = 'epl-post',
+  uploadPreset,
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
 
@@ -171,7 +175,7 @@ export default function IdeaCard({
                   const url = window.URL.createObjectURL(blob)
                   const link = document.createElement('a')
                   link.href = url
-                  link.download = `epl-post-${idea.type}.jpg`
+                  link.download = `${downloadPrefix}-${idea.type}.jpg`
                   link.click()
                   window.URL.revokeObjectURL(url)
                 } catch (err) {
@@ -197,6 +201,7 @@ export default function IdeaCard({
           }}
           onClose={() => setShowPhotoModal(false)}
           cachedPhotos={cachedPhotos}
+          uploadPreset={uploadPreset}
         />
       )}
     </>

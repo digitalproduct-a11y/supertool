@@ -6,9 +6,10 @@ interface PhotoPickerModalProps {
   onSelect: (photo: { url: string; publicId: string }) => void
   onClose: () => void
   cachedPhotos?: Record<string, any[]>
+  uploadPreset?: string
 }
 
-export default function PhotoPickerModal({ playerName, club, onSelect, onClose, cachedPhotos }: PhotoPickerModalProps) {
+export default function PhotoPickerModal({ playerName, club, onSelect, onClose, cachedPhotos, uploadPreset }: PhotoPickerModalProps) {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [photos, setPhotos] = useState<any[]>([])
   const [isLoadingPhotos] = useState(false)
@@ -81,7 +82,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
     try {
       const formData = new FormData()
       formData.append('file', uploadFile)
-      formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_ENGAGEMENT_UPLOAD_PRESET)
+      formData.append('upload_preset', uploadPreset || import.meta.env.VITE_CLOUDINARY_EPL_UPLOAD_PRESET)
       formData.append('tags', tags)
 
       const res = await fetch(

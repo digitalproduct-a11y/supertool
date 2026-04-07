@@ -161,7 +161,9 @@ export function AffiliateLinksPage() {
               <Spinner size="md" />
               <div className="text-center">
                 <p className="text-sm font-medium text-neutral-700">
-                  {progress ? `Processing batch ${progress.current} of ${progress.total}…` : 'Preparing…'}
+                  {progress
+                    ? `Processing batch ${progress.current} of ${progress.total}…`
+                    : 'Preparing…'}
                 </p>
                 <p className="text-xs text-neutral-500 mt-1">This may take a few minutes for large files</p>
               </div>

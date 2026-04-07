@@ -1,14 +1,16 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
 import { AffiliateLinksPage } from './components/AffiliateLinksPage'
 import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
-import { AnalyticsDashboardPage } from './components/AnalyticsDashboardPage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
+import { ScheduledPostsPage } from './components/ScheduledPostsPage'
+import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
+import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -25,7 +27,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -35,6 +37,16 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
+  '/scheduled-posts': 'scheduled-posts',
+  '/shopee-top-products': 'shopee-top-products',
+}
+
+// Map scheduled-posts subpages to scheduled-posts tool
+function getActiveTool(pathname: string): ToolId {
+  if (pathname.startsWith('/scheduled-posts')) {
+    return 'scheduled-posts'
+  }
+  return pathToTool[pathname] ?? 'home'
 }
 
 const toolToPath: Record<ToolId, string> = {
@@ -45,6 +57,8 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-photos',
   'engagement-photos': '/engagement-photos/epl',
+  'scheduled-posts': '/scheduled-posts',
+  'shopee-top-products': '/shopee-top-products',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -268,6 +282,11 @@ function SuggestButton() {
   )
 }
 
+function ScheduledPostsBrandPage() {
+  const { brandSlug } = useParams<{ brandSlug: string }>()
+  return <ScheduledPostsPage brand={brandSlug || ''} />
+}
+
 function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedChange }: {
   children: React.ReactNode
   showSuggest?: boolean
@@ -276,7 +295,7 @@ function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedC
 }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const activeTool = pathToTool[location.pathname] ?? 'home'
+  const activeTool = getActiveTool(location.pathname)
 
   return (
     <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
@@ -292,6 +311,25 @@ function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedC
   )
 }
 
+async function encodeImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const MAX = 1200
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1])
+    }
+    img.onerror = reject
+    img.src = url
+  })
+}
+
 function FbPostPage() {
   const [state, setState] = useState<AppState>('idle')
   const [result, setResult] = useState<WorkflowResult | null>(null)
@@ -303,10 +341,14 @@ function FbPostPage() {
   const [titleMode, setTitleMode] = useState<TitleMode>('original')
   const [customTitle, setCustomTitle] = useState('')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
+  const [isImageGenerating, setIsImageGenerating] = useState(false)
+
+  const handleTitleModeChange = (mode: TitleMode) => {
+    setTitleMode(mode)
+    if (mode !== 'custom') setCustomTitle('')
+  }
 
   const { run, isRunning } = useWorkflow()
-
-  useEffect(() => {}, [])
 
   useEffect(() => {
     if (state === 'result' && window.innerWidth < 768) {
@@ -327,7 +369,7 @@ function FbPostPage() {
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
-      mode: 'own_brand',
+
       title_mode: titleMode,
       custom_title: titleMode === 'custom' ? customTitle : undefined,
       caption_title_mode: captionTitleMode,
@@ -351,6 +393,27 @@ function FbPostPage() {
       setErrorMessage(response.message)
       setState('error')
     }
+  }, [url, brand, titleMode, customTitle, captionTitleMode, run])
+
+  const handleCustomImageUpload = useCallback(async (file: File) => {
+    if (!url.trim() || !brand) return
+    setIsImageGenerating(true)
+    const customImageBase64 = await encodeImage(file)
+    const request: WorkflowRequest = {
+      url: url.trim(),
+      brand,
+
+      title_mode: titleMode,
+      custom_title: titleMode === 'custom' ? customTitle : undefined,
+      caption_title_mode: captionTitleMode,
+      custom_image: customImageBase64,
+      operation: 'image_only',
+    }
+    const response = await run(request)
+    if (response.success) {
+      setResult(prev => prev ? { ...prev, imageUrl: response.imageUrl } : response)
+    }
+    setIsImageGenerating(false)
   }, [url, brand, titleMode, customTitle, captionTitleMode, run])
 
   const handleApprove = useCallback(
@@ -389,7 +452,7 @@ function FbPostPage() {
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
-      mode: 'own_brand',
+
       operation: op,
       title_mode: localTitleMode,
       custom_title: localTitleMode === 'custom' ? localCustomTitle : undefined,
@@ -472,7 +535,7 @@ function FbPostPage() {
                 brand={brand}
                 onBrandChange={setBrand}
                 titleMode={titleMode}
-                onTitleModeChange={setTitleMode}
+                onTitleModeChange={handleTitleModeChange}
                 customTitle={customTitle}
                 onCustomTitleChange={setCustomTitle}
                 captionTitleMode={captionTitleMode}
@@ -500,6 +563,8 @@ function FbPostPage() {
               titleMode={titleMode}
               customTitle={customTitle}
               captionTitleMode={captionTitleMode}
+              onCustomImageUpload={state === 'result' ? handleCustomImageUpload : undefined}
+              isImageGenerating={isImageGenerating}
             />
           </div>
         </div>
@@ -546,7 +611,6 @@ function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
-
   const layoutProps = {
     isSidebarCollapsed,
     onCollapsedChange: setIsSidebarCollapsed,
@@ -581,11 +645,6 @@ function App() {
           <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
         </Layout>
       } />
-      <Route path="/analytics" element={
-        <Layout {...layoutProps} showSuggest={false}>
-          <AnalyticsDashboardPage />
-        </Layout>
-      } />
       <Route path="/engagement-photos" element={
         <Layout {...layoutProps}>
           <EngagementPostsLanding onSelectTopic={(id) => navigate(toolToPath[id])} />
@@ -593,7 +652,32 @@ function App() {
       } />
       <Route path="/engagement-photos/epl" element={
         <Layout {...layoutProps}>
-          <EngagementPhotosPage />
+          <EngagementPhotosPage topic="epl" />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/ucl" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="ucl" />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/worldcup" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="worldcup" />
+        </Layout>
+      } />
+      <Route path="/scheduled-posts" element={
+        <Layout {...layoutProps}>
+          <ScheduledPostsLanding onSelectBrand={() => {}} />
+        </Layout>
+      } />
+      <Route path="/scheduled-posts/:brandSlug" element={
+        <Layout {...layoutProps}>
+          <ScheduledPostsBrandPage />
+        </Layout>
+      } />
+      <Route path="/shopee-top-products" element={
+        <Layout {...layoutProps}>
+          <ShopeeTopProductsPage />
         </Layout>
       } />
     </Routes>
