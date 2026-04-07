@@ -208,3 +208,39 @@ export interface ArticleGeneratorState {
   isLoading: boolean
   error?: string
 }
+
+// ─── Scheduled Posts tool types ───────────────────────────────────────────────
+
+export type ScheduledPostStatus = 'pending' | 'scheduled' | 'published' | 'error'
+
+export interface ScheduledPost {
+  id: string
+  date: string            // YYYY-MM-DD
+  brand: string
+  articleUrl: string
+  articleTitle: string
+  imageUrl: string        // full Cloudinary URL with transformations
+  photoPublicId: string   // base image public ID (last path segment of imageUrl)
+  title: string           // editable text overlay on image
+  caption: string         // editable FB caption
+  status: ScheduledPostStatus
+  scheduled_time: string | null   // ISO 8601 or null
+  scheduled_to: string | null     // 'facebook' or null
+  error_message: string | null
+}
+
+export interface FetchScheduledPostsResponse {
+  success: true
+  posts: ScheduledPost[]
+}
+
+export interface UpdatePostPayload {
+  postId: string
+  updates: Partial<Pick<ScheduledPost, 'title' | 'caption' | 'imageUrl' | 'photoPublicId'>>
+}
+
+export interface SchedulePostPayload {
+  postId: string
+  scheduledTime: string   // ISO 8601
+  platform: 'facebook'
+}
