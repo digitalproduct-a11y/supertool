@@ -508,9 +508,31 @@ function FbPostPage() {
                 onSubmit={handleSubmit}
                 disabled={isRunning}
               />
-              {/* Custom image upload */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
+            </div>
+            {history.length > 0 && (
+              <div className="mt-6">
+                <HistoryPanel items={history} />
+              </div>
+            )}
+          </div>
+
+          <div id="preview-panel" className="space-y-4">
+            <PreviewPanel
+              state={state === 'approved' ? 'idle' : state}
+              result={result}
+              errorMessage={errorMessage}
+              onApprove={handleApprove}
+              onRegenerate={handleRegenerate}
+              onReset={handleReset}
+              onPartialRegenerate={handlePartialRegenerate}
+              titleMode={titleMode}
+              customTitle={customTitle}
+              captionTitleMode={captionTitleMode}
+            />
+            {state === 'result' && (
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Custom Image (optional)</label>
+                <p className="text-xs text-gray-500 mb-3">Upload a custom image to replace the AI-generated one on the next generate.</p>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
                     <IconPhoto size={16} />
@@ -534,27 +556,7 @@ function FbPostPage() {
                   )}
                 </div>
               </div>
-            </div>
-            {history.length > 0 && (
-              <div className="mt-6">
-                <HistoryPanel items={history} />
-              </div>
             )}
-          </div>
-
-          <div id="preview-panel">
-            <PreviewPanel
-              state={state === 'approved' ? 'idle' : state}
-              result={result}
-              errorMessage={errorMessage}
-              onApprove={handleApprove}
-              onRegenerate={handleRegenerate}
-              onReset={handleReset}
-              onPartialRegenerate={handlePartialRegenerate}
-              titleMode={titleMode}
-              customTitle={customTitle}
-              captionTitleMode={captionTitleMode}
-            />
           </div>
         </div>
 
