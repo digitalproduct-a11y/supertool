@@ -9,9 +9,10 @@ import {
   IconFileText,
   IconLayoutSidebar,
   IconHeart,
+  IconClock,
 } from '@tabler/icons-react'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts'
 
 interface NavItem {
   id: ToolId | string
@@ -37,6 +38,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'fb-post', label: 'Article to FB Photos', icon: IconPhoto },
       { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },
+      { id: 'scheduled-posts', label: 'Schedule Trending News', icon: IconClock },
       { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
     ],
   },
@@ -53,6 +55,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   home: 'KULT Digital Kit',
   'fb-post': 'Article to FB Photos',
   'trending-news': 'Trending News to FB Photos',
+  'scheduled-posts': 'Schedule Trending News',
   'affiliate-links': 'Shopee Affiliate Links',
   'article-generator': 'Affiliate Article Editor',
   'engagement-posts': 'Engagement Posts',

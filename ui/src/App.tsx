@@ -8,6 +8,7 @@ import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
+import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -26,7 +27,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -36,6 +37,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
+  '/scheduled-posts': 'scheduled-posts',
 }
 
 const toolToPath: Record<ToolId, string> = {
@@ -46,6 +48,7 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-photos',
   'engagement-photos': '/engagement-photos/epl',
+  'scheduled-posts': '/scheduled-posts',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -600,6 +603,11 @@ function App() {
       <Route path="/engagement-photos/epl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage />
+        </Layout>
+      } />
+      <Route path="/scheduled-posts" element={
+        <Layout {...layoutProps}>
+          <ScheduledPostsPage />
         </Layout>
       } />
     </Routes>
