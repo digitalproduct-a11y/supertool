@@ -191,10 +191,10 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [customTitle, setCustomTitle] = useState('')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isImageGenerating, setIsImageGenerating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
   const [customImage, setCustomImage] = useState<File | null>(null)
-  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
@@ -221,7 +221,6 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
         setCaption(data.caption ?? '')
         setCustomImage(null)
-        setCustomImagePreview(null)
       } else {
         setError(data.message || 'Generation failed.')
       }
@@ -232,6 +231,28 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       setIsGenerating(false)
     }
   }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode, customImage])
+
+  const handleCustomImageUpload = useCallback(async (file: File) => {
+    setIsImageGenerating(true)
+    try {
+      const customImageBase64 = await encodeImage(file)
+      const data = await callGenerateWebhook({
+        url: source.articleUrl,
+        brand,
+        mode: 'own_brand',
+        title_mode: titleMode,
+        custom_title: titleMode === 'custom' ? customTitle : undefined,
+        caption_title_mode: captionTitleMode,
+        custom_image: customImageBase64,
+        operation: 'image_only',
+      })
+      if (data.success && data.imageUrl) {
+        setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl } : prev)
+      }
+    } finally {
+      setIsImageGenerating(false)
+    }
+  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode])
 
   async function handleDownload() {
     if (!result?.imageUrl) return
@@ -410,38 +431,38 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
             <div>
               {/* Image */}
               <div className="relative bg-neutral-50">
-                <img src={result.imageUrl} alt={result.title} className="w-full aspect-[4/5] object-cover" />
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <button
-                    onClick={handleDownload}
-                    className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download
-                  </button>
-                </div>
+                {isImageGenerating ? (
+                  <div className="w-full aspect-[4/5] animate-pulse bg-neutral-200" />
+                ) : (
+                  <>
+                    <img src={result.imageUrl} alt={result.title} className="w-full aspect-[4/5] object-cover" />
+                    <div className="absolute top-3 right-3 flex gap-2">
+                      <button
+                        onClick={handleDownload}
+                        className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
               {/* Caption */}
               <div className="p-5 space-y-3">
                 {/* Custom image upload */}
-                <label className="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                <label className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors ${isImageGenerating ? 'opacity-50 pointer-events-none' : ''}`}>
                   <IconPhoto size={16} />
-                  {customImage ? customImage.name : 'Upload Custom Image'}
-                  <input type="file" accept="image/*" className="hidden"
+                  Upload Custom Image
+                  <input type="file" accept="image/*" className="hidden" disabled={isImageGenerating}
                     onChange={e => {
                       const f = e.target.files?.[0] ?? null
-                      setCustomImage(f)
-                      setCustomImagePreview(f ? URL.createObjectURL(f) : null)
+                      if (f) handleCustomImageUpload(f)
+                      e.target.value = ''
                     }} />
                 </label>
-                {customImagePreview && (
-                  <div className="flex items-center gap-3">
-                    <img src={customImagePreview} className="w-10 h-10 rounded-lg object-cover border border-gray-200" alt="" />
-                    <button type="button" onClick={() => { setCustomImage(null); setCustomImagePreview(null) }} className="text-xs text-gray-500 hover:text-red-600 transition">Remove</button>
-                  </div>
-                )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm font-medium text-gray-700">Caption</span>

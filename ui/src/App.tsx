@@ -324,6 +324,7 @@ function FbPostPage() {
   const [titleMode, setTitleMode] = useState<TitleMode>('original')
   const [customTitle, setCustomTitle] = useState('')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
+  const [isImageGenerating, setIsImageGenerating] = useState(false)
 
   const { run, isRunning } = useWorkflow()
 
@@ -378,6 +379,27 @@ function FbPostPage() {
       setErrorMessage(response.message)
       setState('error')
     }
+  }, [url, brand, titleMode, customTitle, captionTitleMode, run])
+
+  const handleCustomImageUpload = useCallback(async (file: File) => {
+    if (!url.trim() || !brand) return
+    setIsImageGenerating(true)
+    const customImageBase64 = await encodeImage(file)
+    const request: WorkflowRequest = {
+      url: url.trim(),
+      brand,
+      mode: 'own_brand',
+      title_mode: titleMode,
+      custom_title: titleMode === 'custom' ? customTitle : undefined,
+      caption_title_mode: captionTitleMode,
+      custom_image: customImageBase64,
+      operation: 'image_only',
+    }
+    const response = await run(request)
+    if (response.success) {
+      setResult(prev => prev ? { ...prev, imageUrl: response.imageUrl } : response)
+    }
+    setIsImageGenerating(false)
   }, [url, brand, titleMode, customTitle, captionTitleMode, run])
 
   const handleApprove = useCallback(
@@ -527,6 +549,8 @@ function FbPostPage() {
               titleMode={titleMode}
               customTitle={customTitle}
               captionTitleMode={captionTitleMode}
+              onCustomImageUpload={state === 'result' ? handleCustomImageUpload : undefined}
+              isImageGenerating={isImageGenerating}
             />
           </div>
         </div>

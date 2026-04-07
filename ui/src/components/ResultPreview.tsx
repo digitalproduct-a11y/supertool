@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { IconPhoto } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
 
@@ -6,12 +7,16 @@ interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
   onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
+  onCustomImageUpload?: (file: File) => void
+  isImageGenerating?: boolean
 }
 
 export function ResultPreview({
   result,
   isRunning,
   onPostDraft,
+  onCustomImageUpload,
+  isImageGenerating = false,
 }: ResultPreviewProps) {
   const [caption, setCaption] = useState(result.caption ?? '')
   const [copied, setCopied] = useState(false)
@@ -131,7 +136,9 @@ export function ResultPreview({
     <div className="space-y-4">
       {/* Image with download overlay */}
       <div className="relative bg-neutral-50 rounded-xl overflow-hidden border border-gray-200">
-        {aiImageRemoved && !replacementPreviewUrl ? (
+        {isImageGenerating ? (
+          <div className="w-full aspect-[4/5] animate-pulse bg-neutral-200" />
+        ) : aiImageRemoved && !replacementPreviewUrl ? (
           <div className="flex flex-col items-center justify-center w-full aspect-[4/5] text-gray-400">
             <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -149,7 +156,7 @@ export function ResultPreview({
             <img
               src={replacementPreviewUrl || result.imageUrl}
               alt="Generated Facebook image"
-              className="w-full aspect-[4/5] object-cover"
+              className="w-full"
               onError={(e) => {
                 ;(e.target as HTMLImageElement).src = ''
               }}
@@ -172,6 +179,21 @@ export function ResultPreview({
       {/* Hidden file inputs for photo upload */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplaceAiImage} />
+
+      {/* Custom image upload */}
+      {onCustomImageUpload && (
+        <label className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors ${isImageGenerating ? 'opacity-50 pointer-events-none' : ''}`}>
+          <IconPhoto size={16} />
+          Upload Custom Image
+          <input type="file" accept="image/*" className="hidden"
+            disabled={isImageGenerating}
+            onChange={e => {
+              const f = e.target.files?.[0]
+              if (f) onCustomImageUpload(f)
+              e.target.value = ''
+            }} />
+        </label>
+      )}
 
       {/* Caption section */}
       <div className="space-y-2">
