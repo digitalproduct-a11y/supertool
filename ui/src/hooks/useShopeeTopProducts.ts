@@ -13,6 +13,8 @@ export interface ShopeeTopProduct {
   rating: number
   shopName: string
   shopType?: string
+  shopTypeLabel?: string     // "Mall", "Preferred", or "Normal"
+  commissionRate?: number    // affiliate commission %
   productUrl: string         // shopee.com.my URL
   fetchedAt: string          // ISO timestamp
 }

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { IconShoppingCart, IconExternalLink, IconRefresh, IconStar } from '@tabler/icons-react'
+import { useState, useMemo, useEffect } from 'react'
+import { IconShoppingCart, IconExternalLink, IconRefresh, IconStar, IconPhoto } from '@tabler/icons-react'
 import { BRANDS, type BrandName } from '../constants/brands'
 import { GuideModal } from './ds/GuideModal'
 import { Spinner } from './ds/Spinner'
@@ -8,7 +8,8 @@ import { useShopeeTopProducts, type ShopeeTopProduct } from '../hooks/useShopeeT
 const GENERATE_URL = import.meta.env.VITE_SHOPEE_TOP_PRODUCTS_GENERATE_URL as string
 
 function formatPrice(price: number): string {
-  return `RM ${(price / 100000).toFixed(2)}`
+  if (!price) return '—'
+  return `RM ${price.toFixed(2)}`
 }
 
 function formatLastRefreshed(iso: string | null): string {
@@ -17,12 +18,52 @@ function formatLastRefreshed(iso: string | null): string {
   return d.toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+function ShopTypeBadge({ label }: { label?: string }) {
+  if (!label || label === 'Normal') return null
+  const isMall = label === 'Mall'
+  return (
+    <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${isMall ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+      {label}
+    </span>
+  )
+}
+
+async function encodeImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1200
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+    }
+    img.src = url
+  })
+}
+
 export function ShopeeTopProductsPage() {
   const { products, lastRefreshed, loading, error, refetch } = useShopeeTopProducts()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [selectedBrand, setSelectedBrand] = useState<BrandName>(BRANDS[0])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [customImage, setCustomImage] = useState<File | null>(null)
+  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!lightboxUrl) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setLightboxUrl(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [lightboxUrl])
 
   // Group products by tiktokKeyword
   const grouped = useMemo(() => {
@@ -60,10 +101,11 @@ export function ShopeeTopProductsPage() {
     setIsGenerating(true)
     setGenerateError(null)
     try {
+      const customImageBase64 = customImage ? await encodeImage(customImage) : null
       const res = await fetch(`${GENERATE_URL}?brand=${encodeURIComponent(selectedBrand)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productUrls: Array.from(selected) }),
+        body: JSON.stringify({ productUrls: Array.from(selected), customImage: customImageBase64 }),
         signal: AbortSignal.timeout(180_000),
       })
       const contentType = res.headers.get('content-type') ?? ''
@@ -79,6 +121,8 @@ export function ShopeeTopProductsPage() {
         a.click()
         window.URL.revokeObjectURL(objectUrl)
         setSelected(new Set())
+        setCustomImage(null)
+        setCustomImagePreview(null)
       } else {
         const data = await res.json()
         setGenerateError(data.message ?? 'Failed to generate affiliate links.')
@@ -121,6 +165,7 @@ export function ShopeeTopProductsPage() {
                   <li><strong>Browse the table</strong> — Products are grouped by TikTok trending keyword. The table refreshes daily at 8am with the latest top-selling items from Shopee.</li>
                   <li><strong>Select products</strong> — Tick the checkbox next to products you want to generate affiliate links for. You can select individual products or check the keyword header to select the whole group.</li>
                   <li><strong>Pick a brand</strong> — Choose which brand's affiliate account to use for link generation.</li>
+                  <li><strong>Custom image (optional)</strong> — Upload a custom image to include in the generated output.</li>
                   <li><strong>Click Generate</strong> — An Excel file with affiliate-tagged product data will download automatically.</li>
                 </ol>
                 <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
@@ -195,6 +240,7 @@ export function ShopeeTopProductsPage() {
                           <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wide">Price</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wide">Sales</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wide">Rating</th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wide">Comm</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wide">Shop</th>
                           <th className="w-10 px-4 py-3" />
                         </tr>
@@ -216,12 +262,15 @@ export function ShopeeTopProductsPage() {
                                   className="w-4 h-4 rounded accent-neutral-950 cursor-pointer"
                                 />
                               </td>
-                              <td className="px-4 py-3">
-                                {product.imageUrl ? (
-                                  <img src={product.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover bg-neutral-100" />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-lg bg-neutral-100" />
-                                )}
+                              <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                                <div
+                                  className="w-12 h-12 rounded-lg overflow-hidden bg-neutral-100 shrink-0 cursor-zoom-in"
+                                  onClick={() => product.imageUrl && setLightboxUrl(product.imageUrl)}
+                                >
+                                  {product.imageUrl ? (
+                                    <img src={product.imageUrl} alt="" className="w-full h-full object-cover" />
+                                  ) : null}
+                                </div>
                               </td>
                               <td className="px-4 py-3 max-w-[280px]">
                                 <p className="font-medium text-neutral-900 leading-snug line-clamp-2">{product.productName}</p>
@@ -234,10 +283,17 @@ export function ShopeeTopProductsPage() {
                                   {product.rating.toFixed(1)}
                                 </span>
                               </td>
+                              <td className="px-4 py-3 text-right whitespace-nowrap">
+                                {product.commissionRate != null ? (
+                                  <span className="text-green-600 font-medium">{product.commissionRate.toFixed(1)}%</span>
+                                ) : (
+                                  <span className="text-neutral-300">—</span>
+                                )}
+                              </td>
                               <td className="px-4 py-3">
                                 <p className="text-neutral-700 truncate max-w-[140px]">{product.shopName}</p>
-                                {product.shopType && (
-                                  <p className="text-xs text-neutral-400">{product.shopType}</p>
+                                {product.shopTypeLabel && (
+                                  <ShopTypeBadge label={product.shopTypeLabel} />
                                 )}
                               </td>
                               <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -271,10 +327,36 @@ export function ShopeeTopProductsPage() {
             <p className="text-sm text-neutral-600">
               <span className="font-semibold text-neutral-950">{selected.size}</span> product{selected.size > 1 ? 's' : ''} selected
             </p>
-            <div className="flex items-center gap-3 ml-auto">
+            <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
               {generateError && (
                 <p className="text-xs text-red-600">{generateError}</p>
               )}
+              {/* Custom image upload */}
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-1.5 px-3 py-2 border border-neutral-200 rounded-lg text-xs text-neutral-600 hover:border-neutral-400 cursor-pointer bg-neutral-50 hover:bg-neutral-100 transition-colors whitespace-nowrap">
+                  <IconPhoto size={14} />
+                  {customImage ? customImage.name : 'Custom image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0] ?? null
+                      setCustomImage(f)
+                      setCustomImagePreview(f ? URL.createObjectURL(f) : null)
+                    }}
+                  />
+                </label>
+                {customImagePreview && (
+                  <div className="relative">
+                    <img src={customImagePreview} className="w-8 h-8 rounded object-cover border border-neutral-200" alt="" />
+                    <button
+                      onClick={() => { setCustomImage(null); setCustomImagePreview(null) }}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-neutral-900 text-white rounded-full text-[10px] flex items-center justify-center leading-none"
+                    >×</button>
+                  </div>
+                )}
+              </div>
               {/* Brand selector */}
               <div className="relative">
                 <select
@@ -299,6 +381,21 @@ export function ShopeeTopProductsPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain"
+            onClick={e => e.stopPropagation()}
+          />
         </div>
       )}
     </main>
