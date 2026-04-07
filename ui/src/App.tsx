@@ -42,6 +42,14 @@ const pathToTool: Record<string, ToolId> = {
   '/shopee-top-products': 'shopee-top-products',
 }
 
+// Map scheduled-posts subpages to scheduled-posts tool
+function getActiveTool(pathname: string): ToolId {
+  if (pathname.startsWith('/scheduled-posts')) {
+    return 'scheduled-posts'
+  }
+  return pathToTool[pathname] ?? 'home'
+}
+
 const toolToPath: Record<ToolId, string> = {
   'home': '/',
   'fb-post': '/article-to-fb',
@@ -285,7 +293,7 @@ function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedC
 }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const activeTool = pathToTool[location.pathname] ?? 'home'
+  const activeTool = getActiveTool(location.pathname)
 
   return (
     <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>

@@ -16,12 +16,11 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const uploadPreset = import.meta.env[config.uploadPresetEnvVar] as string | undefined
 
   const navigate = useNavigate()
-  const { ideas, setIdeas, isLoading, error, generate, refresh, photosByPlayerClub } = useEngagementPhotos()
+  const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState(config.loadingQuotes[0])
-  const [selectedIdeas, setSelectedIdeas] = useState<Set<string>>(new Set())
 
   // Block in-app navigation (sidebar clicks) when in review stage
   const blocker = useBlocker(
