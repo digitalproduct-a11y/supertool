@@ -26,7 +26,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'engagement-ucl' | 'engagement-worldcup' | 'scheduled-posts' | 'shopee-top-products'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -36,8 +36,6 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
-  '/engagement-photos/ucl': 'engagement-ucl',
-  '/engagement-photos/worldcup': 'engagement-worldcup',
   '/scheduled-posts': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
 }
@@ -58,8 +56,6 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-photos',
   'engagement-photos': '/engagement-photos/epl',
-  'engagement-ucl': '/engagement-photos/ucl',
-  'engagement-worldcup': '/engagement-photos/worldcup',
   'scheduled-posts': '/scheduled-posts',
   'shopee-top-products': '/shopee-top-products',
 }
