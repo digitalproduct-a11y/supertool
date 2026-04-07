@@ -1,5 +1,4 @@
 export type AppState = 'idle' | 'loading' | 'result' | 'error' | 'approved'
-export type WorkflowMode = 'own_brand' | 'cross_brand'
 export type TitleMode = 'original' | 'ai' | 'custom'
 export type CaptionTitleMode = 'original' | 'ai'
 export type WorkflowOperation = 'full' | 'image_only' | 'caption_only'
@@ -7,7 +6,6 @@ export type WorkflowOperation = 'full' | 'image_only' | 'caption_only'
 export interface WorkflowRequest {
   url: string
   brand: string
-  mode: WorkflowMode
   title_mode: TitleMode
   custom_title?: string
   caption_title_mode: CaptionTitleMode

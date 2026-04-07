@@ -17,8 +17,6 @@ import { HistoryPanel } from './components/HistoryPanel'
 import { GuideModal } from './components/ds/GuideModal'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
-import { useKultStats } from './hooks/useKultStats'
-import { setKultLogger, trackEvent } from './utils/analytics'
 import type {
   AppState,
   WorkflowResult,
@@ -313,6 +311,25 @@ function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedC
   )
 }
 
+async function encodeImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const MAX = 1200
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1])
+    }
+    img.onerror = reject
+    img.src = url
+  })
+}
+
 function FbPostPage() {
   const [state, setState] = useState<AppState>('idle')
   const [result, setResult] = useState<WorkflowResult | null>(null)
@@ -326,11 +343,12 @@ function FbPostPage() {
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
   const [isImageGenerating, setIsImageGenerating] = useState(false)
 
-  const { run, isRunning } = useWorkflow()
+  const handleTitleModeChange = (mode: TitleMode) => {
+    setTitleMode(mode)
+    if (mode !== 'custom') setCustomTitle('')
+  }
 
-  useEffect(() => {
-    trackEvent({ event_type: 'page_visit', tool_id: 'article-to-fb', tool_label: 'Article to FB Post' })
-  }, [])
+  const { run, isRunning } = useWorkflow()
 
   useEffect(() => {
     if (state === 'result' && window.innerWidth < 768) {
@@ -348,12 +366,10 @@ function FbPostPage() {
     setResult(null)
     setErrorMessage('')
 
-    trackEvent({ event_type: 'form_submitted', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand })
-
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
-      mode: 'own_brand',
+
       title_mode: titleMode,
       custom_title: titleMode === 'custom' ? customTitle : undefined,
       caption_title_mode: captionTitleMode,
@@ -362,7 +378,6 @@ function FbPostPage() {
     const response = await run(request)
 
     if (response.success) {
-      trackEvent({ event_type: 'asset_generated', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand })
       setResult(response)
       setState('result')
       const item: HistoryItem = {
@@ -375,7 +390,6 @@ function FbPostPage() {
       }
       setHistory((h) => [item, ...h])
     } else {
-      trackEvent({ event_type: 'generation_failed', tool_id: 'article-to-fb', tool_label: 'Article to FB Post', brand, error_message: response.message })
       setErrorMessage(response.message)
       setState('error')
     }
@@ -388,7 +402,7 @@ function FbPostPage() {
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
-      mode: 'own_brand',
+
       title_mode: titleMode,
       custom_title: titleMode === 'custom' ? customTitle : undefined,
       caption_title_mode: captionTitleMode,
@@ -438,7 +452,7 @@ function FbPostPage() {
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
-      mode: 'own_brand',
+
       operation: op,
       title_mode: localTitleMode,
       custom_title: localTitleMode === 'custom' ? localCustomTitle : undefined,
@@ -521,7 +535,7 @@ function FbPostPage() {
                 brand={brand}
                 onBrandChange={setBrand}
                 titleMode={titleMode}
-                onTitleModeChange={setTitleMode}
+                onTitleModeChange={handleTitleModeChange}
                 customTitle={customTitle}
                 onCustomTitleChange={setCustomTitle}
                 captionTitleMode={captionTitleMode}
@@ -596,12 +610,6 @@ function FbPostPage() {
 function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const { logEvent } = useKultStats()
-
-  useEffect(() => {
-    setKultLogger(logEvent)
-  }, [logEvent])
-
   const layoutProps = {
     isSidebarCollapsed,
     onCollapsedChange: setIsSidebarCollapsed,

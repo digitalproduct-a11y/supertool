@@ -9,7 +9,8 @@ import {
   IconFileText,
   IconLayoutSidebar,
   IconHeart,
-  IconShoppingCart,
+  IconCalendar,
+  IconShoppingBag,
 } from '@tabler/icons-react'
 
 type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts'
@@ -39,13 +40,13 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
       { id: 'fb-post', label: 'Article to FB Photos', icon: IconPhoto },
       { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },
       { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
-      { id: 'scheduled-posts', label: 'Schedule Trending News', icon: IconTrendingUp },
+      { id: 'scheduled-posts', label: 'Schedule Trending News', icon: IconCalendar },
     ],
   },
   {
     section: 'Affiliate',
     items: [
-      { id: 'shopee-top-products', label: 'Shopee Top Products', icon: IconShoppingCart },
+      { id: 'shopee-top-products', label: 'Shopee Top Products', icon: IconShoppingBag },
       { id: 'affiliate-links', label: 'Shopee Affiliate Links', icon: IconLink },
       { id: 'article-generator', label: 'Affiliate Article Editor', icon: IconFileText },
     ],

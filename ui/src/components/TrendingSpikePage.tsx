@@ -189,6 +189,11 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [brand, setBrand] = useState(source.brand || '')
   const [titleMode, setTitleMode] = useState<TitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [customTitle, setCustomTitle] = useState('')
+
+  const handleTitleModeChange = (mode: TitleMode) => {
+    setTitleMode(mode)
+    if (mode !== 'custom') setCustomTitle('')
+  }
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isImageGenerating, setIsImageGenerating] = useState(false)
@@ -211,7 +216,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       const data = await callGenerateWebhook({
         url: source.articleUrl,
         brand,
-        mode: 'own_brand',
+
         title_mode: titleMode,
         custom_title: titleMode === 'custom' ? customTitle : undefined,
         caption_title_mode: captionTitleMode,
@@ -239,7 +244,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
       const data = await callGenerateWebhook({
         url: source.articleUrl,
         brand,
-        mode: 'own_brand',
+
         title_mode: titleMode,
         custom_title: titleMode === 'custom' ? customTitle : undefined,
         caption_title_mode: captionTitleMode,
@@ -362,7 +367,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
               {(['original', 'ai', 'custom'] as TitleMode[]).map(m => (
                 <button
                   key={m}
-                  onClick={() => setTitleMode(m)}
+                  onClick={() => handleTitleModeChange(m)}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                     titleMode === m
                       ? 'bg-white text-gray-900 shadow-sm'

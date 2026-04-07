@@ -8,9 +8,11 @@ import {
   IconFileText,
   IconActivity,
   IconBrain,
+  IconCalendar,
+  IconShoppingBag,
 } from '@tabler/icons-react'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'scheduled-posts' | 'shopee-top-products'
 
 interface Tool {
   id: ToolId
@@ -53,6 +55,13 @@ const sections: Section[] = [
         color: '#0055EE',
         icon: IconHeart,
       },
+      {
+        id: 'scheduled-posts',
+        label: 'Schedule Trending News',
+        description: 'Schedule trending news posts across brands',
+        color: '#0055EE',
+        icon: IconCalendar,
+      },
     ],
   },
   {
@@ -72,6 +81,13 @@ const sections: Section[] = [
         description: 'Write engaging Shopee product articles from links',
         color: '#F05A35',
         icon: IconFileText,
+      },
+      {
+        id: 'shopee-top-products',
+        label: 'Shopee Top Products',
+        description: 'Discover and share top-performing Shopee products',
+        color: '#F05A35',
+        icon: IconShoppingBag,
       },
     ],
   },
