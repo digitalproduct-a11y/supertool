@@ -78,13 +78,6 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     setLoadingMessage(config.loadingQuotes[0])
   }
 
-  const handleRefreshIdeas = async () => {
-    if (!selectedBrand) return
-    await refresh(selectedBrand, 'en', webhookUrl)
-    setSelectedIdeas(new Set())
-    setCurrentLoadingStep(0)
-  }
-
   const handleUpdateIdea = (ideaId: string, field: 'headline' | 'subtitle' | 'caption', value: string) => {
     setIdeas(
       ideas.map((idea) => (idea.id === ideaId ? { ...idea, [field]: value } : idea))
@@ -95,28 +88,6 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     setIdeas(
       ideas.map((idea) => (idea.id === ideaId ? { ...idea, photo_url: photo.url, photo_public_id: photo.publicId } : idea))
     )
-  }
-
-  const handleConfirmAndRender = () => {
-    if (selectedIdeas.size === 0) {
-      alert('Please select at least one idea')
-      return
-    }
-
-    const ideasToRender = ideas.filter((idea) => selectedIdeas.has(idea.id))
-
-    const allValid = ideasToRender.every(
-      (idea) =>
-        idea.headline.trim() &&
-        idea.subtitle.trim() &&
-        idea.caption.trim() &&
-        idea.photo_url
-    )
-
-    if (!allValid) {
-      alert('Please fill in all fields (headline, subtitle, caption) and select a photo for each post.')
-      return
-    }
   }
 
   return (
