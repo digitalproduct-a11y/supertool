@@ -517,6 +517,26 @@ function FbPostPage() {
           </div>
 
           <div id="preview-panel" className="space-y-4">
+            {state === 'result' && (
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4">
+                <label className="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                  <IconPhoto size={16} />
+                  {customImage ? customImage.name : 'Upload Custom Image'}
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0] ?? null
+                      setCustomImage(f)
+                      setCustomImagePreview(f ? URL.createObjectURL(f) : null)
+                    }} />
+                </label>
+                {customImagePreview && (
+                  <div className="flex items-center gap-3 mt-3">
+                    <img src={customImagePreview} className="w-10 h-10 rounded-lg object-cover border border-gray-200" alt="" />
+                    <button type="button" onClick={() => { setCustomImage(null); setCustomImagePreview(null) }} className="text-xs text-gray-500 hover:text-red-600 transition">Remove</button>
+                  </div>
+                )}
+              </div>
+            )}
             <PreviewPanel
               state={state === 'approved' ? 'idle' : state}
               result={result}
@@ -529,30 +549,6 @@ function FbPostPage() {
               customTitle={customTitle}
               captionTitleMode={captionTitleMode}
             />
-            {state === 'result' && (
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4">
-                <label className="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors">
-                  <IconPhoto size={16} />
-                  {customImage ? customImage.name : 'Custom Image (optional)'}
-                  <input type="file" accept="image/*" className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0] ?? null
-                      setCustomImage(f)
-                      setCustomImagePreview(f ? URL.createObjectURL(f) : null)
-                    }} />
-                </label>
-                {customImagePreview && (
-                  <div className="flex items-center gap-3 mt-3">
-                    <img src={customImagePreview} className="w-10 h-10 rounded-lg object-cover border border-gray-200" alt="" />
-                    <button
-                      type="button"
-                      onClick={() => { setCustomImage(null); setCustomImagePreview(null) }}
-                      className="text-xs text-gray-500 hover:text-red-600 transition"
-                    >Remove</button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
