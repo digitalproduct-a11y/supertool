@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
@@ -8,6 +8,9 @@ import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
+import { ScheduledPostsPage } from './components/ScheduledPostsPage'
+import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
+import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -279,6 +282,11 @@ function SuggestButton() {
       )}
     </div>
   )
+}
+
+function ScheduledPostsBrandPage() {
+  const { brandSlug } = useParams<{ brandSlug: string }>()
+  return <ScheduledPostsPage brand={brandSlug || ''} />
 }
 
 function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedChange }: {
@@ -622,6 +630,21 @@ function App() {
       <Route path="/engagement-photos/worldcup" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="worldcup" />
+        </Layout>
+      } />
+      <Route path="/scheduled-posts" element={
+        <Layout {...layoutProps}>
+          <ScheduledPostsLanding onSelectBrand={() => {}} />
+        </Layout>
+      } />
+      <Route path="/scheduled-posts/:brandSlug" element={
+        <Layout {...layoutProps}>
+          <ScheduledPostsBrandPage />
+        </Layout>
+      } />
+      <Route path="/shopee-top-products" element={
+        <Layout {...layoutProps}>
+          <ShopeeTopProductsPage />
         </Layout>
       } />
     </Routes>
