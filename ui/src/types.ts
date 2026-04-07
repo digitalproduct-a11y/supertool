@@ -73,6 +73,18 @@ export type AffiliateLinksResponse = AffiliateLinksResult | AffiliateLinksError
 // Article Generator tool types
 export type ArticleGeneratorStep = 'input' | 'pick-angle' | 'review-article' | 'thumbnail' | 'done'
 
+// Topic config for multi-topic engagement posts
+export interface TopicConfig {
+  id: string
+  label: string
+  webhookEnvVar: string
+  uploadPresetEnvVar: string
+  templateImages: [string, string, string]
+  loadingSteps: [string, string, string]
+  loadingQuotes: string[]
+  downloadPrefix: string
+}
+
 // Engagement Photos tool types
 export interface EngagementPost {
   headline: string

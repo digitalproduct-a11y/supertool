@@ -26,7 +26,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'engagement-ucl' | 'engagement-worldcup'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -36,6 +36,8 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
+  '/engagement-photos/ucl': 'engagement-ucl',
+  '/engagement-photos/worldcup': 'engagement-worldcup',
 }
 
 const toolToPath: Record<ToolId, string> = {
@@ -46,6 +48,8 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-photos',
   'engagement-photos': '/engagement-photos/epl',
+  'engagement-ucl': '/engagement-photos/ucl',
+  'engagement-worldcup': '/engagement-photos/worldcup',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -599,7 +603,17 @@ function App() {
       } />
       <Route path="/engagement-photos/epl" element={
         <Layout {...layoutProps}>
-          <EngagementPhotosPage />
+          <EngagementPhotosPage topic="epl" />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/ucl" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="ucl" />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/worldcup" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="worldcup" />
         </Layout>
       } />
     </Routes>

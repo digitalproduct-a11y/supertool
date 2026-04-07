@@ -6,36 +6,23 @@ import { Button } from './ds/Button'
 import { BRANDS } from '../constants/brands'
 import IdeaCard from './IdeaCard'
 import { IconChevronLeft } from '@tabler/icons-react'
+import { TOPIC_CONFIGS } from '../constants/topics'
 
-const DEFAULT_PHOTO_PUBLIC_ID = 'placeholder_bxywkp'
+interface EngagementPhotosPageProps {
+  topic?: string
+}
 
-const TEMPLATE_IMAGES = [
-  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775189927/epl-post-challenge_1_byvuse.jpg',
-  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775199810/epl-post-debate_sqjs6z.jpg',
-  'https://res.cloudinary.com/dymmqtqyg/image/upload/v1775199812/epl-post-quiz_c1piip.jpg',
-]
+export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProps) {
+  const config = TOPIC_CONFIGS[topic] || TOPIC_CONFIGS.epl
+  const webhookUrl = import.meta.env[config.webhookEnvVar] as string | undefined
+  const uploadPreset = import.meta.env[config.uploadPresetEnvVar] as string | undefined
 
-
-const LOADING_STEPS = [
-  'Scanning latest EPL news',
-  'Curating top stories',
-  'Generating 5 post ideas',
-]
-
-const LOADING_QUOTES = [
-  'VAR checking the vibes...',
-  'Consulting the dugout...',
-  'Asking the fans...',
-  'Reading the match report...',
-]
-
-export function EngagementPhotosPage() {
   const navigate = useNavigate()
   const { ideas, setIdeas, isLoading, error, generate, refresh, photosByPlayerClub } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
-  const [loadingMessage, setLoadingMessage] = useState(LOADING_QUOTES[0])
+  const [loadingMessage, setLoadingMessage] = useState(config.loadingQuotes[0])
   const [selectedIdeas, setSelectedIdeas] = useState<Set<string>>(new Set())
 
   // Block in-app navigation (sidebar clicks) when in review stage
@@ -63,7 +50,7 @@ export function EngagementPhotosPage() {
   useEffect(() => {
     if (!isLoading) return
     const interval = setInterval(() => {
-      setLoadingMessage(LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)])
+      setLoadingMessage(config.loadingQuotes[Math.floor(Math.random() * config.loadingQuotes.length)])
     }, 4000)
     return () => clearInterval(interval)
   }, [isLoading])
@@ -87,15 +74,15 @@ export function EngagementPhotosPage() {
       return
     }
     setStage('review')
-    await generate(selectedBrand, 'en')
+    await generate(selectedBrand, 'en', webhookUrl)
     setSelectedIdeas(new Set())
     setCurrentLoadingStep(0)
-    setLoadingMessage(LOADING_QUOTES[0])
+    setLoadingMessage(config.loadingQuotes[0])
   }
 
   const handleRefreshIdeas = async () => {
     if (!selectedBrand) return
-    await refresh(selectedBrand, 'en')
+    await refresh(selectedBrand, 'en', webhookUrl)
     setSelectedIdeas(new Set())
     setCurrentLoadingStep(0)
   }
@@ -132,8 +119,6 @@ export function EngagementPhotosPage() {
       alert('Please fill in all fields (headline, subtitle, caption) and select a photo for each post.')
       return
     }
-
-    // All ideas are ready — stay on review stage
   }
 
   return (
@@ -148,9 +133,9 @@ export function EngagementPhotosPage() {
             >
               <IconChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-semibold text-neutral-950">Engagement Posts: EPL</h1>
+            <h1 className="text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
           </div>
-          <p className="text-sm text-neutral-600">Create engaging sports posts featuring Premier League players</p>
+          <p className="text-sm text-neutral-600">Create engaging sports posts featuring {config.label} players</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
       </div>
@@ -205,7 +190,7 @@ export function EngagementPhotosPage() {
             <div>
               <div className="relative overflow-visible rounded-3xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] aspect-[1080/1350]">
                 <div className="carousel-stack">
-                  {TEMPLATE_IMAGES.map((img, idx) => (
+                  {config.templateImages.map((img, idx) => (
                     <div key={idx} className="carousel-stack-item overflow-hidden">
                       <img src={img} alt={`Template ${idx + 1}`} className="w-full h-full object-cover" />
                     </div>
@@ -220,7 +205,7 @@ export function EngagementPhotosPage() {
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
                 <div className="text-4xl inline-block animate-bounce">⚽</div>
                 <div className="flex justify-center gap-2">
-                  {LOADING_STEPS.map((_, idx) => (
+                  {config.loadingSteps.map((_, idx) => (
                     <div
                       key={idx}
                       className={`h-2 rounded-full transition-all duration-700 ${
@@ -239,9 +224,9 @@ export function EngagementPhotosPage() {
                   ))}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-neutral-900">{LOADING_STEPS[currentLoadingStep]}</p>
+                  <p className="text-sm font-semibold text-neutral-900">{config.loadingSteps[currentLoadingStep]}</p>
                   <p className="text-xs text-neutral-400 mt-1">
-                    Step {currentLoadingStep + 1} of {LOADING_STEPS.length}
+                    Step {currentLoadingStep + 1} of {config.loadingSteps.length}
                   </p>
                 </div>
                 <p key={loadingMessage} className="text-sm text-neutral-500 italic animate-fade">
@@ -270,6 +255,8 @@ export function EngagementPhotosPage() {
                     selectedBrand={selectedBrand}
                     index={idx}
                     cachedPhotos={photosByPlayerClub}
+                    downloadPrefix={config.downloadPrefix}
+                    uploadPreset={uploadPreset}
                   />
                 </div>
               ))}

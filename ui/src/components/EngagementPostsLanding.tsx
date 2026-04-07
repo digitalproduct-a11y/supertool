@@ -1,12 +1,14 @@
 import { IconFlame, IconTrophy, IconWorld, IconMusicStar } from '@tabler/icons-react'
 import type React from 'react'
 
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'worldcup'
+
 interface EngagementPostsLandingProps {
-  onSelectTopic: (id: 'engagement-photos') => void
+  onSelectTopic: (id: ActiveTopicId) => void
 }
 
 interface Topic {
-  id: 'engagement-photos' | 'coming-soon-1' | 'coming-soon-2' | 'coming-soon-3' | 'coming-soon-4'
+  id: string
   label: string
   description: string
   icon: React.ComponentType<{ className?: string }>
@@ -33,20 +35,18 @@ const sections: Section[] = [
         color: '#FF3FBF',
       },
       {
-        id: 'coming-soon-1',
+        id: 'ucl',
         label: 'Champions League',
         description: 'European football highlights and player comparisons',
         icon: IconTrophy,
         color: '#0055EE',
-        comingSoon: true,
       },
       {
-        id: 'coming-soon-2',
+        id: 'worldcup',
         label: 'International Football',
         description: 'World Cup and international tournament content',
         icon: IconWorld,
         color: '#00E5D4',
-        comingSoon: true,
       },
       {
         id: 'coming-soon-3',
@@ -137,7 +137,7 @@ export function EngagementPostsLanding({ onSelectTopic }: EngagementPostsLanding
                     return (
                       <button
                         key={topic.label}
-                        onClick={() => onSelectTopic(topic.id as 'engagement-photos')}
+                        onClick={() => onSelectTopic(topic.id as ActiveTopicId)}
                         className="glass-card rounded-xl overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] transition-all duration-200 text-left group"
                       >
                         <div className="px-5 pt-5 pb-2 flex items-center justify-between">
