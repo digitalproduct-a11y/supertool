@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
+import { IconPhoto } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
-import { trackEvent } from '../utils/analytics'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
 import { Spinner } from './ds/Spinner'
@@ -149,6 +149,24 @@ function CopyButton({ text }: { text: string }) {
 }
 
 
+async function encodeImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1200
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(objectUrl)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+    }
+    img.src = objectUrl
+  })
+}
+
 // ─── Generate View ────────────────────────────────────────────────────────────
 
 interface GenerateSource {
@@ -175,6 +193,8 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
+  const [customImage, setCustomImage] = useState<File | null>(null)
+  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
@@ -186,9 +206,8 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     setIsGenerating(true)
     setError('')
 
-    trackEvent({ event_type: 'form_submitted', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand })
-
     try {
+      const customImageBase64 = customImage ? await encodeImage(customImage) : undefined
       const data = await callGenerateWebhook({
         url: source.articleUrl,
         brand,
@@ -196,23 +215,23 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         title_mode: titleMode,
         custom_title: titleMode === 'custom' ? customTitle : undefined,
         caption_title_mode: captionTitleMode,
+        custom_image: customImageBase64,
       })
       if (data.success) {
-        trackEvent({ event_type: 'asset_generated', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand })
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
         setCaption(data.caption ?? '')
+        setCustomImage(null)
+        setCustomImagePreview(null)
       } else {
-        trackEvent({ event_type: 'generation_failed', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand, error_message: data.message || 'Generation failed.' })
         setError(data.message || 'Generation failed.')
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Request failed.'
-      trackEvent({ event_type: 'generation_failed', tool_id: 'trending-news', tool_label: 'Trending News to FB', brand, error_message: errorMsg })
       setError(errorMsg)
     } finally {
       setIsGenerating(false)
     }
-  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode])
+  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode, customImage])
 
   async function handleDownload() {
     if (!result?.imageUrl) return
@@ -406,6 +425,23 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
               </div>
               {/* Caption */}
               <div className="p-5 space-y-3">
+                {/* Custom image upload */}
+                <label className="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                  <IconPhoto size={16} />
+                  {customImage ? customImage.name : 'Upload Custom Image'}
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0] ?? null
+                      setCustomImage(f)
+                      setCustomImagePreview(f ? URL.createObjectURL(f) : null)
+                    }} />
+                </label>
+                {customImagePreview && (
+                  <div className="flex items-center gap-3">
+                    <img src={customImagePreview} className="w-10 h-10 rounded-lg object-cover border border-gray-200" alt="" />
+                    <button type="button" onClick={() => { setCustomImage(null); setCustomImagePreview(null) }} className="text-xs text-gray-500 hover:text-red-600 transition">Remove</button>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm font-medium text-gray-700">Caption</span>
@@ -418,6 +454,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed"
                   />
                 </div>
+
                 {/* Post mode + action — hidden for now */}
                 {false && <div className="space-y-3">
                   {/* Publish Now / Schedule toggle */}
@@ -502,9 +539,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 export function TrendingSpikePage() {
   const [activeTab, setActiveTab] = useState<'spike' | 'trending'>('trending')
 
-  useEffect(() => {
-    trackEvent({ event_type: 'page_visit', tool_id: 'trending-news', tool_label: 'Trending News to FB' })
-  }, [])
+  useEffect(() => {}, [])
 
   // Spike tab state
   const [spikeView, setSpikeView] = useState<'list' | 'generate'>('list')

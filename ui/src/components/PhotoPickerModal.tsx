@@ -12,7 +12,7 @@ interface PhotoPickerModalProps {
 export default function PhotoPickerModal({ playerName, club, onSelect, onClose, cachedPhotos, uploadPreset }: PhotoPickerModalProps) {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [photos, setPhotos] = useState<any[]>([])
-  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false)
+  const [isLoadingPhotos] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)

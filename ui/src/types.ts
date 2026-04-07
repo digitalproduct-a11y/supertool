@@ -12,6 +12,7 @@ export interface WorkflowRequest {
   custom_title?: string
   caption_title_mode: CaptionTitleMode
   operation?: WorkflowOperation
+  custom_image?: string
   // For partial regenerations — pass through existing values
   imageUrl?: string
   caption?: string

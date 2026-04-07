@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, type BrandName } from '../constants/brands'
-import { trackEvent } from '../utils/analytics'
 import { Spinner } from './ds/Spinner'
 import { GuideModal } from './ds/GuideModal'
 import { useAffiliateLinks } from '../hooks/useAffiliateLinks'
@@ -13,11 +12,9 @@ export function AffiliateLinksPage() {
   const [pageState, setPageState] = useState<AffiliateLinksState>('idle')
   const [selectedBrand, setSelectedBrand] = useState<BrandName>(BRANDS[0])
   const [dragOver, setDragOver] = useState(false)
-  const { run } = useAffiliateLinks()
+  const { run, progress } = useAffiliateLinks()
 
-  useEffect(() => {
-    trackEvent({ event_type: 'page_visit', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links' })
-  }, [])
+  useEffect(() => {}, [])
 
   const handleFile = async (selectedFile: File) => {
     if (!selectedBrand) {
@@ -26,16 +23,13 @@ export function AffiliateLinksPage() {
     }
 
     setPageState('loading')
-    trackEvent({ event_type: 'form_submitted', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand })
 
     const response = await run(selectedFile, selectedBrand)
 
     if (response.success) {
-      trackEvent({ event_type: 'asset_generated', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand })
       toast.success('Your file is ready and has been downloaded.')
       setPageState('idle')
     } else {
-      trackEvent({ event_type: 'generation_failed', tool_id: 'affiliate-links', tool_label: 'Shopee Affiliate Links', brand: selectedBrand, error_message: response.message })
       toast.error(response.message)
       setPageState('idle')
     }
@@ -166,8 +160,12 @@ export function AffiliateLinksPage() {
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <Spinner size="md" />
               <div className="text-center">
-                <p className="text-sm font-medium text-neutral-700">Processing your file…</p>
-                <p className="text-xs text-neutral-500 mt-1">This may take 1–2 minutes</p>
+                <p className="text-sm font-medium text-neutral-700">
+                  {progress
+                    ? `Processing batch ${progress.current} of ${progress.total}…`
+                    : 'Preparing…'}
+                </p>
+                <p className="text-xs text-neutral-500 mt-1">This may take a few minutes for large files</p>
               </div>
             </div>
           )}

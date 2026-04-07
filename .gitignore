@@ -143,3 +143,5 @@ vite.config.ts.timestamp-*
 
 # Superpowers brainstorming session files
 .superpowers/
+
+.mcp.json
