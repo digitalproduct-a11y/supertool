@@ -13,6 +13,7 @@ import { EngagementPostsLanding } from './components/EngagementPostsLanding'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
+import { IconPhoto } from '@tabler/icons-react'
 import { GuideModal } from './components/ds/GuideModal'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
@@ -295,6 +296,24 @@ function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedC
   )
 }
 
+async function encodeImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1200
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(objectUrl)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+    }
+    img.src = objectUrl
+  })
+}
+
 function FbPostPage() {
   const [state, setState] = useState<AppState>('idle')
   const [result, setResult] = useState<WorkflowResult | null>(null)
@@ -306,6 +325,8 @@ function FbPostPage() {
   const [titleMode, setTitleMode] = useState<TitleMode>('original')
   const [customTitle, setCustomTitle] = useState('')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
+  const [customImage, setCustomImage] = useState<File | null>(null)
+  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
 
   const { run, isRunning } = useWorkflow()
 
@@ -327,6 +348,7 @@ function FbPostPage() {
     setResult(null)
     setErrorMessage('')
 
+    const customImageBase64 = customImage ? await encodeImage(customImage) : undefined
     const request: WorkflowRequest = {
       url: url.trim(),
       brand,
@@ -334,6 +356,7 @@ function FbPostPage() {
       title_mode: titleMode,
       custom_title: titleMode === 'custom' ? customTitle : undefined,
       caption_title_mode: captionTitleMode,
+      custom_image: customImageBase64,
     }
 
     const response = await run(request)
@@ -341,6 +364,8 @@ function FbPostPage() {
     if (response.success) {
       setResult(response)
       setState('result')
+      setCustomImage(null)
+      setCustomImagePreview(null)
       const item: HistoryItem = {
         id: crypto.randomUUID(),
         timestamp: new Date(),
@@ -354,7 +379,7 @@ function FbPostPage() {
       setErrorMessage(response.message)
       setState('error')
     }
-  }, [url, brand, titleMode, customTitle, captionTitleMode, run])
+  }, [url, brand, titleMode, customTitle, captionTitleMode, customImage, run])
 
   const handleApprove = useCallback(
     (finalCaption: string) => {
@@ -483,6 +508,32 @@ function FbPostPage() {
                 onSubmit={handleSubmit}
                 disabled={isRunning}
               />
+              {/* Custom image upload */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Custom Image (optional)</label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <IconPhoto size={16} />
+                    {customImage ? customImage.name : 'Upload image'}
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0] ?? null
+                        setCustomImage(f)
+                        setCustomImagePreview(f ? URL.createObjectURL(f) : null)
+                      }} />
+                  </label>
+                  {customImagePreview && (
+                    <div className="relative">
+                      <img src={customImagePreview} className="w-10 h-10 rounded-lg object-cover border border-gray-200" alt="" />
+                      <button
+                        type="button"
+                        onClick={() => { setCustomImage(null); setCustomImagePreview(null) }}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-neutral-900 text-white rounded-full text-[10px] flex items-center justify-center leading-none"
+                      >×</button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             {history.length > 0 && (
               <div className="mt-6">

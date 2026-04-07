@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { IconPhoto } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
@@ -148,6 +149,24 @@ function CopyButton({ text }: { text: string }) {
 }
 
 
+async function encodeImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1200
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(objectUrl)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+    }
+    img.src = objectUrl
+  })
+}
+
 // ─── Generate View ────────────────────────────────────────────────────────────
 
 interface GenerateSource {
@@ -174,6 +193,8 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
+  const [customImage, setCustomImage] = useState<File | null>(null)
+  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
@@ -186,6 +207,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     setError('')
 
     try {
+      const customImageBase64 = customImage ? await encodeImage(customImage) : undefined
       const data = await callGenerateWebhook({
         url: source.articleUrl,
         brand,
@@ -193,10 +215,13 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         title_mode: titleMode,
         custom_title: titleMode === 'custom' ? customTitle : undefined,
         caption_title_mode: captionTitleMode,
+        custom_image: customImageBase64,
       })
       if (data.success) {
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
         setCaption(data.caption ?? '')
+        setCustomImage(null)
+        setCustomImagePreview(null)
       } else {
         setError(data.message || 'Generation failed.')
       }
@@ -206,7 +231,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     } finally {
       setIsGenerating(false)
     }
-  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode])
+  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode, customImage])
 
   async function handleDownload() {
     if (!result?.imageUrl) return
@@ -355,6 +380,32 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                   {m === 'original' ? 'Original' : 'AI ✨'}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Custom image upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Custom Image (optional)</label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                <IconPhoto size={16} />
+                {customImage ? customImage.name : 'Upload image'}
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => {
+                    const f = e.target.files?.[0] ?? null
+                    setCustomImage(f)
+                    setCustomImagePreview(f ? URL.createObjectURL(f) : null)
+                  }} />
+              </label>
+              {customImagePreview && (
+                <div className="relative">
+                  <img src={customImagePreview} className="w-10 h-10 rounded-lg object-cover border border-gray-200" alt="" />
+                  <button type="button"
+                    onClick={() => { setCustomImage(null); setCustomImagePreview(null) }}
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-neutral-900 text-white rounded-full text-[10px] flex items-center justify-center leading-none"
+                  >×</button>
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { IconShoppingCart, IconExternalLink, IconRefresh, IconStar, IconPhoto } from '@tabler/icons-react'
+import { IconShoppingCart, IconExternalLink, IconRefresh, IconStar } from '@tabler/icons-react'
 import { BRANDS, type BrandName } from '../constants/brands'
 import { GuideModal } from './ds/GuideModal'
 import { Spinner } from './ds/Spinner'
@@ -28,24 +28,6 @@ function ShopTypeBadge({ label }: { label?: string }) {
   )
 }
 
-async function encodeImage(file: File): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      const MAX = 1200
-      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width * scale
-      canvas.height = img.height * scale
-      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-      URL.revokeObjectURL(url)
-      resolve(canvas.toDataURL('image/jpeg', 0.85))
-    }
-    img.src = url
-  })
-}
-
 export function ShopeeTopProductsPage() {
   const { products, lastRefreshed, loading, error, refetch } = useShopeeTopProducts()
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -53,8 +35,6 @@ export function ShopeeTopProductsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
-  const [customImage, setCustomImage] = useState<File | null>(null)
-  const [customImagePreview, setCustomImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (!lightboxUrl) return
@@ -101,11 +81,10 @@ export function ShopeeTopProductsPage() {
     setIsGenerating(true)
     setGenerateError(null)
     try {
-      const customImageBase64 = customImage ? await encodeImage(customImage) : null
       const res = await fetch(`${GENERATE_URL}?brand=${encodeURIComponent(selectedBrand)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productUrls: Array.from(selected), customImage: customImageBase64 }),
+        body: JSON.stringify({ productUrls: Array.from(selected) }),
         signal: AbortSignal.timeout(180_000),
       })
       const contentType = res.headers.get('content-type') ?? ''
@@ -121,8 +100,6 @@ export function ShopeeTopProductsPage() {
         a.click()
         window.URL.revokeObjectURL(objectUrl)
         setSelected(new Set())
-        setCustomImage(null)
-        setCustomImagePreview(null)
       } else {
         const data = await res.json()
         setGenerateError(data.message ?? 'Failed to generate affiliate links.')
@@ -331,32 +308,6 @@ export function ShopeeTopProductsPage() {
               {generateError && (
                 <p className="text-xs text-red-600">{generateError}</p>
               )}
-              {/* Custom image upload */}
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1.5 px-3 py-2 border border-neutral-200 rounded-lg text-xs text-neutral-600 hover:border-neutral-400 cursor-pointer bg-neutral-50 hover:bg-neutral-100 transition-colors whitespace-nowrap">
-                  <IconPhoto size={14} />
-                  {customImage ? customImage.name : 'Custom image'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0] ?? null
-                      setCustomImage(f)
-                      setCustomImagePreview(f ? URL.createObjectURL(f) : null)
-                    }}
-                  />
-                </label>
-                {customImagePreview && (
-                  <div className="relative">
-                    <img src={customImagePreview} className="w-8 h-8 rounded object-cover border border-neutral-200" alt="" />
-                    <button
-                      onClick={() => { setCustomImage(null); setCustomImagePreview(null) }}
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-neutral-900 text-white rounded-full text-[10px] flex items-center justify-center leading-none"
-                    >×</button>
-                  </div>
-                )}
-              </div>
               {/* Brand selector */}
               <div className="relative">
                 <select
