@@ -13,7 +13,7 @@ interface PreviewPanelProps {
   titleMode: TitleMode
   customTitle: string
   captionTitleMode: CaptionTitleMode
-  onCustomImageUpload?: (file: File) => void
+  onCustomImageUpload?: (file: File, subtitle?: string) => void
   isImageGenerating?: boolean
   onTitleChange?: (title: string) => void
 }

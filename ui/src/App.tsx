@@ -395,7 +395,7 @@ function FbPostPage() {
     }
   }, [url, brand, titleMode, customTitle, captionTitleMode, run])
 
-  const handleCustomImageUpload = useCallback(async (file: File) => {
+  const handleCustomImageUpload = useCallback(async (file: File, subtitleValue?: string) => {
     if (!url.trim() || !brand) return
     setIsImageGenerating(true)
     const customImageBase64 = await encodeImage(file)
@@ -410,6 +410,7 @@ function FbPostPage() {
       operation: 'image_only',
       caption: result?.caption,
       title: result?.title,
+      subtitle: subtitleValue ?? result?.subtitle,
       category: result?.category,
     }
     const response = await run(request)

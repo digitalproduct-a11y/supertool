@@ -8,7 +8,7 @@ interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
   onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
-  onCustomImageUpload?: (file: File) => void
+  onCustomImageUpload?: (file: File, subtitle?: string) => void
   isImageGenerating?: boolean
   onTitleChange?: (title: string) => void
 }
@@ -66,8 +66,9 @@ export function ResultPreview({
   }, [result.imageUrl])
 
   async function handleDownload() {
+    const urlToDownload = previewImageUrl || result.imageUrl
     try {
-      const res = await fetch(result.imageUrl)
+      const res = await fetch(urlToDownload)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -75,7 +76,7 @@ export function ResultPreview({
       a.click()
       URL.revokeObjectURL(a.href)
     } catch {
-      window.open(result.imageUrl, '_blank')
+      window.open(urlToDownload, '_blank')
     }
   }
 
@@ -208,7 +209,7 @@ export function ResultPreview({
             disabled={isImageGenerating}
             onChange={e => {
               const f = e.target.files?.[0]
-              if (f) onCustomImageUpload(f)
+              if (f) onCustomImageUpload(f, subtitle)
               e.target.value = ''
             }} />
         </label>
@@ -220,13 +221,13 @@ export function ResultPreview({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Title</label>
-            <span className="text-xs text-gray-400">{title.length}/35</span>
+            <span className="text-xs text-gray-400">{title.length}</span>
           </div>
           <input
             type="text"
             value={title}
             onChange={(e) => {
-              const v = e.target.value.slice(0, 35)
+              const v = e.target.value
               setTitle(v)
               onTitleChange?.(v)
               setPreviewImageUrl(updateTitleInImageUrl(result.imageUrl, result.title, v))
@@ -240,12 +241,12 @@ export function ResultPreview({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Subtitle <span className="normal-case font-normal text-gray-400">(optional)</span></label>
-            <span className="text-xs text-gray-400">{subtitle.length}/70</span>
+            <span className="text-xs text-gray-400">{subtitle.length}</span>
           </div>
           <input
             type="text"
             value={subtitle}
-            onChange={(e) => setSubtitle(e.target.value.slice(0, 70))}
+            onChange={(e) => setSubtitle(e.target.value)}
             placeholder="Enter subtitle..."
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
           />

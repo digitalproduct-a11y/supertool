@@ -260,10 +260,12 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         operation: 'image_only',
         caption: result?.caption,
         title: result?.title,
+        subtitle: localSubtitle,
         category: result?.category,
       })
       if (data.success && data.imageUrl) {
         setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl } : prev)
+        setPreviewImageUrl(data.imageUrl)
       }
     } finally {
       setIsImageGenerating(false)
@@ -272,8 +274,9 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
   async function handleDownload() {
     if (!result?.imageUrl) return
+    const urlToDownload = previewImageUrl ?? result.imageUrl
     try {
-      const res = await fetch(result.imageUrl)
+      const res = await fetch(urlToDownload)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -484,13 +487,13 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Title</label>
-                    <span className="text-xs text-gray-400">{localTitle.length}/35</span>
+                    <span className="text-xs text-gray-400">{localTitle.length}</span>
                   </div>
                   <input
                     type="text"
                     value={localTitle}
                     onChange={e => {
-                      const v = e.target.value.slice(0, 35)
+                      const v = e.target.value
                       setLocalTitle(v)
                       handleTitleModeChange('custom')
                       setCustomTitle(v)
@@ -505,12 +508,12 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Subtitle <span className="normal-case font-normal text-gray-400">(optional)</span></label>
-                    <span className="text-xs text-gray-400">{localSubtitle.length}/70</span>
+                    <span className="text-xs text-gray-400">{localSubtitle.length}</span>
                   </div>
                   <input
                     type="text"
                     value={localSubtitle}
-                    onChange={e => setLocalSubtitle(e.target.value.slice(0, 70))}
+                    onChange={e => setLocalSubtitle(e.target.value)}
                     placeholder="Enter subtitle..."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
                   />
