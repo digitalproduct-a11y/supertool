@@ -8,7 +8,14 @@ import { trackEvent } from '../utils/analytics'
 
 export function ScheduledPostsPage({ brand }: { brand: string }) {
   const navigate = useNavigate()
-  const { posts, isLoading, error, loadPosts, refetchPosts, schedulePost } = useScheduledPosts(brand)
+
+  // Convert URL slug to proper brand name (e.g., "astro-ulagam" → "Astro Ulagam")
+  const displayBrand = brand
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+
+  const { posts, isLoading, error, loadPosts, refetchPosts, schedulePost } = useScheduledPosts(displayBrand)
 
   const handleRefetch = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -20,9 +27,9 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
       event_type: 'page_visit',
       tool_id: 'scheduled-posts',
       tool_label: 'Schedule Trending News',
-      brand,
+      brand: displayBrand,
     })
-  }, [brand])
+  }, [displayBrand])
 
   const today = new Date().toLocaleDateString('en-MY', {
     weekday: 'long',
@@ -45,7 +52,7 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
             </button>
             <div className="flex-1 flex items-center justify-between">
               <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-                Schedule Trending News for {brand}
+                Schedule Trending News for {displayBrand}
               </h1>
               <button
                 onClick={handleRefetch}
@@ -57,7 +64,7 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
             </div>
           </div>
           <p className="text-neutral-500 mt-1 text-sm">
-            You are seeing trending news in the last 24 hours. Refreshed daily at 10:00 AM
+            View and schedule trending news posts from {displayBrand}
           </p>
           {!isLoading && posts.length > 0 && (
             <p className="text-neutral-400 mt-2 text-xs">
@@ -94,7 +101,7 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
         {/* Empty state */}
         {!isLoading && !error && posts.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 gap-2">
-            <p className="text-sm font-medium text-neutral-700">No posts for today yet.</p>
+            <p className="text-sm font-medium text-neutral-700">No posts for {displayBrand} today yet.</p>
             <p className="text-sm text-neutral-500">The workflow runs at 10:00 AM daily.</p>
           </div>
         )}
