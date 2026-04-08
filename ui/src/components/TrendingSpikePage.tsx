@@ -260,12 +260,13 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         custom_image: customImageBase64,
         operation: 'image_only',
         caption: result?.caption,
-        title: result?.title,
+        title: localTitle || result?.title,
         subtitle: localSubtitle,
         category: result?.category,
       })
       if (data.success && data.imageUrl) {
-        setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl } : prev)
+        const embeddedTitle = data.title || localTitle || result?.title
+        setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl, title: embeddedTitle } : prev)
         setPreviewImageUrl(data.imageUrl)
       }
     } finally {

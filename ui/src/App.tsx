@@ -415,7 +415,8 @@ function FbPostPage() {
     }
     const response = await run(request)
     if (response.success) {
-      setResult(prev => prev ? { ...prev, imageUrl: response.imageUrl } : response)
+      const embeddedTitle = response.title || (titleMode === 'custom' ? customTitle : undefined)
+      setResult(prev => prev ? { ...prev, imageUrl: response.imageUrl, ...(embeddedTitle ? { title: embeddedTitle } : {}) } : response)
     }
     setIsImageGenerating(false)
   }, [url, brand, titleMode, customTitle, captionTitleMode, run])
