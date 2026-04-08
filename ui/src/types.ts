@@ -15,6 +15,8 @@ export interface WorkflowRequest {
   imageUrl?: string
   caption?: string
   title?: string
+  subtitle?: string
+  category?: string
 }
 
 export interface WorkflowResult {
@@ -22,8 +24,10 @@ export interface WorkflowResult {
   imageUrl: string
   caption: string
   title: string
+  subtitle?: string
   originalTitle: string
   brand: string
+  category?: string
 }
 
 export interface WorkflowError {

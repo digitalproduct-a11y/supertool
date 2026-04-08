@@ -408,6 +408,9 @@ function FbPostPage() {
       caption_title_mode: captionTitleMode,
       custom_image: customImageBase64,
       operation: 'image_only',
+      caption: result?.caption,
+      title: result?.title,
+      category: result?.category,
     }
     const response = await run(request)
     if (response.success) {
@@ -565,6 +568,7 @@ function FbPostPage() {
               captionTitleMode={captionTitleMode}
               onCustomImageUpload={state === 'result' ? handleCustomImageUpload : undefined}
               isImageGenerating={isImageGenerating}
+              onTitleChange={state === 'result' ? (t) => { handleTitleModeChange('custom'); setCustomTitle(t) } : undefined}
             />
           </div>
         </div>
