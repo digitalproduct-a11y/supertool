@@ -9,14 +9,33 @@ import type {
 // Preserves all brand-specific transformations (template, fonts, positioning, colors, etc.)
 // This works across all brands because it respects the webhook's built transformation chain
 
-export function buildCloudinaryUrl(_photoPublicId: string, title: string, imageUrl: string): string {
+export function buildCloudinaryUrl(photoPublicId: string, title: string, imageUrl: string): string {
   const encodedTitle = encodeURIComponent(encodeURIComponent(title))
 
-  // Find and replace the headline text layer within the existing URL
-  // Pattern: l_text:fonts:{fontspec}:{oldHeadline},{rest of text layer}
-  // This preserves font, size, color, positioning, and all other transformations
-  const headlinePattern = /l_text:fonts:([^:]+):([^,]+),/
+  // Extract the old public ID from the URL to check if it's changed
+  // Pattern: /upload/[transformations]/[oldPublicId]
+  const publicIdPattern = /\/([^/]+)(?:\.[a-z]+)?$/
+  const oldPublicIdMatch = imageUrl.match(publicIdPattern)
+  const oldPublicId = oldPublicIdMatch ? oldPublicIdMatch[1].split('.')[0] : null
 
+  // If the public ID changed (custom upload), rebuild the URL with the new public ID
+  if (oldPublicId && oldPublicId !== photoPublicId) {
+    const baseUrl = imageUrl.substring(0, imageUrl.lastIndexOf('/'))
+    const newImageUrl = `${baseUrl}/${photoPublicId}`
+
+    // Now apply text transformation to the new URL
+    const headlinePattern = /l_text:fonts:([^:]+):([^,]+),/
+    if (headlinePattern.test(newImageUrl)) {
+      return newImageUrl.replace(
+        headlinePattern,
+        `l_text:fonts:$1:${encodedTitle},`
+      )
+    }
+    return newImageUrl
+  }
+
+  // No public ID change, just update the text in the existing URL
+  const headlinePattern = /l_text:fonts:([^:]+):([^,]+),/
   if (headlinePattern.test(imageUrl)) {
     return imageUrl.replace(
       headlinePattern,
@@ -25,7 +44,6 @@ export function buildCloudinaryUrl(_photoPublicId: string, title: string, imageU
   }
 
   // Fallback: if pattern doesn't match, return the original URL
-  // (shouldn't happen if webhook provides correct format)
   return imageUrl
 }
 
