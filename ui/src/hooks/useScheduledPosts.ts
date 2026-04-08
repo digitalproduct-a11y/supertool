@@ -136,19 +136,9 @@ export function useScheduledPosts(brand: string = 'Astro Ulagam') {
         })
         const data = await res.json()
         if (data.success) {
-          // Update local state with new scheduled status
-          setPosts(prev =>
-            prev.map(p =>
-              p.id === payload.postId
-                ? {
-                    ...p,
-                    status: 'scheduled',
-                    scheduled_time: payload.scheduledTime,
-                    scheduled_to: payload.platform,
-                  }
-                : p
-            )
-          )
+          // Clear cache and refetch to get updated status from webhook
+          localStorage.removeItem(CACHE_KEY)
+          await loadPosts(true) // skipCache = true
           return true
         }
         return false
@@ -156,7 +146,7 @@ export function useScheduledPosts(brand: string = 'Astro Ulagam') {
         return false
       }
     },
-    []
+    [brand]
   )
 
   const refetchPosts = useCallback(() => {

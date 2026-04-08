@@ -18,8 +18,26 @@ function StatusBadge({ post }: { post: ScheduledPost }) {
     })
     return (
       <div className="flex justify-center">
-        <span className="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700">
+        <span className="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700">
           Scheduled · {formatted}
+        </span>
+      </div>
+    )
+  }
+  if (post.status === 'published') {
+    return (
+      <div className="flex justify-center">
+        <span className="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700">
+          Published
+        </span>
+      </div>
+    )
+  }
+  if (post.status === 'failed') {
+    return (
+      <div className="flex justify-center">
+        <span className="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-100 text-red-700">
+          Failed
         </span>
       </div>
     )
@@ -33,31 +51,139 @@ function StatusBadge({ post }: { post: ScheduledPost }) {
   )
 }
 
-// ─── Schedule modal ───────────────────────────────────────────────────────────
+// ─── Action modal ───────────────────────────────────────────────────────────
 
-function ScheduleModal({
-  onClose,
-}: {
+interface ActionModalProps {
+  post: ScheduledPost
   onClose: () => void
-}) {
+  onAction: (payload: SchedulePostPayload) => Promise<boolean>
+}
+
+function ActionModal({ post, onClose, onAction }: ActionModalProps) {
+  const [selectedDateTime, setSelectedDateTime] = useState<string>(
+    post.status === 'scheduled' && post.scheduled_time
+      ? new Date(post.scheduled_time).toISOString().slice(0, 16)
+      : getDefaultDateTime()
+  )
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  function getDefaultDateTime(): string {
+    const now = new Date()
+    now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15)
+    now.setSeconds(0)
+    return now.toISOString().slice(0, 16)
+  }
+
+  async function handleAction(action: SchedulePostPayload['action']) {
+    if ((action === 'schedule' || action === 'reschedule') && !selectedDateTime) {
+      toast.error('Please select a date and time')
+      return
+    }
+
+    setIsSubmitting(true)
+    const payload: SchedulePostPayload = {
+      postId: post.id,
+      action,
+      scheduledTime: selectedDateTime || undefined,
+      platform: 'facebook',
+    }
+
+    const success = await onAction(payload)
+    setIsSubmitting(false)
+
+    if (success) {
+      toast.success(
+        action === 'publish_now'
+          ? 'Post published!'
+          : action === 'schedule'
+            ? 'Post scheduled!'
+            : action === 'reschedule'
+              ? 'Schedule updated!'
+              : 'Schedule removed!'
+      )
+      onClose()
+    } else {
+      toast.error('Action failed. Please try again.')
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-80 text-center space-y-4">
-        <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto">
-          <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full space-y-6 p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-neutral-950">
+              {post.status === 'scheduled' ? 'Reschedule Post' : 'Schedule Post'}
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1">{post.title}</p>
+          </div>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-900 text-xl leading-none">
+            ×
+          </button>
         </div>
+
+        {/* DateTime Picker */}
         <div>
-          <h3 className="font-semibold text-neutral-950 mb-1">Feature Coming Soon!</h3>
-          <p className="text-sm text-neutral-500">Facebook scheduling will be available soon. Check back later.</p>
+          <label className="block text-xs font-medium text-neutral-600 mb-2">Schedule Date & Time</label>
+          <input
+            type="datetime-local"
+            value={selectedDateTime}
+            onChange={(e) => setSelectedDateTime(e.target.value)}
+            className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
+          />
         </div>
-        <button
-          onClick={onClose}
-          className="w-full py-2 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 transition"
-        >
-          Got it
-        </button>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2">
+          {post.status === 'pending' && (
+            <>
+              <button
+                onClick={() => handleAction('schedule')}
+                disabled={isSubmitting}
+                className="w-full py-2.5 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+              >
+                {isSubmitting ? 'Scheduling...' : 'Schedule'}
+              </button>
+              <button
+                onClick={() => handleAction('publish_now')}
+                disabled={isSubmitting}
+                className="w-full py-2 rounded-lg text-sm font-medium border border-neutral-200 text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition"
+              >
+                {isSubmitting ? 'Posting...' : 'Post Now'}
+              </button>
+            </>
+          )}
+
+          {post.status === 'scheduled' && (
+            <>
+              <button
+                onClick={() => handleAction('reschedule')}
+                disabled={isSubmitting}
+                className="w-full py-2.5 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+              >
+                {isSubmitting ? 'Updating...' : 'Update Schedule'}
+              </button>
+              <button
+                onClick={() => handleAction('remove_schedule')}
+                disabled={isSubmitting}
+                className="w-full py-2 rounded-lg text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50 transition"
+              >
+                {isSubmitting ? 'Removing...' : 'Remove Schedule'}
+              </button>
+            </>
+          )}
+
+          {post.status === 'failed' && (
+            <button
+              onClick={() => handleAction('schedule')}
+              disabled={isSubmitting}
+              className="w-full py-2.5 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50 transition"
+            >
+              {isSubmitting ? 'Retrying...' : 'Retry'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -70,11 +196,10 @@ interface PostCardProps {
   onSchedule: (payload: SchedulePostPayload) => Promise<boolean>
 }
 
-export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
-  // Note: onSchedule callback is prepared for future scheduling functionality
+export function PostCard({ post, onSchedule }: PostCardProps) {
   const [editTitle, setEditTitle] = useState(post.title)
   const [editCaption, setEditCaption] = useState(post.caption)
-  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showActionModal, setShowActionModal] = useState(false)
   const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
 
@@ -89,14 +214,13 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
     toast.success('Image uploaded!')
   }
 
-
   async function handleDownload() {
     try {
       const res = await fetch(previewUrl)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `astro-ulagam-${post.date}-${Date.now()}.jpg`
+      a.download = `${post.brand}-${post.date}-${Date.now()}.jpg`
       a.click()
     } catch {
       toast.error('Download failed.')
@@ -107,10 +231,8 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
 
   return (
     <>
-      {showScheduleModal && (
-        <ScheduleModal
-          onClose={() => setShowScheduleModal(false)}
-        />
+      {showActionModal && (
+        <ActionModal post={post} onClose={() => setShowActionModal(false)} onAction={onSchedule} />
       )}
 
       {showImageUploadModal && (
@@ -169,7 +291,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
             <input
               type="text"
               value={editTitle}
-              onChange={e => setEditTitle(e.target.value)}
+              onChange={(e) => setEditTitle(e.target.value)}
               maxLength={100}
               className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
               placeholder="Post headline"
@@ -186,29 +308,37 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
             </label>
             <textarea
               value={editCaption}
-              onChange={e => setEditCaption(e.target.value)}
+              onChange={(e) => setEditCaption(e.target.value)}
               rows={4}
               className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
               placeholder="Facebook caption"
             />
           </div>
 
-          {/* Action buttons */}
+          {/* Action buttons — changes based on status */}
           <div className="flex flex-col gap-2 mt-auto">
-            <div className="flex gap-2">
-              <button
-                onClick={handleDownload}
-                className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 hover:bg-neutral-50 transition"
-              >
-                Download image
-              </button>
-              <button
-                onClick={() => setShowScheduleModal(true)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 transition"
-              >
-                Schedule on FB
-              </button>
-            </div>
+            {post.status === 'published' && (
+              <p className="text-xs text-neutral-500 text-center py-2">Post published to Facebook</p>
+            )}
+
+            {(post.status === 'pending' || post.status === 'scheduled' || post.status === 'failed') && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 hover:bg-neutral-50 transition"
+                >
+                  Download image
+                </button>
+                <button
+                  onClick={() => setShowActionModal(true)}
+                  className="flex-1 py-2 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 transition"
+                >
+                  {post.status === 'pending' && 'Schedule'}
+                  {post.status === 'scheduled' && 'Edit Schedule'}
+                  {post.status === 'failed' && 'Retry'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

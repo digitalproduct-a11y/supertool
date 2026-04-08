@@ -109,11 +109,11 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
         {/* Posts grouped by origin */}
         {!isLoading && !error && (
           <>
-            {posts.filter(p => p.status !== 'error').length > 0 ? (
+            {posts.filter(p => p.status !== 'failed').length > 0 ? (
               <div className="space-y-8">
                 {Object.entries(
                   posts
-                    .filter(p => p.status !== 'error')
+                    .filter(p => p.status !== 'failed')
                     .reduce((acc: Record<string, typeof posts>, post) => {
                       const origin = post.origin || 'Other'
                       if (!acc[origin]) acc[origin] = []

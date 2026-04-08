@@ -221,7 +221,7 @@ export interface ArticleGeneratorState {
 }
 
 // Scheduled Posts tool types
-export type ScheduledPostStatus = 'pending' | 'scheduled' | 'published' | 'error'
+export type ScheduledPostStatus = 'pending' | 'scheduled' | 'published' | 'failed'
 
 export interface ScheduledPost {
   id: string
@@ -252,6 +252,7 @@ export interface UpdatePostPayload {
 
 export interface SchedulePostPayload {
   postId: string
-  scheduledTime: string   // ISO 8601
+  action: 'publish_now' | 'schedule' | 'reschedule' | 'remove_schedule'
+  scheduledTime?: string  // ISO 8601, required for schedule/reschedule
   platform: 'facebook'
 }
