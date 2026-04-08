@@ -31,8 +31,12 @@ export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
         signal: controller.signal,
       })
 
-      const data: WorkflowResponse = await response.json()
-      return data
+      const data = await response.json() as Record<string, unknown>
+      // Normalize subTitle → subtitle (n8n returns camelCase subTitle)
+      if (data.subTitle !== undefined && data.subtitle === undefined) {
+        data.subtitle = data.subTitle
+      }
+      return data as unknown as WorkflowResponse
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         return {

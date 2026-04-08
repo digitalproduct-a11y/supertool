@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { IconPhoto } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
+import { updateTitleInImageUrl, updateSubtitleInImageUrl, SUBTITLE_BRANDS } from '../utils/cloudinary'
 
 interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
   onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
-  onCustomImageUpload?: (file: File) => void
+  onCustomImageUpload?: (file: File, subtitle?: string) => void
   isImageGenerating?: boolean
+  onTitleChange?: (title: string) => void
 }
 
 export function ResultPreview({
@@ -17,8 +19,12 @@ export function ResultPreview({
   onPostDraft,
   onCustomImageUpload,
   isImageGenerating = false,
+  onTitleChange,
 }: ResultPreviewProps) {
+  const [title, setTitle] = useState(result.title ?? '')
+  const [subtitle, setSubtitle] = useState(result.subtitle ?? '')
   const [caption, setCaption] = useState(result.caption ?? '')
+  const [previewImageUrl, setPreviewImageUrl] = useState(result.imageUrl)
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
@@ -32,7 +38,20 @@ export function ResultPreview({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
 
-  // Sync caption textarea when result.caption changes (e.g. after caption_only regen)
+  // Reset previewImageUrl when a new image is generated
+  useEffect(() => {
+    setPreviewImageUrl(result.imageUrl)
+  }, [result.imageUrl])
+
+  // Sync fields when result changes (e.g. after regen)
+  useEffect(() => {
+    setTitle(result.title ?? '')
+  }, [result.title])
+
+  useEffect(() => {
+    setSubtitle(result.subtitle ?? '')
+  }, [result.subtitle])
+
   useEffect(() => {
     setCaption(result.caption ?? '')
   }, [result.caption])
@@ -47,8 +66,9 @@ export function ResultPreview({
   }, [result.imageUrl])
 
   async function handleDownload() {
+    const urlToDownload = previewImageUrl || result.imageUrl
     try {
-      const res = await fetch(result.imageUrl)
+      const res = await fetch(urlToDownload)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -56,7 +76,7 @@ export function ResultPreview({
       a.click()
       URL.revokeObjectURL(a.href)
     } catch {
-      window.open(result.imageUrl, '_blank')
+      window.open(urlToDownload, '_blank')
     }
   }
 
@@ -136,9 +156,7 @@ export function ResultPreview({
     <div className="space-y-4">
       {/* Image with download overlay */}
       <div className="relative bg-neutral-50 rounded-xl overflow-hidden border border-gray-200">
-        {isImageGenerating ? (
-          <div className="w-full aspect-[4/5] animate-pulse bg-neutral-200" />
-        ) : aiImageRemoved && !replacementPreviewUrl ? (
+        {aiImageRemoved && !replacementPreviewUrl && !isImageGenerating ? (
           <div className="flex flex-col items-center justify-center w-full aspect-[4/5] text-gray-400">
             <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -154,24 +172,28 @@ export function ResultPreview({
         ) : (
           <>
             <img
-              src={replacementPreviewUrl || result.imageUrl}
+              src={replacementPreviewUrl || previewImageUrl}
               alt="Generated Facebook image"
               className="w-full"
               onError={(e) => {
                 ;(e.target as HTMLImageElement).src = ''
               }}
             />
-            <div className="absolute top-3 right-3">
-              <button
-                onClick={handleDownload}
-                className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download
-              </button>
-            </div>
+            {isImageGenerating ? (
+              <div className="absolute inset-0 image-upload-shimmer" />
+            ) : (
+              <div className="absolute top-3 right-3">
+                <button
+                  onClick={handleDownload}
+                  className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -189,33 +211,78 @@ export function ResultPreview({
             disabled={isImageGenerating}
             onChange={e => {
               const f = e.target.files?.[0]
-              if (f) onCustomImageUpload(f)
+              if (f) onCustomImageUpload(f, subtitle)
               e.target.value = ''
             }} />
         </label>
       )}
 
-      {/* Caption section */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700">Caption</label>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-gray-400">{caption.length} characters</p>
-            <button onClick={handleCopy} title="Copy caption" className="text-neutral-400 hover:text-neutral-700 transition">
-              {copied
-                ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              }
-            </button>
+      {/* Editable fields */}
+      <div className="space-y-4">
+        {/* Title */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Title</label>
+            <span className="text-xs text-gray-400">{title.length}</span>
           </div>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => {
+              const v = e.target.value
+              setTitle(v)
+              onTitleChange?.(v)
+              const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, v)
+              setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', subtitle))
+            }}
+            placeholder="Enter title..."
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+          />
         </div>
 
-        <textarea
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          rows={8}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed"
-        />
+        {/* Subtitle — only for brands with a subtitle layer (Era Sarawak, Era Sabah) */}
+        {SUBTITLE_BRANDS.has(result.brand) && (
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Subtitle</label>
+              <span className="text-xs text-gray-400">{subtitle.length}</span>
+            </div>
+            <input
+              type="text"
+              value={subtitle}
+              onChange={(e) => {
+                const v = e.target.value
+                setSubtitle(v)
+                const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, title)
+                setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', v))
+              }}
+              placeholder="Enter subtitle..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+            />
+          </div>
+        )}
+
+        {/* Caption */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Caption</label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">{caption.length}/600</span>
+              <button onClick={handleCopy} title="Copy caption" className="text-neutral-400 hover:text-neutral-700 transition">
+                {copied
+                  ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                }
+              </button>
+            </div>
+          </div>
+          <textarea
+            value={caption}
+            onChange={(e) => setCaption(e.target.value.slice(0, 600))}
+            rows={8}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed transition"
+          />
+        </div>
       </div>
 
       {/* Post mode toggle + action */}

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { IconPhoto } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
+import { updateTitleInImageUrl, updateSubtitleInImageUrl, SUBTITLE_BRANDS } from '../utils/cloudinary'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
@@ -39,6 +40,8 @@ interface GeneratedPost {
   title: string
   originalTitle: string
   brand: string
+  category?: string
+  subtitle?: string
 }
 
 // ─── API helper ───────────────────────────────────────────────────────────────
@@ -200,6 +203,9 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
   const [customImage, setCustomImage] = useState<File | null>(null)
+  const [localTitle, setLocalTitle] = useState('')
+  const [localSubtitle, setLocalSubtitle] = useState('')
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
@@ -223,8 +229,11 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         custom_image: customImageBase64,
       })
       if (data.success) {
-        setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand })
+        setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand, category: data.category })
         setCaption(data.caption ?? '')
+        setLocalTitle(data.title ?? '')
+        setLocalSubtitle(data.subtitle ?? data.subTitle ?? '')
+        setPreviewImageUrl(data.imageUrl)
         setCustomImage(null)
       } else {
         setError(data.message || 'Generation failed.')
@@ -250,9 +259,15 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         caption_title_mode: captionTitleMode,
         custom_image: customImageBase64,
         operation: 'image_only',
+        caption: result?.caption,
+        title: localTitle || result?.title,
+        subtitle: localSubtitle,
+        category: result?.category,
       })
       if (data.success && data.imageUrl) {
-        setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl } : prev)
+        const embeddedTitle = data.title || localTitle || result?.title
+        setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl, title: embeddedTitle } : prev)
+        setPreviewImageUrl(data.imageUrl)
       }
     } finally {
       setIsImageGenerating(false)
@@ -261,8 +276,9 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
   async function handleDownload() {
     if (!result?.imageUrl) return
+    const urlToDownload = previewImageUrl ?? result.imageUrl
     try {
-      const res = await fetch(result.imageUrl)
+      const res = await fetch(urlToDownload)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -436,27 +452,25 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
             <div>
               {/* Image */}
               <div className="relative bg-neutral-50">
+                <img src={previewImageUrl ?? result.imageUrl} alt={result.title} className="w-full aspect-[4/5] object-cover" />
                 {isImageGenerating ? (
-                  <div className="w-full aspect-[4/5] animate-pulse bg-neutral-200" />
+                  <div className="absolute inset-0 image-upload-shimmer" />
                 ) : (
-                  <>
-                    <img src={result.imageUrl} alt={result.title} className="w-full aspect-[4/5] object-cover" />
-                    <div className="absolute top-3 right-3 flex gap-2">
-                      <button
-                        onClick={handleDownload}
-                        className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Download
-                      </button>
-                    </div>
-                  </>
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <button
+                      onClick={handleDownload}
+                      className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download
+                    </button>
+                  </div>
                 )}
               </div>
-              {/* Caption */}
-              <div className="p-5 space-y-3">
+              {/* Fields */}
+              <div className="p-5 space-y-4">
                 {/* Custom image upload */}
                 <label className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors ${isImageGenerating ? 'opacity-50 pointer-events-none' : ''}`}>
                   <IconPhoto size={16} />
@@ -468,16 +482,67 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                       e.target.value = ''
                     }} />
                 </label>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-gray-700">Caption</span>
-                    <CopyButton text={caption} />
+
+                {/* Title */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Title</label>
+                    <span className="text-xs text-gray-400">{localTitle.length}</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={localTitle}
+                    onChange={e => {
+                      const v = e.target.value
+                      setLocalTitle(v)
+                      handleTitleModeChange('custom')
+                      setCustomTitle(v)
+                      if (result) {
+                        const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, v)
+                        setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', localSubtitle))
+                      }
+                    }}
+                    placeholder="Enter title..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+                  />
+                </div>
+
+                {/* Subtitle — only for Era Sarawak and Era Sabah */}
+                {result && SUBTITLE_BRANDS.has(result.brand) && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Subtitle <span className="normal-case font-normal text-gray-400">(optional)</span></label>
+                      <span className="text-xs text-gray-400">{localSubtitle.length}</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={localSubtitle}
+                      onChange={e => {
+                        const v = e.target.value
+                        setLocalSubtitle(v)
+                        const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, localTitle)
+                        setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', v))
+                      }}
+                      placeholder="Enter subtitle..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+                    />
+                  </div>
+                )}
+
+                {/* Caption */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Caption</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">{caption.length}/600</span>
+                      <CopyButton text={caption} />
+                    </div>
                   </div>
                   <textarea
                     value={caption}
-                    onChange={e => setCaption(e.target.value)}
+                    onChange={e => setCaption(e.target.value.slice(0, 600))}
                     rows={8}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 font-sans leading-relaxed transition"
                   />
                 </div>
 

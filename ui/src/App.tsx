@@ -395,7 +395,7 @@ function FbPostPage() {
     }
   }, [url, brand, titleMode, customTitle, captionTitleMode, run])
 
-  const handleCustomImageUpload = useCallback(async (file: File) => {
+  const handleCustomImageUpload = useCallback(async (file: File, subtitleValue?: string) => {
     if (!url.trim() || !brand) return
     setIsImageGenerating(true)
     const customImageBase64 = await encodeImage(file)
@@ -408,10 +408,15 @@ function FbPostPage() {
       caption_title_mode: captionTitleMode,
       custom_image: customImageBase64,
       operation: 'image_only',
+      caption: result?.caption,
+      title: result?.title,
+      subtitle: subtitleValue ?? result?.subtitle,
+      category: result?.category,
     }
     const response = await run(request)
     if (response.success) {
-      setResult(prev => prev ? { ...prev, imageUrl: response.imageUrl } : response)
+      const embeddedTitle = response.title || (titleMode === 'custom' ? customTitle : undefined)
+      setResult(prev => prev ? { ...prev, imageUrl: response.imageUrl, ...(embeddedTitle ? { title: embeddedTitle } : {}) } : response)
     }
     setIsImageGenerating(false)
   }, [url, brand, titleMode, customTitle, captionTitleMode, run])
@@ -565,6 +570,7 @@ function FbPostPage() {
               captionTitleMode={captionTitleMode}
               onCustomImageUpload={state === 'result' ? handleCustomImageUpload : undefined}
               isImageGenerating={isImageGenerating}
+              onTitleChange={state === 'result' ? (t) => { handleTitleModeChange('custom'); setCustomTitle(t) } : undefined}
             />
           </div>
         </div>

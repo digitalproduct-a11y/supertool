@@ -51,6 +51,21 @@ body {
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
+/* ── Image upload shimmer overlay ──────────────────────────── */
+
+.image-upload-shimmer {
+  background: linear-gradient(
+    105deg,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.18) 38%,
+    rgba(255,255,255,0.55) 50%,
+    rgba(255,255,255,0.18) 62%,
+    rgba(255,255,255,0.18) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
 /* ── Rainbow text gradient ──────────────────────────────────── */
 
 .text-rainbow {
