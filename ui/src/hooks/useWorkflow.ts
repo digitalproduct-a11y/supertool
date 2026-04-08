@@ -36,7 +36,7 @@ export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
       if (data.subTitle !== undefined && data.subtitle === undefined) {
         data.subtitle = data.subTitle
       }
-      return data as WorkflowResponse
+      return data as unknown as WorkflowResponse
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         return {
