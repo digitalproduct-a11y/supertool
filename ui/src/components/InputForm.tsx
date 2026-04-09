@@ -9,8 +9,6 @@ interface InputFormProps {
   onBrandChange: (brand: string) => void
   titleMode: TitleMode
   onTitleModeChange: (mode: TitleMode) => void
-  customTitle: string
-  onCustomTitleChange: (title: string) => void
   captionTitleMode: CaptionTitleMode
   onCaptionTitleModeChange: (mode: CaptionTitleMode) => void
   onSubmit: () => void
@@ -24,8 +22,6 @@ export function InputForm({
   onBrandChange,
   titleMode,
   onTitleModeChange,
-  customTitle,
-  onCustomTitleChange,
   captionTitleMode,
   onCaptionTitleModeChange,
   onSubmit,
@@ -155,7 +151,7 @@ export function InputForm({
           Image Title
         </label>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-          {(['original', 'ai', 'custom'] as const).map((tm) => (
+          {(['original', 'ai'] as const).map((tm) => (
             <button
               key={tm}
               type="button"
@@ -166,7 +162,7 @@ export function InputForm({
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {tm === 'original' ? 'Original' : tm === 'ai' ? 'AI ✨' : 'Custom'}
+              {tm === 'original' ? 'Original' : 'AI ✨'}
             </button>
           ))}
         </div>
@@ -174,18 +170,7 @@ export function InputForm({
         <p className="mt-2 text-xs text-gray-500">
           {titleMode === 'original' && "Uses the article's headline as-is"}
           {titleMode === 'ai' && "AI generates the headline according to your brand voice"}
-          {titleMode === 'custom' && "Enter your custom headline below"}
         </p>
-
-        {titleMode === 'custom' && (
-          <input
-            type="text"
-            value={customTitle}
-            onChange={(e) => onCustomTitleChange(e.target.value)}
-            placeholder="Enter custom title"
-            className="mt-2 w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
-          />
-        )}
       </div>
 
       {/* Caption title control */}
@@ -219,7 +204,7 @@ export function InputForm({
       {/* Generate button */}
       <button
         type="submit"
-        disabled={disabled || !url.trim() || !brand || !detectedBrand || (titleMode === 'custom' && !customTitle.trim())}
+        disabled={disabled || !url.trim() || !brand || !detectedBrand}
         className="w-full py-3 px-6 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium rounded-xl transition text-sm active:scale-[0.98]"
       >
         Generate Facebook Post Asset
@@ -232,10 +217,10 @@ export function InputForm({
           onClick={() => setShowSupportedSites(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-lg p-6 max-w-sm mx-4"
+            className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2">
               <h3 className="text-lg font-semibold text-gray-900">Supported websites</h3>
               <button
                 type="button"
@@ -247,17 +232,17 @@ export function InputForm({
                 </svg>
               </button>
             </div>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
               {Object.entries(DOMAIN_TO_BRAND).map(([domain, info]) => (
                 <div key={domain} className="text-sm text-gray-700">
-                  • <span className="font-medium">{info.brand}</span>{' '}
+                  <span className="font-medium">{info.brand}</span>{' '}
                   <a
                     href={`https://${domain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
+                    className="text-blue-600 hover:underline text-xs"
                   >
-                    ({domain})
+                    {domain}
                   </a>
                 </div>
               ))}

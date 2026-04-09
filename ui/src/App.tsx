@@ -311,25 +311,6 @@ function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedC
   )
 }
 
-async function encodeImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      const MAX = 1200
-      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.round(img.width * scale)
-      canvas.height = Math.round(img.height * scale)
-      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-      resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1])
-    }
-    img.onerror = reject
-    img.src = url
-  })
-}
-
 function FbPostPage() {
   const [state, setState] = useState<AppState>('idle')
   const [result, setResult] = useState<WorkflowResult | null>(null)
@@ -339,14 +320,7 @@ function FbPostPage() {
   const [url, setUrl] = useState('')
   const [brand, setBrand] = useState('')
   const [titleMode, setTitleMode] = useState<TitleMode>('original')
-  const [customTitle, setCustomTitle] = useState('')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
-  const [isImageGenerating, setIsImageGenerating] = useState(false)
-
-  const handleTitleModeChange = (mode: TitleMode) => {
-    setTitleMode(mode)
-    if (mode !== 'custom') setCustomTitle('')
-  }
 
   const { run, isRunning } = useWorkflow()
 
@@ -371,7 +345,6 @@ function FbPostPage() {
       brand,
 
       title_mode: titleMode,
-      custom_title: titleMode === 'custom' ? customTitle : undefined,
       caption_title_mode: captionTitleMode,
     }
 
@@ -393,33 +366,7 @@ function FbPostPage() {
       setErrorMessage(response.message)
       setState('error')
     }
-  }, [url, brand, titleMode, customTitle, captionTitleMode, run])
-
-  const handleCustomImageUpload = useCallback(async (file: File, subtitleValue?: string) => {
-    if (!url.trim() || !brand) return
-    setIsImageGenerating(true)
-    const customImageBase64 = await encodeImage(file)
-    const request: WorkflowRequest = {
-      url: url.trim(),
-      brand,
-
-      title_mode: titleMode,
-      custom_title: titleMode === 'custom' ? customTitle : undefined,
-      caption_title_mode: captionTitleMode,
-      custom_image: customImageBase64,
-      operation: 'image_only',
-      caption: result?.caption,
-      title: result?.title,
-      subtitle: subtitleValue ?? result?.subtitle,
-      category: result?.category,
-    }
-    const response = await run(request)
-    if (response.success) {
-      const embeddedTitle = response.title || (titleMode === 'custom' ? customTitle : undefined)
-      setResult(prev => prev ? { ...prev, imageUrl: response.imageUrl, ...(embeddedTitle ? { title: embeddedTitle } : {}) } : response)
-    }
-    setIsImageGenerating(false)
-  }, [url, brand, titleMode, customTitle, captionTitleMode, run])
+  }, [url, brand, titleMode, captionTitleMode, run])
 
   const handleApprove = useCallback(
     (finalCaption: string) => {
@@ -540,9 +487,7 @@ function FbPostPage() {
                 brand={brand}
                 onBrandChange={setBrand}
                 titleMode={titleMode}
-                onTitleModeChange={handleTitleModeChange}
-                customTitle={customTitle}
-                onCustomTitleChange={setCustomTitle}
+                onTitleModeChange={setTitleMode}
                 captionTitleMode={captionTitleMode}
                 onCaptionTitleModeChange={setCaptionTitleMode}
                 onSubmit={handleSubmit}
@@ -566,11 +511,7 @@ function FbPostPage() {
               onReset={handleReset}
               onPartialRegenerate={handlePartialRegenerate}
               titleMode={titleMode}
-              customTitle={customTitle}
               captionTitleMode={captionTitleMode}
-              onCustomImageUpload={state === 'result' ? handleCustomImageUpload : undefined}
-              isImageGenerating={isImageGenerating}
-              onTitleChange={state === 'result' ? (t) => { handleTitleModeChange('custom'); setCustomTitle(t) } : undefined}
             />
           </div>
         </div>

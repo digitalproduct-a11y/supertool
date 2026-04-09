@@ -1,12 +1,14 @@
 import { useState, useCallback, useEffect } from 'react'
-import { IconPhoto } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl, updateSubtitleInImageUrl, SUBTITLE_BRANDS } from '../utils/cloudinary'
+import { updateTitleInImageUrl } from '../utils/cloudinary'
+import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
 import { ProgressSteps } from './ProgressSteps'
 import { Spinner } from './ds/Spinner'
 import { GuideModal } from './ds/GuideModal'
+import ImageUploadModal from './ImageUploadModal'
+import { IconUpload } from '@tabler/icons-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,6 +104,60 @@ function formatBrandName(brand: string): string {
   ).join(' ')
 }
 
+// ─── Caching utilities ─────────────────────────────────────────────────────────
+
+const TRENDING_CACHE_KEY = 'trending_spike_cache'
+const REFRESH_HOUR = 10
+
+function isCacheValid(lastFetchTime: number): boolean {
+  const now = new Date()
+  const lastFetch = new Date(lastFetchTime)
+  const today = now.toDateString()
+  const lastFetchDate = lastFetch.toDateString()
+
+  // Cache is valid if:
+  // 1. It's the same calendar day AND
+  // 2. Either we haven't reached 10am yet (use yesterday's data),
+  //    OR we have reached 10am and the cache was fetched after 10am today
+  if (today === lastFetchDate) {
+    const nowHour = now.getHours()
+    const lastFetchHour = lastFetch.getHours()
+
+    if (nowHour < REFRESH_HOUR) {
+      // Before 10am - cache valid if it was fetched today (any time)
+      return true
+    } else {
+      // After 10am - cache valid only if it was fetched after 10am today
+      return lastFetchHour >= REFRESH_HOUR
+    }
+  }
+
+  return false
+}
+
+function getCachedTrendingData(): { items: TrendingItem[]; timestamp: number } | null {
+  try {
+    const cached = localStorage.getItem(TRENDING_CACHE_KEY)
+    if (!cached) return null
+
+    const { items, timestamp } = JSON.parse(cached)
+    return isCacheValid(timestamp) ? { items, timestamp } : null
+  } catch {
+    return null
+  }
+}
+
+function setCacheTrendingData(items: TrendingItem[]) {
+  try {
+    localStorage.setItem(TRENDING_CACHE_KEY, JSON.stringify({
+      items,
+      timestamp: Date.now(),
+    }))
+  } catch (err) {
+    console.error('Failed to cache trending data:', err)
+  }
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ImageThumb({ url, alt, aspectRatio = 'square' }: { url?: string; alt: string; aspectRatio?: 'square' | 'video' }) {
@@ -191,26 +247,19 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
 
   const [brand, setBrand] = useState(source.brand || '')
   const [titleMode, setTitleMode] = useState<TitleMode>(isBrandMismatch ? 'ai' : 'original')
-  const [customTitle, setCustomTitle] = useState('')
-
-  const handleTitleModeChange = (mode: TitleMode) => {
-    setTitleMode(mode)
-    if (mode !== 'custom') setCustomTitle('')
-  }
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isImageGenerating, setIsImageGenerating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<GeneratedPost | null>(null)
   const [customImage, setCustomImage] = useState<File | null>(null)
   const [localTitle, setLocalTitle] = useState('')
-  const [localSubtitle, setLocalSubtitle] = useState('')
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
+  const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
   const [postMode, setPostMode] = useState<'publish' | 'schedule'>('publish')
   const [scheduledFor, setScheduledFor] = useState('')
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
@@ -224,7 +273,6 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         brand,
 
         title_mode: titleMode,
-        custom_title: titleMode === 'custom' ? customTitle : undefined,
         caption_title_mode: captionTitleMode,
         custom_image: customImageBase64,
       })
@@ -232,8 +280,6 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand, category: data.category })
         setCaption(data.caption ?? '')
         setLocalTitle(data.title ?? '')
-        setLocalSubtitle(data.subtitle ?? data.subTitle ?? '')
-        setPreviewImageUrl(data.imageUrl)
         setCustomImage(null)
       } else {
         setError(data.message || 'Generation failed.')
@@ -244,35 +290,21 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     } finally {
       setIsGenerating(false)
     }
-  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode, customImage])
+  }, [source.articleUrl, brand, titleMode, captionTitleMode, customImage])
 
-  const handleCustomImageUpload = useCallback(async (file: File) => {
-    setIsImageGenerating(true)
-    try {
-      const customImageBase64 = await encodeImage(file)
-      const data = await callGenerateWebhook({
-        url: source.articleUrl,
-        brand,
+  // Reset uploaded image when new result is generated
+  useEffect(() => {
+    setUploadedPublicId(null)
+  }, [result?.imageUrl])
 
-        title_mode: titleMode,
-        custom_title: titleMode === 'custom' ? customTitle : undefined,
-        caption_title_mode: captionTitleMode,
-        custom_image: customImageBase64,
-        operation: 'image_only',
-        caption: result?.caption,
-        title: localTitle || result?.title,
-        subtitle: localSubtitle,
-        category: result?.category,
-      })
-      if (data.success && data.imageUrl) {
-        const embeddedTitle = data.title || localTitle || result?.title
-        setResult(prev => prev ? { ...prev, imageUrl: data.imageUrl, title: embeddedTitle } : prev)
-        setPreviewImageUrl(data.imageUrl)
-      }
-    } finally {
-      setIsImageGenerating(false)
-    }
-  }, [source.articleUrl, brand, titleMode, customTitle, captionTitleMode])
+  // Derive preview URL reactively (like ResultPreview does)
+  const baseImageUrl = uploadedPublicId
+    ? buildCloudinaryUrl(uploadedPublicId, localTitle || result?.title || '', result?.imageUrl || '')
+    : result?.imageUrl
+
+  const previewImageUrl = baseImageUrl
+    ? updateTitleInImageUrl(baseImageUrl, result?.title || '', localTitle)
+    : undefined
 
   async function handleDownload() {
     if (!result?.imageUrl) return
@@ -380,29 +412,20 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Image Title</label>
             <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-              {(['original', 'ai', 'custom'] as TitleMode[]).map(m => (
+              {(['original', 'ai'] as TitleMode[]).map(m => (
                 <button
                   key={m}
-                  onClick={() => handleTitleModeChange(m)}
+                  onClick={() => setTitleMode(m)}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                     titleMode === m
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  {m === 'original' ? 'Original' : m === 'ai' ? 'AI ✨' : 'Custom'}
+                  {m === 'original' ? 'Original' : 'AI ✨'}
                 </button>
               ))}
             </div>
-            {titleMode === 'custom' && (
-              <input
-                type="text"
-                value={customTitle}
-                onChange={e => setCustomTitle(e.target.value)}
-                placeholder="Enter custom title..."
-                className="mt-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
-              />
-            )}
           </div>
 
           {/* Caption title mode */}
@@ -449,39 +472,45 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
               <ProgressSteps isComplete={false} />
             </div>
           ) : result ? (
-            <div>
+            <div className="p-5 space-y-4">
+              {/* Image with modal */}
+              {showImageUploadModal && (
+                <ImageUploadModal
+                  onSelect={({ publicId }) => {
+                    setUploadedPublicId(publicId)
+                    setShowImageUploadModal(false)
+                  }}
+                  onClose={() => setShowImageUploadModal(false)}
+                />
+              )}
+
               {/* Image */}
-              <div className="relative bg-neutral-50">
-                <img src={previewImageUrl ?? result.imageUrl} alt={result.title} className="w-full aspect-[4/5] object-cover" />
-                {isImageGenerating ? (
-                  <div className="absolute inset-0 image-upload-shimmer" />
-                ) : (
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <button
-                      onClick={handleDownload}
-                      className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Download
-                    </button>
-                  </div>
-                )}
+              <div className="relative bg-neutral-50 aspect-[4/5] rounded-xl overflow-hidden border border-gray-200 w-full">
+                <img src={previewImageUrl ?? result.imageUrl} alt={result.title} className="w-full h-full object-cover" />
               </div>
-              {/* Fields */}
-              <div className="p-5 space-y-4">
-                {/* Custom image upload */}
-                <label className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors ${isImageGenerating ? 'opacity-50 pointer-events-none' : ''}`}>
-                  <IconPhoto size={16} />
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowImageUploadModal(true)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <IconUpload size={16} />
                   Upload Custom Image
-                  <input type="file" accept="image/*" className="hidden" disabled={isImageGenerating}
-                    onChange={e => {
-                      const f = e.target.files?.[0] ?? null
-                      if (f) handleCustomImageUpload(f)
-                      e.target.value = ''
-                    }} />
-                </label>
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </button>
+              </div>
+
+              {/* Fields */}
+              <div className="space-y-4">
 
                 {/* Title */}
                 <div>
@@ -495,39 +524,11 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                     onChange={e => {
                       const v = e.target.value
                       setLocalTitle(v)
-                      handleTitleModeChange('custom')
-                      setCustomTitle(v)
-                      if (result) {
-                        const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, v)
-                        setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', localSubtitle))
-                      }
                     }}
                     placeholder="Enter title..."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
                   />
                 </div>
-
-                {/* Subtitle — only for Era Sarawak and Era Sabah */}
-                {result && SUBTITLE_BRANDS.has(result.brand) && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Subtitle <span className="normal-case font-normal text-gray-400">(optional)</span></label>
-                      <span className="text-xs text-gray-400">{localSubtitle.length}</span>
-                    </div>
-                    <input
-                      type="text"
-                      value={localSubtitle}
-                      onChange={e => {
-                        const v = e.target.value
-                        setLocalSubtitle(v)
-                        const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, localTitle)
-                        setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', v))
-                      }}
-                      placeholder="Enter subtitle..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
-                    />
-                  </div>
-                )}
 
                 {/* Caption */}
                 <div>
@@ -645,7 +646,6 @@ export function TrendingSpikePage() {
   const [selectedTrending, setSelectedTrending] = useState<TrendingItem | null>(null)
   const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([])
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
 
   // ── Spike inbox: load ─────────────────────────────────────────────────────
@@ -710,13 +710,22 @@ export function TrendingSpikePage() {
     setSelectedTrending(null)
   }
 
-  // ── Trending: fetch ──────────────────────────────────────────────────────
-  const handleFetchTrending = useCallback(async () => {
+  // ── Trending: fetch with cache ──────────────────────────────────────────────
+  const handleFetchTrending = useCallback(async (forceRefresh = false) => {
+    // Check cache first (unless forced)
+    if (!forceRefresh) {
+      const cached = getCachedTrendingData()
+      if (cached) {
+        setTrendingItems(cached.items)
+        return
+      }
+    }
+
     setIsFetchingTrending(true)
     try {
       const data = await callWebhook({ type: 'fetch-trending' })
       if (data.success && Array.isArray(data.articles)) {
-        setTrendingItems(data.articles.map((a: { url: string; source: string; brand?: string; category: string; type: string; title?: string; image?: string; caption?: string; publishedAt?: string }) => ({
+        const items = data.articles.map((a: { url: string; source: string; brand?: string; category: string; type: string; title?: string; image?: string; caption?: string; publishedAt?: string }) => ({
           id: crypto.randomUUID(),
           url: a.url,
           source: a.source || a.category || 'Unknown',
@@ -728,7 +737,9 @@ export function TrendingSpikePage() {
           caption: a.caption || '',
           publishedAt: a.publishedAt || '',
           status: 'idle' as const,
-        })))
+        }))
+        setTrendingItems(items)
+        setCacheTrendingData(items)
       } else {
         toast.error('Failed to fetch trending articles.')
       }
@@ -785,29 +796,43 @@ export function TrendingSpikePage() {
 
         {/* Tabs — hide when in generate view */}
         {spikeView === 'list' && trendingView === 'list' && (
-          <div className="flex gap-1 bg-neutral-100 rounded-xl p-1 w-fit mb-6">
-            {(['trending', 'spike'] as const).map(tab => (
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex gap-1 bg-neutral-100 rounded-xl p-1">
+              {(['trending', 'spike'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => { setActiveTab(tab); if (tab === 'spike') setHasUnreadSpikes(false) }}
+                  className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab
+                      ? 'bg-white text-neutral-950 shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-800'
+                  }`}
+                >
+                  {tab === 'trending' ? (
+                    '📈 Trending News'
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      ⚡ Spike News
+                      {hasUnreadSpikes && (
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      )}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {activeTab === 'trending' && (
               <button
-                key={tab}
-                onClick={() => { setActiveTab(tab); if (tab === 'spike') setHasUnreadSpikes(false) }}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === tab
-                    ? 'bg-white text-neutral-950 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-800'
-                }`}
+                onClick={() => handleFetchTrending(true)}
+                disabled={isFetchingTrending}
+                className="p-2 bg-white border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                title="Refresh trending articles"
               >
-                {tab === 'trending' ? (
-                  '📈 Trending News'
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    ⚡ Spike News
-                    {hasUnreadSpikes && (
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                    )}
-                  </span>
-                )}
+                <svg className={`w-4 h-4 ${isFetchingTrending ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
               </button>
-            ))}
+            )}
           </div>
         )}
 
@@ -944,7 +969,7 @@ export function TrendingSpikePage() {
           <GenerateView
             source={{
               articleUrl: selectedTrending.url,
-              brand: selectedTrending.source,
+              brand: selectedTrending.brand,
               articleTitle: selectedTrending.title,
               backLabel: 'Back to trending',
             }}
@@ -969,29 +994,9 @@ export function TrendingSpikePage() {
               </div>
             </div>
 
-            {/* Search + Brand filter */}
+            {/* Brand filter */}
             {trendingItems.length > 0 && (
               <div className="flex flex-col sm:flex-row gap-3">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                  </svg>
-                  <input
-                    type="text"
-                    placeholder="Search articles..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent placeholder:text-neutral-400"
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
                 {/* Brand chips */}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <div className="flex items-center gap-1 bg-neutral-100 rounded-full p-1">
@@ -1054,11 +1059,9 @@ export function TrendingSpikePage() {
             {trendingItems.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 {(['News', 'Sport', 'Entertainment'] as const).map(type => {
-                  const q = searchQuery.trim().toLowerCase()
                   let items = trendingItems.filter(i => {
                     if (i.type.toLowerCase() !== type.toLowerCase()) return false
                     if (selectedSources.size > 0 && !selectedSources.has(i.brand)) return false
-                    if (q && !(i.title ?? i.url).toLowerCase().includes(q)) return false
                     return true
                   })
                   if (type === 'Entertainment') {
