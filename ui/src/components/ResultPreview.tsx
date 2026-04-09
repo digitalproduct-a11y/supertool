@@ -1,30 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
-import { IconPhoto } from '@tabler/icons-react'
+import { IconUpload } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl, updateSubtitleInImageUrl, SUBTITLE_BRANDS } from '../utils/cloudinary'
+import { updateTitleInImageUrl } from '../utils/cloudinary'
+import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
+import ImageUploadModal from './ImageUploadModal'
 
 interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
   onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
-  onCustomImageUpload?: (file: File, subtitle?: string) => void
-  isImageGenerating?: boolean
-  onTitleChange?: (title: string) => void
 }
 
 export function ResultPreview({
   result,
   isRunning,
   onPostDraft,
-  onCustomImageUpload,
-  isImageGenerating = false,
-  onTitleChange,
 }: ResultPreviewProps) {
   const [title, setTitle] = useState(result.title ?? '')
-  const [subtitle, setSubtitle] = useState(result.subtitle ?? '')
   const [caption, setCaption] = useState(result.caption ?? '')
-  const [previewImageUrl, setPreviewImageUrl] = useState(result.imageUrl)
+  const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [draftPostId, setDraftPostId] = useState<string | null>(null)
@@ -38,19 +34,15 @@ export function ResultPreview({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
 
-  // Reset previewImageUrl when a new image is generated
+  // Reset custom upload when a new image is generated
   useEffect(() => {
-    setPreviewImageUrl(result.imageUrl)
+    setUploadedPublicId(null)
   }, [result.imageUrl])
 
   // Sync fields when result changes (e.g. after regen)
   useEffect(() => {
     setTitle(result.title ?? '')
   }, [result.title])
-
-  useEffect(() => {
-    setSubtitle(result.subtitle ?? '')
-  }, [result.subtitle])
 
   useEffect(() => {
     setCaption(result.caption ?? '')
@@ -64,6 +56,13 @@ export function ResultPreview({
     setReplacementAiPhoto(null)
     setReplacementPreviewUrl(null)
   }, [result.imageUrl])
+
+  // Derived preview URL: compose from base image + title
+  const baseImageUrl = uploadedPublicId
+    ? buildCloudinaryUrl(uploadedPublicId, result.title || '', result.imageUrl)
+    : result.imageUrl
+
+  const previewImageUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', title)
 
   async function handleDownload() {
     const urlToDownload = previewImageUrl || result.imageUrl
@@ -154,9 +153,20 @@ export function ResultPreview({
 
   return (
     <div className="space-y-4">
+      {showImageUploadModal && (
+        <ImageUploadModal
+          onSelect={({ publicId }) => {
+            setUploadedPublicId(publicId)
+            setShowImageUploadModal(false)
+            toast.success('Image uploaded!')
+          }}
+          onClose={() => setShowImageUploadModal(false)}
+        />
+      )}
+
       {/* Image with download overlay */}
-      <div className="relative bg-neutral-50 rounded-xl overflow-hidden border border-gray-200">
-        {aiImageRemoved && !replacementPreviewUrl && !isImageGenerating ? (
+      <div className="relative bg-neutral-50 rounded-xl overflow-hidden border border-gray-200 aspect-[4/5] w-full">
+        {aiImageRemoved && !replacementPreviewUrl ? (
           <div className="flex flex-col items-center justify-center w-full aspect-[4/5] text-gray-400">
             <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -174,26 +184,11 @@ export function ResultPreview({
             <img
               src={replacementPreviewUrl || previewImageUrl}
               alt="Generated Facebook image"
-              className="w-full"
+              className="w-full h-full object-cover"
               onError={(e) => {
                 ;(e.target as HTMLImageElement).src = ''
               }}
             />
-            {isImageGenerating ? (
-              <div className="absolute inset-0 image-upload-shimmer" />
-            ) : (
-              <div className="absolute top-3 right-3">
-                <button
-                  onClick={handleDownload}
-                  className="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Download
-                </button>
-              </div>
-            )}
           </>
         )}
       </div>
@@ -202,20 +197,25 @@ export function ResultPreview({
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplaceAiImage} />
 
-      {/* Custom image upload */}
-      {onCustomImageUpload && (
-        <label className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 cursor-pointer bg-white hover:bg-gray-50 transition-colors ${isImageGenerating ? 'opacity-50 pointer-events-none' : ''}`}>
-          <IconPhoto size={16} />
+      {/* Custom image upload + Download */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => setShowImageUploadModal(true)}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors"
+        >
+          <IconUpload size={16} />
           Upload Custom Image
-          <input type="file" accept="image/*" className="hidden"
-            disabled={isImageGenerating}
-            onChange={e => {
-              const f = e.target.files?.[0]
-              if (f) onCustomImageUpload(f, subtitle)
-              e.target.value = ''
-            }} />
-        </label>
-      )}
+        </button>
+        <button
+          onClick={handleDownload}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Download
+        </button>
+      </div>
 
       {/* Editable fields */}
       <div className="space-y-4">
@@ -231,36 +231,11 @@ export function ResultPreview({
             onChange={(e) => {
               const v = e.target.value
               setTitle(v)
-              onTitleChange?.(v)
-              const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, v)
-              setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', subtitle))
             }}
             placeholder="Enter title..."
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
           />
         </div>
-
-        {/* Subtitle — only for brands with a subtitle layer (Era Sarawak, Era Sabah) */}
-        {SUBTITLE_BRANDS.has(result.brand) && (
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Subtitle</label>
-              <span className="text-xs text-gray-400">{subtitle.length}</span>
-            </div>
-            <input
-              type="text"
-              value={subtitle}
-              onChange={(e) => {
-                const v = e.target.value
-                setSubtitle(v)
-                const withTitle = updateTitleInImageUrl(result.imageUrl, result.title, title)
-                setPreviewImageUrl(updateSubtitleInImageUrl(withTitle, result.subtitle ?? '', v))
-              }}
-              placeholder="Enter subtitle..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
-            />
-          </div>
-        )}
 
         {/* Caption */}
         <div>

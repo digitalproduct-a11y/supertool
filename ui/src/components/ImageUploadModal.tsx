@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ImageUploadModalProps {
   onSelect: (photo: { url: string; publicId: string }) => void
@@ -91,7 +92,7 @@ export default function ImageUploadModal({ onSelect, onClose }: ImageUploadModal
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full shadow-[0_2px_24px_rgba(0,0,0,0.12)]">
         {/* Header */}
@@ -202,6 +203,7 @@ export default function ImageUploadModal({ onSelect, onClose }: ImageUploadModal
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
