@@ -158,18 +158,6 @@ function setCacheTrendingData(items: TrendingItem[]) {
   }
 }
 
-function getTimeSinceUpdate(timestamp: number): string {
-  const now = Date.now()
-  const diff = now - timestamp
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  return 'yesterday'
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ImageThumb({ url, alt, aspectRatio = 'square' }: { url?: string; alt: string; aspectRatio?: 'square' | 'video' }) {
@@ -660,7 +648,6 @@ export function TrendingSpikePage() {
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
-  const [lastTrendingUpdate, setLastTrendingUpdate] = useState<number | null>(null)
 
   // ── Spike inbox: load ─────────────────────────────────────────────────────
   const handleLoadInbox = useCallback(async () => {
@@ -731,7 +718,6 @@ export function TrendingSpikePage() {
       const cached = getCachedTrendingData()
       if (cached) {
         setTrendingItems(cached.items)
-        setLastTrendingUpdate(cached.timestamp)
         return
       }
     }
@@ -755,7 +741,6 @@ export function TrendingSpikePage() {
         }))
         setTrendingItems(items)
         setCacheTrendingData(items)
-        setLastTrendingUpdate(Date.now())
       } else {
         toast.error('Failed to fetch trending articles.')
       }
