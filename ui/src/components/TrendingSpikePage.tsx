@@ -646,7 +646,6 @@ export function TrendingSpikePage() {
   const [selectedTrending, setSelectedTrending] = useState<TrendingItem | null>(null)
   const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([])
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
 
   // ── Spike inbox: load ─────────────────────────────────────────────────────
@@ -1060,11 +1059,9 @@ export function TrendingSpikePage() {
             {trendingItems.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 {(['News', 'Sport', 'Entertainment'] as const).map(type => {
-                  const q = searchQuery.trim().toLowerCase()
                   let items = trendingItems.filter(i => {
                     if (i.type.toLowerCase() !== type.toLowerCase()) return false
                     if (selectedSources.size > 0 && !selectedSources.has(i.brand)) return false
-                    if (q && !(i.title ?? i.url).toLowerCase().includes(q)) return false
                     return true
                   })
                   if (type === 'Entertainment') {
