@@ -5,8 +5,6 @@ import { GuideModal } from './ds/GuideModal'
 import { Spinner } from './ds/Spinner'
 import { useShopeeTopProducts, type ShopeeTopProduct } from '../hooks/useShopeeTopProducts'
 
-const GENERATE_URL = import.meta.env.VITE_SHOPEE_TOP_PRODUCTS_GENERATE_URL as string
-
 function formatPrice(price: number): string {
   if (!price) return '—'
   return `RM ${price.toFixed(2)}`
@@ -32,8 +30,6 @@ export function ShopeeTopProductsPage() {
   const { products, lastRefreshed, loading, error, refetch } = useShopeeTopProducts()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [selectedBrand, setSelectedBrand] = useState<BrandName>(BRANDS[0])
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generateError, setGenerateError] = useState<string | null>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [showComingSoonModal, setShowComingSoonModal] = useState(false)
 
@@ -77,40 +73,6 @@ export function ShopeeTopProductsPage() {
     })
   }
 
-  async function handleGenerate() {
-    if (selected.size === 0 || !selectedBrand) return
-    setIsGenerating(true)
-    setGenerateError(null)
-    try {
-      const res = await fetch(`${GENERATE_URL}?brand=${encodeURIComponent(selectedBrand)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productUrls: Array.from(selected) }),
-        signal: AbortSignal.timeout(180_000),
-      })
-      const contentType = res.headers.get('content-type') ?? ''
-      if (contentType.includes('spreadsheet') || contentType.includes('excel') || contentType.includes('octet-stream')) {
-        const blob = await res.blob()
-        const disposition = res.headers.get('content-disposition') ?? ''
-        const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-        const filename = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : 'Shopee_Affiliates.xlsx'
-        const objectUrl = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = objectUrl
-        a.download = filename
-        a.click()
-        window.URL.revokeObjectURL(objectUrl)
-        setSelected(new Set())
-      } else {
-        const data = await res.json()
-        setGenerateError(data.message ?? 'Failed to generate affiliate links.')
-      }
-    } catch (e) {
-      setGenerateError(e instanceof Error ? e.message : 'Something went wrong.')
-    } finally {
-      setIsGenerating(false)
-    }
-  }
 
   return (
     <>
