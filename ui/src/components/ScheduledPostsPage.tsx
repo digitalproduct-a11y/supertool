@@ -10,10 +10,12 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
   const navigate = useNavigate()
 
   // Convert URL slug to proper brand name (e.g., "astro-ulagam" → "Astro Ulagam")
-  const displayBrand = brand
+  const rawBrand = brand
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+  // MY brand uses all-caps; slug "my" must not be titlecased
+  const displayBrand = rawBrand === 'My' ? 'MY' : rawBrand
 
   const { posts, isLoading, error, loadPosts, refetchPosts, schedulePost } = useScheduledPosts(displayBrand)
 

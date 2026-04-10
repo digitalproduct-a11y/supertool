@@ -15,7 +15,7 @@ const BRANDS = [
   'Melody',
   'Mingguan Wanita',
   'Mix',
-  'My',
+  'MY',
   'Raaga',
   'Rojak Daily',
   'Sinar',
