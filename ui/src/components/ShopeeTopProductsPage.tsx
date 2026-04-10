@@ -290,9 +290,6 @@ export function ShopeeTopProductsPage() {
               <span className="font-semibold text-neutral-950">{selected.size}</span> product{selected.size > 1 ? 's' : ''} selected
             </p>
             <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
-              {generateError && (
-                <p className="text-xs text-red-600">{generateError}</p>
-              )}
               {/* Brand selector */}
               <div className="relative">
                 <select
