@@ -35,6 +35,7 @@ export function ShopeeTopProductsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false)
 
   useEffect(() => {
     if (!lightboxUrl) return
@@ -112,6 +113,28 @@ export function ShopeeTopProductsPage() {
   }
 
   return (
+    <>
+      {showComingSoonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-80 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-neutral-950 mb-1">Feature Coming Soon!</h3>
+              <p className="text-sm text-neutral-500">Affiliate link generation will be available soon. Check back later.</p>
+            </div>
+            <button
+              onClick={() => setShowComingSoonModal(false)}
+              className="w-full py-2 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 transition"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-28">
       <div className="max-w-6xl mx-auto">
 
@@ -324,11 +347,10 @@ export function ShopeeTopProductsPage() {
                 </svg>
               </div>
               <button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="px-5 py-2 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:text-neutral-400 text-white rounded-lg text-sm font-semibold transition active:scale-[0.98]"
+                onClick={() => setShowComingSoonModal(true)}
+                className="px-5 py-2 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-sm font-semibold transition active:scale-[0.98]"
               >
-                {isGenerating ? 'Generating…' : `Generate Affiliate Links`}
+                Generate Affiliate Links
               </button>
             </div>
           </div>
@@ -350,5 +372,6 @@ export function ShopeeTopProductsPage() {
         </div>
       )}
     </main>
+    </>
   )
 }
