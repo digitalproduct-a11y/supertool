@@ -224,6 +224,42 @@ export interface ArticleGeneratorState {
   error?: string
 }
 
+// Article to Photo Carousels tool types
+export interface CarouselImage {
+  id: string
+  src: string
+  alt: string
+  type: 'hero' | 'pexels'
+  photographer?: string
+  overlays: unknown[]
+}
+
+export interface CarouselResult {
+  success: true
+  title: string
+  originalTitle: string
+  brand: string
+  caption: string
+  images: CarouselImage[]
+}
+
+export interface CarouselError {
+  success: false
+  error: 'brand_invalid' | 'link_invalid' | 'execution_error'
+  message: string
+}
+
+export type CarouselResponse = CarouselResult | CarouselError
+
+export const CAROUSEL_PROGRESS_STEPS = [
+  { label: 'Checking your brand', subtitle: 'Confirming brand voice and settings', duration: 6000 },
+  { label: 'Reading the article', subtitle: 'Pulling the story and key details', duration: 8000 },
+  { label: 'Designing main image', subtitle: 'Composing the primary visual', duration: 10000 },
+  { label: 'Finding carousel photos', subtitle: 'Searching for related images', duration: 8000 },
+  { label: 'Applying brand layouts', subtitle: 'Styling carousel thumbnails', duration: 10000 },
+  { label: 'Writing the caption', subtitle: 'Crafting your post copy', duration: 10000 },
+] as const
+
 // Scheduled Posts tool types
 export type ScheduledPostStatus = 'pending' | 'scheduled' | 'published' | 'error'
 

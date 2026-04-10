@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import {
   IconHome,
   IconPhoto,
+  IconLayoutColumns,
   IconTrendingUp,
   IconLink,
   IconFileText,
@@ -13,7 +14,7 @@ import {
   IconShoppingBag,
 } from '@tabler/icons-react'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts' | 'photo-carousel'
 
 interface NavItem {
   id: ToolId | string
@@ -38,6 +39,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     section: 'Social',
     items: [
       { id: 'fb-post', label: 'Article to FB Photos', icon: IconPhoto },
+      { id: 'photo-carousel', label: 'Article to Photo Carousels', icon: IconLayoutColumns },
       { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },
       { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
       { id: 'scheduled-posts', label: 'Schedule Trending News', icon: IconCalendar },
@@ -56,6 +58,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
 const TOOL_NAMES: Record<ToolId, string> = {
   home: 'KULT Digital Kit',
   'fb-post': 'Article to FB Photos',
+  'photo-carousel': 'Article to Photo Carousels',
   'trending-news': 'Trending News to FB Photos',
   'affiliate-links': 'Shopee Affiliate Links',
   'article-generator': 'Affiliate Article Editor',
