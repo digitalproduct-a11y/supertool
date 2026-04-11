@@ -15,6 +15,7 @@ import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
+import { GetStartedPage } from './components/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
@@ -33,7 +34,7 @@ import type {
 type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'photo-carousel'
 
 const pathToTool: Record<string, ToolId> = {
-  '/': 'home',
+  '/home': 'home',
   '/article-to-fb': 'fb-post',
   '/article-to-carousel': 'photo-carousel',
   '/trending-news-to-fb': 'trending-news',
@@ -54,7 +55,7 @@ function getActiveTool(pathname: string): ToolId {
 }
 
 const toolToPath: Record<ToolId, string> = {
-  'home': '/',
+  'home': '/home',
   'fb-post': '/article-to-fb',
   'photo-carousel': '/article-to-carousel',
   'trending-news': '/trending-news-to-fb',
@@ -670,7 +671,8 @@ function App() {
     <>
     <ToastContainer />
     <Routes>
-      <Route path="/" element={
+      <Route path="/" element={<GetStartedPage />} />
+      <Route path="/home" element={
         <Layout {...layoutProps}>
           <HomePage onToolSelect={(id) => navigate(toolToPath[id])} />
         </Layout>
