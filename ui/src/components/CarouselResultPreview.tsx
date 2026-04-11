@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import JSZip from 'jszip'
 import type { CarouselResult } from '../types'
 import { toast } from '../hooks/useToast'
+import { updateTitleInImageUrl } from '../utils/cloudinary'
 
 interface ImageReplacement {
   file: File
@@ -20,12 +21,26 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
   const [caption, setCaption] = useState(result.caption ?? '')
   const [isZipping, setIsZipping] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [slideTitles, setSlideTitles] = useState<Map<string, string>>(() => {
+    const map = new Map<string, string>()
+    for (const img of result.images) {
+      if (img.imageTitle) map.set(img.id, img.imageTitle)
+    }
+    return map
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceTargetIdRef = useRef<string | null>(null)
 
   // Sync fields when result changes
   useEffect(() => { setTitle(result.title ?? '') }, [result.title])
   useEffect(() => { setCaption(result.caption ?? '') }, [result.caption])
+  useEffect(() => {
+    const map = new Map<string, string>()
+    for (const img of result.images) {
+      if (img.imageTitle) map.set(img.id, img.imageTitle)
+    }
+    setSlideTitles(map)
+  }, [result.images])
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -42,7 +57,19 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
   const currentImage = activeImages[clampedIndex]
 
   function getDisplayUrl(id: string, fallback: string): string {
-    return replacements.get(id)?.previewUrl ?? fallback
+    const replacement = replacements.get(id)
+    if (replacement) return replacement.previewUrl
+
+    // If user has edited the slide title, rebuild the Cloudinary URL with the new title
+    const img = result.images.find(i => i.id === id)
+    if (img?.imageTitle) {
+      const currentTitle = slideTitles.get(id)
+      if (currentTitle !== undefined && currentTitle !== img.imageTitle) {
+        return updateTitleInImageUrl(fallback, img.imageTitle, currentTitle)
+      }
+    }
+
+    return fallback
   }
 
   // Navigation
@@ -132,12 +159,13 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
     for (let i = 0; i < activeImages.length; i++) {
       const img = activeImages[i]
       const replacement = replacements.get(img.id)
+      const url = getDisplayUrl(img.id, img.src)
       try {
         let blob: Blob
         if (replacement) {
           blob = replacement.file
         } else {
-          const res = await fetch(img.src)
+          const res = await fetch(url)
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
           blob = await res.blob()
         }
@@ -370,45 +398,52 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
         </p>
       )}
 
-      {/* Download ZIP */}
-      <button
-        onClick={handleDownloadZip}
-        disabled={isZipping || activeImages.length === 0}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white disabled:text-neutral-400 rounded-xl text-sm font-medium transition-colors"
-      >
-        {isZipping ? (
-          <>
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
-            Packaging zip…
-          </>
-        ) : (
-          <>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download all as ZIP ({activeImages.length} image{activeImages.length !== 1 ? 's' : ''})
-          </>
-        )}
-      </button>
-
       {/* Editable fields */}
       <div className="space-y-4">
-        {/* Title */}
+        {/* Image Title — editable per-slide if imageTitle exists, otherwise post title */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Title</label>
-            <span className="text-xs text-gray-400">{title.length}</span>
+            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Image Title</label>
+            {currentImage?.imageTitle && !replacements.has(currentImage.id) && slideTitles.get(currentImage.id) !== currentImage.imageTitle ? (
+              <button
+                onClick={() => setSlideTitles(prev => {
+                  const next = new Map(prev)
+                  next.set(currentImage.id, currentImage.imageTitle!)
+                  return next
+                })}
+                className="text-[11px] text-gray-400 hover:text-gray-600 underline transition-colors"
+              >
+                Reset
+              </button>
+            ) : (
+              <span className="text-xs text-gray-400">{(currentImage?.imageTitle ? (slideTitles.get(currentImage.id) ?? currentImage.imageTitle) : title).length}</span>
+            )}
           </div>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter title…"
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
-          />
+          {currentImage?.imageTitle && !replacements.has(currentImage.id) ? (
+            <input
+              key={currentImage.id}
+              type="text"
+              value={slideTitles.get(currentImage.id) ?? currentImage.imageTitle}
+              onChange={(e) => {
+                const id = currentImage.id
+                setSlideTitles(prev => {
+                  const next = new Map(prev)
+                  next.set(id, e.target.value)
+                  return next
+                })
+              }}
+              placeholder="Enter image title…"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+            />
+          ) : (
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter title…"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+            />
+          )}
         </div>
 
         {/* Caption */}
@@ -433,6 +468,30 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
           />
         </div>
       </div>
+
+      {/* Download ZIP */}
+      <button
+        onClick={handleDownloadZip}
+        disabled={isZipping || activeImages.length === 0}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white disabled:text-neutral-400 rounded-xl text-sm font-medium transition-colors"
+      >
+        {isZipping ? (
+          <>
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+            Packaging zip…
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download all as ZIP ({activeImages.length} image{activeImages.length !== 1 ? 's' : ''})
+          </>
+        )}
+      </button>
     </div>
   )
 }

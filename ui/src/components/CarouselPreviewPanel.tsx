@@ -1,6 +1,7 @@
 import type { CarouselResult } from '../types'
 import { CarouselResultPreview } from './CarouselResultPreview'
 import { CarouselProgressSteps } from './CarouselProgressSteps'
+import { IconCarouselHorizontal } from '@tabler/icons-react'
 
 interface CarouselPreviewPanelProps {
   state: 'idle' | 'loading' | 'result' | 'error'
@@ -20,19 +21,7 @@ export function CarouselPreviewPanel({
       {state === 'idle' && (
         <div className="flex-1 flex items-center justify-center text-center">
           <div>
-            <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4 animate-breathe"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M4 6h16M4 10h16M4 14h16M4 18h16"
-              />
-            </svg>
+            <IconCarouselHorizontal className="w-16 h-16 text-gray-300 mx-auto mb-4 animate-breathe" strokeWidth={1.5} />
             <p className="text-gray-400 text-sm">Your photo carousel will appear here</p>
           </div>
         </div>

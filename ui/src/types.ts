@@ -232,6 +232,7 @@ export interface CarouselImage {
   type: 'hero' | 'pexels'
   photographer?: string
   overlays: unknown[]
+  imageTitle?: string
 }
 
 export interface CarouselResult {
