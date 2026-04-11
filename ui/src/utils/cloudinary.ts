@@ -82,3 +82,62 @@ export function updateSubtitleInImageUrl(imageUrl: string, originalSubtitle: str
 
 /** Brands that have a subtitle text layer in their Cloudinary template. */
 export const SUBTITLE_BRANDS = new Set(['era sarawak', 'era sabah'])
+
+/**
+ * Replaces the base image in a Cloudinary image/upload URL while preserving all
+ * overlay transformations. Uses a comma heuristic: transform segments always contain
+ * commas (e.g. c_fill,w_1080), public_id segments never do.
+ *
+ * .../image/upload/{transforms}/{old_public_id.jpg}
+ * → .../image/upload/{transforms}/{newPublicId}
+ */
+export function replaceBaseImage(originalUrl: string, newPublicId: string): string {
+  const uploadPrefix = '/image/upload/'
+  const uploadIdx = originalUrl.indexOf(uploadPrefix)
+  if (uploadIdx === -1) return originalUrl
+
+  const base = originalUrl.substring(0, uploadIdx)
+  const afterUpload = originalUrl.substring(uploadIdx + uploadPrefix.length)
+  const segments = afterUpload.split('/')
+
+  // Find the last segment that contains a comma — that's the final transform.
+  // Everything after it is the old public_id (may include folder paths + extension).
+  let lastTransformIdx = -1
+  for (let i = 0; i < segments.length; i++) {
+    if (segments[i].includes(',')) lastTransformIdx = i
+  }
+
+  if (lastTransformIdx < 0) return originalUrl
+
+  const transforms = segments.slice(0, lastTransformIdx + 1).join('/')
+  return `${base}/image/upload/${transforms}/${newPublicId}`
+}
+
+/**
+ * Uploads an image file to Cloudinary using unsigned upload.
+ * Returns the public_id on success.
+ */
+export async function uploadToCloudinary(file: File): Promise<string> {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error('Cloudinary configuration missing')
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', uploadPreset)
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    { method: 'POST', body: formData }
+  )
+
+  if (!res.ok) {
+    throw new Error(`Upload failed: ${res.status}`)
+  }
+
+  const data = await res.json()
+  return data.public_id as string
+}

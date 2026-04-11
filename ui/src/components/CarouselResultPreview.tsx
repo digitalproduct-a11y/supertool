@@ -2,11 +2,13 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import JSZip from 'jszip'
 import type { CarouselResult } from '../types'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl } from '../utils/cloudinary'
+import { updateTitleInImageUrl, replaceBaseImage, uploadToCloudinary } from '../utils/cloudinary'
 
 interface ImageReplacement {
   file: File
-  previewUrl: string
+  previewUrl: string          // blob URL for instant preview while uploading
+  cloudinaryUrl?: string      // final URL with overlays applied to new image
+  isUploading?: boolean       // upload in progress
 }
 
 interface CarouselResultPreviewProps {
@@ -58,7 +60,21 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
 
   function getDisplayUrl(id: string, fallback: string): string {
     const replacement = replacements.get(id)
-    if (replacement) return replacement.previewUrl
+    if (replacement) {
+      // Prefer overlaid Cloudinary URL when upload is done; fall back to blob preview
+      const base = replacement.cloudinaryUrl ?? replacement.previewUrl
+      // Apply slide title edits on top of the overlaid URL
+      if (replacement.cloudinaryUrl) {
+        const img = result.images.find(i => i.id === id)
+        if (img?.imageTitle) {
+          const currentTitle = slideTitles.get(id)
+          if (currentTitle !== undefined && currentTitle !== img.imageTitle) {
+            return updateTitleInImageUrl(base, img.imageTitle, currentTitle)
+          }
+        }
+      }
+      return base
+    }
 
     // If user has edited the slide title, rebuild the Cloudinary URL with the new title
     const img = result.images.find(i => i.id === id)
@@ -87,7 +103,8 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
     const replacement = replacements.get(id)
     try {
       let blob: Blob
-      if (replacement) {
+      // Use raw file only if upload hasn't completed yet (no cloudinaryUrl)
+      if (replacement && !replacement.cloudinaryUrl) {
         blob = replacement.file
       } else {
         const res = await fetch(url)
@@ -114,15 +131,45 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
     const targetId = replaceTargetIdRef.current
     if (!file || !targetId) return
     const previewUrl = URL.createObjectURL(file)
+    const originalImage = result.images.find(img => img.id === targetId)
+
+    // Instant blob preview + mark as uploading
     setReplacements(prev => {
       const next = new Map(prev)
       const old = next.get(targetId)
       if (old) URL.revokeObjectURL(old.previewUrl)
-      next.set(targetId, { file, previewUrl })
+      next.set(targetId, { file, previewUrl, isUploading: true })
       return next
     })
     e.target.value = ''
     replaceTargetIdRef.current = null
+
+    // Background upload → rebuild URL with overlays
+    if (originalImage) {
+      uploadToCloudinary(file)
+        .then(publicId => {
+          const cloudinaryUrl = replaceBaseImage(originalImage.src, publicId)
+          setReplacements(prev => {
+            const next = new Map(prev)
+            const current = next.get(targetId)
+            if (current) {
+              next.set(targetId, { ...current, cloudinaryUrl, isUploading: false })
+            }
+            return next
+          })
+        })
+        .catch(() => {
+          toast.error('Image upload failed. Overlays won\'t be applied.')
+          setReplacements(prev => {
+            const next = new Map(prev)
+            const current = next.get(targetId)
+            if (current) {
+              next.set(targetId, { ...current, isUploading: false })
+            }
+            return next
+          })
+        })
+    }
   }
 
   // Delete image (soft)
@@ -162,7 +209,8 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
       const url = getDisplayUrl(img.id, img.src)
       try {
         let blob: Blob
-        if (replacement) {
+        // Use raw file only if upload hasn't completed yet (no cloudinaryUrl)
+        if (replacement && !replacement.cloudinaryUrl) {
           blob = replacement.file
         } else {
           const res = await fetch(url)
@@ -250,6 +298,17 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
               </button>
             )}
 
+            {/* Upload-in-progress indicator on main viewer */}
+            {replacements.get(currentImage.id)?.isUploading && (
+              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-sm">
+                <svg className="w-3.5 h-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <span className="text-white text-[11px] font-medium">Applying overlays…</span>
+              </div>
+            )}
+
             {/* Position counter */}
             {activeImages.length > 1 && (
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs font-medium">
@@ -333,6 +392,16 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
                   </div>
                 )}
 
+                {/* Upload spinner */}
+                {replacements.get(img.id)?.isUploading && (
+                  <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
+                    <svg className="w-3 h-3 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                  </div>
+                )}
+
                 {/* Deleted overlay */}
                 {isDeleted && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/60">
@@ -404,7 +473,7 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Image Title</label>
-            {currentImage?.imageTitle && !replacements.has(currentImage.id) && slideTitles.get(currentImage.id) !== currentImage.imageTitle ? (
+            {currentImage?.imageTitle && (!replacements.has(currentImage.id) || replacements.get(currentImage.id)?.cloudinaryUrl) && slideTitles.get(currentImage.id) !== currentImage.imageTitle ? (
               <button
                 onClick={() => setSlideTitles(prev => {
                   const next = new Map(prev)
@@ -419,7 +488,7 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
               <span className="text-xs text-gray-400">{(currentImage?.imageTitle ? (slideTitles.get(currentImage.id) ?? currentImage.imageTitle) : title).length}</span>
             )}
           </div>
-          {currentImage?.imageTitle && !replacements.has(currentImage.id) ? (
+          {currentImage?.imageTitle && (!replacements.has(currentImage.id) || replacements.get(currentImage.id)?.cloudinaryUrl) ? (
             <input
               key={currentImage.id}
               type="text"
