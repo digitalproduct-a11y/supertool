@@ -149,3 +149,4 @@ vite.config.ts.timestamp-*
 .vercel
 .vscode
 CLAUDE.md
+graphify-out

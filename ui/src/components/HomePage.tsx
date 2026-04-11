@@ -20,8 +20,10 @@ type ToolId =
   | "affiliate-links"
   | "article-generator"
   | "engagement-posts"
+  | "engagement-photos"
   | "scheduled-posts"
-  | "shopee-top-products";
+  | "shopee-top-products"
+  | "photo-carousel";
 
 interface Tool {
   id: ToolId;
