@@ -117,19 +117,19 @@ Always push workflow changes directly to the n8n instance using MCP. After pushi
 
 ## Communication Rules
 
-1. No victory laps  
+1. No victory laps
    Do not announce completion with celebratory messages.
 
-2. No unsolicited explanations  
+2. No unsolicited explanations
    Do not explain changes unless explicitly asked.
 
-3. No teaching unless requested  
+3. No teaching unless requested
    Avoid educational commentary or advice.
 
-4. Minimal confirmations  
+4. Minimal confirmations
    Use "Done." or proceed silently.
 
-5. No summaries unless asked  
+5. No summaries unless asked
    Complete the task and stop.
 
 ## When to provide detail

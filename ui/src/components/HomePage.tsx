@@ -62,6 +62,13 @@ const sections: Section[] = [
         color: '#0055EE',
         icon: IconCalendar,
       },
+      {
+        id: 'photo-carousel',
+        label: 'Article to Photo Carousels',
+        description: 'Transform articles into swipeable photo carousels',
+        color: '#0055EE',
+        icon: IconStack2,
+      },
     ],
   },
   {
@@ -109,14 +116,6 @@ const sections: Section[] = [
         description: 'AI-powered content idea generation for your brand',
         color: '#00E5D4',
         icon: IconBrain,
-        comingSoon: true,
-      },
-      {
-        id: 'fb-post',
-        label: 'Article to Photo Carousels',
-        description: 'Transform articles into swipeable photo carousels',
-        color: '#0055EE',
-        icon: IconStack2,
         comingSoon: true,
       },
       {
