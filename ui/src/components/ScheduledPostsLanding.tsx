@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { trackEvent } from '../utils/analytics'
 
 const BRANDS = [
   'Astro Ulagam',
@@ -30,12 +29,6 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
   const handleBrandClick = (brand: string) => {
     if (DISABLED_BRANDS.has(brand)) return
 
-    trackEvent({
-      event_type: 'page_visit',
-      tool_id: 'scheduled-posts',
-      tool_label: 'Schedule Trending News',
-      brand,
-    })
     onSelectBrand(brand)
     navigate(`/scheduled-posts/${brand.toLowerCase().replace(/\s+/g, '-')}`)
   }

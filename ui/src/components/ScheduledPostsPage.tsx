@@ -1,10 +1,9 @@
-import { useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { useScheduledPosts } from '../hooks/useScheduledPosts'
 import { PostCard } from './PostCard'
 import { Spinner } from './ds/Spinner'
-import { trackEvent } from '../utils/analytics'
 
 export function ScheduledPostsPage({ brand }: { brand: string }) {
   const navigate = useNavigate()
@@ -23,15 +22,6 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
     e.preventDefault()
     void refetchPosts()
   }, [refetchPosts])
-
-  useEffect(() => {
-    trackEvent({
-      event_type: 'page_visit',
-      tool_id: 'scheduled-posts',
-      tool_label: 'Schedule Trending News',
-      brand: displayBrand,
-    })
-  }, [displayBrand])
 
   const today = new Date().toLocaleDateString('en-MY', {
     weekday: 'long',
