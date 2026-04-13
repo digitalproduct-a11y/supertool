@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
@@ -671,7 +671,8 @@ function App() {
     <>
     <ToastContainer />
     <Routes>
-      <Route path="/" element={<GetStartedPage />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      <Route path="/start" element={<GetStartedPage />} />
       <Route path="/home" element={
         <Layout {...layoutProps}>
           <HomePage onToolSelect={(id) => navigate(toolToPath[id])} />
