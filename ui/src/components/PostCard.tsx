@@ -73,14 +73,15 @@ interface PostCardProps {
 export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
   // Note: onSchedule callback is prepared for future scheduling functionality
   const [editTitle, setEditTitle] = useState(post.title)
+  const [committedTitle, setCommittedTitle] = useState(post.title)
   const [editCaption, setEditCaption] = useState(post.caption)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
 
-  // Real-time Cloudinary preview URL — updates as user edits title
+  // Cloudinary preview URL — only updates when user commits title (on blur)
   const previewPublicId = uploadedPublicId ?? post.photoPublicId
-  const previewUrl = buildCloudinaryUrl(previewPublicId, editTitle, post.imageUrl)
+  const previewUrl = buildCloudinaryUrl(previewPublicId, committedTitle, post.imageUrl)
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -170,6 +171,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
               type="text"
               value={editTitle}
               onChange={e => setEditTitle(e.target.value)}
+              onBlur={() => setCommittedTitle(editTitle)}
               maxLength={100}
               className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
               placeholder="Post headline"

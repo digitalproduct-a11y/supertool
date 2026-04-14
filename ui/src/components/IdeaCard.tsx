@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import PhotoPickerModal from './PhotoPickerModal'
@@ -41,6 +41,14 @@ export default function IdeaCard({
   uploadPreset,
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
+  const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
+  const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
+
+  // Sync committed values when a new idea is generated (idea.id changes)
+  useEffect(() => {
+    setCommittedHeadline(idea.headline)
+    setCommittedSubtitle(idea.subtitle)
+  }, [idea.id])
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
@@ -60,7 +68,7 @@ export default function IdeaCard({
     ].join('/')
   }
 
-  const previewUrl = buildPreviewUrl(idea.headline, idea.subtitle, idea.photo_public_id)
+  const previewUrl = buildPreviewUrl(committedHeadline, committedSubtitle, idea.photo_public_id)
 
   const headlineChars = idea.headline.length
   const subtitleChars = idea.subtitle.length
@@ -123,6 +131,7 @@ export default function IdeaCard({
                 type="text"
                 value={idea.headline}
                 onChange={(e) => onUpdateField(idea.id, 'headline', e.target.value.slice(0, 35))}
+                onBlur={() => setCommittedHeadline(idea.headline)}
                 placeholder="Enter headline..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
                   headlineValid ? 'border-gray-200' : 'border-red-300'
@@ -141,6 +150,7 @@ export default function IdeaCard({
                 type="text"
                 value={idea.subtitle}
                 onChange={(e) => onUpdateField(idea.id, 'subtitle', e.target.value.slice(0, 70))}
+                onBlur={() => setCommittedSubtitle(idea.subtitle)}
                 placeholder="Enter subtitle..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
                   subtitleValid ? 'border-gray-200' : 'border-red-300'

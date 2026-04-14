@@ -253,6 +253,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [result, setResult] = useState<GeneratedPost | null>(null)
   const [customImage, setCustomImage] = useState<File | null>(null)
   const [localTitle, setLocalTitle] = useState('')
+  const [committedLocalTitle, setCommittedLocalTitle] = useState('')
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
@@ -280,6 +281,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand, category: data.category })
         setCaption(data.caption ?? '')
         setLocalTitle(data.title ?? '')
+        setCommittedLocalTitle(data.title ?? '')
         setCustomImage(null)
       } else {
         setError(data.message || 'Generation failed.')
@@ -297,13 +299,13 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     setUploadedPublicId(null)
   }, [result?.imageUrl])
 
-  // Derive preview URL reactively (like ResultPreview does)
+  // Cloudinary preview URL — only updates when user commits title (on blur)
   const baseImageUrl = uploadedPublicId
-    ? buildCloudinaryUrl(uploadedPublicId, localTitle || result?.title || '', result?.imageUrl || '')
+    ? buildCloudinaryUrl(uploadedPublicId, committedLocalTitle || result?.title || '', result?.imageUrl || '')
     : result?.imageUrl
 
   const previewImageUrl = baseImageUrl
-    ? updateTitleInImageUrl(baseImageUrl, result?.title || '', localTitle)
+    ? updateTitleInImageUrl(baseImageUrl, result?.title || '', committedLocalTitle)
     : undefined
 
   async function handleDownload() {
@@ -525,6 +527,7 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
                       const v = e.target.value
                       setLocalTitle(v)
                     }}
+                    onBlur={() => setCommittedLocalTitle(localTitle)}
                     placeholder="Enter title..."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
                   />

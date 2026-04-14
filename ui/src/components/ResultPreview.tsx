@@ -18,6 +18,7 @@ export function ResultPreview({
   onPostDraft,
 }: ResultPreviewProps) {
   const [title, setTitle] = useState(result.title ?? '')
+  const [committedTitle, setCommittedTitle] = useState(result.title ?? '')
   const [caption, setCaption] = useState(result.caption ?? '')
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
   const [showImageUploadModal, setShowImageUploadModal] = useState(false)
@@ -42,6 +43,7 @@ export function ResultPreview({
   // Sync fields when result changes (e.g. after regen)
   useEffect(() => {
     setTitle(result.title ?? '')
+    setCommittedTitle(result.title ?? '')
   }, [result.title])
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export function ResultPreview({
     ? buildCloudinaryUrl(uploadedPublicId, result.title || '', result.imageUrl)
     : result.imageUrl
 
-  const previewImageUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', title)
+  const previewImageUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', committedTitle)
 
   async function handleDownload() {
     const urlToDownload = previewImageUrl || result.imageUrl
@@ -232,6 +234,7 @@ export function ResultPreview({
               const v = e.target.value
               setTitle(v)
             }}
+            onBlur={() => setCommittedTitle(title)}
             placeholder="Enter title..."
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
           />
