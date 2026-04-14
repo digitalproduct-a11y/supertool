@@ -1,7 +1,67 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import PhotoPickerModal from './PhotoPickerModal'
+import { toast } from '../hooks/useToast'
+
+// ─── Schedule Time Modal ──────────────────────────────────────────────────────
+
+function ScheduleTimeModal({
+  brand,
+  isPosting,
+  onConfirm,
+  onClose,
+}: {
+  brand: string
+  isPosting: boolean
+  onConfirm: (scheduledFor: string) => void
+  onClose: () => void
+}) {
+  const [scheduledFor, setScheduledFor] = useState('')
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-80 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-neutral-950">Schedule on FB</h3>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 transition p-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-xs text-neutral-500">Posting for <span className="font-medium text-neutral-800">{brand}</span></p>
+        <input
+          type="datetime-local"
+          value={scheduledFor}
+          onChange={e => setScheduledFor(e.target.value)}
+          min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+          className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
+        />
+        <button
+          onClick={() => {
+            if (!scheduledFor) {
+              toast.error('Please pick a date and time.')
+              return
+            }
+            onConfirm(new Date(scheduledFor).toISOString())
+          }}
+          disabled={isPosting || !scheduledFor}
+          className="w-full py-2.5 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {isPosting ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              Scheduling…
+            </span>
+          ) : 'Schedule'}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 const FORMAT_BADGES: Record<string, string> = {
   challenge: '🏆',
@@ -23,6 +83,7 @@ interface IdeaCardProps {
   idea: EngagementIdea
   onUpdateField: (ideaId: string, field: 'headline' | 'subtitle' | 'caption', value: string) => void
   onPhotoSelected: (ideaId: string, photo: { url: string; publicId: string }) => void
+  onScheduleOnFB?: (previewUrl: string, caption: string, brand: string, scheduledFor?: string) => Promise<{ success: boolean; message: string }>
   selectedBrand: string
   index: number
   cachedPhotos?: Record<string, any[]>
@@ -34,6 +95,7 @@ export default function IdeaCard({
   idea,
   onUpdateField,
   onPhotoSelected,
+  onScheduleOnFB,
   selectedBrand,
   index,
   cachedPhotos,
@@ -41,6 +103,17 @@ export default function IdeaCard({
   uploadPreset,
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [isScheduling, setIsScheduling] = useState(false)
+  const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
+  const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
+  const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
+
+  // Sync committed values when a new idea is generated (idea.id changes)
+  useEffect(() => {
+    setCommittedHeadline(idea.headline)
+    setCommittedSubtitle(idea.subtitle)
+  }, [idea.id])
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
@@ -60,7 +133,7 @@ export default function IdeaCard({
     ].join('/')
   }
 
-  const previewUrl = buildPreviewUrl(idea.headline, idea.subtitle, idea.photo_public_id)
+  const previewUrl = buildPreviewUrl(committedHeadline, committedSubtitle, idea.photo_public_id)
 
   const headlineChars = idea.headline.length
   const subtitleChars = idea.subtitle.length
@@ -123,6 +196,7 @@ export default function IdeaCard({
                 type="text"
                 value={idea.headline}
                 onChange={(e) => onUpdateField(idea.id, 'headline', e.target.value.slice(0, 35))}
+                onBlur={() => setCommittedHeadline(idea.headline)}
                 placeholder="Enter headline..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
                   headlineValid ? 'border-gray-200' : 'border-red-300'
@@ -141,6 +215,7 @@ export default function IdeaCard({
                 type="text"
                 value={idea.subtitle}
                 onChange={(e) => onUpdateField(idea.id, 'subtitle', e.target.value.slice(0, 70))}
+                onBlur={() => setCommittedSubtitle(idea.subtitle)}
                 placeholder="Enter subtitle..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
                   subtitleValid ? 'border-gray-200' : 'border-red-300'
@@ -187,6 +262,47 @@ export default function IdeaCard({
             >
               Download
             </button>
+
+            {/* Schedule on FB Button */}
+            {onScheduleOnFB && (
+              <>
+                {showScheduleModal && (
+                  <ScheduleTimeModal
+                    brand={selectedBrand}
+                    isPosting={isScheduling}
+                    onConfirm={async (scheduledFor) => {
+                      setIsScheduling(true)
+                      const result = await onScheduleOnFB(previewUrl, idea.caption, selectedBrand, scheduledFor)
+                      setIsScheduling(false)
+                      setShowScheduleModal(false)
+                      setScheduleStatus(result.success ? 'done' : 'error')
+                    }}
+                    onClose={() => setShowScheduleModal(false)}
+                  />
+                )}
+                <button
+                  onClick={() => setShowScheduleModal(true)}
+                  disabled={isScheduling || !captionValid || !photoValid}
+                  className="w-full px-3 py-2 border border-neutral-950 text-neutral-950 hover:bg-neutral-950 hover:text-white disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition active:scale-[0.98]"
+                >
+                  {isScheduling ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      </svg>
+                      Scheduling…
+                    </span>
+                  ) : 'Schedule on FB'}
+                </button>
+                {scheduleStatus === 'done' && (
+                  <p className="text-xs text-green-600 text-center">✓ Scheduled on Facebook</p>
+                )}
+                {scheduleStatus === 'error' && (
+                  <p className="text-xs text-red-500 text-center">✗ Failed to schedule. Try again.</p>
+                )}
+              </>
+            )}
             </div>
         </div>
 

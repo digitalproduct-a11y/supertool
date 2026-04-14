@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useBlocker } from 'react-router-dom'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
 import { BRANDS } from '../constants/brands'
@@ -23,11 +23,12 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
   const [showCredModal, setShowCredModal] = useState(false)
-  const [pendingSchedule, setPendingSchedule] = useState<{ previewUrl: string; caption: string; brand: string } | null>(null)
+  const [pendingSchedule, setPendingSchedule] = useState<{ previewUrl: string; caption: string; brand: string; scheduledFor?: string } | null>(null)
+  const pendingResolveRef = useRef<((result: { success: boolean; message: string }) => void) | null>(null)
 
-  async function postToFB(previewUrl: string, caption: string, brand: string, creds: FBCredentials) {
+  async function postToFB(previewUrl: string, caption: string, brand: string, creds: FBCredentials, scheduledFor?: string): Promise<{ success: boolean; message: string }> {
     const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
-    if (!webhookUrl) { toast.error('Webhook not configured.'); return }
+    if (!webhookUrl) { toast.error('Webhook not configured.'); return { success: false, message: 'Webhook not configured.' } }
     try {
       const res = await fetch(webhookUrl, {
         method: 'POST',
@@ -37,47 +38,56 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
           fb_ai_caption: caption,
           brand: brand.toLowerCase(),
           passcode: creds.passcode,
+          ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
         }),
       })
       const data = await res.json() as { success?: boolean; status?: string; message?: string }
       if (data.status === 'AUTH_ERROR') {
         clearCredentials(brand.toLowerCase())
         toast.error('Invalid passcode. Please try again.')
-        setPendingSchedule({ previewUrl, caption, brand })
+        setPendingSchedule({ previewUrl, caption, brand, scheduledFor })
         setShowCredModal(true)
-        return
+        return { success: false, message: 'Invalid passcode.' }
       }
       if (data.status === 'BRAND_ERROR') {
-        toast.error(data.message ?? 'Brand not permitted.')
-        return
+        const msg = data.message ?? 'Brand not permitted.'
+        toast.error(msg)
+        return { success: false, message: msg }
       }
       if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
         saveCredentials(brand.toLowerCase(), creds.passcode)
         toast.success('Scheduled on Facebook!')
-      } else {
-        toast.error(data.message ?? "Couldn't post. Please try again.")
+        return { success: true, message: 'Scheduled on Facebook!' }
       }
+      const msg = data.message ?? "Couldn't post. Please try again."
+      toast.error(msg)
+      return { success: false, message: msg }
     } catch {
       toast.error('Network error. Please try again.')
+      return { success: false, message: 'Network error. Please try again.' }
     }
   }
 
-  function handleScheduleOnFB(previewUrl: string, caption: string, brand: string) {
+  function handleScheduleOnFB(previewUrl: string, caption: string, brand: string, scheduledFor?: string): Promise<{ success: boolean; message: string }> {
     const creds = getCredentials(brand.toLowerCase())
     if (!creds) {
-      setPendingSchedule({ previewUrl, caption, brand })
+      setPendingSchedule({ previewUrl, caption, brand, scheduledFor })
       setShowCredModal(true)
-      return
+      return new Promise(resolve => { pendingResolveRef.current = resolve })
     }
-    void postToFB(previewUrl, caption, brand, creds)
+    return postToFB(previewUrl, caption, brand, creds, scheduledFor)
   }
 
   function onCredentialsSaved(creds: FBCredentials) {
     setShowCredModal(false)
     if (pendingSchedule) {
       const pending = pendingSchedule
+      const resolve = pendingResolveRef.current
+      pendingResolveRef.current = null
       setPendingSchedule(null)
-      void postToFB(pending.previewUrl, pending.caption, pending.brand, creds)
+      void postToFB(pending.previewUrl, pending.caption, pending.brand, creds, pending.scheduledFor).then(result => {
+        if (resolve) resolve(result)
+      })
     }
   }
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
