@@ -37,12 +37,8 @@ export function AffiliateLinksPage() {
             </button>
           </div>
 
-          <div className="glass-card rounded-2xl p-12 text-center space-y-4">
-            <div className="text-6xl">🚧</div>
-            <div>
-              <h2 className="text-lg font-semibold text-neutral-950 mb-2">Under Construction</h2>
-              <p className="text-neutral-600">We're rebuilding this page. For now, use the form above to get started.</p>
-            </div>
+          <div className="bg-neutral-100/50 rounded-2xl p-6 text-center border border-neutral-200">
+            <p className="text-sm text-neutral-600"><span className="font-semibold">FYI:</span> We're rebuilding this page. For now, use the form above to get started.</p>
           </div>
         </div>
       </div>
