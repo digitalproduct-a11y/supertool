@@ -28,14 +28,12 @@ export function AffiliateLinksPage() {
 
         <div className="space-y-6">
           <div className="glass-card rounded-2xl p-12 text-center">
-            <a
-              href={N8N_FORM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => window.open(N8N_FORM_URL, '_blank')}
               className="inline-block px-6 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
             >
               Begin 🚀
-            </a>
+            </button>
           </div>
 
           <div className="glass-card rounded-2xl p-12 text-center space-y-4">
