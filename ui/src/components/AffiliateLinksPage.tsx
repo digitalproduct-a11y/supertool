@@ -26,19 +26,24 @@ export function AffiliateLinksPage() {
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
-        <div className="glass-card rounded-2xl p-12 text-center space-y-6">
-          <a
-            href={N8N_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-6 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
-          >
-            Begin 🚀
-          </a>
-          <div className="text-6xl">🚧</div>
-          <div>
-            <h2 className="text-lg font-semibold text-neutral-950 mb-2">Under Construction</h2>
-            <p className="text-neutral-600">We're rebuilding this page. For now, click above to get started.</p>
+        <div className="space-y-6">
+          <div className="glass-card rounded-2xl p-12 text-center">
+            <a
+              href={N8N_FORM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-6 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+            >
+              Begin 🚀
+            </a>
+          </div>
+
+          <div className="glass-card rounded-2xl p-12 text-center space-y-4">
+            <div className="text-6xl">🚧</div>
+            <div>
+              <h2 className="text-lg font-semibold text-neutral-950 mb-2">Under Construction</h2>
+              <p className="text-neutral-600">We're rebuilding this page. For now, use the form above to get started.</p>
+            </div>
           </div>
         </div>
       </div>
