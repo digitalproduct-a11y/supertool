@@ -29,7 +29,7 @@ const sections: Section[] = [
     topics: [
       {
         id: 'engagement-photos',
-        label: 'EPL Engagement Posts',
+        label: 'English Premier League',
         description: 'Create engaging football posts featuring Premier League players and debates',
         icon: IconFlame,
         color: '#FF3FBF',

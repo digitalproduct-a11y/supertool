@@ -60,7 +60,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'affiliate-links': 'Shopee Affiliate Links',
   'article-generator': 'Affiliate Article Editor',
   'engagement-posts': 'Engagement Posts',
-  'engagement-photos': 'EPL Engagement Posts',
+  'engagement-photos': 'English Premier League',
   'shopee-top-products': 'Shopee Top Products',
   'scheduled-posts': 'Schedule Trending News',
 }
