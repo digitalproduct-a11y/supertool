@@ -79,6 +79,9 @@ const FORMAT_LABELS: Record<string, string> = {
   hot_take: 'Hot Take',
 }
 
+const getBadge = (type: string): string => FORMAT_BADGES[type] || '✨'
+const getLabel = (type: string): string => FORMAT_LABELS[type] || type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
+
 interface IdeaCardProps {
   idea: EngagementIdea
   onUpdateField: (ideaId: string, field: 'headline' | 'subtitle' | 'caption', value: string) => void
@@ -151,8 +154,8 @@ export default function IdeaCard({
         <div className="flex items-center justify-between mb-2 pb-3 border-b border-gray-200">
           <span className="text-sm font-semibold text-neutral-950">Idea {index + 1}</span>
           <div className="flex items-center gap-2">
-            <span className="text-lg">{FORMAT_BADGES[idea.type]}</span>
-            <span className="text-xs font-semibold text-gray-600 uppercase">{FORMAT_LABELS[idea.type]}</span>
+            <span className="text-lg">{getBadge(idea.type)}</span>
+            <span className="text-xs font-semibold text-gray-600 uppercase">{getLabel(idea.type)}</span>
           </div>
         </div>
 

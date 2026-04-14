@@ -64,6 +64,11 @@ const toolToPath: Record<ToolId, string> = {
   'shopee-top-products': '/shopee-top-products',
 }
 
+const topicToPath: Record<string, string> = {
+  'engagement-photos': '/engagement-photos/epl',
+  'ucl': '/engagement-photos/ucl',
+}
+
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
 
 function ConfettiBurst({ children }: { children: React.ReactNode }) {
@@ -675,7 +680,7 @@ function App() {
       } />
       <Route path="/engagement-photos" element={
         <Layout {...layoutProps}>
-          <EngagementPostsLanding onSelectTopic={(id) => navigate(toolToPath[id])} />
+          <EngagementPostsLanding onSelectTopic={(id) => navigate(topicToPath[id])} />
         </Layout>
       } />
       <Route path="/engagement-photos/epl" element={

@@ -1,12 +1,65 @@
 import { useState } from 'react'
 import type { EngagementIdea } from '../types'
 
+export interface TrendingTopic {
+  id: string
+  title: string
+  content: string
+}
+
 export function useEngagementPhotos() {
   const [ideas, setIdeas] = useState<EngagementIdea[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isRendering, setIsRendering] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [photosByPlayerClub, setPhotosByPlayerClub] = useState<Record<string, any[]>>({})
+  const [topics, setTopics] = useState<TrendingTopic[]>([])
+  const [isFetchingTopics, setIsFetchingTopics] = useState(false)
+
+  const fetchTrendingTopics = async (brand: string, webhookUrl: string) => {
+    setIsFetchingTopics(true)
+    setError(null)
+    setTopics([])
+
+    try {
+      if (!webhookUrl) {
+        throw new Error('Webhook URL not configured')
+      }
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 120 * 1000)
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand }),
+        signal: controller.signal,
+        mode: 'cors',
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      let data = (await response.json()) as any
+      // Handle array wrapper from webhook response
+      if (Array.isArray(data) && data.length > 0) {
+        data = data[0]
+      }
+      if (data?.success && data?.topics && Array.isArray(data.topics)) {
+        setTopics(data.topics)
+      } else {
+        console.error('Invalid response structure:', data)
+        throw new Error(`Invalid response: ${JSON.stringify(data).slice(0, 100)}`)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? (err.name === 'AbortError' ? 'Request timed out' : err.message) : 'Unknown error')
+    } finally {
+      setIsFetchingTopics(false)
+    }
+  }
 
   const bulkSearchPhotos = async (keywords: Array<{ player: string; club: string }>) => {
     try {
@@ -37,7 +90,12 @@ export function useEngagementPhotos() {
     }
   }
 
-  const generate = async (brand: string, language: string, webhookUrl?: string) => {
+  const generate = async (
+    brand: string,
+    language: string,
+    selectedTopics: Array<TrendingTopic & { post_type: string }>,
+    webhookUrl?: string
+  ) => {
     setIsLoading(true)
     setError(null)
     setIdeas([])
@@ -54,7 +112,7 @@ export function useEngagementPhotos() {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brand, language }),
+        body: JSON.stringify({ brand, language, topics: selectedTopics }),
         signal: controller.signal,
         mode: 'cors',
       })
@@ -99,8 +157,13 @@ export function useEngagementPhotos() {
     }
   }
 
-  const refresh = async (brand: string, language: string, webhookUrl?: string) => {
-    return generate(brand, language, webhookUrl)
+  const refresh = async (
+    brand: string,
+    language: string,
+    selectedTopics: Array<TrendingTopic & { post_type: string }>,
+    webhookUrl?: string
+  ) => {
+    return generate(brand, language, selectedTopics, webhookUrl)
   }
 
   const render = async (selectedIdeas: EngagementIdea[], brandLogoUrl: string) => {
@@ -152,5 +215,5 @@ export function useEngagementPhotos() {
     }
   }
 
-  return { ideas, setIdeas, isLoading, isRendering, error, generate, refresh, render, photosByPlayerClub }
+  return { ideas, setIdeas, isLoading, isRendering, error, generate, refresh, render, photosByPlayerClub, topics, isFetchingTopics, fetchTrendingTopics }
 }
