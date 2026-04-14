@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { IconUpload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
+import { updateTitleInImageUrl } from '../utils/cloudinary'
 import ImageUploadModal from './ImageUploadModal'
 import { FBCredentialsModal } from './FBCredentialsModal'
 import { getCredentials, saveCredentials, clearCredentials, type FBCredentials } from '../utils/fbCredentials'
@@ -119,7 +120,10 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
 
   // Cloudinary preview URL — only updates when user commits title (on blur)
   const previewPublicId = uploadedPublicId ?? post.photoPublicId
-  const previewUrl = buildCloudinaryUrl(previewPublicId, committedTitle, post.imageUrl)
+  // Step 1: handle photo swap; also tries fonts-pattern title replacement
+  const urlWithPhoto = buildCloudinaryUrl(previewPublicId, committedTitle, post.imageUrl)
+  // Step 2: robust title replacement (handles all brand URL formats incl. Chinese chars)
+  const previewUrl = updateTitleInImageUrl(urlWithPhoto, post.title ?? '', committedTitle)
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
