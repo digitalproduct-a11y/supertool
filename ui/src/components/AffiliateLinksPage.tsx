@@ -26,14 +26,18 @@ export function AffiliateLinksPage() {
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
-        <div className="rounded-2xl overflow-hidden">
-          <iframe
-            src={N8N_FORM_URL}
-            className="w-full"
-            style={{ height: '800px' }}
-            title="Shopee Affiliate Links Form"
-            frameBorder="0"
-          />
+        <div className="glass-card rounded-2xl p-12 text-center space-y-6">
+          <div>
+            <p className="text-neutral-600 mb-2">We're rebuilding this page. For now, click below to begin:</p>
+          </div>
+          <a
+            href={N8N_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-6 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+          >
+            Begin
+          </a>
         </div>
       </div>
     </main>
