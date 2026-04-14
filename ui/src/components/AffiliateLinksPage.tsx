@@ -27,11 +27,6 @@ export function AffiliateLinksPage() {
         </div>
 
         <div className="glass-card rounded-2xl p-12 text-center space-y-6">
-          <div className="text-6xl">🚧</div>
-          <div>
-            <h2 className="text-lg font-semibold text-neutral-950 mb-2">Under Construction</h2>
-            <p className="text-neutral-600">We're rebuilding this page. For now, click below to get started:</p>
-          </div>
           <a
             href={N8N_FORM_URL}
             target="_blank"
@@ -40,6 +35,11 @@ export function AffiliateLinksPage() {
           >
             Begin 🚀
           </a>
+          <div className="text-6xl">🚧</div>
+          <div>
+            <h2 className="text-lg font-semibold text-neutral-950 mb-2">Under Construction</h2>
+            <p className="text-neutral-600">We're rebuilding this page. For now, click above to get started.</p>
+          </div>
         </div>
       </div>
     </main>
