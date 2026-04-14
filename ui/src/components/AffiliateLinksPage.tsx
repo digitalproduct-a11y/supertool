@@ -38,7 +38,7 @@ export function AffiliateLinksPage() {
           </div>
 
           <div className="bg-neutral-100/50 rounded-2xl p-6 text-center border border-neutral-200">
-            <p className="text-sm text-neutral-600"><span className="font-semibold">FYI:</span> We're rebuilding this page. For now, use the form above to get started.</p>
+            <p className="text-sm text-neutral-600">🚧 <span className="font-semibold">We're rebuilding this page</span> for a better user experience. Coming soon!</p>
           </div>
         </div>
       </div>
