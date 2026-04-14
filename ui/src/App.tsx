@@ -599,7 +599,7 @@ function App() {
       } />
       <Route path="/engagement-photos" element={
         <Layout {...layoutProps}>
-          <EngagementPostsLanding onSelectTopic={(id) => navigate(topicToPath[id] ?? toolToPath[id])} />
+          <EngagementPostsLanding onSelectTopic={(id) => navigate(topicToPath[id])} />
         </Layout>
       } />
       <Route path="/engagement-photos/epl" element={
