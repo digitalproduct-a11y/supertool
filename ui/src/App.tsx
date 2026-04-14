@@ -17,6 +17,9 @@ import { HistoryPanel } from './components/HistoryPanel'
 import { GuideModal } from './components/ds/GuideModal'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
+import { FBCredentialsModal } from './components/FBCredentialsModal'
+import { getCredentials, saveCredentials, clearCredentials, type FBCredentials } from './utils/fbCredentials'
+import { toast } from './hooks/useToast'
 import type {
   AppState,
   WorkflowResult,
@@ -393,6 +396,76 @@ function FbPostPage() {
     setErrorMessage('')
   }, [])
 
+  const [showCredModal, setShowCredModal] = useState(false)
+  type PendingArgs = { imageUrl: string; caption: string; brand: string; scheduledFor?: string; extraPhotos?: string[]; postMode?: string }
+  const [pendingPostArgs, setPendingPostArgs] = useState<PendingArgs | null>(null)
+
+  async function callZernioWebhook(
+    args: PendingArgs,
+    creds: FBCredentials,
+  ): Promise<{success: boolean, message: string, postId?: string, status?: string}> {
+    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
+    if (!webhookUrl) return { success: false, message: 'Webhook not configured.' }
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fb_ai_image_url: args.imageUrl,
+          fb_ai_caption: args.caption,
+          brand: args.brand.toLowerCase(),
+          ...(args.scheduledFor ? { scheduled_for: args.scheduledFor } : {}),
+          ...(args.extraPhotos?.length ? { uploaded_images: args.extraPhotos } : {}),
+          passcode: creds.passcode,
+        }),
+      })
+      const data = await res.json() as { success?: boolean; status?: string; message?: string; post_id?: string }
+      if (data.status === 'AUTH_ERROR') {
+        clearCredentials(args.brand.toLowerCase())
+        setShowCredModal(true)
+        return { success: false, message: data.message ?? 'Invalid passcode.' }
+      }
+      if (data.status === 'BRAND_ERROR') {
+        return { success: false, message: data.message ?? 'Brand not permitted.' }
+      }
+      if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
+        saveCredentials(args.brand.toLowerCase(), creds.passcode)
+        return { success: true, message: data.message ?? 'Scheduled!', postId: data.post_id, status: data.status }
+      }
+      return { success: false, message: data.message ?? 'Something went wrong.' }
+    } catch {
+      return { success: false, message: 'Network error. Please try again.' }
+    }
+  }
+
+  async function handlePostDraft(
+    imageUrl: string,
+    caption: string,
+    brand: string,
+    scheduledFor?: string,
+    extraPhotos?: string[],
+    postMode?: string,
+  ): Promise<{success: boolean, message: string, postId?: string, status?: string}> {
+    const creds = getCredentials(brand.toLowerCase())
+    if (!creds) {
+      setPendingPostArgs({ imageUrl, caption, brand, scheduledFor, extraPhotos, postMode })
+      setShowCredModal(true)
+      return { success: false, message: 'credentials_required' }
+    }
+    return callZernioWebhook({ imageUrl, caption, brand, scheduledFor, extraPhotos, postMode }, creds)
+  }
+
+  function onCredentialsSaved(creds: FBCredentials) {
+    setShowCredModal(false)
+    if (pendingPostArgs) {
+      const args = pendingPostArgs
+      setPendingPostArgs(null)
+      void callZernioWebhook(args, creds).then(res => {
+        if (!res.success) toast.error(res.message)
+      })
+    }
+  }
+
   const handlePartialRegenerate = useCallback(async (
     op: WorkflowOperation,
     localTitleMode: TitleMode,
@@ -502,6 +575,13 @@ function FbPostPage() {
           </div>
 
           <div id="preview-panel">
+            {showCredModal && (
+              <FBCredentialsModal
+                brand={pendingPostArgs?.brand ?? brand}
+                onSave={onCredentialsSaved}
+                onClose={() => setShowCredModal(false)}
+              />
+            )}
             <PreviewPanel
               state={state === 'approved' ? 'idle' : state}
               result={result}
@@ -512,6 +592,7 @@ function FbPostPage() {
               onPartialRegenerate={handlePartialRegenerate}
               titleMode={titleMode}
               captionTitleMode={captionTitleMode}
+              onPostDraft={handlePostDraft}
             />
           </div>
         </div>

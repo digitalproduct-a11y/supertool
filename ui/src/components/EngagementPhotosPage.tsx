@@ -5,6 +5,9 @@ import { BRANDS } from '../constants/brands'
 import IdeaCard from './IdeaCard'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { TOPIC_CONFIGS } from '../constants/topics'
+import { FBCredentialsModal } from './FBCredentialsModal'
+import { getCredentials, saveCredentials, clearCredentials, type FBCredentials } from '../utils/fbCredentials'
+import { toast } from '../hooks/useToast'
 
 interface EngagementPhotosPageProps {
   topic?: string
@@ -19,6 +22,64 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
+  const [showCredModal, setShowCredModal] = useState(false)
+  const [pendingSchedule, setPendingSchedule] = useState<{ previewUrl: string; caption: string; brand: string } | null>(null)
+
+  async function postToFB(previewUrl: string, caption: string, brand: string, creds: FBCredentials) {
+    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
+    if (!webhookUrl) { toast.error('Webhook not configured.'); return }
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fb_ai_image_url: previewUrl,
+          fb_ai_caption: caption,
+          brand: brand.toLowerCase(),
+          passcode: creds.passcode,
+        }),
+      })
+      const data = await res.json() as { success?: boolean; status?: string; message?: string }
+      if (data.status === 'AUTH_ERROR') {
+        clearCredentials(brand.toLowerCase())
+        toast.error('Invalid passcode. Please try again.')
+        setPendingSchedule({ previewUrl, caption, brand })
+        setShowCredModal(true)
+        return
+      }
+      if (data.status === 'BRAND_ERROR') {
+        toast.error(data.message ?? 'Brand not permitted.')
+        return
+      }
+      if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
+        saveCredentials(brand.toLowerCase(), creds.passcode)
+        toast.success('Scheduled on Facebook!')
+      } else {
+        toast.error(data.message ?? "Couldn't post. Please try again.")
+      }
+    } catch {
+      toast.error('Network error. Please try again.')
+    }
+  }
+
+  function handleScheduleOnFB(previewUrl: string, caption: string, brand: string) {
+    const creds = getCredentials(brand.toLowerCase())
+    if (!creds) {
+      setPendingSchedule({ previewUrl, caption, brand })
+      setShowCredModal(true)
+      return
+    }
+    void postToFB(previewUrl, caption, brand, creds)
+  }
+
+  function onCredentialsSaved(creds: FBCredentials) {
+    setShowCredModal(false)
+    if (pendingSchedule) {
+      const pending = pendingSchedule
+      setPendingSchedule(null)
+      void postToFB(pending.previewUrl, pending.caption, pending.brand, creds)
+    }
+  }
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState(config.loadingQuotes[0])
 
@@ -203,6 +264,14 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
               </div>
         )}
 
+        {showCredModal && (
+          <FBCredentialsModal
+            brand={pendingSchedule?.brand ?? ''}
+            onSave={onCredentialsSaved}
+            onClose={() => { setShowCredModal(false); setPendingSchedule(null) }}
+          />
+        )}
+
         {stage === 'review' && !isLoading && (
           <div className="space-y-6">
             <div>
@@ -219,6 +288,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                     idea={idea}
                     onUpdateField={handleUpdateIdea}
                     onPhotoSelected={handlePhotoSelected}
+                    onScheduleOnFB={handleScheduleOnFB}
                     selectedBrand={selectedBrand}
                     index={idx}
                     cachedPhotos={photosByPlayerClub}
