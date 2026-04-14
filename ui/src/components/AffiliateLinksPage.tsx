@@ -27,12 +27,13 @@ export function AffiliateLinksPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="glass-card rounded-2xl p-12 text-center">
+          <div className="glass-card rounded-2xl p-12 text-center space-y-4">
+            <p className="text-neutral-950 font-medium">Fill in this form to generate Shopee Affiliate Links</p>
             <button
               onClick={() => window.open(N8N_FORM_URL, '_blank')}
               className="inline-block px-6 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
             >
-              Begin 🚀
+              Start now
             </button>
           </div>
 
