@@ -3,6 +3,7 @@ import { useNavigate, useBlocker } from 'react-router-dom'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
 import { BRANDS } from '../constants/brands'
 import IdeaCard from './IdeaCard'
+import TrendingTopicsSelector from './TrendingTopicsSelector'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { TOPIC_CONFIGS } from '../constants/topics'
 
@@ -16,16 +17,16 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const uploadPreset = import.meta.env[config.uploadPresetEnvVar] as string | undefined
 
   const navigate = useNavigate()
-  const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub } = useEngagementPhotos()
+  const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub, topics, isFetchingTopics, fetchTrendingTopics } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
-  const [stage, setStage] = useState<'brand-select' | 'review'>('brand-select')
+  const [stage, setStage] = useState<'brand-select' | 'select-topics' | 'review'>('brand-select')
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState(config.loadingQuotes[0])
 
-  // Block in-app navigation (sidebar clicks) when in review stage
+  // Block in-app navigation (sidebar clicks) when in review or loading stage
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      stage === 'review' &&
+      (stage === 'review' || isLoading) &&
       currentLocation.pathname !== nextLocation.pathname
   )
 
@@ -65,13 +66,29 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [stage])
 
-  const handleGenerateIdeas = async () => {
+  const handleFetchTrendingTopics = async () => {
     if (!selectedBrand) {
       alert('Please select a brand')
       return
     }
+    const trendingTopicsWebhookEnvVar = config.trendingTopicsWebhookEnvVar || 'VITE_ENGAGEMENT_TRENDING_TOPICS_WEBHOOK_URL'
+    const trendingTopicsWebhookUrl = import.meta.env[trendingTopicsWebhookEnvVar] as string | undefined
+    if (!trendingTopicsWebhookUrl) {
+      alert('Trending topics webhook URL not configured')
+      return
+    }
+    await fetchTrendingTopics(selectedBrand, trendingTopicsWebhookUrl)
+    setStage('select-topics')
+  }
+
+  const handleGenerateFromTopics = async (selections: Array<{ topicId: string; postType: string }>) => {
+    const selectedTopics = topics.filter((t) => selections.some((s) => s.topicId === t.id))
+    const topicsWithTypes = selectedTopics.map((topic) => ({
+      ...topic,
+      post_type: selections.find((s) => s.topicId === topic.id)?.postType || '',
+    }))
     setStage('review')
-    await generate(selectedBrand, 'en', webhookUrl)
+    await generate(selectedBrand, 'en', topicsWithTypes, webhookUrl)
     setCurrentLoadingStep(0)
     setLoadingMessage(config.loadingQuotes[0])
   }
@@ -109,7 +126,15 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        {stage === 'brand-select' && (
+        {stage === 'brand-select' && isFetchingTopics && (
+          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
+            <div className="text-4xl inline-block animate-bounce">⚽</div>
+            <p className="text-sm font-semibold text-neutral-900">Fetching Trending News</p>
+            <p className="text-xs text-neutral-500">Scanning RSS feeds and curating stories...</p>
+          </div>
+        )}
+
+        {stage === 'brand-select' && !isFetchingTopics && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
             {/* LEFT: Brand Selector (spans 2 columns) */}
             <div className="lg:col-span-2">
@@ -142,11 +167,11 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                   </div>
 
                   <button
-                    onClick={handleGenerateIdeas}
-                    disabled={!selectedBrand || isLoading}
+                    onClick={handleFetchTrendingTopics}
+                    disabled={!selectedBrand || isFetchingTopics}
                     className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
                   >
-                    {isLoading ? 'Generating Ideas...' : 'Generate Ideas'}
+                    {isFetchingTopics ? 'Fetching Trending News...' : 'Get Trending News'}
                   </button>
 
                   {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
@@ -164,6 +189,26 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {stage === 'select-topics' && (
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+              <button
+                onClick={() => setStage('brand-select')}
+                className="mb-4 text-sm text-neutral-600 hover:text-neutral-950 transition flex items-center gap-1"
+              >
+                <IconChevronLeft className="w-4 h-4" />
+                Back to brand selection
+              </button>
+              {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm mb-4">{error}</div>}
+              <TrendingTopicsSelector
+                topics={topics}
+                isLoading={isLoading}
+                onGenerate={handleGenerateFromTopics}
+              />
             </div>
           </div>
         )}

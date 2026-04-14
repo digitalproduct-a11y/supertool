@@ -80,6 +80,7 @@ export type ArticleGeneratorStep = 'input' | 'pick-angle' | 'review-article' | '
 export interface TopicConfig {
   id: string
   label: string
+  trendingTopicsWebhookEnvVar?: string
   webhookEnvVar: string
   uploadPresetEnvVar: string
   templateImages: [string, string, string]
@@ -109,7 +110,7 @@ export interface EngagementPhotosError {
 export type EngagementPhotosResult = EngagementPhotosResponse | EngagementPhotosError
 
 // Engagement Photos post formats
-export type PostFormat = 'challenge' | 'debate' | 'nostalgia' | 'quiz' | 'hot_take'
+export type PostFormat = string
 export type IdeaStatus = 'draft' | 'selected' | 'rendered'
 
 export interface Brand {

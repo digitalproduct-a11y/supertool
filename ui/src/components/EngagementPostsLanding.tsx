@@ -1,7 +1,7 @@
 import { IconFlame, IconTrophy, IconWorld, IconMusicStar } from '@tabler/icons-react'
 import type React from 'react'
 
-type ActiveTopicId = 'engagement-photos'
+type ActiveTopicId = 'engagement-photos' | 'ucl'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -40,7 +40,6 @@ const sections: Section[] = [
         description: 'European football highlights and player comparisons',
         icon: IconTrophy,
         color: '#0055EE',
-        comingSoon: true,
       },
       {
         id: 'worldcup',

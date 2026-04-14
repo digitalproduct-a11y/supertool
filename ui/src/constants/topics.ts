@@ -10,6 +10,7 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   epl: {
     id: 'epl',
     label: 'EPL',
+    trendingTopicsWebhookEnvVar: 'VITE_ENGAGEMENT_TRENDING_TOPICS_WEBHOOK_URL',
     webhookEnvVar: 'VITE_EPL_IDEA_GENERATION_WEBHOOK_URL',
     uploadPresetEnvVar: 'VITE_CLOUDINARY_EPL_UPLOAD_PRESET',
     templateImages: SHARED_TEMPLATE_IMAGES,
@@ -20,21 +21,12 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   ucl: {
     id: 'ucl',
     label: 'Champions League',
+    trendingTopicsWebhookEnvVar: 'VITE_UCL_TRENDING_TOPICS_WEBHOOK_URL',
     webhookEnvVar: 'VITE_UCL_IDEA_GENERATION_WEBHOOK_URL',
     uploadPresetEnvVar: 'VITE_CLOUDINARY_UCL_UPLOAD_PRESET',
     templateImages: SHARED_TEMPLATE_IMAGES,
     loadingSteps: ['Scanning latest UCL news', 'Curating top stories', 'Generating 5 post ideas'],
     loadingQuotes: ['Checking VAR in UEFA HQ...', 'Consulting the dugout...', 'Asking the ultras...', 'Reading the match report...'],
     downloadPrefix: 'ucl-post',
-  },
-  worldcup: {
-    id: 'worldcup',
-    label: 'World Cup',
-    webhookEnvVar: 'VITE_WC_IDEA_GENERATION_WEBHOOK_URL',
-    uploadPresetEnvVar: 'VITE_CLOUDINARY_WC_UPLOAD_PRESET',
-    templateImages: SHARED_TEMPLATE_IMAGES,
-    loadingSteps: ['Scanning latest World Cup news', 'Curating top stories', 'Generating 5 post ideas'],
-    loadingQuotes: ['Checking with FIFA...', 'Consulting the bench...', 'Asking the fans...', 'Reading the match report...'],
-    downloadPrefix: 'wc-post',
   },
 }
