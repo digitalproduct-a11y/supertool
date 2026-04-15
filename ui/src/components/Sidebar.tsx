@@ -12,6 +12,7 @@ import {
   IconHeart,
   IconCalendar,
   IconShoppingBag,
+  IconBrandThreads,
 } from "@tabler/icons-react";
 
 type ToolId =
@@ -24,7 +25,8 @@ type ToolId =
   | "engagement-photos"
   | "shopee-top-products"
   | "scheduled-posts"
-  | "photo-carousel";
+  | "photo-carousel"
+  | "social-affiliate-posting";
 
 interface NavItem {
   id: ToolId | string;
@@ -85,6 +87,11 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
         label: "Affiliate Article Editor",
         icon: IconFileText,
       },
+      {
+        id: "social-affiliate-posting",
+        label: "Social Affiliate Posting",
+        icon: IconBrandThreads,
+      },
     ],
   },
 ];
@@ -100,6 +107,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   "engagement-photos": "EPL Engagement Posts",
   "shopee-top-products": "Shopee Top Products",
   "scheduled-posts": "Schedule Trending News",
+  "social-affiliate-posting": "Social Affiliate Posting",
 };
 
 const floatingBtnClass =
