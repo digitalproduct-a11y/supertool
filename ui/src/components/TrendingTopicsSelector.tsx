@@ -4,14 +4,12 @@ import type { TrendingTopic } from '../hooks/useEngagementPhotos'
 const POST_TYPES = [
   { id: 'challenge', label: 'Challenge' },
   { id: 'debate', label: 'Debate' },
-  { id: 'nostalgia', label: 'Nostalgia' },
-  { id: 'hot_take', label: 'Hot Take' },
   { id: 'prediction', label: 'Prediction' },
   { id: 'rate_it', label: 'Rate It' },
   { id: 'this_or_that', label: 'This or That' },
   { id: 'stat_drop', label: 'Stat Drop' },
   { id: 'agree_or_disagree', label: 'Agree or Disagree' },
-  { id: 'confession', label: 'Confession' },
+  { id: 'quote', label: 'Quote' },
 ]
 
 interface TopicSelection {
