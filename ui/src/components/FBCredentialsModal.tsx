@@ -51,7 +51,7 @@ export function FBCredentialsModal({ brand, onSave, onClose }: FBCredentialsModa
         </div>
 
         <p className="text-xs text-neutral-400">
-          Your passcode is saved in this browser — you won't need to enter it again.
+          Your passcode is saved for this session — you won't need to enter it again.
         </p>
 
         <button

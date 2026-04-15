@@ -10,10 +10,11 @@ import {
   IconLayoutSidebar,
   IconHeart,
   IconCalendar,
+  IconCalendarClock,
   IconShoppingBag,
 } from '@tabler/icons-react'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts' | 'post-queue'
 
 interface NavItem {
   id: ToolId | string
@@ -41,6 +42,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
       { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },
       { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
       { id: 'scheduled-posts', label: 'Schedule Trending News', icon: IconCalendar },
+      { id: 'post-queue', label: 'Scheduled Queue', icon: IconCalendarClock },
     ],
   },
   {
@@ -63,6 +65,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'engagement-photos': 'English Premier League',
   'shopee-top-products': 'Shopee Top Products',
   'scheduled-posts': 'Schedule Trending News',
+  'post-queue': 'Scheduled Queue',
 }
 
 const floatingBtnClass = 'fixed top-4 left-4 z-50 p-2 rounded-lg bg-zinc-900 text-neutral-500 hover:text-neutral-200 hover:bg-white/8 transition-all duration-300'

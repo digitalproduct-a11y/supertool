@@ -8,9 +8,9 @@ import { ProgressSteps } from './ProgressSteps'
 import { Spinner } from './ds/Spinner'
 import { GuideModal } from './ds/GuideModal'
 import ImageUploadModal from './ImageUploadModal'
-import { IconUpload } from '@tabler/icons-react'
-import { FBCredentialsModal } from './FBCredentialsModal'
-import { getCredentials, saveCredentials, clearCredentials, type FBCredentials } from '../utils/fbCredentials'
+import { IconUpload, IconRefresh } from '@tabler/icons-react'
+import { ScheduleModal } from './ScheduleModal'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -228,65 +228,6 @@ async function encodeImage(file: File): Promise<string> {
   })
 }
 
-// ─── Schedule Time Modal ─────────────────────────────────────────────────────
-
-function ScheduleTimeModal({
-  brand,
-  isPosting,
-  onConfirm,
-  onClose,
-}: {
-  brand: string
-  isPosting: boolean
-  onConfirm: (scheduledFor: string) => void
-  onClose: () => void
-}) {
-  const [scheduledFor, setScheduledFor] = useState('')
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-80 space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-neutral-950">Schedule on FB</h3>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 transition p-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <p className="text-xs text-neutral-500">Posting for <span className="font-medium text-neutral-800">{brand}</span></p>
-        <input
-          type="datetime-local"
-          value={scheduledFor}
-          onChange={e => setScheduledFor(e.target.value)}
-          min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-          className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
-        />
-        <button
-          onClick={() => {
-            if (!scheduledFor) {
-              toast.error('Please pick a date and time.')
-              return
-            }
-            onConfirm(new Date(scheduledFor).toISOString())
-          }}
-          disabled={isPosting || !scheduledFor}
-          className="w-full py-2.5 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {isPosting ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-              </svg>
-              Scheduling…
-            </span>
-          ) : 'Schedule'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Generate View ────────────────────────────────────────────────────────────
 
 interface GenerateSource {
@@ -320,9 +261,6 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [showCredModal, setShowCredModal] = useState(false)
-  const [pendingSchedule, setPendingSchedule] = useState(false)
-  const [pendingScheduleFor, setPendingScheduleFor] = useState<string | undefined>(undefined)
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
@@ -383,15 +321,8 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     } catch { /* ignore */ }
   }
 
-  async function handlePostDraftClick(creds?: FBCredentials, scheduleFor?: string) {
+  async function handlePostDraftClick(scheduledFor: string, passcode: string) {
     const brand = result?.brand.toLowerCase() ?? ''
-    const resolvedCreds = creds ?? getCredentials(brand)
-    if (!resolvedCreds) {
-      setPendingSchedule(true)
-      setPendingScheduleFor(scheduleFor)
-      setShowCredModal(true)
-      return
-    }
     const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
     if (!webhookUrl || !result) {
       toast.error('Draft posting is not available right now.')
@@ -407,16 +338,16 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
           fb_ai_image_url: result.imageUrl,
           fb_ai_caption: caption,
           brand: result.brand.toLowerCase(),
-          ...(scheduleFor ? { scheduled_for: scheduleFor } : {}),
-          passcode: resolvedCreds.passcode,
+          scheduled_for: scheduledFor,
+          passcode,
         }),
       })
       const data = await res.json() as { success?: boolean; status?: string; message?: string; post_id?: string }
       if (data.status === 'AUTH_ERROR') {
         clearCredentials(brand)
-        setPendingSchedule(true)
-        setShowCredModal(true)
         setDraftState('idle')
+        setShowScheduleModal(false)
+        toast.error('Invalid passcode. Please try again.')
         return
       }
       if (data.status === 'BRAND_ERROR') {
@@ -425,8 +356,9 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
         return
       }
       if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
-        saveCredentials(brand, resolvedCreds.passcode)
+        saveCredentials(brand, passcode)
         setDraftState('done')
+        setShowScheduleModal(false)
         toast.success('Scheduled on Facebook!')
       } else {
         setDraftState('error')
@@ -438,30 +370,14 @@ function GenerateView({ source, onBack }: GenerateViewProps) {
     }
   }
 
-  function onCredentialsSaved(creds: FBCredentials) {
-    setShowCredModal(false)
-    if (pendingSchedule) {
-      const sf = pendingScheduleFor
-      setPendingSchedule(false)
-      setPendingScheduleFor(undefined)
-      void handlePostDraftClick(creds, sf)
-    }
-  }
-
   return (
     <div className="space-y-6">
-      {showCredModal && (
-        <FBCredentialsModal
-          brand={result?.brand ?? ''}
-          onSave={onCredentialsSaved}
-          onClose={() => { setShowCredModal(false); setPendingSchedule(false) }}
-        />
-      )}
       {showScheduleModal && (
-        <ScheduleTimeModal
+        <ScheduleModal
           brand={result?.brand ?? ''}
+          hasCredentials={!!getCredentials(result?.brand?.toLowerCase() ?? '')}
           isPosting={draftState === 'posting'}
-          onConfirm={(sf) => { setShowScheduleModal(false); void handlePostDraftClick(undefined, sf) }}
+          onConfirm={(sf, passcode) => void handlePostDraftClick(sf, passcode ?? getCredentials(result?.brand?.toLowerCase() ?? '')?.passcode ?? '')}
           onClose={() => setShowScheduleModal(false)}
         />
       )}
@@ -832,6 +748,16 @@ export function TrendingSpikePage() {
               <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending Spike to FB Post</h1>
               <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from spike or trending articles</p>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => handleFetchTrending(true)}
+                disabled={isFetchingTrending}
+                className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors border border-neutral-200 hover:border-neutral-400 rounded-lg px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 disabled:opacity-50"
+                title="Refresh trending articles"
+              >
+                <IconRefresh size={16} className={isFetchingTrending ? 'animate-spin' : ''} />
+                Refresh
+              </button>
             <GuideModal title="How to use Trending Spike to FB Post">
               <div className="space-y-4">
                 <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
@@ -856,16 +782,13 @@ export function TrendingSpikePage() {
                 </div>
               </div>
             </GuideModal>
+            </div>
           </div>
-          <div
-            className="mt-4 h-[3px] rounded-full animate-stripe-grow"
-            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
-          />
         </div>
 
         {/* Tabs — hide when in generate view */}
         {spikeView === 'list' && trendingView === 'list' && (
-          <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4 mb-6">
             <div className="flex gap-1 bg-neutral-100 rounded-xl p-1">
               {(['trending', 'spike'] as const).map(tab => (
                 <button
@@ -890,18 +813,6 @@ export function TrendingSpikePage() {
                 </button>
               ))}
             </div>
-            {activeTab === 'trending' && (
-              <button
-                onClick={() => handleFetchTrending(true)}
-                disabled={isFetchingTrending}
-                className="p-2 bg-white border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                title="Refresh trending articles"
-              >
-                <svg className={`w-4 h-4 ${isFetchingTrending ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-            )}
           </div>
         )}
 
@@ -1068,7 +979,17 @@ export function TrendingSpikePage() {
               <div className="flex flex-col sm:flex-row gap-3">
                 {/* Brand chips */}
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <div className="flex items-center gap-1 bg-neutral-100 rounded-full p-1">
+                  <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-full p-1 shadow-sm">
+                    <button
+                      onClick={() => setSelectedSources(new Set())}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition whitespace-nowrap ${
+                        selectedSources.size === 0
+                          ? 'bg-neutral-950 text-white shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                    >
+                      All
+                    </button>
                     {Array.from(new Set(trendingItems.map(i => i.brand).filter(Boolean))).sort().map(brand => {
                       const active = selectedSources.has(brand)
                       return (
@@ -1081,7 +1002,7 @@ export function TrendingSpikePage() {
                           })}
                           className={`px-3 py-1 rounded-full text-xs font-medium transition whitespace-nowrap ${
                             active
-                              ? 'bg-white text-neutral-950 shadow-sm'
+                              ? 'bg-neutral-950 text-white shadow-sm'
                               : 'text-neutral-500 hover:text-neutral-800'
                           }`}
                         >
@@ -1090,11 +1011,6 @@ export function TrendingSpikePage() {
                       )
                     })}
                   </div>
-                  {selectedSources.size > 0 && (
-                    <button onClick={() => setSelectedSources(new Set())} className="text-xs text-neutral-400 hover:text-neutral-600 transition px-1">
-                      Clear
-                    </button>
-                  )}
                 </div>
               </div>
             )}

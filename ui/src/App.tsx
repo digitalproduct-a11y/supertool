@@ -11,6 +11,7 @@ import { EngagementPostsLanding } from './components/EngagementPostsLanding'
 import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
+import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -30,7 +31,7 @@ import type {
   WorkflowOperation,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue'
 
 const pathToTool: Record<string, ToolId> = {
   '/': 'home',
@@ -42,6 +43,7 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-photos/epl': 'engagement-photos',
   '/scheduled-posts': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
+  '/post-queue': 'post-queue',
 }
 
 // Map scheduled-posts subpages to scheduled-posts tool
@@ -62,6 +64,7 @@ const toolToPath: Record<ToolId, string> = {
   'engagement-photos': '/engagement-photos/epl',
   'scheduled-posts': '/scheduled-posts',
   'shopee-top-products': '/shopee-top-products',
+  'post-queue': '/post-queue',
 }
 
 const topicToPath: Record<string, string> = {
@@ -711,6 +714,11 @@ function App() {
       <Route path="/shopee-top-products" element={
         <Layout {...layoutProps}>
           <ShopeeTopProductsPage />
+        </Layout>
+      } />
+      <Route path="/post-queue" element={
+        <Layout {...layoutProps} showSuggest={false}>
+          <ZernioScheduledPostsPage />
         </Layout>
       } />
     </Routes>

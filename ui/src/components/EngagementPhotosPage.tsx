@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useBlocker } from 'react-router-dom'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
 import { BRANDS } from '../constants/brands'
@@ -6,8 +6,7 @@ import IdeaCard from './IdeaCard'
 import TrendingTopicsSelector from './TrendingTopicsSelector'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { TOPIC_CONFIGS } from '../constants/topics'
-import { FBCredentialsModal } from './FBCredentialsModal'
-import { getCredentials, saveCredentials, clearCredentials, type FBCredentials } from '../utils/fbCredentials'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
 
 interface EngagementPhotosPageProps {
@@ -23,11 +22,9 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub, topics, isFetchingTopics, fetchTrendingTopics } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'select-topics' | 'review'>('brand-select')
-  const [showCredModal, setShowCredModal] = useState(false)
-  const [pendingSchedule, setPendingSchedule] = useState<{ previewUrl: string; caption: string; brand: string; scheduledFor?: string } | null>(null)
-  const pendingResolveRef = useRef<((result: { success: boolean; message: string }) => void) | null>(null)
-
-  async function postToFB(previewUrl: string, caption: string, brand: string, creds: FBCredentials, scheduledFor?: string): Promise<{ success: boolean; message: string }> {
+  async function handleScheduleOnFB(previewUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string): Promise<{ success: boolean; message: string }> {
+    const resolvedPasscode = passcode ?? getCredentials(brand.toLowerCase())?.passcode
+    if (!resolvedPasscode) return { success: false, message: 'No passcode.' }
     const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
     if (!webhookUrl) { toast.error('Webhook not configured.'); return { success: false, message: 'Webhook not configured.' } }
     try {
@@ -38,7 +35,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
           fb_ai_image_url: previewUrl,
           fb_ai_caption: caption,
           brand: brand.toLowerCase(),
-          passcode: creds.passcode,
+          passcode: resolvedPasscode,
           ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
         }),
       })
@@ -46,8 +43,6 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       if (data.status === 'AUTH_ERROR') {
         clearCredentials(brand.toLowerCase())
         toast.error('Invalid passcode. Please try again.')
-        setPendingSchedule({ previewUrl, caption, brand, scheduledFor })
-        setShowCredModal(true)
         return { success: false, message: 'Invalid passcode.' }
       }
       if (data.status === 'BRAND_ERROR') {
@@ -56,7 +51,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
         return { success: false, message: msg }
       }
       if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
-        saveCredentials(brand.toLowerCase(), creds.passcode)
+        saveCredentials(brand.toLowerCase(), resolvedPasscode)
         toast.success('Scheduled on Facebook!')
         return { success: true, message: 'Scheduled on Facebook!' }
       }
@@ -66,29 +61,6 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     } catch {
       toast.error('Network error. Please try again.')
       return { success: false, message: 'Network error. Please try again.' }
-    }
-  }
-
-  function handleScheduleOnFB(previewUrl: string, caption: string, brand: string, scheduledFor?: string): Promise<{ success: boolean; message: string }> {
-    const creds = getCredentials(brand.toLowerCase())
-    if (!creds) {
-      setPendingSchedule({ previewUrl, caption, brand, scheduledFor })
-      setShowCredModal(true)
-      return new Promise(resolve => { pendingResolveRef.current = resolve })
-    }
-    return postToFB(previewUrl, caption, brand, creds, scheduledFor)
-  }
-
-  function onCredentialsSaved(creds: FBCredentials) {
-    setShowCredModal(false)
-    if (pendingSchedule) {
-      const pending = pendingSchedule
-      const resolve = pendingResolveRef.current
-      pendingResolveRef.current = null
-      setPendingSchedule(null)
-      void postToFB(pending.previewUrl, pending.caption, pending.brand, creds, pending.scheduledFor).then(result => {
-        if (resolve) resolve(result)
-      })
     }
   }
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
@@ -317,14 +289,6 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                 </p>
                 <p className="text-xs text-neutral-400">Taking ~30 seconds to process</p>
               </div>
-        )}
-
-        {showCredModal && (
-          <FBCredentialsModal
-            brand={pendingSchedule?.brand ?? ''}
-            onSave={onCredentialsSaved}
-            onClose={() => { setShowCredModal(false); setPendingSchedule(null) }}
-          />
         )}
 
         {stage === 'review' && !isLoading && (
