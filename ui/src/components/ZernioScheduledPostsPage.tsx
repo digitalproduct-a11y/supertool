@@ -5,16 +5,13 @@ import { Pagination } from './ds/Pagination'
 import { getCredentials, saveCredentials } from '../utils/fbCredentials'
 import type { ZernioPost } from '../types'
 
-function formatScheduledTime(iso: string): string {
+function formatScheduledTime(iso: string): { date: string; time: string } {
   const d = new Date(iso)
-  return d.toLocaleString('en-MY', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  })
+  const now = new Date()
+  const isToday = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  const date = isToday ? 'Today' : d.toLocaleString('en-MY', { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleString('en-MY', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return { date, time }
 }
 
 
@@ -120,6 +117,7 @@ export function ZernioScheduledPostsPage() {
 
   const [pendingDelete, setPendingDelete] = useState<ZernioPost | null>(null)
   const [brandFilter, setBrandFilter] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const pendingDeleteBrand = pendingDelete?.platforms[0]?.accountId?.displayName ?? ''
 
@@ -150,7 +148,7 @@ export function ZernioScheduledPostsPage() {
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Scheduled Queue</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Scheduled queue</h1>
               <p className="text-neutral-500 mt-1 text-sm">View and manage all Facebook posts currently scheduled</p>
               <p className="text-neutral-400 mt-1 text-xs">Note: rescheduling is not supported at the moment.</p>
             </div>
@@ -262,9 +260,17 @@ export function ZernioScheduledPostsPage() {
                           >
                             {/* Caption */}
                             <td className="px-6 py-4 max-w-[400px]">
-                              <p className="text-neutral-800 text-sm line-clamp-2 leading-snug font-mulish">
+                              <p className={`text-neutral-800 text-sm leading-snug font-mulish ${expandedId === post._id ? '' : 'line-clamp-2'}`}>
                                 {post.content || <span className="text-neutral-400 italic">No caption</span>}
                               </p>
+                              {post.content && post.content.length > 80 && (
+                                <button
+                                  onClick={() => setExpandedId(expandedId === post._id ? null : post._id)}
+                                  className="mt-1 text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+                                >
+                                  {expandedId === post._id ? 'Show less' : 'Show more'}
+                                </button>
+                              )}
                             </td>
 
                             {/* Page/Profile */}
@@ -286,18 +292,17 @@ export function ZernioScheduledPostsPage() {
                             </td>
 
                             {/* Scheduled time */}
-                            <td className="px-4 py-4">
-                              <span className="inline-flex items-center gap-1.5 text-xs text-neutral-600 whitespace-nowrap font-mulish">
-                                <IconCalendarClock size={13} className="text-neutral-400" />
-                                {formatScheduledTime(post.scheduledFor)}
-                              </span>
+                            <td className="px-4 py-4 font-mulish">
+                              <p className="text-xs text-neutral-600">{formatScheduledTime(post.scheduledFor).date}</p>
+                              <p className="text-xs text-neutral-400">{formatScheduledTime(post.scheduledFor).time}</p>
                             </td>
 
                             {/* Created */}
                             <td className="px-4 py-4">
-                              <span className="text-xs text-neutral-500 whitespace-nowrap font-mulish">
-                                {formatScheduledTime(post.createdAt)}
-                              </span>
+                              <div className="font-mulish">
+                                <p className="text-xs text-neutral-500">{formatScheduledTime(post.createdAt).date}</p>
+                                <p className="text-xs text-neutral-400">{formatScheduledTime(post.createdAt).time}</p>
+                              </div>
                             </td>
 
                             {/* Post ID */}

@@ -12,7 +12,7 @@ interface PreviewPanelProps {
   onPartialRegenerate: (op: WorkflowOperation, titleMode: TitleMode, customTitle: string, captionTitleMode: CaptionTitleMode) => void
   titleMode: TitleMode
   captionTitleMode: CaptionTitleMode
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string, passcode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
 }
 
 export function PreviewPanel({

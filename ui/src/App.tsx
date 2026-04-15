@@ -12,6 +12,7 @@ import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
+import { SpikeNewsPage } from './components/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
@@ -36,13 +37,14 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
   '/article-to-fb': 'fb-post',
   '/article-to-carousel': 'photo-carousel',
   '/trending-news-to-fb': 'trending-news',
+  '/spike-news': 'spike-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
@@ -66,6 +68,7 @@ const toolToPath: Record<ToolId, string> = {
   'fb-post': '/article-to-fb',
   'photo-carousel': '/article-to-carousel',
   'trending-news': '/trending-news-to-fb',
+  'spike-news': '/spike-news',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-photos',
@@ -462,8 +465,9 @@ function FbPostPage() {
     scheduledFor?: string,
     extraPhotos?: string[],
     postMode?: string,
+    passcode?: string,
   ): Promise<{success: boolean, message: string, postId?: string, status?: string}> {
-    const creds = getCredentials(brand.toLowerCase())
+    const creds = passcode ? { passcode } : getCredentials(brand.toLowerCase())
     if (!creds) {
       setPendingPostArgs({ imageUrl, caption, brand, scheduledFor, extraPhotos, postMode })
       setShowCredModal(true)
@@ -538,7 +542,7 @@ function FbPostPage() {
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Article to FB Post</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Photo post</h1>
               <p className="text-neutral-500 mt-1 text-sm">Turn any article into a Facebook image &amp; caption</p>
             </div>
             <GuideModal title="How to use Article to FB Post">
@@ -705,13 +709,46 @@ function CarouselPage() {
     setErrorMessage('')
   }, [])
 
+  async function handleCarouselPostDraft(
+    imageUrl: string,
+    caption: string,
+    postBrand: string,
+    scheduledFor?: string,
+    passcode?: string,
+  ): Promise<{success: boolean, message: string, status?: string}> {
+    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
+    if (!webhookUrl) return { success: false, message: 'Webhook not configured.' }
+    const creds = passcode ? { passcode } : getCredentials(postBrand.toLowerCase())
+    if (!creds) return { success: false, message: 'credentials_required' }
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fb_ai_image_url: imageUrl,
+          fb_ai_caption: caption,
+          brand: postBrand.toLowerCase(),
+          ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
+          passcode: creds.passcode,
+        }),
+      })
+      const data = await res.json() as { success?: boolean; status?: string; message?: string }
+      if (data.status === 'AUTH_ERROR') return { success: false, message: data.message ?? 'Invalid passcode.', status: 'AUTH_ERROR' }
+      if (data.status === 'BRAND_ERROR') return { success: false, message: data.message ?? 'Brand not permitted.' }
+      if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') return { success: true, message: 'Scheduled!' }
+      return { success: false, message: data.message ?? 'Something went wrong.' }
+    } catch {
+      return { success: false, message: 'Network error. Please try again.' }
+    }
+  }
+
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Article to Photo Carousels</h1>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Photo carousel post</h1>
               <p className="text-neutral-500 mt-1 text-sm">Turn any article into a branded photo carousel — 1 main image + up to 6 supporting photos</p>
             </div>
           </div>
@@ -742,6 +779,7 @@ function CarouselPage() {
               result={result}
               errorMessage={errorMessage}
               onReset={handleReset}
+              onPostDraft={handleCarouselPostDraft}
             />
           </div>
         </div>
@@ -783,6 +821,11 @@ function App() {
       <Route path="/trending-news-to-fb" element={
         <Layout {...layoutProps}>
           <TrendingSpikePage />
+        </Layout>
+      } />
+      <Route path="/spike-news" element={
+        <Layout {...layoutProps}>
+          <SpikeNewsPage />
         </Layout>
       } />
       <Route path="/affiliate-links" element={

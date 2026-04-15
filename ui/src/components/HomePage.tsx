@@ -12,12 +12,15 @@ import {
   IconCalendar,
   IconShoppingBag,
   IconBrandThreads,
+  IconBolt,
+  IconCalendarClock,
 } from "@tabler/icons-react";
 
 type ToolId =
   | "home"
   | "fb-post"
   | "trending-news"
+  | "spike-news"
   | "affiliate-links"
   | "article-generator"
   | "engagement-posts"
@@ -25,7 +28,8 @@ type ToolId =
   | "scheduled-posts"
   | "shopee-top-products"
   | "photo-carousel"
-  | "social-affiliate-posting";
+  | "social-affiliate-posting"
+  | "post-queue";
 
 interface Tool {
   id: ToolId;
@@ -47,44 +51,58 @@ interface Section {
 
 const sections: Section[] = [
   {
-    label: "Social",
+    label: "Article to Social",
     description:
-      "Turn articles and trends into ready-to-post social platform visuals.",
+      "Turn articles into ready-to-post social media visuals.",
     tools: [
       {
         id: "fb-post",
-        label: "Article to FB Photos",
+        label: "Photo Post",
         description: "Turn any article into a Facebook image and caption",
         color: "#0055EE",
         icon: IconPhoto,
       },
       {
+        id: "photo-carousel",
+        label: "Photo Carousel Post",
+        description: "Transform articles into swipeable photo carousels",
+        color: "#0055EE",
+        icon: IconCarouselHorizontal,
+      },
+    ],
+  },
+  {
+    label: "Content Ideas",
+    description:
+      "Discover trending content and generate engagement posts.",
+    tools: [
+      {
         id: "trending-news",
-        label: "Trending News to FB Photos",
+        label: "Trending News",
         description: "Turn trending news into Facebook-ready visuals",
         color: "#0055EE",
         icon: IconTrendingUp,
       },
       {
-        id: "engagement-posts",
-        label: "Engagement Photos Generator",
-        description: "Create engagement-driving photo posts",
+        id: "spike-news",
+        label: "Spike News",
+        description: "Articles currently experiencing a traffic spike",
         color: "#0055EE",
-        icon: IconHeart,
+        icon: IconBolt,
       },
       {
         id: "scheduled-posts",
-        label: "Schedule Trending News",
+        label: "News for Your Brand",
         description: "Schedule trending news posts across brands",
         color: "#0055EE",
         icon: IconCalendar,
       },
       {
-        id: "photo-carousel",
-        label: "Article to Photo Carousels",
-        description: "Transform articles into swipeable photo carousels",
+        id: "engagement-posts",
+        label: "Engagement Posts",
+        description: "Create engagement-driving photo posts",
         color: "#0055EE",
-        icon: IconCarouselHorizontal,
+        icon: IconHeart,
       },
     ],
   },
@@ -93,6 +111,13 @@ const sections: Section[] = [
     description:
       "Generate affiliate content faster and drive more commissions.",
     tools: [
+      {
+        id: "shopee-top-products",
+        label: "Shopee Top Products",
+        description: "Discover and share top-performing Shopee products",
+        color: "#F05A35",
+        icon: IconShoppingBag,
+      },
       {
         id: "affiliate-links",
         label: "Shopee Affiliate Links",
@@ -108,18 +133,24 @@ const sections: Section[] = [
         icon: IconFileText,
       },
       {
-        id: "shopee-top-products",
-        label: "Shopee Top Products",
-        description: "Discover and share top-performing Shopee products",
-        color: "#F05A35",
-        icon: IconShoppingBag,
-      },
-      {
         id: "social-affiliate-posting",
-        label: "Social Affiliate Posting",
+        label: "Social Affiliate Post",
         description: "Generate Threads and Facebook content for Shopee affiliate products",
         color: "#F05A35",
         icon: IconBrandThreads,
+      },
+    ],
+  },
+  {
+    label: "Others",
+    description: "Manage and review your scheduled content.",
+    tools: [
+      {
+        id: "post-queue",
+        label: "Scheduled Queue",
+        description: "View and manage all your scheduled Facebook posts",
+        color: "#6B7280",
+        icon: IconCalendarClock,
       },
     ],
   },

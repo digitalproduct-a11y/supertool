@@ -83,7 +83,7 @@ export function EngagementPostsLanding({ onSelectTopic }: EngagementPostsLanding
         {/* Hero */}
         <div className="mb-10">
           <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-            Engagement Posts
+            Engagement posts
           </h1>
           <p className="text-neutral-500 mt-1 text-sm">
             Create captivating social media content across different topics and industries.

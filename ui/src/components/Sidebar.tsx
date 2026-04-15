@@ -14,9 +14,10 @@ import {
   IconCalendarClock,
   IconShoppingBag,
   IconBrandThreads,
+  IconBolt,
 } from "@tabler/icons-react";
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
 
 interface NavItem {
   id: ToolId | string;
@@ -38,14 +39,19 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [{ id: "home", label: "Home", icon: IconHome }],
   },
   {
-    section: "Social",
+    section: "Article to Social",
     items: [
-      { id: 'fb-post', label: 'Article to FB Photos', icon: IconPhoto },
-      { id: 'trending-news', label: 'Trending News to FB Photos', icon: IconTrendingUp },
-      { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
-      { id: 'scheduled-posts', label: 'Schedule Trending News', icon: IconCalendar },
-      { id: 'post-queue', label: 'Scheduled Queue', icon: IconCalendarClock },
-      { id: 'photo-carousel', label: 'Article to Photo Carousels', icon: IconCarouselHorizontal },
+      { id: 'fb-post', label: 'Photo post', icon: IconPhoto },
+      { id: 'photo-carousel', label: 'Photo carousel post', icon: IconCarouselHorizontal },
+    ],
+  },
+  {
+    section: "Content Ideas",
+    items: [
+      { id: 'trending-news', label: 'Trending news', icon: IconTrendingUp },
+      { id: 'spike-news', label: 'Spike news', icon: IconBolt },
+      { id: 'scheduled-posts', label: 'News for your brand', icon: IconCalendar },
+      { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
     ],
   },
   {
@@ -53,40 +59,47 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       {
         id: "shopee-top-products",
-        label: "Shopee Top Products",
+        label: "Shopee top products",
         icon: IconShoppingBag,
       },
       {
         id: "affiliate-links",
-        label: "Shopee Affiliate Links",
+        label: "Shopee affiliate links",
         icon: IconLink,
       },
       {
         id: "article-generator",
-        label: "Affiliate Article Editor",
+        label: "Affiliate article editor",
         icon: IconFileText,
       },
       {
         id: "social-affiliate-posting",
-        label: "Social Affiliate Posting",
+        label: "Social affiliate post",
         icon: IconBrandThreads,
       },
+    ],
+  },
+  {
+    section: "Others",
+    items: [
+      { id: 'post-queue', label: 'Scheduled queue', icon: IconCalendarClock },
     ],
   },
 ];
 
 const TOOL_NAMES: Record<ToolId, string> = {
   home: 'KULT Digital Kit',
-  'fb-post': 'Article to FB Photos',
-  'photo-carousel': 'Article to Photo Carousels',
-  'trending-news': 'Trending News to FB Photos',
+  'fb-post': 'Photo post',
+  'photo-carousel': 'Photo carousel post',
+  'trending-news': 'Trending News',
+  'spike-news': 'Spike News',
   'affiliate-links': 'Shopee Affiliate Links',
   'article-generator': 'Affiliate Article Editor',
-  'engagement-posts': 'Engagement Posts',
+  'engagement-posts': 'Engagement posts',
   'engagement-photos': 'English Premier League',
   'shopee-top-products': 'Shopee Top Products',
-  'scheduled-posts': 'Schedule Trending News',
-  'post-queue': 'Scheduled Queue',
+  'scheduled-posts': 'News for your brand',
+  'post-queue': 'Scheduled queue',
   'social-affiliate-posting': 'Social Affiliate Posting',
 }
 

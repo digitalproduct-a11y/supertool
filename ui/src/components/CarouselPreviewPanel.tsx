@@ -8,6 +8,7 @@ interface CarouselPreviewPanelProps {
   result: CarouselResult | null
   errorMessage: string
   onReset: () => void
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string) => Promise<{success: boolean, message: string, status?: string}>
 }
 
 export function CarouselPreviewPanel({
@@ -15,6 +16,7 @@ export function CarouselPreviewPanel({
   result,
   errorMessage,
   onReset,
+  onPostDraft,
 }: CarouselPreviewPanelProps) {
   return (
     <div className="glass-card rounded-2xl p-6 min-h-96 flex flex-col">
@@ -43,7 +45,7 @@ export function CarouselPreviewPanel({
 
       {state === 'result' && result && (
         <div className="animate-fade-slide-up">
-          <CarouselResultPreview result={result} />
+          <CarouselResultPreview result={result} onPostDraft={onPostDraft} />
         </div>
       )}
 

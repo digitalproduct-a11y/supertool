@@ -1,74 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { IconUpload } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import ImageUploadModal from './ImageUploadModal'
-
-// ─── Schedule Time Modal ──────────────────────────────────────────────────────
-
-function ScheduleTimeModal({
-  brand,
-  isPosting,
-  onConfirm,
-  onClose,
-}: {
-  brand: string
-  isPosting: boolean
-  onConfirm: (scheduledFor: string) => void
-  onClose: () => void
-}) {
-  const [scheduledFor, setScheduledFor] = useState('')
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-80 space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-neutral-950">Schedule on FB</h3>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 transition p-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <p className="text-xs text-neutral-500">Posting for <span className="font-medium text-neutral-800">{brand}</span></p>
-        <input
-          type="datetime-local"
-          value={scheduledFor}
-          onChange={e => setScheduledFor(e.target.value)}
-          min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-          className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
-        />
-        <button
-          onClick={() => {
-            if (!scheduledFor) {
-              toast.error('Please pick a date and time.')
-              return
-            }
-            onConfirm(new Date(scheduledFor).toISOString())
-          }}
-          disabled={isPosting || !scheduledFor}
-          className="w-full py-2.5 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {isPosting ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-              </svg>
-              Scheduling…
-            </span>
-          ) : 'Schedule'}
-        </button>
-      </div>
-    </div>
-  )
-}
+import { ScheduleModal } from './ScheduleModal'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string, passcode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
 }
 
 export function ResultPreview({
@@ -168,8 +113,11 @@ export function ResultPreview({
     setReplacementPreviewUrl(null)
   }
 
-  async function handlePostDraftClick(scheduleFor?: string) {
+  async function handlePostDraftClick(scheduleFor?: string, passcode?: string) {
     if (!onPostDraft) return
+    const brand = result.brand.toLowerCase()
+    const resolvedPasscode = passcode ?? getCredentials(brand)?.passcode
+    if (!resolvedPasscode) return
     setDraftState('posting')
     try {
       const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : result.imageUrl
@@ -182,9 +130,16 @@ export function ResultPreview({
             reader.readAsDataURL(file)
           })))
         : undefined
-      const response = await onPostDraft(effectiveAiImageUrl, caption, result.brand, scheduleFor, base64Extras)
-      if (response.success) {
+      const response = await onPostDraft(effectiveAiImageUrl, caption, result.brand, scheduleFor, base64Extras, undefined, resolvedPasscode)
+      if (response.status === 'AUTH_ERROR') {
+        clearCredentials(brand)
+        setShowScheduleModal(true)
+        setDraftState('idle')
+        toast.error('Invalid passcode. Please try again.')
+      } else if (response.success) {
+        saveCredentials(brand, resolvedPasscode)
         setDraftState('done')
+        setShowScheduleModal(false)
         toast.success('Scheduled on Facebook!')
       } else {
         setDraftState('error')
@@ -198,13 +153,15 @@ export function ResultPreview({
 
   return (
     <>
-      {showScheduleModal && (
-        <ScheduleTimeModal
+      {showScheduleModal && createPortal(
+        <ScheduleModal
           brand={result.brand}
+          hasCredentials={!!getCredentials(result.brand.toLowerCase())}
           isPosting={draftState === 'posting'}
-          onConfirm={(sf) => { setShowScheduleModal(false); void handlePostDraftClick(sf) }}
+          onConfirm={(sf, passcode) => void handlePostDraftClick(sf, passcode)}
           onClose={() => setShowScheduleModal(false)}
-        />
+        />,
+        document.body
       )}
     <div className="space-y-4">
       {showImageUploadModal && (
@@ -276,7 +233,7 @@ export function ResultPreview({
         {/* Title */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Title</label>
+            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Image Title</label>
             <span className="text-xs text-gray-400">{title.length}</span>
           </div>
           <input
@@ -334,7 +291,15 @@ export function ResultPreview({
             ) : 'Schedule on FB'}
           </button>
           {draftState === 'done' && (
-            <p className="text-xs text-green-600 text-center mt-1">✓ Scheduled on Facebook</p>
+            <div className="text-center space-y-1 mt-1">
+              <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+              <p className="text-xs text-neutral-400">
+                To view or delete your scheduled post, check{' '}
+                <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                  here
+                </Link>.
+              </p>
+            </div>
           )}
           {draftState === 'error' && (
             <p className="text-xs text-red-500 text-center mt-1">✗ Failed to schedule. Try again.</p>
