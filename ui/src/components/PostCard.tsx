@@ -1,12 +1,15 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { IconUpload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import ImageUploadModal from './ImageUploadModal'
+import { ScheduleModal } from './ScheduleModal'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import type { ScheduledPost, SchedulePostPayload } from '../types'
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
+// ─── Status badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ post }: { post: ScheduledPost }) {
   if (post.status === 'scheduled' && post.scheduled_time) {
@@ -34,36 +37,6 @@ function StatusBadge({ post }: { post: ScheduledPost }) {
   )
 }
 
-// ─── Schedule modal ───────────────────────────────────────────────────────────
-
-function ScheduleModal({
-  onClose,
-}: {
-  onClose: () => void
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-80 text-center space-y-4">
-        <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto">
-          <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <h3 className="font-semibold text-neutral-950 mb-1">Feature Coming Soon!</h3>
-          <p className="text-sm text-neutral-500">Facebook scheduling will be available soon. Check back later.</p>
-        </div>
-        <button
-          onClick={onClose}
-          className="w-full py-2 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 transition"
-        >
-          Got it
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── PostCard ─────────────────────────────────────────────────────────────────
 
 interface PostCardProps {
@@ -72,13 +45,14 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
-  // Note: onSchedule callback is prepared for future scheduling functionality
   const [editTitle, setEditTitle] = useState(post.title)
   const [committedTitle, setCommittedTitle] = useState(post.title)
   const [editCaption, setEditCaption] = useState(post.caption)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
+  const [isPosting, setIsPosting] = useState(false)
+  const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
 
   // Cloudinary preview URL — only updates when user commits title (on blur)
   const previewPublicId = uploadedPublicId ?? post.photoPublicId
@@ -108,12 +82,65 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
     }
   }
 
+  function handleScheduleClick() {
+    setShowScheduleModal(true)
+  }
+
+  async function handleConfirmSchedule(scheduledFor: string, passcode?: string) {
+    const brand = post.brand.toLowerCase()
+    const resolvedPasscode = passcode ?? getCredentials(brand)?.passcode
+    if (!resolvedPasscode) { setShowScheduleModal(false); return }
+    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
+    if (!webhookUrl) { toast.error('Webhook not configured.'); return }
+    setIsPosting(true)
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fb_ai_image_url: previewUrl,
+          fb_ai_caption: editCaption,
+          brand,
+          ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
+          passcode: resolvedPasscode,
+        }),
+      })
+      const data = await res.json() as { success?: boolean; status?: string; message?: string }
+      if (data.status === 'AUTH_ERROR') {
+        clearCredentials(brand)
+        setShowScheduleModal(false)
+        toast.error('Invalid passcode. Please try again.')
+        setScheduleStatus('error')
+      } else if (data.status === 'BRAND_ERROR') {
+        toast.error(data.message ?? 'Brand not permitted.')
+        setShowScheduleModal(false)
+      } else if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
+        saveCredentials(brand, resolvedPasscode)
+        setScheduleStatus('done')
+        setShowScheduleModal(false)
+        toast.success('Scheduled on Facebook!')
+      } else {
+        setScheduleStatus('error')
+        toast.error(data.message ?? "Couldn't post. Please try again.")
+      }
+    } catch {
+      setScheduleStatus('error')
+      toast.error('Network error. Please try again.')
+    } finally {
+      setIsPosting(false)
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
       {showScheduleModal && (
         <ScheduleModal
+          brand={post.brand}
+          hasCredentials={!!getCredentials(post.brand.toLowerCase())}
+          isPosting={isPosting}
+          onConfirm={handleConfirmSchedule}
           onClose={() => setShowScheduleModal(false)}
         />
       )}
@@ -209,12 +236,35 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
                 Download image
               </button>
               <button
-                onClick={() => setShowScheduleModal(true)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 transition"
+                onClick={handleScheduleClick}
+                disabled={isPosting}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold transition bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50"
               >
-                Schedule on FB
+                {isPosting ? (
+                  <span className="flex items-center justify-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    Scheduling…
+                  </span>
+                ) : 'Schedule on FB'}
               </button>
             </div>
+            {scheduleStatus === 'done' && (
+              <div className="text-center space-y-1">
+                <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                <p className="text-xs text-neutral-400">
+                  To view or delete your scheduled post, check{' '}
+                  <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                    here
+                  </Link>.
+                </p>
+              </div>
+            )}
+            {scheduleStatus === 'error' && (
+              <p className="text-xs text-red-500 text-center">✗ Failed to schedule. Try again.</p>
+            )}
           </div>
         </div>
       </div>

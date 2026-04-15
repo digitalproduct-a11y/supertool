@@ -6,6 +6,8 @@ import IdeaCard from './IdeaCard'
 import TrendingTopicsSelector from './TrendingTopicsSelector'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { TOPIC_CONFIGS } from '../constants/topics'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { toast } from '../hooks/useToast'
 
 interface EngagementPhotosPageProps {
   topic?: string
@@ -20,6 +22,47 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub, topics, isFetchingTopics, fetchTrendingTopics } = useEngagementPhotos()
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [stage, setStage] = useState<'brand-select' | 'select-topics' | 'review'>('brand-select')
+  async function handleScheduleOnFB(previewUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string): Promise<{ success: boolean; message: string }> {
+    const resolvedPasscode = passcode ?? getCredentials(brand.toLowerCase())?.passcode
+    if (!resolvedPasscode) return { success: false, message: 'No passcode.' }
+    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
+    if (!webhookUrl) { toast.error('Webhook not configured.'); return { success: false, message: 'Webhook not configured.' } }
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fb_ai_image_url: previewUrl,
+          fb_ai_caption: caption,
+          brand: brand.toLowerCase(),
+          passcode: resolvedPasscode,
+          ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
+        }),
+      })
+      const data = await res.json() as { success?: boolean; status?: string; message?: string }
+      if (data.status === 'AUTH_ERROR') {
+        clearCredentials(brand.toLowerCase())
+        toast.error('Invalid passcode. Please try again.')
+        return { success: false, message: 'Invalid passcode.' }
+      }
+      if (data.status === 'BRAND_ERROR') {
+        const msg = data.message ?? 'Brand not permitted.'
+        toast.error(msg)
+        return { success: false, message: msg }
+      }
+      if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
+        saveCredentials(brand.toLowerCase(), resolvedPasscode)
+        toast.success('Scheduled on Facebook!')
+        return { success: true, message: 'Scheduled on Facebook!' }
+      }
+      const msg = data.message ?? "Couldn't post. Please try again."
+      toast.error(msg)
+      return { success: false, message: msg }
+    } catch {
+      toast.error('Network error. Please try again.')
+      return { success: false, message: 'Network error. Please try again.' }
+    }
+  }
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState(config.loadingQuotes[0])
 
@@ -264,6 +307,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                     idea={idea}
                     onUpdateField={handleUpdateIdea}
                     onPhotoSelected={handlePhotoSelected}
+                    onScheduleOnFB={handleScheduleOnFB}
                     selectedBrand={selectedBrand}
                     index={idx}
                     cachedPhotos={photosByPlayerClub}

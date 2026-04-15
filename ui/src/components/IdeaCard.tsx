@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import PhotoPickerModal from './PhotoPickerModal'
+import { ScheduleModal } from './ScheduleModal'
+import { getCredentials } from '../utils/fbCredentials'
 
 const FORMAT_BADGES: Record<string, string> = {
   challenge: '🏆',
@@ -26,6 +28,7 @@ interface IdeaCardProps {
   idea: EngagementIdea
   onUpdateField: (ideaId: string, field: 'headline' | 'subtitle' | 'caption', value: string) => void
   onPhotoSelected: (ideaId: string, photo: { url: string; publicId: string }) => void
+  onScheduleOnFB?: (previewUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string) => Promise<{ success: boolean; message: string }>
   selectedBrand: string
   index: number
   cachedPhotos?: Record<string, any[]>
@@ -37,6 +40,7 @@ export default function IdeaCard({
   idea,
   onUpdateField,
   onPhotoSelected,
+  onScheduleOnFB,
   selectedBrand,
   index,
   cachedPhotos,
@@ -44,6 +48,9 @@ export default function IdeaCard({
   uploadPreset,
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [isScheduling, setIsScheduling] = useState(false)
+  const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
 
@@ -200,6 +207,48 @@ export default function IdeaCard({
             >
               Download
             </button>
+
+            {/* Schedule on FB Button */}
+            {onScheduleOnFB && (
+              <>
+                {showScheduleModal && (
+                  <ScheduleModal
+                    brand={selectedBrand}
+                    hasCredentials={!!getCredentials(selectedBrand.toLowerCase())}
+                    isPosting={isScheduling}
+                    onConfirm={async (scheduledFor, passcode) => {
+                      setIsScheduling(true)
+                      const result = await onScheduleOnFB(previewUrl, idea.caption, selectedBrand, scheduledFor, passcode)
+                      setIsScheduling(false)
+                      setShowScheduleModal(false)
+                      setScheduleStatus(result.success ? 'done' : 'error')
+                    }}
+                    onClose={() => setShowScheduleModal(false)}
+                  />
+                )}
+                <button
+                  onClick={() => setShowScheduleModal(true)}
+                  disabled={isScheduling || !captionValid || !photoValid}
+                  className="w-full px-3 py-2 border border-neutral-950 text-neutral-950 hover:bg-neutral-950 hover:text-white disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition active:scale-[0.98]"
+                >
+                  {isScheduling ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      </svg>
+                      Scheduling…
+                    </span>
+                  ) : 'Schedule on FB'}
+                </button>
+                {scheduleStatus === 'done' && (
+                  <p className="text-xs text-green-600 text-center">✓ Scheduled on Facebook</p>
+                )}
+                {scheduleStatus === 'error' && (
+                  <p className="text-xs text-red-500 text-center">✗ Failed to schedule. Try again.</p>
+                )}
+              </>
+            )}
             </div>
         </div>
 

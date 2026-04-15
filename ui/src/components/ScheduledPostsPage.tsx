@@ -80,7 +80,15 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
         {/* Error state */}
         {!isLoading && error && (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <p className="text-sm text-neutral-500">{error}</p>
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium text-neutral-700">Failed to load posts</p>
+              <p className="text-xs text-neutral-400 mt-1">{error}</p>
+            </div>
             <button
               onClick={() => void loadPosts()}
               className="px-4 py-2 rounded-lg text-sm font-semibold bg-neutral-950 text-white hover:bg-neutral-800 transition"
@@ -92,9 +100,16 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
 
         {/* Empty state */}
         {!isLoading && !error && posts.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 gap-2">
-            <p className="text-sm font-medium text-neutral-700">No posts for {displayBrand} today yet.</p>
-            <p className="text-sm text-neutral-500">The workflow runs at 10:00 AM daily.</p>
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
+              <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium text-neutral-700">No posts for {displayBrand} today yet</p>
+              <p className="text-xs text-neutral-400 mt-1">The workflow runs at 10:00 AM daily. Check back after it runs.</p>
+            </div>
           </div>
         )}
 

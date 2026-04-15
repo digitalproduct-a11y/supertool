@@ -260,3 +260,42 @@ export interface SchedulePostPayload {
   scheduledTime: string   // ISO 8601
   platform: 'facebook'
 }
+
+// Zernio Scheduled Queue types
+export interface ZernioPlatformEntry {
+  platform: string
+  accountId?: {
+    _id: string
+    platform: string
+    username?: string
+    displayName?: string
+    isActive?: boolean
+  }
+  status?: string
+  platformPostUrl?: string
+}
+
+export interface ZernioPost {
+  _id: string
+  status: 'scheduled'
+  title?: string
+  content: string
+  scheduledFor: string     // ISO 8601
+  timezone?: string
+  platforms: ZernioPlatformEntry[]
+  tags?: string[]
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface ZernioPagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
+export interface ZernioPostsResponse {
+  posts: ZernioPost[]
+  pagination: ZernioPagination
+}
