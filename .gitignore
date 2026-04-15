@@ -145,3 +145,8 @@ vite.config.ts.timestamp-*
 .superpowers/
 
 .mcp.json
+.claudeignore
+.vercel
+.vscode
+CLAUDE.md
+graphify-out

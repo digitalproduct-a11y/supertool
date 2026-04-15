@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
@@ -14,7 +14,9 @@ import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
+import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
+import { GetStartedPage } from './components/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
@@ -29,13 +31,16 @@ import type {
   CaptionTitleMode,
   WorkflowRequest,
   WorkflowOperation,
+  CarouselResult,
+  CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel'
 
 const pathToTool: Record<string, ToolId> = {
-  '/': 'home',
+  '/home': 'home',
   '/article-to-fb': 'fb-post',
+  '/article-to-carousel': 'photo-carousel',
   '/trending-news-to-fb': 'trending-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',
@@ -55,8 +60,9 @@ function getActiveTool(pathname: string): ToolId {
 }
 
 const toolToPath: Record<ToolId, string> = {
-  'home': '/',
+  'home': '/home',
   'fb-post': '/article-to-fb',
+  'photo-carousel': '/article-to-carousel',
   'trending-news': '/trending-news-to-fb',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
@@ -643,6 +649,104 @@ function FbPostPage() {
   )
 }
 
+function CarouselPage() {
+  const [state, setState] = useState<AppState>('idle')
+  const [result, setResult] = useState<CarouselResult | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+
+  const [url, setUrl] = useState('')
+  const [brand, setBrand] = useState('')
+  const [titleMode, setTitleMode] = useState<TitleMode>('original')
+  const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
+
+  const carouselWebhookUrl = import.meta.env.VITE_CAROUSEL_WEBHOOK_URL as string | undefined
+  const { run, isRunning } = useWorkflow(carouselWebhookUrl)
+
+  useEffect(() => {
+    if (state === 'result' && window.innerWidth < 768) {
+      setTimeout(() => {
+        document.getElementById('carousel-preview-panel')?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+  }, [state])
+
+  const handleSubmit = useCallback(async () => {
+    if (!url.trim() || !brand) return
+
+    setState('loading')
+    setResult(null)
+    setErrorMessage('')
+
+    const request: WorkflowRequest = {
+      url: url.trim(),
+      brand,
+      title_mode: titleMode,
+      caption_title_mode: captionTitleMode,
+    }
+
+    const response = await run(request)
+    const carouselResponse = response as unknown as CarouselResponse
+
+    if (carouselResponse.success) {
+      setResult(carouselResponse)
+      setState('result')
+    } else {
+      setErrorMessage(carouselResponse.message)
+      setState('error')
+    }
+  }, [url, brand, titleMode, captionTitleMode, run])
+
+  const handleReset = useCallback(() => {
+    setState('idle')
+    setResult(null)
+    setErrorMessage('')
+  }, [])
+
+  return (
+    <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Article to Photo Carousels</h1>
+              <p className="text-neutral-500 mt-1 text-sm">Turn any article into a branded photo carousel — 1 main image + up to 6 supporting photos</p>
+            </div>
+          </div>
+          <div className="mt-3 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
+          <div>
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+              <InputForm
+                url={url}
+                onUrlChange={setUrl}
+                brand={brand}
+                onBrandChange={setBrand}
+                titleMode={titleMode}
+                onTitleModeChange={setTitleMode}
+                captionTitleMode={captionTitleMode}
+                onCaptionTitleModeChange={setCaptionTitleMode}
+                onSubmit={handleSubmit}
+                disabled={isRunning}
+              />
+            </div>
+          </div>
+
+          <div id="carousel-preview-panel">
+            <CarouselPreviewPanel
+              state={state as 'idle' | 'loading' | 'result' | 'error'}
+              result={result}
+              errorMessage={errorMessage}
+              onReset={handleReset}
+            />
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
 function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -656,7 +760,9 @@ function App() {
     <>
     <ToastContainer />
     <Routes>
-      <Route path="/" element={
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      <Route path="/start" element={<GetStartedPage />} />
+      <Route path="/home" element={
         <Layout {...layoutProps}>
           <HomePage onToolSelect={(id) => navigate(toolToPath[id])} />
         </Layout>
@@ -664,6 +770,11 @@ function App() {
       <Route path="/article-to-fb" element={
         <Layout {...layoutProps}>
           <FbPostPage />
+        </Layout>
+      } />
+      <Route path="/article-to-carousel" element={
+        <Layout {...layoutProps}>
+          <CarouselPage />
         </Layout>
       } />
       <Route path="/trending-news-to-fb" element={

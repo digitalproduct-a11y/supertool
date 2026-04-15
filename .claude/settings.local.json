@@ -1,14 +1,13 @@
 {
   "permissions": {
-    "allow": [
-      "WebFetch(domain:github.com)"
-    ]
+    "allow": ["WebFetch(domain:github.com)"]
   },
   "enabledMcpjsonServers": [
     "n8n-mcp",
     "cloudinary-asset-mgmt",
     "cloudinary-env-config",
     "cloudinary-smd",
-    "cloudinary-analysis"
+    "cloudinary-analysis",
+    "vercel"
   ]
 }
