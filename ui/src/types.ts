@@ -336,3 +336,46 @@ export interface ZernioPostsResponse {
   posts: ZernioPost[]
   pagination: ZernioPagination
 }
+
+// Social Affiliate Posting tool types
+export type SocialAffiliateState = 'idle' | 'loading' | 'success' | 'error'
+
+export interface SocialAffiliateFormData {
+  productName: string
+  affiliateLink: string
+  angle: string
+  targetAudience: string
+  tone: string
+  brand: string
+}
+
+export interface SocialAffiliateThreadPost {
+  postNumber: number
+  title: string
+  content: string
+}
+
+export interface SocialAffiliateThreadsResult {
+  contentLabel: string
+  posts: SocialAffiliateThreadPost[]
+}
+
+export interface SocialAffiliateFacebookResult {
+  contentLabel: string
+  paragraphs: string[]
+  fullText: string
+}
+
+export interface SocialAffiliateGenerationResult {
+  sessionId: string
+  createdAt: string
+  productName: string
+  affiliateLink: string
+  affiliateLinkGenerated?: string
+  angle: string
+  targetAudience: string
+  tone: string
+  threads: SocialAffiliateThreadsResult
+  facebook: SocialAffiliateFacebookResult
+  thumbnailUrl?: string
+}

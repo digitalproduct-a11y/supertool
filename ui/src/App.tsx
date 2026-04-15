@@ -12,6 +12,7 @@ import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
+import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -35,7 +36,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -49,6 +50,7 @@ const pathToTool: Record<string, ToolId> = {
   '/scheduled-posts': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
+  '/social-affiliate-posting': 'social-affiliate-posting',
 }
 
 // Map scheduled-posts subpages to scheduled-posts tool
@@ -71,6 +73,7 @@ const toolToPath: Record<ToolId, string> = {
   'scheduled-posts': '/scheduled-posts',
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
+  'social-affiliate-posting': '/social-affiliate-posting',
 }
 
 const topicToPath: Record<string, string> = {
@@ -830,6 +833,11 @@ function App() {
       <Route path="/post-queue" element={
         <Layout {...layoutProps} showSuggest={false}>
           <ZernioScheduledPostsPage />
+        </Layout>
+      } />
+      <Route path="/social-affiliate-posting" element={
+        <Layout {...layoutProps}>
+          <SocialAffiliatePostingPage />
         </Layout>
       } />
     </Routes>

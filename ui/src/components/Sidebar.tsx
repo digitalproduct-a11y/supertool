@@ -13,9 +13,10 @@ import {
   IconCalendar,
   IconCalendarClock,
   IconShoppingBag,
+  IconBrandThreads,
 } from "@tabler/icons-react";
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts' | 'post-queue' | 'photo-carousel'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'shopee-top-products' | 'scheduled-posts' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
 
 interface NavItem {
   id: ToolId | string;
@@ -65,6 +66,11 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
         label: "Affiliate Article Editor",
         icon: IconFileText,
       },
+      {
+        id: "social-affiliate-posting",
+        label: "Social Affiliate Posting",
+        icon: IconBrandThreads,
+      },
     ],
   },
 ];
@@ -81,6 +87,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'shopee-top-products': 'Shopee Top Products',
   'scheduled-posts': 'Schedule Trending News',
   'post-queue': 'Scheduled Queue',
+  'social-affiliate-posting': 'Social Affiliate Posting',
 }
 
 const floatingBtnClass =

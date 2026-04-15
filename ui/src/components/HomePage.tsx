@@ -11,6 +11,7 @@ import {
   IconBrain,
   IconCalendar,
   IconShoppingBag,
+  IconBrandThreads,
 } from "@tabler/icons-react";
 
 type ToolId =
@@ -23,7 +24,8 @@ type ToolId =
   | "engagement-photos"
   | "scheduled-posts"
   | "shopee-top-products"
-  | "photo-carousel";
+  | "photo-carousel"
+  | "social-affiliate-posting";
 
 interface Tool {
   id: ToolId;
@@ -111,6 +113,13 @@ const sections: Section[] = [
         description: "Discover and share top-performing Shopee products",
         color: "#F05A35",
         icon: IconShoppingBag,
+      },
+      {
+        id: "social-affiliate-posting",
+        label: "Social Affiliate Posting",
+        description: "Generate Threads and Facebook content for Shopee affiliate products",
+        color: "#F05A35",
+        icon: IconBrandThreads,
       },
     ],
   },
