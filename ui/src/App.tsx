@@ -710,7 +710,7 @@ function CarouselPage() {
   }, [])
 
   async function handleCarouselPostDraft(
-    imageUrl: string,
+    imageUrls: string[],
     caption: string,
     postBrand: string,
     scheduledFor?: string,
@@ -725,7 +725,8 @@ function CarouselPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fb_ai_image_url: imageUrl,
+          fb_ai_image_url: imageUrls[0],
+          carousel_images: imageUrls,
           fb_ai_caption: caption,
           brand: postBrand.toLowerCase(),
           ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),

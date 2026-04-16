@@ -8,7 +8,7 @@ interface CarouselPreviewPanelProps {
   result: CarouselResult | null
   errorMessage: string
   onReset: () => void
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string) => Promise<{success: boolean, message: string, status?: string}>
+  onPostDraft?: (imageUrls: string[], caption: string, brand: string, scheduledFor?: string, passcode?: string) => Promise<{success: boolean, message: string, status?: string}>
 }
 
 export function CarouselPreviewPanel({

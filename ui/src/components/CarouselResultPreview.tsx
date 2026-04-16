@@ -17,7 +17,7 @@ interface ImageReplacement {
 
 interface CarouselResultPreviewProps {
   result: CarouselResult
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string) => Promise<{success: boolean, message: string, status?: string}>
+  onPostDraft?: (imageUrls: string[], caption: string, brand: string, scheduledFor?: string, passcode?: string) => Promise<{success: boolean, message: string, status?: string}>
 }
 
 export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPreviewProps) {
@@ -262,11 +262,11 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
     const brand = result.brand.toLowerCase()
     const resolvedPasscode = passcode ?? getCredentials(brand)?.passcode
     if (!resolvedPasscode) return
-    const heroImage = result.images.find(img => img.type === 'hero') ?? result.images[0]
-    if (!heroImage) return
+    if (activeImages.length === 0) return
+    const imageUrls = activeImages.map(img => getDisplayUrl(img.id, img.src))
     setIsPosting(true)
     try {
-      const response = await onPostDraft(heroImage.src, caption, result.brand, scheduleFor, resolvedPasscode)
+      const response = await onPostDraft(imageUrls, caption, result.brand, scheduleFor, resolvedPasscode)
       if (response.status === 'AUTH_ERROR') {
         clearCredentials(brand)
         setShowScheduleModal(true)
