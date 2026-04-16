@@ -84,24 +84,37 @@ export function updateSubtitleInImageUrl(imageUrl: string, originalSubtitle: str
 export const SUBTITLE_BRANDS = new Set(['era sarawak', 'era sabah'])
 
 /**
- * Replaces the base image in a Cloudinary image/upload URL while preserving all
- * overlay transformations. Uses a comma heuristic: transform segments always contain
- * commas (e.g. c_fill,w_1080), public_id segments never do.
+ * Replaces the base image in a Cloudinary URL while preserving all overlay
+ * transformations. Handles both /image/upload/ and /image/fetch/ source URLs
+ * but always outputs an /image/upload/ URL (for custom user-uploaded replacements).
  *
- * .../image/upload/{transforms}/{old_public_id.jpg}
- * → .../image/upload/{transforms}/{newPublicId}
+ * Uses a comma heuristic: transform segments always contain commas (e.g. c_fill,w_1080),
+ * while the base image segment (public_id or encoded fetch URL) never does.
+ *
+ * .../image/upload/{transforms}/{old_public_id.jpg}  → .../image/upload/{transforms}/{newPublicId}
+ * .../image/fetch/{transforms}/{encodedPexelsUrl}    → .../image/upload/{transforms}/{newPublicId}
  */
 export function replaceBaseImage(originalUrl: string, newPublicId: string): string {
   const uploadPrefix = '/image/upload/'
-  const uploadIdx = originalUrl.indexOf(uploadPrefix)
-  if (uploadIdx === -1) return originalUrl
+  const fetchPrefix  = '/image/fetch/'
 
-  const base = originalUrl.substring(0, uploadIdx)
-  const afterUpload = originalUrl.substring(uploadIdx + uploadPrefix.length)
-  const segments = afterUpload.split('/')
+  let prefixIdx = originalUrl.indexOf(uploadPrefix)
+  let prefixLen = uploadPrefix.length
+
+  if (prefixIdx === -1) {
+    prefixIdx = originalUrl.indexOf(fetchPrefix)
+    prefixLen = fetchPrefix.length
+  }
+
+  if (prefixIdx === -1) return originalUrl
+
+  const base = originalUrl.substring(0, prefixIdx)
+  const afterPrefix = originalUrl.substring(prefixIdx + prefixLen)
+  const segments = afterPrefix.split('/')
 
   // Find the last segment that contains a comma — that's the final transform.
-  // Everything after it is the old public_id (may include folder paths + extension).
+  // Encoded Pexels URLs (%2F, %2C etc.) contain no literal commas, so they're
+  // correctly identified as the base image segment, not a transform.
   let lastTransformIdx = -1
   for (let i = 0; i < segments.length; i++) {
     if (segments[i].includes(',')) lastTransformIdx = i
@@ -110,6 +123,7 @@ export function replaceBaseImage(originalUrl: string, newPublicId: string): stri
   if (lastTransformIdx < 0) return originalUrl
 
   const transforms = segments.slice(0, lastTransformIdx + 1).join('/')
+  // Always produce an upload URL regardless of whether source was fetch or upload
   return `${base}/image/upload/${transforms}/${newPublicId}`
 }
 
