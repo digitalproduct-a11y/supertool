@@ -54,6 +54,18 @@ function dayMonthFromDate(date: string | null): string | null {
   return d.toLocaleDateString('en-MY', { day: 'numeric', month: 'long' })
 }
 
+/** Parses a DD/MM/YYYY string into a Date. Returns null if input is null, empty, or malformed. */
+function parseDDMMYYYY(date: string | null): Date | null {
+  if (!date) return null
+  const parts = date.split('/')
+  if (parts.length !== 3) return null
+  const [dd, mm, yyyy] = parts.map(Number)
+  if (!dd || !mm || !yyyy || isNaN(dd) || isNaN(mm) || isNaN(yyyy)) return null
+  const d = new Date(yyyy, mm - 1, dd)
+  if (isNaN(d.getTime())) return null
+  return d
+}
+
 
 // ─── Featured Event Row (inside glass-card list) ──────────────────────────────
 
@@ -163,6 +175,11 @@ function EventRow({ item }: { item: ListEvent }) {
 // ─── Tavily Result Row (Section 3) ───────────────────────────────────────────
 
 function TavilyResultRow({ item }: { item: TavilyResult }) {
+  const parsedDate = parseDDMMYYYY(item.date)
+  const formattedDate = parsedDate
+    ? parsedDate.toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+
   return (
     <div className="p-3 hover:bg-neutral-50/50 transition-colors">
       <a
@@ -176,9 +193,9 @@ function TavilyResultRow({ item }: { item: TavilyResult }) {
         </p>
         <IconExternalLink className="w-3.5 h-3.5 text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 mt-0.5" />
       </a>
-      {item.date && (
+      {formattedDate && (
         <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">
-          {item.date}
+          {formattedDate}
         </p>
       )}
       {item.facebook_caption && (
