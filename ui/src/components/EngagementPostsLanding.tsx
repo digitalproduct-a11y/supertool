@@ -1,7 +1,7 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCalendar } from '@tabler/icons-react'
 import type React from 'react'
 
-type ActiveTopicId = 'engagement-photos' | 'ucl'
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'on-this-day'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -63,6 +63,13 @@ const sections: Section[] = [
     label: 'Entertainment',
     description: 'Create engaging content for entertainment and lifestyle.',
     topics: [
+      {
+        id: 'on-this-day',
+        label: 'On This Day',
+        description: 'Historical events from Malaysia — what happened today in history',
+        icon: IconCalendar,
+        color: '#0055EE',
+      },
       {
         id: 'coming-soon-4',
         label: 'Celebrity News',
