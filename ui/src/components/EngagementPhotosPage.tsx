@@ -95,7 +95,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={() => navigate('/engagement-photos')}
+              onClick={() => navigate('/engagement-posts')}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />

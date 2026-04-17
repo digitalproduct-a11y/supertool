@@ -45,9 +45,9 @@ const pathToTool: Record<string, ToolId> = {
   '/trending-news-to-fb': 'trending-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',
-  '/engagement-photos': 'engagement-posts',
-  '/engagement-photos/epl': 'engagement-photos',
-  '/on-this-day': 'on-this-day',
+  '/engagement-posts': 'engagement-posts',
+  '/engagement-posts/epl': 'engagement-photos',
+  '/engagement-posts/on-this-day-malaysia': 'on-this-day',
   '/scheduled-posts': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/social-affiliate-posting': 'social-affiliate-posting',
@@ -68,12 +68,12 @@ const toolToPath: Record<ToolId, string> = {
   'trending-news': '/trending-news-to-fb',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
-  'engagement-posts': '/engagement-photos',
-  'engagement-photos': '/engagement-photos/epl',
+  'engagement-posts': '/engagement-posts',
+  'engagement-photos': '/engagement-posts/epl',
   'scheduled-posts': '/scheduled-posts',
   'shopee-top-products': '/shopee-top-products',
   'social-affiliate-posting': '/social-affiliate-posting',
-  'on-this-day': '/on-this-day',
+  'on-this-day': '/engagement-posts/on-this-day-malaysia',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -712,22 +712,22 @@ function App() {
           <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
         </Layout>
       } />
-      <Route path="/engagement-photos" element={
+      <Route path="/engagement-posts" element={
         <Layout {...layoutProps}>
           <EngagementPostsLanding onSelectTopic={(id) => navigate(toolToPath[id])} />
         </Layout>
       } />
-      <Route path="/engagement-photos/epl" element={
+      <Route path="/engagement-posts/epl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="epl" />
         </Layout>
       } />
-      <Route path="/engagement-photos/ucl" element={
+      <Route path="/engagement-posts/ucl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="ucl" />
         </Layout>
       } />
-      <Route path="/engagement-photos/worldcup" element={
+      <Route path="/engagement-posts/worldcup" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="worldcup" />
         </Layout>
@@ -752,7 +752,7 @@ function App() {
           <SocialAffiliatePostingPage />
         </Layout>
       } />
-      <Route path="/on-this-day" element={
+      <Route path="/engagement-posts/on-this-day-malaysia" element={
         <Layout {...layoutProps}>
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <OnThisDayPage />
