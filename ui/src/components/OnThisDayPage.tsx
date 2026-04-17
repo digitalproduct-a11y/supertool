@@ -136,13 +136,13 @@ export function OnThisDayPage() {
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-28">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-start gap-3">
             <button
-              onClick={() => navigate('/engagement-photos')}
+              onClick={() => navigate('/engagement-posts')}
               className="mt-0.5 p-1.5 hover:bg-neutral-200/60 rounded-lg transition text-neutral-500 hover:text-neutral-950 shrink-0"
             >
               <IconChevronLeft className="w-5 h-5" />

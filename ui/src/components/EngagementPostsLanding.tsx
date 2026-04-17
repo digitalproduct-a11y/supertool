@@ -60,16 +60,22 @@ const sections: Section[] = [
     ],
   },
   {
-    label: 'Entertainment',
-    description: 'Create engaging content for entertainment and lifestyle.',
+    label: 'On This Day',
+    description: 'Discover historical events and create timely engagement posts.',
     topics: [
       {
         id: 'on-this-day',
-        label: 'On This Day',
+        label: 'On This Day — Malaysia',
         description: 'Historical events from Malaysia — what happened today in history',
         icon: IconCalendar,
         color: '#0055EE',
       },
+    ],
+  },
+  {
+    label: 'Entertainment',
+    description: 'Create engaging content for entertainment and lifestyle.',
+    topics: [
       {
         id: 'coming-soon-4',
         label: 'Celebrity News',
