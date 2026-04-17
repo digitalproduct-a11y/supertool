@@ -1,6 +1,8 @@
 {
   "permissions": {
-    "allow": ["WebFetch(domain:github.com)"]
+    "allow": [
+      "WebFetch(domain:github.com)"
+    ]
   },
   "enabledMcpjsonServers": [
     "n8n-mcp",
@@ -8,6 +10,7 @@
     "cloudinary-env-config",
     "cloudinary-smd",
     "cloudinary-analysis",
-    "vercel"
+    "vercel",
+    "tavily-mcp"
   ]
 }

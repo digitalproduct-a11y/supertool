@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
@@ -12,12 +12,16 @@ import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
+const OnThisDayPage = lazy(() =>
+  import('./components/OnThisDayPage').then(m => ({ default: m.OnThisDayPage }))
+)
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
 import { GetStartedPage } from './components/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
+import { Spinner } from './components/ds/Spinner'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
 import type {
@@ -32,7 +36,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'photo-carousel' | 'social-affiliate-posting' | 'on-this-day'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -43,6 +47,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
+  '/on-this-day': 'on-this-day',
   '/scheduled-posts': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/social-affiliate-posting': 'social-affiliate-posting',
@@ -68,6 +73,7 @@ const toolToPath: Record<ToolId, string> = {
   'scheduled-posts': '/scheduled-posts',
   'shopee-top-products': '/shopee-top-products',
   'social-affiliate-posting': '/social-affiliate-posting',
+  'on-this-day': '/on-this-day',
 }
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
@@ -744,6 +750,13 @@ function App() {
       <Route path="/social-affiliate-posting" element={
         <Layout {...layoutProps}>
           <SocialAffiliatePostingPage />
+        </Layout>
+      } />
+      <Route path="/on-this-day" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <OnThisDayPage />
+          </Suspense>
         </Layout>
       } />
     </Routes>
