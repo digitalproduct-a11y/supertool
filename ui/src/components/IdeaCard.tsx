@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import PhotoPickerModal from './PhotoPickerModal'
@@ -242,7 +243,15 @@ export default function IdeaCard({
                   ) : 'Schedule on FB'}
                 </button>
                 {scheduleStatus === 'done' && (
-                  <p className="text-xs text-green-600 text-center">✓ Scheduled on Facebook</p>
+                  <div className="text-center space-y-1">
+                    <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                    <p className="text-xs text-neutral-400">
+                      To view or delete your scheduled post, check{' '}
+                      <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                        here
+                      </Link>.
+                    </p>
+                  </div>
                 )}
                 {scheduleStatus === 'error' && (
                   <p className="text-xs text-red-500 text-center">✗ Failed to schedule. Try again.</p>

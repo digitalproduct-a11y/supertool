@@ -40,7 +40,7 @@ export function ScheduleModal({ brand, hasCredentials, isPosting, onConfirm, onC
           </button>
         </div>
 
-        <p className="text-xs text-neutral-500">Posting for <span className="font-medium text-neutral-800">{brand}</span></p>
+        <p className="text-xs text-neutral-500">Posting for <span className="font-medium text-neutral-800">{brand.replace(/\b\w/g, c => c.toUpperCase())}</span></p>
 
         {/* Passcode field — only when no stored credentials */}
         {!hasCredentials && (

@@ -40,7 +40,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
         {/* Hero */}
         <div className="mb-10">
           <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-            News for your brand
+          Ready to post content
           </h1>
           <p className="text-neutral-500 mt-3 text-sm max-w-xs">
             View trending news from the last 24 hours. Refreshed daily at 10:00 AM

@@ -2,16 +2,6 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useToastStore, type ToastItem } from '../../hooks/useToast'
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatTime(ts: number): string {
-  const d = new Date(ts)
-  const h = d.getHours() % 12 || 12
-  const m = d.getMinutes().toString().padStart(2, '0')
-  const ampm = d.getHours() >= 12 ? 'PM' : 'AM'
-  return `Today ${h}:${m}${ampm}`
-}
-
 // ── Variants ─────────────────────────────────────────────────────────────────
 
 const VARIANTS = {
@@ -81,7 +71,6 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
       {icon}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white leading-snug truncate">{item.message}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{formatTime(item.createdAt)}</p>
       </div>
       <button
         onClick={handleClose}

@@ -92,7 +92,7 @@ const sections: Section[] = [
       },
       {
         id: "scheduled-posts",
-        label: "News for Your Brand",
+        label: "Ready to Post Content",
         description: "Schedule trending news posts across brands",
         color: "#0055EE",
         icon: IconCalendar,

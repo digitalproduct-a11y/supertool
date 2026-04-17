@@ -50,7 +50,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'trending-news', label: 'Trending news', icon: IconTrendingUp },
       { id: 'spike-news', label: 'Spike news', icon: IconBolt },
-      { id: 'scheduled-posts', label: 'News for your brand', icon: IconCalendar },
+      { id: 'scheduled-posts', label: 'Ready to post content', icon: IconCalendar },
       { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
     ],
   },
@@ -98,7 +98,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'engagement-posts': 'Engagement posts',
   'engagement-photos': 'English Premier League',
   'shopee-top-products': 'Shopee Top Products',
-  'scheduled-posts': 'News for your brand',
+  'scheduled-posts': 'Ready to post content',
   'post-queue': 'Scheduled queue',
   'social-affiliate-posting': 'Social Affiliate Posting',
 }
