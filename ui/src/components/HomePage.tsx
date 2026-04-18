@@ -9,8 +9,6 @@ import {
   IconFileText,
   IconActivity,
   IconBrain,
-  IconCalendar,
-  IconShoppingBag,
   IconBrandThreads,
   IconBolt,
   IconCalendarClock,
@@ -77,13 +75,6 @@ const sections: Section[] = [
       "Discover trending content and generate engagement posts.",
     tools: [
       {
-        id: "trending-news",
-        label: "Trending News",
-        description: "Turn trending news into Facebook-ready visuals",
-        color: "#0055EE",
-        icon: IconTrendingUp,
-      },
-      {
         id: "spike-news",
         label: "Spike News",
         description: "Articles currently experiencing a traffic spike",
@@ -92,10 +83,10 @@ const sections: Section[] = [
       },
       {
         id: "scheduled-posts",
-        label: "Ready to Post Content",
-        description: "Schedule trending news posts across brands",
+        label: "Trending News",
+        description: "Browse trending articles and generate posts for your brand",
         color: "#0055EE",
-        icon: IconCalendar,
+        icon: IconTrendingUp,
       },
       {
         id: "engagement-posts",
@@ -111,13 +102,6 @@ const sections: Section[] = [
     description:
       "Generate affiliate content faster and drive more commissions.",
     tools: [
-      {
-        id: "shopee-top-products",
-        label: "Shopee Top Products",
-        description: "Discover and share top-performing Shopee products",
-        color: "#F05A35",
-        icon: IconShoppingBag,
-      },
       {
         id: "affiliate-links",
         label: "Shopee Affiliate Links",

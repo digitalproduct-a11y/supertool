@@ -10,9 +10,7 @@ import {
   IconFileText,
   IconLayoutSidebar,
   IconHeart,
-  IconCalendar,
   IconCalendarClock,
-  IconShoppingBag,
   IconBrandThreads,
   IconBolt,
 } from "@tabler/icons-react";
@@ -48,20 +46,14 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
   {
     section: "Content Ideas",
     items: [
-      { id: 'trending-news', label: 'Trending news', icon: IconTrendingUp },
       { id: 'spike-news', label: 'Spike news', icon: IconBolt },
-      { id: 'scheduled-posts', label: 'Ready to post content', icon: IconCalendar },
+      { id: 'scheduled-posts', label: 'Trending news', icon: IconTrendingUp },
       { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
     ],
   },
   {
     section: "Affiliate",
     items: [
-      {
-        id: "shopee-top-products",
-        label: "Shopee top products",
-        icon: IconShoppingBag,
-      },
       {
         id: "affiliate-links",
         label: "Shopee affiliate links",
@@ -98,7 +90,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'engagement-posts': 'Engagement posts',
   'engagement-photos': 'English Premier League',
   'shopee-top-products': 'Shopee Top Products',
-  'scheduled-posts': 'Ready to post content',
+  'scheduled-posts': 'Trending news',
   'post-queue': 'Scheduled queue',
   'social-affiliate-posting': 'Social Affiliate Posting',
 }
