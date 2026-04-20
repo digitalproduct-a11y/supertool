@@ -3,6 +3,7 @@ import { IconRefresh, IconTrash, IconCalendarClock } from '@tabler/icons-react'
 import { useZernioScheduledPosts } from '../hooks/useZernioScheduledPosts'
 import { Pagination } from './ds/Pagination'
 import { getCredentials, saveCredentials } from '../utils/fbCredentials'
+import { toast } from '../hooks/useToast'
 import type { ZernioPost } from '../types'
 
 function formatScheduledTime(iso: string): { date: string; time: string } {
@@ -125,7 +126,10 @@ export function ZernioScheduledPostsPage() {
     if (!pendingDelete) return
     if (passcode) saveCredentials(pendingDeleteBrand, passcode)
     const ok = await deletePost(pendingDelete._id)
-    if (ok) setPendingDelete(null)
+    if (ok) {
+      setPendingDelete(null)
+      toast.success('Post deleted successfully')
+    }
   }
 
   const availableBrands = useMemo(() =>
