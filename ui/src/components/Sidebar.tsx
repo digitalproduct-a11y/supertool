@@ -26,7 +26,8 @@ type ToolId =
   | "shopee-top-products"
   | "scheduled-posts"
   | "photo-carousel"
-  | "social-affiliate-posting";
+  | "social-affiliate-posting"
+  | "on-this-day";
 
 interface NavItem {
   id: ToolId | string;
@@ -108,6 +109,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   "shopee-top-products": "Shopee Top Products",
   "scheduled-posts": "Schedule Trending News",
   "social-affiliate-posting": "Social Affiliate Posting",
+  "on-this-day": "On This Day",
 };
 
 const floatingBtnClass =
