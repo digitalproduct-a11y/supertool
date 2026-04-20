@@ -133,7 +133,13 @@ interface ArticleRowProps {
 
 function ArticleRow({ item, selected, onToggle }: ArticleRowProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const isLong = (item.title?.length ?? 0) > 70
+  const [isClamped, setIsClamped] = useState(false)
+  const titleRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const el = titleRef.current
+    if (el) setIsClamped(el.scrollHeight > el.clientHeight)
+  }, [])
 
   return (
     <div
@@ -159,10 +165,13 @@ function ArticleRow({ item, selected, onToggle }: ArticleRowProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1">
             <div className="flex-1 min-w-0">
-              <p className={`text-neutral-800 font-medium text-xs leading-snug ${isExpanded ? '' : 'line-clamp-2'}`}>
+              <p
+                ref={titleRef}
+                className={`text-neutral-800 font-medium text-xs leading-snug ${isExpanded ? '' : 'line-clamp-2'}`}
+              >
                 {item.title || item.url}
               </p>
-              {isLong && (
+              {isClamped && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setIsExpanded(v => !v) }}
                   className="text-[10px] text-neutral-400 hover:text-neutral-600 mt-0.5 transition-colors"
