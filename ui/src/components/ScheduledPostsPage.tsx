@@ -420,7 +420,7 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
   const totalBulk = bulkResults.length
 
   return (
-    <main className="pt-20 md:pt-10 px-4 md:px-8 pb-32">
+    <main className={`pt-20 md:pt-10 px-4 md:px-8 transition-all ${view === 'browse' && selectedIds.size > 0 ? 'pb-32' : 'pb-12'}`}>
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
@@ -564,7 +564,7 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
                       <h2 className="text-sm font-semibold text-neutral-500">Other Sources</h2>
                       <p className="text-xs text-neutral-400 mt-0.5">Articles from other brands you can optionally use</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start opacity-80">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                       {Object.entries(otherGroups).map(([source, items]) => (
                         <SourceGroup
                           key={source}
