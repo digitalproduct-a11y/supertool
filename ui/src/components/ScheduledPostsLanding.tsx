@@ -25,24 +25,38 @@ const BRANDS = [
 
 type RawArticle = Record<string, string>
 
+interface CachedItem {
+  id: string
+  url: string
+  source: string
+  brand: string
+  category: string
+  type: string
+  title: string
+  imageUrl: string
+  caption: string
+  publishedAt: string
+  status: 'idle'
+}
+
 function isSameDay(timestamp: number): boolean {
   return new Date(timestamp).toDateString() === new Date().toDateString()
 }
 
 // All brands share the same article pool — find any valid same-day cache
-function loadCachedArticles(): { source: string }[] | null {
+function loadCachedArticles(): CachedItem[] | null {
   for (const brand of BRANDS) {
     try {
       const raw = localStorage.getItem(`ready_to_post_${brand}`)
       if (!raw) continue
-      const parsed = JSON.parse(raw) as { items: { source: string }[]; timestamp: number }
+      const parsed = JSON.parse(raw) as { items: CachedItem[]; timestamp: number }
       if (parsed.items?.length > 0 && isSameDay(parsed.timestamp)) return parsed.items
     } catch { /* continue */ }
   }
   return null
 }
 
-async function fetchArticles(): Promise<{ source: string }[]> {
+async function fetchArticles(): Promise<CachedItem[]> {
   const webhookUrl = (import.meta.env.VITE_TRENDING_SPIKE_WEBHOOK_URL as string | undefined)?.trim()
   if (!webhookUrl) throw new Error('VITE_TRENDING_SPIKE_WEBHOOK_URL is not configured.')
   const controller = new AbortController()
@@ -58,7 +72,19 @@ async function fetchArticles(): Promise<{ source: string }[]> {
     if (!text.trim()) throw new Error('Empty response.')
     const data = JSON.parse(text) as { success: boolean; articles: RawArticle[] }
     if (!data.success || !Array.isArray(data.articles)) throw new Error('Unexpected response format.')
-    return data.articles.map(a => ({ source: a.source || a.category || 'Unknown' }))
+    return data.articles.map(a => ({
+      id: crypto.randomUUID(),
+      url: a.url,
+      source: a.source || a.category || 'Unknown',
+      brand: a.brand || a.source || '',
+      category: a.category || '',
+      type: a.type || '',
+      title: a.title || '',
+      imageUrl: (a.image && !a.image.includes('sponsor-logos')) ? a.image : '',
+      caption: a.caption || '',
+      publishedAt: a.publishedAt || '',
+      status: 'idle' as const,
+    }))
   } finally {
     clearTimeout(timeout)
   }
