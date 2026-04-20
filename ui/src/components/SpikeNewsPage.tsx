@@ -62,7 +62,7 @@ export function SpikeNewsPage({ onMarkRead }: { onMarkRead?: (urls: string[]) =>
           receivedAt: s.receivedAt || '',
         }))
         setSpikeInbox(items)
-        onMarkRead?.(items.map(i => i.articleUrl).filter(Boolean))
+        onMarkRead?.(items.map((i: { articleUrl: string }) => i.articleUrl).filter(Boolean))
       } else {
         toast.error(data.message || 'Failed to load spike inbox.')
       }
