@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { RECOMMENDED_SOURCES } from './ScheduledPostsPage'
 
 const BRANDS = [
   'Astro Ulagam',
@@ -40,7 +41,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
         {/* Hero */}
         <div className="mb-10">
           <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-          Ready to post content
+          Trending News
           </h1>
           <p className="text-neutral-500 mt-3 text-sm max-w-xs">
             View trending news from the last 24 hours. Refreshed daily at 10:00 AM
@@ -71,6 +72,11 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
                   <p className="text-xs text-neutral-500 mt-0.5">
                     {isDisabled ? 'Templates coming soon' : `Schedule trending news easily for ${brand}`}
                   </p>
+                  {!isDisabled && (RECOMMENDED_SOURCES[brand]?.length ?? 0) > 0 && (
+                    <p className="text-[11px] text-neutral-400 mt-1.5">
+                      {RECOMMENDED_SOURCES[brand].length} recommended {RECOMMENDED_SOURCES[brand].length === 1 ? 'source' : 'sources'}
+                    </p>
+                  )}
                 </div>
                 {!isDisabled && (
                   <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors flex-shrink-0">

@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconChevronLeft, IconRefresh } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
-import { callGenerateWebhook, GenerateView, ImageThumb } from './GeneratePostView'
-import type { GenerateSource } from './GeneratePostView'
+import { callGenerateWebhook, ImageThumb } from './GeneratePostView'
 import { PostCard } from './PostCard'
 import type { ScheduledPost } from '../types'
 import { Spinner } from './ds/Spinner'
@@ -36,7 +35,7 @@ interface GeneratedResult {
 
 // ─── Recommended sources map ──────────────────────────────────────────────────
 
-const RECOMMENDED_SOURCES: Record<string, string[]> = {
+export const RECOMMENDED_SOURCES: Record<string, string[]> = {
   'Era':             ['astro awani', 'astro arena', 'gempak'],
   'Sinar':           ['astro awani', 'astro arena', 'gempak'],
   'Era Sarawak':     ['astro awani', 'astro arena', 'gempak'],
@@ -130,33 +129,53 @@ interface ArticleRowProps {
   item: TrendingItem
   selected: boolean
   onToggle: (id: string) => void
-  onGenerate: (item: TrendingItem) => void
 }
 
-function ArticleRow({ item, selected, onToggle, onGenerate }: ArticleRowProps) {
+function ArticleRow({ item, selected, onToggle }: ArticleRowProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const isLong = (item.title?.length ?? 0) > 70
+
   return (
-    <div className={`p-3 hover:bg-neutral-50/50 transition-colors ${selected ? 'bg-blue-50/30' : ''}`}>
+    <div
+      onClick={() => onToggle(item.id)}
+      className={`p-3 cursor-pointer transition-colors ${selected ? 'bg-blue-50/50' : 'hover:bg-neutral-50/70'}`}
+    >
       <div className="flex gap-2.5">
-        {/* Thumbnail — 16:9 with checkbox overlay */}
-        <div className="relative w-24 shrink-0">
+        {/* Thumbnail — 16:9, non-clickable, with custom checkbox overlay */}
+        <div className="relative w-24 shrink-0 pointer-events-none">
           <ImageThumb url={item.imageUrl} alt={item.title || item.url} aspectRatio="video" />
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={() => onToggle(item.id)}
-            className="absolute top-1 left-1 h-3.5 w-3.5 rounded border-white accent-neutral-950 cursor-pointer shadow"
-          />
+          <div className={`absolute top-1 left-1 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shadow-sm ${
+            selected ? 'bg-neutral-950 border-neutral-950' : 'bg-white/90 border-neutral-300'
+          }`}>
+            {selected && (
+              <svg className="w-2.5 h-2.5" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 12 12">
+                <path d="M2 6l3 3 5-5" />
+              </svg>
+            )}
+          </div>
         </div>
+
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1">
-            <span className="text-neutral-800 font-medium text-xs line-clamp-2 leading-snug flex-1">
-              {item.title || item.url}
-            </span>
+            <div className="flex-1 min-w-0">
+              <p className={`text-neutral-800 font-medium text-xs leading-snug ${isExpanded ? '' : 'line-clamp-2'}`}>
+                {item.title || item.url}
+              </p>
+              {isLong && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsExpanded(v => !v) }}
+                  className="text-[10px] text-neutral-400 hover:text-neutral-600 mt-0.5 transition-colors"
+                >
+                  {isExpanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
+            </div>
             <a
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="shrink-0 text-neutral-300 hover:text-neutral-600 transition mt-0.5"
               title="Open article"
             >
@@ -165,19 +184,11 @@ function ArticleRow({ item, selected, onToggle, onGenerate }: ArticleRowProps) {
               </svg>
             </a>
           </div>
-          <div className="flex items-center justify-between mt-1.5 gap-2">
-            <div className="min-w-0">
-              <span className="text-[10px] text-neutral-400 font-medium capitalize block truncate">{item.source}</span>
-              {item.publishedAt && (
-                <span className="text-[10px] text-neutral-300 block truncate">{item.publishedAt}</span>
-              )}
-            </div>
-            <button
-              onClick={() => onGenerate(item)}
-              className="shrink-0 px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-[10px] font-semibold transition active:scale-[0.97]"
-            >
-              Generate
-            </button>
+          <div className="mt-1.5">
+            <span className="text-[10px] text-neutral-400 font-medium capitalize block truncate">{item.source}</span>
+            {item.publishedAt && (
+              <span className="text-[10px] text-neutral-300 block truncate">{item.publishedAt}</span>
+            )}
           </div>
         </div>
       </div>
@@ -192,10 +203,9 @@ interface SourceGroupProps {
   items: TrendingItem[]
   selectedIds: Set<string>
   onToggle: (id: string) => void
-  onGenerate: (item: TrendingItem) => void
 }
 
-function SourceGroup({ source, items, selectedIds, onToggle, onGenerate }: SourceGroupProps) {
+function SourceGroup({ source, items, selectedIds, onToggle }: SourceGroupProps) {
   const allSelected = items.every(i => selectedIds.has(i.id))
 
   const handleToggleAll = () => {
@@ -227,7 +237,6 @@ function SourceGroup({ source, items, selectedIds, onToggle, onGenerate }: Sourc
             item={item}
             selected={selectedIds.has(item.id)}
             onToggle={onToggle}
-            onGenerate={onGenerate}
           />
         ))}
       </div>
@@ -275,9 +284,8 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [view, setView] = useState<'browse' | 'single' | 'bulk'>('browse')
+  const [view, setView] = useState<'browse' | 'bulk'>('browse')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [singleSource, setSingleSource] = useState<GenerateSource | null>(null)
   const [bulkResults, setBulkResults] = useState<GeneratedResult[]>([])
 
   // Track if bulk generation has already been triggered for the current results
@@ -323,16 +331,6 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
     })
   }, [])
 
-  const handleSingleGenerate = useCallback((item: TrendingItem) => {
-    setSingleSource({
-      articleUrl: item.url,
-      brand: displayBrand,
-      articleTitle: item.title,
-      backLabel: `Back to ${displayBrand}`,
-    })
-    setView('single')
-  }, [displayBrand])
-
   const handleBulkGenerate = useCallback(() => {
     const selected = articles.filter(a => selectedIds.has(a.id))
     const initial: GeneratedResult[] = selected.map(item => ({
@@ -373,7 +371,6 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
 
   const handleBack = useCallback(() => {
     setView('browse')
-    setSingleSource(null)
     setBulkResults([])
     bulkTriggeredRef.current = false
     setSelectedIds(new Set())
@@ -431,8 +428,6 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
                 <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
                   {view === 'bulk'
                     ? `Generated Posts (${doneCount}/${totalBulk})`
-                    : view === 'single'
-                    ? displayBrand
                     : displayBrand}
                 </h1>
                 {view === 'browse' && !isLoading && articles.length > 0 && (
@@ -456,11 +451,6 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
             style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
           />
         </div>
-
-        {/* ── Single generate view ── */}
-        {view === 'single' && singleSource && (
-          <GenerateView source={singleSource} onBack={handleBack} />
-        )}
 
         {/* ── Bulk generated view ── */}
         {view === 'bulk' && (
@@ -552,7 +542,6 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
                           items={items}
                           selectedIds={selectedIds}
                           onToggle={toggleId}
-                          onGenerate={handleSingleGenerate}
                         />
                       ))}
                     </div>
@@ -574,7 +563,6 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
                           items={items}
                           selectedIds={selectedIds}
                           onToggle={toggleId}
-                          onGenerate={handleSingleGenerate}
                         />
                       ))}
                     </div>
