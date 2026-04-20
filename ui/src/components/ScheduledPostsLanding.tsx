@@ -23,17 +23,45 @@ const BRANDS = [
   'Zayan',
 ].sort()
 
-// All brands share the same article pool — find any cached brand's data
+type RawArticle = Record<string, string>
+
+function isSameDay(timestamp: number): boolean {
+  return new Date(timestamp).toDateString() === new Date().toDateString()
+}
+
+// All brands share the same article pool — find any valid same-day cache
 function loadCachedArticles(): { source: string }[] | null {
   for (const brand of BRANDS) {
     try {
       const raw = localStorage.getItem(`ready_to_post_${brand}`)
       if (!raw) continue
-      const parsed = JSON.parse(raw) as { items: { source: string }[] }
-      if (parsed.items?.length > 0) return parsed.items
+      const parsed = JSON.parse(raw) as { items: { source: string }[]; timestamp: number }
+      if (parsed.items?.length > 0 && isSameDay(parsed.timestamp)) return parsed.items
     } catch { /* continue */ }
   }
   return null
+}
+
+async function fetchArticles(): Promise<{ source: string }[]> {
+  const webhookUrl = (import.meta.env.VITE_TRENDING_SPIKE_WEBHOOK_URL as string | undefined)?.trim()
+  if (!webhookUrl) throw new Error('VITE_TRENDING_SPIKE_WEBHOOK_URL is not configured.')
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 180_000)
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'fetch-trending' }),
+      signal: controller.signal,
+    })
+    const text = await res.text()
+    if (!text.trim()) throw new Error('Empty response.')
+    const data = JSON.parse(text) as { success: boolean; articles: RawArticle[] }
+    if (!data.success || !Array.isArray(data.articles)) throw new Error('Unexpected response format.')
+    return data.articles.map(a => ({ source: a.source || a.category || 'Unknown' }))
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 function computeArticleCounts(articles: { source: string }[]): Record<string, number> {
@@ -50,14 +78,31 @@ function computeArticleCounts(articles: { source: string }[]): Record<string, nu
 export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand: string) => void }) {
   const navigate = useNavigate()
   const [articleCounts, setArticleCounts] = useState<Record<string, number>>({})
+  const [isLoading, setIsLoading] = useState(false)
 
   const DISABLED_BRANDS = new Set(['Raaga', 'Mix', 'Rojak Daily'])
 
   useEffect(() => {
-    const articles = loadCachedArticles()
-    if (articles) {
-      setArticleCounts(computeArticleCounts(articles))
+    // Use cache if available and same-day
+    const cached = loadCachedArticles()
+    if (cached) {
+      setArticleCounts(computeArticleCounts(cached))
+      return
     }
+
+    // Fetch fresh data and populate all brand caches so brand pages also load fast
+    setIsLoading(true)
+    fetchArticles()
+      .then(articles => {
+        const payload = { items: articles, timestamp: Date.now() }
+        const serialized = JSON.stringify(payload)
+        for (const brand of BRANDS) {
+          try { localStorage.setItem(`ready_to_post_${brand}`, serialized) } catch { /* quota */ }
+        }
+        setArticleCounts(computeArticleCounts(articles))
+      })
+      .catch(() => { /* fail silently — counts stay empty */ })
+      .finally(() => setIsLoading(false))
   }, [])
 
   const handleBrandClick = (brand: string) => {
@@ -74,10 +119,12 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
         {/* Hero */}
         <div className="mb-10">
           <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-          Trending News
+            Trending News
           </h1>
           <p className="text-neutral-500 mt-3 text-sm max-w-xs">
-            View trending news from the last 24 hours. Refreshed daily at 10:00 AM
+            {isLoading
+              ? 'Loading today\'s articles…'
+              : 'View trending news from the last 24 hours. Refreshed daily at 10:00 AM'}
           </p>
           <div
             className="mt-6 h-[3px] rounded-full animate-stripe-grow"
@@ -105,10 +152,10 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
                   <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
                   {isDisabled ? (
                     <p className="text-xs text-neutral-400 mt-0.5">Templates coming soon</p>
+                  ) : isLoading ? (
+                    <div className="h-3 w-20 bg-neutral-200 rounded animate-pulse mt-1" />
                   ) : count > 0 ? (
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
-                      {count} articles today
-                    </p>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">{count} articles today</p>
                   ) : null}
                 </div>
                 {!isDisabled && (
