@@ -1,7 +1,6 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RECOMMENDED_SOURCES } from './ScheduledPostsPage'
-import { BRAND_LOGO_IDS } from '../constants/brands'
-import type { BrandName } from '../constants/brands'
 
 const BRANDS = [
   'Astro Ulagam',
@@ -24,10 +23,35 @@ const BRANDS = [
   'Zayan',
 ].sort()
 
+function loadArticleCount(brand: string): number {
+  try {
+    const raw = localStorage.getItem(`ready_to_post_${brand}`)
+    if (!raw) return 0
+    const parsed = JSON.parse(raw) as { items: { source: string }[] }
+    const sources = RECOMMENDED_SOURCES[brand] ?? []
+    return parsed.items.filter(item =>
+      sources.some(s => item.source.toLowerCase() === s.toLowerCase())
+    ).length
+  } catch {
+    return 0
+  }
+}
+
 export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand: string) => void }) {
   const navigate = useNavigate()
+  const [articleCounts, setArticleCounts] = useState<Record<string, number>>({})
 
   const DISABLED_BRANDS = new Set(['Raaga', 'Mix', 'Rojak Daily'])
+
+  useEffect(() => {
+    const counts: Record<string, number> = {}
+    for (const brand of BRANDS) {
+      if (!DISABLED_BRANDS.has(brand)) {
+        counts[brand] = loadArticleCount(brand)
+      }
+    }
+    setArticleCounts(counts)
+  }, [])
 
   const handleBrandClick = (brand: string) => {
     if (DISABLED_BRANDS.has(brand)) return
@@ -58,6 +82,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {BRANDS.map((brand) => {
             const isDisabled = DISABLED_BRANDS.has(brand)
+            const count = articleCounts[brand] ?? 0
             return (
               <button
                 key={brand}
@@ -69,23 +94,13 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
                     : 'hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]'
                 }`}
               >
-                {/* Brand logo */}
-                {BRAND_LOGO_IDS[brand as BrandName] && (
-                  <div className="shrink-0 w-10 h-10 rounded-lg bg-white/60 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={`https://res.cloudinary.com/dymmqtqyg/image/upload/w_80,h_80,c_contain,f_auto/${BRAND_LOGO_IDS[brand as BrandName]}`}
-                      alt={brand}
-                      className="w-8 h-8 object-contain"
-                    />
-                  </div>
-                )}
                 <div className="flex-1 min-w-0">
                   <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
                   {isDisabled ? (
                     <p className="text-xs text-neutral-400 mt-0.5">Templates coming soon</p>
-                  ) : (RECOMMENDED_SOURCES[brand]?.length ?? 0) > 0 ? (
+                  ) : count > 0 ? (
                     <p className="text-[11px] text-neutral-400 mt-0.5">
-                      {RECOMMENDED_SOURCES[brand].length} recommended news
+                      {count} articles today
                     </p>
                   ) : null}
                 </div>
