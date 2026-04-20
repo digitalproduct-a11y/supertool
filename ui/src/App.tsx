@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
@@ -49,15 +49,15 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
-  '/scheduled-posts': 'scheduled-posts',
+  '/trending-news': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
 }
 
-// Map scheduled-posts subpages to scheduled-posts tool
+// Map trending-news subpages to scheduled-posts tool
 function getActiveTool(pathname: string): ToolId {
-  if (pathname.startsWith('/scheduled-posts')) {
+  if (pathname.startsWith('/trending-news')) {
     return 'scheduled-posts'
   }
   return pathToTool[pathname] ?? 'home'
@@ -73,7 +73,7 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-photos',
   'engagement-photos': '/engagement-photos/epl',
-  'scheduled-posts': '/scheduled-posts',
+  'scheduled-posts': '/trending-news',
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
@@ -83,6 +83,26 @@ const topicToPath: Record<string, string> = {
   'engagement-photos': '/engagement-photos/epl',
   'ucl': '/engagement-photos/ucl',
 }
+
+// ─── Spike inbox badge helpers ────────────────────────────────────────────────
+
+const SPIKE_SEEN_KEY = 'spike_seen_urls'
+
+function getSpikeSeenUrls(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SPIKE_SEEN_KEY)
+    if (!raw) return new Set()
+    return new Set(JSON.parse(raw) as string[])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveSpikeSeenUrls(urls: string[]): void {
+  localStorage.setItem(SPIKE_SEEN_KEY, JSON.stringify(urls))
+}
+
+// ─── Kult colours ─────────────────────────────────────────────────────────────
 
 const KULT_COLOURS = ['#FF3FBF', '#00E5D4', '#0055EE', '#F05A35']
 
@@ -310,11 +330,12 @@ function ScheduledPostsBrandPage() {
   return <ScheduledPostsPage brand={brandSlug || ''} />
 }
 
-function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedChange }: {
+function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedChange, spikeUnreadCount = 0 }: {
   children: React.ReactNode
   showSuggest?: boolean
   isSidebarCollapsed: boolean
   onCollapsedChange: (v: boolean) => void
+  spikeUnreadCount?: number
 }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -327,6 +348,7 @@ function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedC
         onToolChange={(id) => navigate(toolToPath[id])}
         isCollapsed={isSidebarCollapsed}
         onCollapsedChange={onCollapsedChange}
+        spikeUnreadCount={spikeUnreadCount}
       />
       {children}
       {showSuggest && <SuggestButton />}
@@ -792,10 +814,45 @@ function CarouselPage() {
 function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [spikeUnreadCount, setSpikeUnreadCount] = useState(0)
+  const hasFetchedBadge = useRef(false)
+
+  // Background fetch to check for unread spike items on app load
+  useEffect(() => {
+    if (hasFetchedBadge.current) return
+    hasFetchedBadge.current = true
+    const webhookUrl = (import.meta.env.VITE_TRENDING_SPIKE_WEBHOOK_URL as string | undefined)?.trim()
+    if (!webhookUrl) return
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'get-spike-inbox' }),
+    })
+      .then(r => r.json())
+      .then((data: { success?: boolean; spikes?: Array<{ articleUrl?: string }> }) => {
+        if (data.success && Array.isArray(data.spikes)) {
+          const seenUrls = getSpikeSeenUrls()
+          const todayStr = new Date().toDateString()
+          const unread = data.spikes.filter((s: { articleUrl?: string; receivedAt?: string }) => {
+            if (!s.articleUrl || seenUrls.has(s.articleUrl)) return false
+            if (!s.receivedAt) return false
+            return new Date(s.receivedAt).toDateString() === todayStr
+          }).length
+          setSpikeUnreadCount(unread)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  function markSpikeRead(urls: string[]) {
+    saveSpikeSeenUrls(urls)
+    setSpikeUnreadCount(0)
+  }
 
   const layoutProps = {
     isSidebarCollapsed,
     onCollapsedChange: setIsSidebarCollapsed,
+    spikeUnreadCount,
   }
 
   return (
@@ -826,7 +883,7 @@ function App() {
       } />
       <Route path="/spike-news" element={
         <Layout {...layoutProps}>
-          <SpikeNewsPage />
+          <SpikeNewsPage onMarkRead={markSpikeRead} />
         </Layout>
       } />
       <Route path="/affiliate-links" element={
@@ -859,12 +916,12 @@ function App() {
           <EngagementPhotosPage topic="worldcup" />
         </Layout>
       } />
-      <Route path="/scheduled-posts" element={
+      <Route path="/trending-news" element={
         <Layout {...layoutProps}>
           <ScheduledPostsLanding onSelectBrand={() => {}} />
         </Layout>
       } />
-      <Route path="/scheduled-posts/:brandSlug" element={
+      <Route path="/trending-news/:brandSlug" element={
         <Layout {...layoutProps}>
           <ScheduledPostsBrandPage />
         </Layout>

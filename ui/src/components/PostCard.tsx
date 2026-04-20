@@ -28,13 +28,7 @@ function StatusBadge({ post }: { post: ScheduledPost }) {
       </div>
     )
   }
-  return (
-    <div className="flex justify-center">
-      <span className="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold bg-yellow-100 text-yellow-700">
-        Not scheduled yet
-      </span>
-    </div>
-  )
+  return null
 }
 
 // ─── PostCard ─────────────────────────────────────────────────────────────────
@@ -194,8 +188,8 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">
               Headline{' '}
-              <span className={`${editTitle.length > 80 ? 'text-red-500' : 'text-neutral-400'}`}>
-                ({editTitle.length}/80)
+              <span className={`${editTitle.trim().split(/\s+/).filter(Boolean).length > 15 ? 'text-red-500' : 'text-neutral-400'}`}>
+                ({editTitle.trim().split(/\s+/).filter(Boolean).length} words)
               </span>
             </label>
             <input
@@ -203,7 +197,6 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
               value={editTitle}
               onChange={e => setEditTitle(e.target.value)}
               onBlur={() => setCommittedTitle(editTitle)}
-              maxLength={100}
               className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
               placeholder="Post headline"
             />

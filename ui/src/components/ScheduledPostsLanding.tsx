@@ -135,7 +135,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
     if (DISABLED_BRANDS.has(brand)) return
 
     onSelectBrand(brand)
-    navigate(`/scheduled-posts/${brand.toLowerCase().replace(/\s+/g, '-')}`)
+    navigate(`/trending-news/${brand.toLowerCase().replace(/\s+/g, '-')}`)
   }
 
   return (

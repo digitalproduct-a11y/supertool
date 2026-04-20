@@ -256,23 +256,30 @@ function SourceGroup({ source, items, selectedIds, onToggle }: SourceGroupProps)
 // ─── Bulk item placeholder (generating / error states) ────────────────────────
 
 function BulkItemPlaceholder({ result }: { result: GeneratedResult }) {
+  if (result.status === 'error') {
+    return (
+      <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
+        <div className="w-full bg-neutral-50 flex flex-col items-center justify-center gap-2 p-6" style={{ aspectRatio: '4/5' }}>
+          <svg className="w-6 h-6 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <p className="text-xs text-neutral-400 text-center">{result.errorMessage || 'Failed to generate'}</p>
+        </div>
+      </div>
+    )
+  }
+  // Generating — skeleton
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden">
-      <div className="w-full bg-neutral-100 flex flex-col items-center justify-center gap-2" style={{ aspectRatio: '4/5' }}>
-        {result.status === 'generating' && (
-          <>
-            <Spinner />
-            <p className="text-xs text-neutral-400">Generating…</p>
-          </>
-        )}
-        {result.status === 'error' && (
-          <>
-            <svg className="w-6 h-6 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            <p className="text-xs text-neutral-400 text-center px-4">{result.errorMessage || 'Failed to generate'}</p>
-          </>
-        )}
+    <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+      {/* Image skeleton */}
+      <div className="w-full bg-neutral-100 animate-pulse" style={{ aspectRatio: '4/5' }} />
+      {/* Content skeleton */}
+      <div className="p-4 space-y-3">
+        <div className="h-3 bg-neutral-100 rounded animate-pulse w-3/4" />
+        <div className="h-3 bg-neutral-100 rounded animate-pulse w-full" />
+        <div className="h-3 bg-neutral-100 rounded animate-pulse w-5/6" />
+        <div className="h-3 bg-neutral-100 rounded animate-pulse w-2/3" />
+        <div className="mt-4 h-8 bg-neutral-100 rounded-lg animate-pulse" />
       </div>
     </div>
   )
@@ -427,7 +434,7 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={view !== 'browse' ? handleBack : () => navigate('/scheduled-posts')}
+              onClick={view !== 'browse' ? handleBack : () => navigate('/trending-news')}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />
