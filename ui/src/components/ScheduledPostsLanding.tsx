@@ -23,18 +23,28 @@ const BRANDS = [
   'Zayan',
 ].sort()
 
-function loadArticleCount(brand: string): number {
-  try {
-    const raw = localStorage.getItem(`ready_to_post_${brand}`)
-    if (!raw) return 0
-    const parsed = JSON.parse(raw) as { items: { source: string }[] }
+// All brands share the same article pool — find any cached brand's data
+function loadCachedArticles(): { source: string }[] | null {
+  for (const brand of BRANDS) {
+    try {
+      const raw = localStorage.getItem(`ready_to_post_${brand}`)
+      if (!raw) continue
+      const parsed = JSON.parse(raw) as { items: { source: string }[] }
+      if (parsed.items?.length > 0) return parsed.items
+    } catch { /* continue */ }
+  }
+  return null
+}
+
+function computeArticleCounts(articles: { source: string }[]): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const brand of BRANDS) {
     const sources = RECOMMENDED_SOURCES[brand] ?? []
-    return parsed.items.filter(item =>
+    counts[brand] = articles.filter(item =>
       sources.some(s => item.source.toLowerCase() === s.toLowerCase())
     ).length
-  } catch {
-    return 0
   }
+  return counts
 }
 
 export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand: string) => void }) {
@@ -44,13 +54,10 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
   const DISABLED_BRANDS = new Set(['Raaga', 'Mix', 'Rojak Daily'])
 
   useEffect(() => {
-    const counts: Record<string, number> = {}
-    for (const brand of BRANDS) {
-      if (!DISABLED_BRANDS.has(brand)) {
-        counts[brand] = loadArticleCount(brand)
-      }
+    const articles = loadCachedArticles()
+    if (articles) {
+      setArticleCounts(computeArticleCounts(articles))
     }
-    setArticleCounts(counts)
   }, [])
 
   const handleBrandClick = (brand: string) => {
@@ -88,7 +95,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
                 key={brand}
                 onClick={() => handleBrandClick(brand)}
                 disabled={isDisabled}
-                className={`glass-card rounded-xl px-4 py-3 transition-all duration-200 text-left group flex items-center gap-3 ${
+                className={`glass-card rounded-xl px-4 py-6 transition-all duration-200 text-left group flex items-center gap-3 ${
                   isDisabled
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]'
