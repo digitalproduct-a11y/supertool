@@ -29,6 +29,7 @@ interface SidebarProps {
   onToolChange?: (id: ToolId) => void;
   isCollapsed: boolean;
   onCollapsedChange: (v: boolean) => void;
+  spikeUnreadCount?: number;
 }
 
 const navSections: { section: string | null; items: NavItem[] }[] = [
@@ -103,6 +104,7 @@ export function Sidebar({
   onToolChange,
   isCollapsed,
   onCollapsedChange,
+  spikeUnreadCount = 0,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -200,6 +202,7 @@ export function Sidebar({
                         </div>
                       );
                     }
+                    const unread = tool.id === 'spike-news' ? spikeUnreadCount : 0
                     return (
                       <button
                         key={tool.id}
@@ -211,7 +214,12 @@ export function Sidebar({
                         }`}
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
-                        {tool.label}
+                        <span className="flex-1">{tool.label}</span>
+                        {unread > 0 && (
+                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#FF3FBF] text-white text-[10px] font-bold leading-none shrink-0">
+                            {unread > 9 ? '9+' : unread}
+                          </span>
+                        )}
                       </button>
                     );
                   })}

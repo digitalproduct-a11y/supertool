@@ -42,7 +42,7 @@ async function callWebhook(body: Record<string, unknown>) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function SpikeNewsPage() {
+export function SpikeNewsPage({ onMarkRead }: { onMarkRead?: (urls: string[]) => void }) {
   const [view, setView] = useState<'list' | 'generate'>('list')
   const [selectedSpike, setSelectedSpike] = useState<SpikeInboxItem | null>(null)
   const [spikeInbox, setSpikeInbox] = useState<SpikeInboxItem[]>([])
@@ -53,14 +53,16 @@ export function SpikeNewsPage() {
     try {
       const data = await callWebhook({ type: 'get-spike-inbox' })
       if (data.success && Array.isArray(data.spikes)) {
-        setSpikeInbox(data.spikes.map((s: SpikeInboxItem & { id?: string }) => ({
+        const items = data.spikes.map((s: SpikeInboxItem & { id?: string }) => ({
           id: s.id || crypto.randomUUID(),
           articleUrl: s.articleUrl || '',
           brand: s.brand || '',
           articleTitle: s.articleTitle || '',
           concurrents: s.concurrents || '',
           receivedAt: s.receivedAt || '',
-        })))
+        }))
+        setSpikeInbox(items)
+        onMarkRead?.(items.map(i => i.articleUrl).filter(Boolean))
       } else {
         toast.error(data.message || 'Failed to load spike inbox.')
       }
@@ -69,7 +71,7 @@ export function SpikeNewsPage() {
     } finally {
       setIsLoadingInbox(false)
     }
-  }, [])
+  }, [onMarkRead])
 
   // Auto-load on mount
   useEffect(() => {
