@@ -1,7 +1,8 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconLightbulb } from '@tabler/icons-react'
 import type React from 'react'
+import { useNavigate } from 'react-router-dom'
 
-type ActiveTopicId = 'engagement-photos' | 'ucl'
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'didyouknow'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -50,6 +51,13 @@ const sections: Section[] = [
         comingSoon: true,
       },
       {
+        id: 'didyouknow',
+        label: 'Did You Know?',
+        description: 'Generate fun facts and interesting moments with context-based search',
+        icon: IconLightbulb,
+        color: '#F05A35',
+      },
+      {
         id: 'coming-soon-3',
         label: 'Badminton',
         description: 'Badminton tournament highlights and player features',
@@ -76,6 +84,16 @@ const sections: Section[] = [
 ]
 
 export function EngagementPostsLanding({ onSelectTopic }: EngagementPostsLandingProps) {
+  const navigate = useNavigate()
+
+  const handleTopicClick = (id: ActiveTopicId) => {
+    if (id === 'didyouknow') {
+      navigate('/engagement-photos/didyouknow')
+    } else {
+      onSelectTopic(id)
+    }
+  }
+
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
@@ -138,7 +156,7 @@ export function EngagementPostsLanding({ onSelectTopic }: EngagementPostsLanding
                     return (
                       <button
                         key={topic.label}
-                        onClick={() => onSelectTopic(topic.id as ActiveTopicId)}
+                        onClick={() => handleTopicClick(topic.id as ActiveTopicId)}
                         className="glass-card rounded-xl overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] transition-all duration-200 text-left group"
                       >
                         <div className="px-5 pt-5 pb-2 flex items-center justify-between">

@@ -8,6 +8,7 @@ import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
+import { DidYouKnowPage } from './components/DidYouKnowPage'
 import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
@@ -914,6 +915,11 @@ function App() {
       <Route path="/engagement-photos/worldcup" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="worldcup" />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/didyouknow" element={
+        <Layout {...layoutProps}>
+          <DidYouKnowPage />
         </Layout>
       } />
       <Route path="/trending-news" element={

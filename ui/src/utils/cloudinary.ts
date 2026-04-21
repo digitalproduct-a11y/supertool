@@ -155,3 +155,36 @@ export async function uploadToCloudinary(file: File): Promise<string> {
   const data = await res.json()
   return data.public_id as string
 }
+
+/**
+ * Builds a Cloudinary transformation URL for "Did You Know" cards.
+ * Layout: user image base → dark gradient → "DID YOU KNOW?" badge (top) → headline → fact → brand logo (bottom).
+ */
+export function buildDidYouKnowUrl(
+  baseImagePublicId: string,
+  headline: string,
+  fact: string,
+  brandLogoId: string
+): string {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+  if (!cloudName) throw new Error('Cloudinary cloud name not configured')
+
+  const encHead = cloudinaryTextEncode(headline)
+  const encFact = cloudinaryTextEncode(fact)
+
+  // Base transformation: fill 1080x1350, dark gradient overlay
+  const transforms = [
+    'c_fill,g_center,w_1080,h_1350',
+    'l_gradient:fade,o_60',
+    // "DID YOU KNOW?" badge at top
+    `l_text:Montserrat_28_bold:DID%20YOU%20KNOW%3F,co_rgb:FF3FBF,y_-500,g_center,w_900,c_fit`,
+    // Headline (white, large, centered)
+    `l_text:Montserrat_80_bold:${encHead},co_white,w_900,c_fit,y_-200,g_center`,
+    // Fact subtitle (light gray, medium, centered)
+    `l_text:Montserrat_40:${encFact},co_rgb:E0E0E0,w_900,c_fit,y_100,g_center`,
+    // Brand logo at bottom
+    `l_${brandLogoId},w_180,y_550,g_south`,
+  ].join('/')
+
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transforms}/${baseImagePublicId}`
+}
