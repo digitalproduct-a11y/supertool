@@ -15,8 +15,15 @@ import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './components/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
 const OnThisDayPage = lazy(() =>
-  import('./components/OnThisDayPage').then(m => ({ default: m.OnThisDayPage }))
-)
+  import("./components/OnThisDayPage").then((m) => ({
+    default: m.OnThisDayPage,
+  })),
+);
+const WeatherMalaysiaPage = lazy(() =>
+  import("./components/WeatherMalaysiaPage").then((m) => ({
+    default: m.WeatherMalaysiaPage,
+  })),
+);
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -41,7 +48,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'on-this-day'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'on-this-day' | 'weather-malaysia'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -54,6 +61,7 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
   '/engagement-posts/on-this-day-malaysia': 'on-this-day',
+  '/engagement-posts/weather-malaysia': 'weather-malaysia',
   '/scheduled-posts': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
@@ -83,11 +91,14 @@ const toolToPath: Record<ToolId, string> = {
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
+  'weather-malaysia': '/engagement-posts/weather-malaysia',
 }
 
 const topicToPath: Record<string, string> = {
-  'engagement-photos': '/engagement-photos/epl',
-  'ucl': '/engagement-photos/ucl',
+  'engagement-photos': '/engagement-posts/epl',
+  'ucl': '/engagement-posts/ucl',
+  'on-this-day': '/engagement-posts/on-this-day-malaysia',
+  'weather-malaysia': '/engagement-posts/weather-malaysia',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -914,6 +925,13 @@ function App() {
         <Layout {...layoutProps}>
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <OnThisDayPage />
+          </Suspense>
+        </Layout>
+      } />
+      <Route path="/engagement-posts/weather-malaysia" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <WeatherMalaysiaPage />
           </Suspense>
         </Layout>
       } />

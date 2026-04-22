@@ -1,7 +1,7 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCalendar } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCalendar, IconCloudRain } from '@tabler/icons-react'
 import type React from 'react'
 
-type ActiveTopicId = 'engagement-photos' | 'ucl' | 'on-this-day'
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'on-this-day' | 'weather-malaysia'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -69,6 +69,19 @@ const sections: Section[] = [
         description: 'Historical events from Malaysia — what happened today in history',
         icon: IconCalendar,
         color: '#0055EE',
+      },
+    ],
+  },
+  {
+    label: 'Weather',
+    description: 'Generate daily weather forecast posts for social media.',
+    topics: [
+      {
+        id: 'weather-malaysia',
+        label: 'Weather Malaysia',
+        description: 'Generate daily weather forecast posts for all 16 states',
+        icon: IconCloudRain,
+        color: '#00E5D4',
       },
     ],
   },
