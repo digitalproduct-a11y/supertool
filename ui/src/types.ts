@@ -379,3 +379,20 @@ export interface SocialAffiliateGenerationResult {
   facebook: SocialAffiliateFacebookResult
   thumbnailUrl?: string
 }
+
+// Quick Fact Generator tool types
+export interface QuickFactResult {
+  success: true
+  imageUrl: string
+  title: string
+  facts: string[]
+  caption: string
+  brand: string
+}
+
+export interface QuickFactError {
+  success: false
+  message: string
+}
+
+export type QuickFactResponse = QuickFactResult | QuickFactError
