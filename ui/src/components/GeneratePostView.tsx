@@ -214,11 +214,15 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
     }
     setDraftState('posting')
     try {
+      const latestBaseUrl = uploadedPublicId
+        ? buildCloudinaryUrl(uploadedPublicId, localTitle || result.title || '', result.imageUrl || '')
+        : result.imageUrl
+      const latestImageUrl = updateTitleInImageUrl(latestBaseUrl, result.title || '', localTitle)
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fb_ai_image_url: result.imageUrl,
+          fb_ai_image_url: latestImageUrl,
           fb_ai_caption: caption,
           brand: result.brand.toLowerCase(),
           scheduled_for: scheduledFor,
