@@ -14,6 +14,7 @@ import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './components/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
+import { QuickFactPage } from './components/QuickFactPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -941,6 +942,11 @@ function App() {
       <Route path="/social-affiliate-posting" element={
         <Layout {...layoutProps}>
           <SocialAffiliatePostingPage />
+        </Layout>
+      } />
+      <Route path="/quick-fact" element={
+        <Layout {...layoutProps}>
+          <QuickFactPage />
         </Layout>
       } />
     </Routes>
