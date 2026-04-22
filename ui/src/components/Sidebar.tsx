@@ -10,21 +10,23 @@ import {
   IconFileText,
   IconLayoutSidebar,
   IconHeart,
-  IconCalendar,
-  IconShoppingBag,
+  IconCalendarClock,
   IconBrandThreads,
+  IconBolt,
 } from "@tabler/icons-react";
 
 type ToolId =
   | "home"
   | "fb-post"
   | "trending-news"
+  | "spike-news"
   | "affiliate-links"
   | "article-generator"
   | "engagement-posts"
   | "engagement-photos"
   | "shopee-top-products"
   | "scheduled-posts"
+  | "post-queue"
   | "photo-carousel"
   | "social-affiliate-posting"
   | "on-this-day";
@@ -41,6 +43,7 @@ interface SidebarProps {
   onToolChange?: (id: ToolId) => void;
   isCollapsed: boolean;
   onCollapsedChange: (v: boolean) => void;
+  spikeUnreadCount?: number;
 }
 
 const navSections: { section: string | null; items: NavItem[] }[] = [
@@ -49,65 +52,61 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [{ id: "home", label: "Home", icon: IconHome }],
   },
   {
-    section: "Social",
+    section: "Article to Social",
     items: [
-      { id: "fb-post", label: "Article to FB Photos", icon: IconPhoto },
-      {
-        id: "trending-news",
-        label: "Trending News to FB Photos",
-        icon: IconTrendingUp,
-      },
-      { id: "engagement-posts", label: "Engagement Posts", icon: IconHeart },
-      {
-        id: "scheduled-posts",
-        label: "Schedule Trending News",
-        icon: IconCalendar,
-      },
-      {
-        id: "photo-carousel",
-        label: "Article to Photo Carousels",
-        icon: IconCarouselHorizontal,
-      },
+      { id: 'fb-post', label: 'Photo post', icon: IconPhoto },
+      { id: 'photo-carousel', label: 'Photo carousel post', icon: IconCarouselHorizontal },
+    ],
+  },
+  {
+    section: "Content Ideas",
+    items: [
+      { id: 'spike-news', label: 'Spike news', icon: IconBolt },
+      { id: 'scheduled-posts', label: 'Trending news', icon: IconTrendingUp },
+      { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
     ],
   },
   {
     section: "Affiliate",
     items: [
       {
-        id: "shopee-top-products",
-        label: "Shopee Top Products",
-        icon: IconShoppingBag,
-      },
-      {
         id: "affiliate-links",
-        label: "Shopee Affiliate Links",
+        label: "Shopee affiliate links",
         icon: IconLink,
       },
       {
         id: "article-generator",
-        label: "Affiliate Article Editor",
+        label: "Affiliate article editor",
         icon: IconFileText,
       },
       {
         id: "social-affiliate-posting",
-        label: "Social Affiliate Posting",
+        label: "Social affiliate post",
         icon: IconBrandThreads,
       },
+    ],
+  },
+  {
+    section: "Others",
+    items: [
+      { id: 'post-queue', label: 'Scheduled queue', icon: IconCalendarClock },
     ],
   },
 ];
 
 const TOOL_NAMES: Record<ToolId, string> = {
   home: "KULT Digital Kit",
-  "fb-post": "Article to FB Photos",
-  "photo-carousel": "Article to Photo Carousels",
-  "trending-news": "Trending News to FB Photos",
+  "fb-post": "Photo post",
+  "photo-carousel": "Photo carousel post",
+  "trending-news": "Trending News",
+  "spike-news": "Spike News",
   "affiliate-links": "Shopee Affiliate Links",
   "article-generator": "Affiliate Article Editor",
-  "engagement-posts": "Engagement Posts",
-  "engagement-photos": "EPL Engagement Posts",
+  "engagement-posts": "Engagement posts",
+  "engagement-photos": "English Premier League",
   "shopee-top-products": "Shopee Top Products",
-  "scheduled-posts": "Schedule Trending News",
+  "scheduled-posts": "Trending news",
+  "post-queue": "Scheduled queue",
   "social-affiliate-posting": "Social Affiliate Posting",
   "on-this-day": "On This Day",
 };
@@ -120,6 +119,7 @@ export function Sidebar({
   onToolChange,
   isCollapsed,
   onCollapsedChange,
+  spikeUnreadCount = 0,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -217,6 +217,7 @@ export function Sidebar({
                         </div>
                       );
                     }
+                    const unread = tool.id === 'spike-news' ? spikeUnreadCount : 0
                     return (
                       <button
                         key={tool.id}
@@ -228,7 +229,12 @@ export function Sidebar({
                         }`}
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
-                        {tool.label}
+                        <span className="flex-1">{tool.label}</span>
+                        {unread > 0 && (
+                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#FF3FBF] text-white text-[10px] font-bold leading-none shrink-0">
+                            {unread > 9 ? '9+' : unread}
+                          </span>
+                        )}
                       </button>
                     );
                   })}

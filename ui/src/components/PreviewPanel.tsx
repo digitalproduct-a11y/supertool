@@ -12,6 +12,7 @@ interface PreviewPanelProps {
   onPartialRegenerate: (op: WorkflowOperation, titleMode: TitleMode, customTitle: string, captionTitleMode: CaptionTitleMode) => void
   titleMode: TitleMode
   captionTitleMode: CaptionTitleMode
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string, passcode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
 }
 
 export function PreviewPanel({
@@ -23,6 +24,7 @@ export function PreviewPanel({
   onPartialRegenerate: _onPartialRegenerate,
   titleMode: _titleMode,
   captionTitleMode: _captionTitleMode,
+  onPostDraft,
 }: PreviewPanelProps) {
   return (
     <div className="glass-card rounded-2xl p-6 min-h-96 flex flex-col">
@@ -63,7 +65,7 @@ export function PreviewPanel({
 
       {state === 'result' && result && (
         <div className="animate-fade-slide-up">
-          <ResultPreview result={result} isRunning={false} />
+          <ResultPreview result={result} isRunning={false} onPostDraft={onPostDraft} />
         </div>
       )}
 

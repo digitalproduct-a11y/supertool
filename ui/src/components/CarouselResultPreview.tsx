@@ -1,8 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import JSZip from 'jszip'
 import type { CarouselResult } from '../types'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl, replaceBaseImage, uploadToCloudinary } from '../utils/cloudinary'
+import { ScheduleModal } from './ScheduleModal'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 interface ImageReplacement {
   file: File
@@ -13,9 +17,10 @@ interface ImageReplacement {
 
 interface CarouselResultPreviewProps {
   result: CarouselResult
+  onPostDraft?: (imageUrls: string[], caption: string, brand: string, scheduledFor?: string, passcode?: string) => Promise<{success: boolean, message: string, status?: string}>
 }
 
-export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
+export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPreviewProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [replacements, setReplacements] = useState<Map<string, ImageReplacement>>(new Map())
@@ -30,6 +35,9 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
     }
     return map
   })
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [isPosting, setIsPosting] = useState(false)
+  const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceTargetIdRef = useRef<string | null>(null)
 
@@ -249,10 +257,54 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
     })
   }
 
+  async function handlePostDraftClick(scheduleFor?: string, passcode?: string) {
+    if (!onPostDraft) return
+    const brand = result.brand.toLowerCase()
+    const resolvedPasscode = passcode ?? getCredentials(brand)?.passcode
+    if (!resolvedPasscode) return
+    if (activeImages.length === 0) return
+    const imageUrls = activeImages.map(img => getDisplayUrl(img.id, img.src))
+    setIsPosting(true)
+    try {
+      const response = await onPostDraft(imageUrls, caption, result.brand, scheduleFor, resolvedPasscode)
+      if (response.status === 'AUTH_ERROR') {
+        clearCredentials(brand)
+        setShowScheduleModal(true)
+        setIsPosting(false)
+        toast.error('Invalid passcode. Please try again.')
+      } else if (response.success) {
+        saveCredentials(brand, resolvedPasscode)
+        setScheduleStatus('done')
+        setShowScheduleModal(false)
+        setIsPosting(false)
+        toast.success('Scheduled on Facebook!')
+      } else {
+        setScheduleStatus('error')
+        setIsPosting(false)
+        toast.error(response.message || "Couldn't post. Please try again.")
+      }
+    } catch {
+      setScheduleStatus('error')
+      setIsPosting(false)
+      toast.error("Couldn't post. Please try again.")
+    }
+  }
+
   const deletedImages = result.images.filter(img => deletedIds.has(img.id))
 
   return (
     <div className="space-y-4">
+      {showScheduleModal && createPortal(
+        <ScheduleModal
+          brand={result.brand}
+          hasCredentials={!!getCredentials(result.brand.toLowerCase())}
+          isPosting={isPosting}
+          onConfirm={(sf, passcode) => void handlePostDraftClick(sf, passcode)}
+          onClose={() => setShowScheduleModal(false)}
+        />,
+        document.body
+      )}
+
       {/* Hidden file input for image replacement */}
       <input
         ref={fileInputRef}
@@ -316,38 +368,6 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
               </div>
             )}
 
-            {/* Download + Replace buttons for active image */}
-            <div className="absolute top-3 right-3 flex gap-1.5">
-              <button
-                onClick={() => openReplace(currentImage.id)}
-                title="Replace image"
-                className="w-8 h-8 rounded-lg bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white flex items-center justify-center transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h14M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </button>
-              <button
-                onClick={() => downloadImage(currentImage.id, currentImage.src, clampedIndex)}
-                title="Download image"
-                className="w-8 h-8 rounded-lg bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white flex items-center justify-center transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-              </button>
-              {currentImage.type === 'pexels' && (
-                <button
-                  onClick={() => handleDelete(currentImage.id)}
-                  title="Remove from carousel"
-                  className="w-8 h-8 rounded-lg bg-black/50 hover:bg-red-600/80 backdrop-blur-sm text-white flex items-center justify-center transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              )}
-            </div>
           </>
         ) : (
           <div className="flex items-center justify-center w-full h-full text-gray-400 text-sm">
@@ -355,6 +375,37 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
           </div>
         )}
       </div>
+
+      {/* Per-image actions */}
+      {currentImage && (
+        <div className="space-y-2">
+          <button
+            onClick={() => openReplace(currentImage.id)}
+            className="w-full py-2 rounded-lg text-sm font-medium border border-dashed border-neutral-300 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Upload custom image
+          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => downloadImage(currentImage.id, currentImage.src, clampedIndex)}
+              className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 hover:bg-neutral-50 transition"
+            >
+              Download image
+            </button>
+            {currentImage.type === 'pexels' && (
+              <button
+                onClick={() => handleDelete(currentImage.id)}
+                className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 text-red-500 hover:bg-red-50 hover:border-red-200 transition"
+              >
+                Delete slide
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Thumbnail strip */}
       {result.images.length > 1 && (
@@ -538,29 +589,62 @@ export function CarouselResultPreview({ result }: CarouselResultPreviewProps) {
         </div>
       </div>
 
-      {/* Download ZIP */}
-      <button
-        onClick={handleDownloadZip}
-        disabled={isZipping || activeImages.length === 0}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white disabled:text-neutral-400 rounded-xl text-sm font-medium transition-colors"
-      >
-        {isZipping ? (
-          <>
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
-            Packaging zip…
-          </>
-        ) : (
-          <>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download all as ZIP ({activeImages.length} image{activeImages.length !== 1 ? 's' : ''})
-          </>
+      {/* Actions */}
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <button
+            onClick={handleDownloadZip}
+            disabled={isZipping || activeImages.length === 0}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-neutral-200 hover:bg-neutral-50 disabled:opacity-50 rounded-xl text-sm font-medium transition-colors"
+          >
+            {isZipping ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Packaging…
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download ZIP
+              </>
+            )}
+          </button>
+          {onPostDraft && (
+            <button
+              onClick={() => setShowScheduleModal(true)}
+              disabled={isPosting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50"
+            >
+              {isPosting ? (
+                <span className="flex items-center justify-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Scheduling…
+                </span>
+              ) : 'Schedule on FB'}
+            </button>
+          )}
+        </div>
+        {scheduleStatus === 'done' && (
+          <div className="text-center space-y-1">
+            <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+            <p className="text-xs text-neutral-400">
+              To view or delete your scheduled post, check{' '}
+              <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">here</Link>.
+            </p>
+          </div>
         )}
-      </button>
+        {scheduleStatus === 'error' && (
+          <p className="text-xs text-red-500 text-center">✗ Failed to schedule. Try again.</p>
+        )}
+      </div>
     </div>
   )
 }

@@ -69,70 +69,15 @@ export function useSocialAffiliatePosting() {
           throw new Error('Content generation webhook URL is not configured')
         }
 
-        const shortlinkUrl = import.meta.env.VITE_SOCIAL_AFFILIATE_SHORTLINK_WEBHOOK_URL as string | undefined
-        const thumbnailUrl = import.meta.env.VITE_SOCIAL_AFFILIATE_THUMBNAIL_WEBHOOK_URL as string | undefined
-
-        const [contentResult, shortLinkResult, thumbnailResult] = await Promise.allSettled([
-          fetch(generateUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-            signal: AbortSignal.timeout(120_000),
-          }).then(async (res) => {
-            if (!res.ok) throw new Error(`Webhook error: ${res.status}`)
-            const raw = await res.json()
-            return unwrapN8n<SocialAffiliateGenerationResult>(raw)
-          }),
-          shortlinkUrl
-            ? fetch(shortlinkUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ affiliateLink: data.affiliateLink, brand: data.brand, productName: data.productName }),
-                signal: AbortSignal.timeout(30_000),
-              }).then((res) => res.json()).then((r) => (r.shortLink as string) || '')
-            : Promise.reject(new Error('No shortlink URL configured')),
-          thumbnailUrl
-            ? fetch(thumbnailUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ brand: data.brand, productName: data.productName }),
-                signal: AbortSignal.timeout(30_000),
-              }).then((res) => res.json()).then((r) => (r.thumbnailUrl as string) || '')
-            : Promise.reject(new Error('No thumbnail URL configured')),
-        ])
-
-        if (contentResult.status === 'rejected') throw contentResult.reason
-
-        generationResult = contentResult.value
-
-        if (shortLinkResult.status === 'fulfilled' && shortLinkResult.value) {
-          const shortLink = shortLinkResult.value
-          generationResult = { ...generationResult, affiliateLinkGenerated: shortLink }
-
-          const escapedLink = data.affiliateLink.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          const linkRegex = new RegExp(escapedLink, 'g')
-
-          if (generationResult.threads?.posts) {
-            generationResult.threads = {
-              ...generationResult.threads,
-              posts: generationResult.threads.posts.map((post) => ({
-                ...post,
-                content: post.content.replace(linkRegex, shortLink),
-              })),
-            }
-          }
-          if (generationResult.facebook) {
-            generationResult.facebook = {
-              ...generationResult.facebook,
-              paragraphs: generationResult.facebook.paragraphs.map((p) => p.replace(linkRegex, shortLink)),
-              fullText: generationResult.facebook.fullText.replace(linkRegex, shortLink),
-            }
-          }
-        }
-
-        if (thumbnailResult.status === 'fulfilled' && thumbnailResult.value) {
-          generationResult = { ...generationResult, thumbnailUrl: thumbnailResult.value }
-        }
+        const res = await fetch(generateUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          signal: AbortSignal.timeout(180_000),
+        })
+        if (!res.ok) throw new Error(`Webhook error: ${res.status}`)
+        const raw = await res.json()
+        generationResult = unwrapN8n<SocialAffiliateGenerationResult>(raw)
       }
 
       setResult(generationResult)

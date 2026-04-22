@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { IconUpload } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import ImageUploadModal from './ImageUploadModal'
+import { ScheduleModal } from './ScheduleModal'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 interface ResultPreviewProps {
   result: WorkflowResult
   isRunning: boolean
-  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
+  onPostDraft?: (imageUrl: string, caption: string, brand: string, scheduledFor?: string, extraPhotos?: string[], postMode?: string, passcode?: string) => Promise<{success: boolean, message: string, postId?: string, status?: string}>
 }
 
 export function ResultPreview({
@@ -18,15 +22,13 @@ export function ResultPreview({
   onPostDraft,
 }: ResultPreviewProps) {
   const [title, setTitle] = useState(result.title ?? '')
+  const [committedTitle, setCommittedTitle] = useState(result.title ?? '')
   const [caption, setCaption] = useState(result.caption ?? '')
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
   const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
-  const [draftPostId, setDraftPostId] = useState<string | null>(null)
-  const [draftStatus, setDraftStatus] = useState<string | null>(null)
-  const [postMode, setPostMode] = useState<'publish' | 'schedule' | 'draft'>('publish')
-  const [scheduledFor, setScheduledFor] = useState('')
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [extraPhotos, setExtraPhotos] = useState<File[]>([])
   const [aiImageRemoved, setAiImageRemoved] = useState(false)
   const [replacementAiPhoto, setReplacementAiPhoto] = useState<File | null>(null)
@@ -42,6 +44,7 @@ export function ResultPreview({
   // Sync fields when result changes (e.g. after regen)
   useEffect(() => {
     setTitle(result.title ?? '')
+    setCommittedTitle(result.title ?? '')
   }, [result.title])
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export function ResultPreview({
     ? buildCloudinaryUrl(uploadedPublicId, result.title || '', result.imageUrl)
     : result.imageUrl
 
-  const previewImageUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', title)
+  const previewImageUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', committedTitle)
 
   async function handleDownload() {
     const urlToDownload = previewImageUrl || result.imageUrl
@@ -110,16 +113,18 @@ export function ResultPreview({
     setReplacementPreviewUrl(null)
   }
 
-  async function handlePostDraftClick() {
+  async function handlePostDraftClick(scheduleFor?: string, passcode?: string) {
     if (!onPostDraft) return
-    if (postMode === 'schedule' && !scheduledFor) {
-      toast.error('Please pick a date and time to schedule.')
-      return
-    }
+    const brand = result.brand.toLowerCase()
+    const resolvedPasscode = passcode ?? getCredentials(brand)?.passcode
+    if (!resolvedPasscode) return
     setDraftState('posting')
     try {
-      const isoSchedule = postMode === 'schedule' ? new Date(scheduledFor).toISOString() : undefined
-      const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : result.imageUrl
+      const latestBaseUrl = uploadedPublicId
+        ? buildCloudinaryUrl(uploadedPublicId, result.title || '', result.imageUrl)
+        : result.imageUrl
+      const latestImageUrl = updateTitleInImageUrl(latestBaseUrl, result.title || '', title)
+      const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : latestImageUrl
       const allExtras = replacementAiPhoto ? [replacementAiPhoto, ...extraPhotos] : extraPhotos
       const base64Extras = allExtras.length > 0
         ? await Promise.all(allExtras.map(file => new Promise<string>((res, rej) => {
@@ -129,16 +134,17 @@ export function ResultPreview({
             reader.readAsDataURL(file)
           })))
         : undefined
-      const response = await onPostDraft(effectiveAiImageUrl, caption, result.brand, isoSchedule, base64Extras, postMode)
-      if (response.success) {
+      const response = await onPostDraft(effectiveAiImageUrl, caption, result.brand, scheduleFor, base64Extras, undefined, resolvedPasscode)
+      if (response.status === 'AUTH_ERROR') {
+        clearCredentials(brand)
+        setShowScheduleModal(true)
+        setDraftState('idle')
+        toast.error('Invalid passcode. Please try again.')
+      } else if (response.success) {
+        saveCredentials(brand, resolvedPasscode)
         setDraftState('done')
-        setDraftPostId(response.postId ?? null)
-        setDraftStatus(response.status ?? null)
-        if (response.status === 'DRAFT_SAVED') {
-          toast.success('Draft saved! Review it on Zernio before publishing.')
-        } else {
-          toast.success(postMode === 'schedule' ? 'Post scheduled on Facebook!' : 'Published to Facebook!')
-        }
+        setShowScheduleModal(false)
+        toast.success('Scheduled on Facebook!')
       } else {
         setDraftState('error')
         toast.error(response.message || "Couldn't post. Please try again.")
@@ -149,9 +155,18 @@ export function ResultPreview({
     }
   }
 
-  const brandLabel = result.brand.replace(/\b\w/g, c => c.toUpperCase())
-
   return (
+    <>
+      {showScheduleModal && createPortal(
+        <ScheduleModal
+          brand={result.brand}
+          hasCredentials={!!getCredentials(result.brand.toLowerCase())}
+          isPosting={draftState === 'posting'}
+          onConfirm={(sf, passcode) => void handlePostDraftClick(sf, passcode)}
+          onClose={() => setShowScheduleModal(false)}
+        />,
+        document.body
+      )}
     <div className="space-y-4">
       {showImageUploadModal && (
         <ImageUploadModal
@@ -222,7 +237,7 @@ export function ResultPreview({
         {/* Title */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Title</label>
+            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Image Title</label>
             <span className="text-xs text-gray-400">{title.length}</span>
           </div>
           <input
@@ -232,6 +247,7 @@ export function ResultPreview({
               const v = e.target.value
               setTitle(v)
             }}
+            onBlur={() => setCommittedTitle(title)}
             placeholder="Enter title..."
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
           />
@@ -260,53 +276,13 @@ export function ResultPreview({
         </div>
       </div>
 
-      {/* Post mode toggle + action */}
+      {/* Schedule on FB */}
       {onPostDraft && (
-        <div className="pt-2 space-y-3">
-          {/* Publish Now / Schedule toggle */}
-          {draftState !== 'done' && (
-            <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
-              <button
-                onClick={() => setPostMode('publish')}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'publish' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
-              >
-                Publish Now
-              </button>
-              <button
-                onClick={() => setPostMode('schedule')}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'schedule' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
-              >
-                Schedule
-              </button>
-              <button
-                onClick={() => setPostMode('draft')}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition ${postMode === 'draft' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
-              >
-                Draft
-              </button>
-            </div>
-          )}
-
-          {/* Date/time picker (schedule mode only) */}
-          {postMode === 'schedule' && draftState !== 'done' && (
-            <input
-              type="datetime-local"
-              value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
-              min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 text-neutral-700"
-            />
-          )}
-
-          {/* Action button */}
+        <div className="pt-2">
           <button
-            onClick={handlePostDraftClick}
+            onClick={() => setShowScheduleModal(true)}
             disabled={draftState === 'posting' || isRunning}
-            className={`w-full py-3 px-4 font-medium rounded-xl transition text-sm ${
-              draftState === 'done'
-                ? 'bg-green-500 hover:bg-green-600 text-white'
-                : 'bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white'
-            }`}
+            className="w-full py-3 px-4 font-medium rounded-xl transition text-sm bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white"
           >
             {draftState === 'posting' ? (
               <span className="flex items-center justify-center gap-2">
@@ -314,26 +290,27 @@ export function ResultPreview({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                {postMode === 'draft' ? 'Saving draft…' : postMode === 'schedule' ? 'Scheduling…' : 'Publishing…'}
+                Scheduling…
               </span>
-            ) : draftState === 'done' ? (
-              draftStatus === 'DRAFT_SAVED' ? '✓ Draft Saved' : postMode === 'schedule' ? '✓ Scheduled!' : '✓ Published!'
-            ) : postMode === 'draft' ? (
-              `Save as Draft on ${brandLabel}'s FB`
-            ) : postMode === 'schedule' ? (
-              `Schedule on ${brandLabel}'s FB`
-            ) : (
-              `Publish on ${brandLabel}'s FB`
-            )}
+            ) : 'Schedule on FB'}
           </button>
-
-          {draftPostId && (
-            <p className="text-xs text-neutral-400 text-center">
-              Post ID: <span className="font-mono text-neutral-600 select-all">{draftPostId}</span>
-            </p>
+          {draftState === 'done' && (
+            <div className="text-center space-y-1 mt-1">
+              <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+              <p className="text-xs text-neutral-400">
+                To view or delete your scheduled post, check{' '}
+                <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                  here
+                </Link>.
+              </p>
+            </div>
+          )}
+          {draftState === 'error' && (
+            <p className="text-xs text-red-500 text-center mt-1">✗ Failed to schedule. Try again.</p>
           )}
         </div>
       )}
     </div>
+    </>
   )
 }

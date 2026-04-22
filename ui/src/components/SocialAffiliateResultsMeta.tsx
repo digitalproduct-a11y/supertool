@@ -10,10 +10,12 @@ const TONE_LABELS: Record<string, string> = {
 
 interface SocialAffiliateResultsMetaProps {
   data: SocialAffiliateGenerationResult
+  brand: string
 }
 
-export function SocialAffiliateResultsMeta({ data }: SocialAffiliateResultsMetaProps) {
+export function SocialAffiliateResultsMeta({ data, brand }: SocialAffiliateResultsMetaProps) {
   const metaItems = [
+    { label: 'Brand', value: brand },
     { label: 'Product Name', value: data.productName },
     { label: 'Shopee Link', value: data.affiliateLink },
     { label: 'Content Angle', value: data.angle },
@@ -22,7 +24,7 @@ export function SocialAffiliateResultsMeta({ data }: SocialAffiliateResultsMetaP
   ]
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
       {metaItems.map((item) => (
         <div key={item.label}>
           <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">{item.label}</p>

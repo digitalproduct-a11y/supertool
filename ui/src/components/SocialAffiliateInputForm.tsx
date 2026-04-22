@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { SocialAffiliateFormData } from '../types'
+import { BRANDS } from '../constants/brands'
 
 const TONE_OPTIONS = [
   { value: 'problem-solution', label: 'Problem–Solution' },
@@ -7,19 +8,6 @@ const TONE_OPTIONS = [
   { value: 'hard-sell', label: 'Hard Sell' },
   { value: 'casual-rojak', label: 'Casual / Rojak' },
   { value: 'friendly-recommendation', label: 'Friendly Recommendation' },
-]
-
-const BRAND_OPTIONS = [
-  { value: 'stadiumastro', label: 'Stadium Astro' },
-  { value: 'astroarena', label: 'Astro Arena' },
-  { value: 'astroawani', label: 'Astro Awani' },
-  { value: 'astroulagam', label: 'Astro Ulagam' },
-  { value: 'sinar', label: 'Sinar' },
-  { value: 'era', label: 'Era' },
-  { value: 'hitz', label: 'Hitz' },
-  { value: 'mix', label: 'Mix' },
-  { value: 'raaga', label: 'Raaga' },
-  { value: 'meletop', label: 'Meletop' },
 ]
 
 interface SocialAffiliateInputFormProps {
@@ -45,7 +33,7 @@ export function SocialAffiliateInputForm({
     angle: initialData?.angle || '',
     targetAudience: initialData?.targetAudience || '',
     tone: initialData?.tone || '',
-    brand: initialData?.brand || 'stadiumastro',
+    brand: initialData?.brand || 'Stadium Astro',
   })
   const [fetchingName, setFetchingName] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -174,8 +162,8 @@ export function SocialAffiliateInputForm({
             onChange={(e) => setFormData((prev) => ({ ...prev, brand: e.target.value }))}
             className={selectClass}
           >
-            {BRAND_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {BRANDS.map((brand) => (
+              <option key={brand} value={brand}>{brand}</option>
             ))}
           </select>
           <div className="pointer-events-none absolute right-3 top-[26px] text-neutral-400">

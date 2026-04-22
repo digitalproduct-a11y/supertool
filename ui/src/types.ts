@@ -80,6 +80,7 @@ export type ArticleGeneratorStep = 'input' | 'pick-angle' | 'review-article' | '
 export interface TopicConfig {
   id: string
   label: string
+  trendingTopicsWebhookEnvVar?: string
   webhookEnvVar: string
   uploadPresetEnvVar: string
   templateImages: [string, string, string]
@@ -109,7 +110,7 @@ export interface EngagementPhotosError {
 export type EngagementPhotosResult = EngagementPhotosResponse | EngagementPhotosError
 
 // Engagement Photos post formats
-export type PostFormat = 'challenge' | 'debate' | 'nostalgia' | 'quiz' | 'hot_take'
+export type PostFormat = string
 export type IdeaStatus = 'draft' | 'selected' | 'rendered'
 
 export interface Brand {
@@ -295,6 +296,45 @@ export interface SchedulePostPayload {
   postId: string
   scheduledTime: string   // ISO 8601
   platform: 'facebook'
+}
+
+// Zernio Scheduled Queue types
+export interface ZernioPlatformEntry {
+  platform: string
+  accountId?: {
+    _id: string
+    platform: string
+    username?: string
+    displayName?: string
+    isActive?: boolean
+  }
+  status?: string
+  platformPostUrl?: string
+}
+
+export interface ZernioPost {
+  _id: string
+  status: 'scheduled'
+  title?: string
+  content: string
+  scheduledFor: string     // ISO 8601
+  timezone?: string
+  platforms: ZernioPlatformEntry[]
+  tags?: string[]
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface ZernioPagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
+export interface ZernioPostsResponse {
+  posts: ZernioPost[]
+  pagination: ZernioPagination
 }
 
 // Social Affiliate Posting tool types

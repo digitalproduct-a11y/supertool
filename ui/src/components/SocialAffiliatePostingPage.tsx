@@ -117,7 +117,7 @@ export function SocialAffiliatePostingPage() {
         {state === 'success' && result && formData && regenData && (
           <div className="space-y-6 pb-20">
             {/* Meta summary */}
-            <SocialAffiliateResultsMeta data={result} />
+            <SocialAffiliateResultsMeta data={result} brand={formData.brand} />
 
             {/* Threads + Facebook — two column */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
