@@ -37,7 +37,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -53,6 +53,7 @@ const pathToTool: Record<string, ToolId> = {
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
+  '/quick-fact': 'quick-fact',
 }
 
 // Map trending-news subpages to scheduled-posts tool
@@ -77,6 +78,7 @@ const toolToPath: Record<ToolId, string> = {
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
+  'quick-fact': '/quick-fact',
 }
 
 const topicToPath: Record<string, string> = {
