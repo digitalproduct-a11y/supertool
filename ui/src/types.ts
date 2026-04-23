@@ -381,11 +381,18 @@ export interface SocialAffiliateGenerationResult {
 }
 
 // Quick Fact Generator tool types
+export interface QuickFactItem {
+  header: string
+  body: string
+}
+
 export interface QuickFactResult {
   success: true
   imageUrl: string
+  sectionLabel: string
   title: string
-  facts: string[]
+  facts: QuickFactItem[]
+  keyPhrase: string
   caption: string
   brand: string
 }

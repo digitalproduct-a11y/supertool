@@ -106,7 +106,7 @@ Always push workflow changes directly to the n8n instance using MCP. After pushi
 
 ## Deployment Rules
 
-- **On `staging` branch**: always deploy automatically — `git push origin staging` triggers a Vercel Preview deployment, no confirmation needed.
+- **On `staging` branch**: ALWAYS ask the user before deploying — never run `git push origin staging` without explicit approval.
 - **On `main` branch**: ALWAYS ask the user before deploying to production. Never run `git push origin main` without explicit approval.
 
 ## Boundaries
