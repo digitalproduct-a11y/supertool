@@ -88,15 +88,6 @@ const topicToPath: Record<string, string> = {
 
 const SPIKE_SEEN_KEY = 'spike_seen_urls'
 
-function getSpikeSeenUrls(): Set<string> {
-  try {
-    const raw = localStorage.getItem(SPIKE_SEEN_KEY)
-    if (!raw) return new Set()
-    return new Set(JSON.parse(raw) as string[])
-  } catch {
-    return new Set()
-  }
-}
 
 function saveSpikeSeenUrls(urls: string[]): void {
   localStorage.setItem(SPIKE_SEEN_KEY, JSON.stringify(urls))
