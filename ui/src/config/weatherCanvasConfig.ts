@@ -131,15 +131,27 @@ export const DEFAULT_WEATHER_CANVAS_CONFIG: WeatherCanvasConfig = {
     text: "Ramalan Cuaca Malaysia",
     style: {
       fontFamily: "Arial",
-      fontSize: 42,
+      fontSize: 48,
       fontWeight: "bold",
       fill: "#ffffff",
       textAlign: "center",
     },
     x: 540,
-    y: 100,
+    y: 130,
   },
   dateHeader: {
+    enabled: true,
+    style: {
+      fontFamily: "Arial",
+      fontSize: 28,
+      fontWeight: "normal",
+      fill: "#ffffff",
+      textAlign: "center",
+    },
+    x: 540,
+    y: 190,
+  },
+  dayHeader: {
     enabled: true,
     style: {
       fontFamily: "Arial",
@@ -148,30 +160,17 @@ export const DEFAULT_WEATHER_CANVAS_CONFIG: WeatherCanvasConfig = {
       fill: "#ffffff",
       textAlign: "center",
     },
-    x: 540,
-    y: 150,
-  },
-  dayHeader: {
-    enabled: true,
-    style: {
-      fontFamily: "Arial",
-      fontSize: 20,
-      fontWeight: "normal",
-      fill: "#cccccc",
-      textAlign: "center",
-    },
-    x: 540,
-    y: 180,
+    x: 450,
+    y: 160,
   },
   brandLogo: {
     enabled: true,
-    width: 150,
+    width: 120,
     x: 540,
-    y: 1220,
+    y: 50,
   },
   dynamicSizing: [
-    { maxCount: 1, scale: 3.0 }, // 1 state  — 3x bigger
-    { maxCount: 3, scale: 2.2 }, // 2-3 states
+    { maxCount: 3, scale: 2.2 }, // 1-3 states
     { maxCount: 5, scale: 1.6 }, // 4-5 states
     { maxCount: 10, scale: 1.2 }, // 6-10 states
     { maxCount: 16, scale: 1.0 }, // 11-16 states — base size
@@ -188,7 +187,7 @@ export const DEFAULT_WEATHER_CANVAS_CONFIG: WeatherCanvasConfig = {
       fontFamily: "Arial",
       fontSize: 16,
       fontWeight: "normal",
-      fill: "#e0e0e0",
+      fill: "#ffffff",
       textAlign: "left",
     },
     temperature: {

@@ -90,24 +90,22 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
           canvas.add(titleText);
         }
 
-        // Date header
-        if (config.dateHeader.enabled && posts.length > 0) {
-          const dateText = makeText(posts[0].date, config.dateHeader.style, {
+        // Day + Date header (combined, centered below title)
+        if ((config.dateHeader.enabled || config.dayHeader.enabled) && posts.length > 0) {
+          const [y, m, d] = posts[0].date.split("-");
+          const formattedDate = `${d}/${m}/${y}`;
+          const day = posts[0].day || "";
+          const parts: string[] = [];
+          if (config.dayHeader.enabled && day) parts.push(day);
+          if (config.dateHeader.enabled) parts.push(formattedDate);
+          const combined = parts.join(" · ");
+
+          const combinedText = makeText(combined, config.dateHeader.style, {
             left: config.dateHeader.x,
             top: config.dateHeader.y,
           });
-          dateText.set({ originX: "center" });
-          canvas.add(dateText);
-        }
-
-        // Day header
-        if (config.dayHeader.enabled && posts.length > 0 && posts[0].day) {
-          const dayText = makeText(posts[0].day, config.dayHeader.style, {
-            left: config.dayHeader.x,
-            top: config.dayHeader.y,
-          });
-          dayText.set({ originX: "center" });
-          canvas.add(dayText);
+          combinedText.set({ originX: "center" });
+          canvas.add(combinedText);
         }
 
         // Brand logo
@@ -281,6 +279,20 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
             );
           });
         }
+
+        // Source attribution — bottom center, subtle
+        const sourceText = new Text("Source: MET Malaysia (Malaysian Meteorological Department)", {
+          left: width / 2,
+          top: height - 30,
+          fontFamily: "Arial",
+          fontSize: 13,
+          fontStyle: "italic",
+          fill: "rgba(255, 255, 255, 0.35)",
+          originX: "center",
+          selectable: false,
+          evented: false,
+        });
+        canvas.add(sourceText);
 
         canvas.renderAll();
         setReady(true);
