@@ -1,30 +1,31 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useBlocker } from 'react-router-dom'
+import { IconChevronLeft } from '@tabler/icons-react'
 import { useDidYouKnow } from '../hooks/useDidYouKnow'
 import { BRANDS } from '../constants/brands'
 import { DidYouKnowCard } from './DidYouKnowCard'
-import { IconChevronLeft } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 
+type Stage = 'input' | 'select' | 'review'
+
 export function DidYouKnowPage() {
   const navigate = useNavigate()
-  const { ideas, isLoading, error, fetchIdeas } = useDidYouKnow()
-
+  const { ideas, setIdeas, isLoading, error, fetchIdeas } = useDidYouKnow()
+  const [stage, setStage] = useState<Stage>('input')
+  const [selectedIdea, setSelectedIdea] = useState<DidYouKnowIdea | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [context, setContext] = useState<string>('')
-  const [stage, setStage] = useState<'input' | 'select-idea' | 'review'>('input')
-  const [selectedIdea, setSelectedIdea] = useState<DidYouKnowIdea | null>(null)
 
   const webhookUrl = import.meta.env.VITE_DIDYOUKNOW_WEBHOOK_URL as string | undefined
 
-  // Block navigation during review
+  // Block in-app navigation during review or loading
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      stage === 'review' && currentLocation.pathname !== nextLocation.pathname
+      (stage === 'review' || isLoading) && currentLocation.pathname !== nextLocation.pathname
   )
 
-  // Prevent accidental page leave during review
+  // Prevent accidental page close
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (stage === 'review') {
@@ -43,7 +44,7 @@ export function DidYouKnowPage() {
       return
     }
     if (!context.trim()) {
-      toast.error('Please enter a context or topic')
+      toast.error('Please enter context')
       return
     }
     if (!webhookUrl) {
@@ -52,7 +53,7 @@ export function DidYouKnowPage() {
     }
 
     await fetchIdeas(selectedBrand, context, webhookUrl)
-    setStage('select-idea')
+    setStage('select')
   }
 
   const handleSelectIdea = (idea: DidYouKnowIdea) => {
@@ -60,14 +61,22 @@ export function DidYouKnowPage() {
     setStage('review')
   }
 
+  const handleUpdateField = (field: 'headline' | 'fact' | 'caption', value: string) => {
+    if (selectedIdea) {
+      const updated = { ...selectedIdea, [field]: value }
+      setSelectedIdea(updated)
+      setIdeas(ideas.map((i) => (i.id === selectedIdea.id ? updated : i)))
+    }
+  }
+
   const handleBackToIdeas = () => {
-    setStage('select-idea')
+    setSelectedIdea(null)
+    setStage('select')
   }
 
   const handleBackToInput = () => {
+    setIdeas([])
     setStage('input')
-    setSelectedBrand('')
-    setContext('')
   }
 
   return (
@@ -84,75 +93,73 @@ export function DidYouKnowPage() {
             </button>
             <h1 className="text-2xl font-semibold text-neutral-950">Did You Know?</h1>
           </div>
-          <p className="text-sm text-neutral-600">Generate engaging sports facts and moments</p>
-          <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
+          <p className="text-sm text-neutral-600">Generate fun facts and interesting moments</p>
+          <div
+            className="mt-4 h-[3px] rounded-full animate-stripe-grow"
+            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
+          />
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+        {/* Stage 1: Input */}
         {stage === 'input' && (
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-8 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
-                <div className="relative">
-                  <select
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-                  >
-                    <option value="">Select a brand...</option>
-                    {BRANDS.map((brand) => (
-                      <option key={brand} value={brand}>
-                        {brand}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-950 mb-2">Context or Topic</label>
-                <textarea
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  placeholder="E.g. Best moments from FIFA World Cup 2002"
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none h-24"
-                />
-              </div>
-
-              {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
-
-              <button
-                onClick={handleFetchIdeas}
-                disabled={!selectedBrand || !context.trim() || isLoading}
-                className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
               >
-                {isLoading ? 'Finding Ideas...' : 'Find Ideas'}
-              </button>
+                <option value="">Select a brand...</option>
+                {BRANDS.map((brand) => (
+                  <option key={brand} value={brand}>
+                    {brand}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-950 mb-2">Context</label>
+              <textarea
+                value={context}
+                onChange={(e) => setContext(e.target.value)}
+                placeholder="E.g., Best moments from FIFA World Cup 2002"
+                rows={4}
+                className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                Describe what kind of facts you want to generate
+              </p>
+            </div>
+
+            {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
+
+            <button
+              onClick={handleFetchIdeas}
+              disabled={isLoading || !selectedBrand || !context.trim()}
+              className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+            >
+              {isLoading ? 'Generating...' : 'Find Ideas'}
+            </button>
           </div>
         )}
 
-        {stage === 'select-idea' && isLoading && (
+        {/* Stage 1: Loading */}
+        {stage === 'input' && isLoading && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
             <div className="text-4xl inline-block animate-bounce">💡</div>
-            <p className="text-sm font-semibold text-neutral-900">Generating Ideas</p>
-            <p className="text-xs text-neutral-500">Searching reliable sources and crafting ideas...</p>
+            <p className="text-sm font-semibold text-neutral-900">Finding Ideas</p>
+            <p className="text-xs text-neutral-500">Searching for interesting facts...</p>
           </div>
         )}
 
-        {stage === 'select-idea' && !isLoading && ideas.length > 0 && (
-          <div className="space-y-6">
+        {/* Stage 2: Select Idea */}
+        {stage === 'select' && !isLoading && (
+          <div className="space-y-4">
             <button
               onClick={handleBackToInput}
               className="text-sm text-neutral-600 hover:text-neutral-950 transition flex items-center gap-1"
@@ -161,30 +168,31 @@ export function DidYouKnowPage() {
               Back to input
             </button>
 
-            <div>
-              <h2 className="text-xl font-semibold text-neutral-950 mb-4">Select an Idea</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {ideas.map((idea) => (
-                  <button
-                    key={idea.id}
-                    onClick={() => handleSelectIdea(idea)}
-                    className="text-left p-4 border border-neutral-200 rounded-xl hover:border-neutral-900 hover:bg-neutral-50 transition space-y-2"
-                  >
-                    <p className="font-semibold text-neutral-950 line-clamp-2">{idea.headline}</p>
-                    <p className="text-sm text-neutral-600 line-clamp-2">{idea.fact}</p>
-                    <p className="text-xs text-neutral-500 line-clamp-1">{idea.caption}</p>
-                  </button>
-                ))}
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {ideas.map((idea) => (
+                <button
+                  key={idea.id}
+                  onClick={() => handleSelectIdea(idea)}
+                  className="text-left p-4 border border-neutral-200 rounded-xl hover:border-neutral-900 hover:shadow-lg transition bg-white group"
+                >
+                  <h3 className="font-semibold text-neutral-950 group-hover:text-neutral-900 line-clamp-2">
+                    {idea.headline}
+                  </h3>
+                  <p className="text-xs text-neutral-600 mt-2 line-clamp-2">{idea.fact}</p>
+                  <p className="text-xs text-neutral-400 mt-2 line-clamp-3">{idea.caption}</p>
+                </button>
+              ))}
             </div>
           </div>
         )}
 
+        {/* Stage 3: Review */}
         {stage === 'review' && selectedIdea && (
           <DidYouKnowCard
             idea={selectedIdea}
-            selectedBrand={selectedBrand}
+            brand={selectedBrand}
             onBack={handleBackToIdeas}
+            onUpdateField={handleUpdateField}
           />
         )}
       </div>
@@ -193,14 +201,9 @@ export function DidYouKnowPage() {
       {blocker.state === 'blocked' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900">Leave this page?</h3>
-                <p className="text-sm text-neutral-600 mt-1">Your progress will be lost if you navigate away now.</p>
-              </div>
-              <button onClick={() => blocker.reset()} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900">Leave this page?</h3>
+              <p className="text-sm text-neutral-600 mt-1">Your progress will be lost if you navigate away now.</p>
             </div>
             <div className="flex gap-2">
               <button

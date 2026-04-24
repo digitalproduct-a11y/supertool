@@ -157,8 +157,8 @@ export async function uploadToCloudinary(file: File): Promise<string> {
 }
 
 /**
- * Builds a Cloudinary transformation URL for "Did You Know" cards.
- * Layout: user image base → dark gradient → "DID YOU KNOW?" badge (top) → headline → fact → brand logo (bottom).
+ * Builds a Cloudinary transformation URL for "Did You Know" cards (Tribune design).
+ * Layout: full-bleed photo → gradient overlay → headline (serif italic) → fact with accent rule.
  */
 export function buildDidYouKnowUrl(
   baseImagePublicId: string,
@@ -172,18 +172,17 @@ export function buildDidYouKnowUrl(
   const encHead = cloudinaryTextEncode(headline)
   const encFact = cloudinaryTextEncode(fact)
 
-  // Base transformation: fill 1080x1350, dark gradient overlay
+  // Base: fill 1080x1350, centered
   const transforms = [
     'c_fill,g_center,w_1080,h_1350',
-    'l_gradient:fade,o_60',
-    // "DID YOU KNOW?" badge at top
-    `l_text:Montserrat_28_bold:DID%20YOU%20KNOW%3F,co_rgb:FF3FBF,y_-500,g_center,w_900,c_fit`,
-    // Headline (white, large, centered)
-    `l_text:Montserrat_80_bold:${encHead},co_white,w_900,c_fit,y_-200,g_center`,
-    // Fact subtitle (light gray, medium, centered)
-    `l_text:Montserrat_40:${encFact},co_rgb:E0E0E0,w_900,c_fit,y_100,g_center`,
-    // Brand logo at bottom
-    `l_${brandLogoId},w_180,y_550,g_south`,
+    // Gradient overlay (5-stop linear gradient, 180° angle, 0.92 intensity)
+    'l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_15,w_1080,h_1350/l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_55,w_1080,h_1350/l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_88,w_1080,h_1350/l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_92,w_1080,h_1350',
+    // Top darkener (280px height)
+    'l_text:arial_1:__,co_rgb:060608,o_78,y_-535,g_north,h_280,w_1080',
+    // Headline (Instrument Serif, italic, 72px, positioned from bottom: 300px)
+    `l_text:Georgia_italic_72:${encHead},co_rgb:faf7ee,y_300,g_south,w_900,c_fit`,
+    // Fact body (Inter, 18px, positioned from bottom: 80px)
+    `l_text:Arial_18:${encFact},co_rgb:f5f2ea,y_80,g_south,w_900,c_fit`,
   ].join('/')
 
   return `https://res.cloudinary.com/${cloudName}/image/upload/${transforms}/${baseImagePublicId}`

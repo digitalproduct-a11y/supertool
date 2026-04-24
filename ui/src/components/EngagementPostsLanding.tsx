@@ -1,4 +1,4 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconLightbulb } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconBulb } from '@tabler/icons-react'
 import type React from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -54,7 +54,7 @@ const sections: Section[] = [
         id: 'didyouknow',
         label: 'Did You Know?',
         description: 'Generate fun facts and interesting moments with context-based search',
-        icon: IconLightbulb,
+        icon: IconBulb,
         color: '#F05A35',
       },
       {

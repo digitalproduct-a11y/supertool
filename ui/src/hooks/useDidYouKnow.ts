@@ -40,9 +40,10 @@ export function useDidYouKnow() {
       }
 
       const data = (await response.json()) as any
+
       if (data?.success && data?.ideas && Array.isArray(data.ideas)) {
         const limitedIdeas = data.ideas.map((idea: any) => ({
-          id: idea.id,
+          id: idea.id || `idea-${Math.random()}`,
           headline: (idea.headline || '').slice(0, 35),
           fact: (idea.fact || '').slice(0, 70),
           caption: (idea.caption || '').slice(0, 300),
@@ -59,5 +60,5 @@ export function useDidYouKnow() {
     }
   }
 
-  return { ideas, isLoading, error, fetchIdeas }
+  return { ideas, setIdeas, isLoading, error, fetchIdeas }
 }
