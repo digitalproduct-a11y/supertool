@@ -17,6 +17,7 @@ import { BRAND_LOGO_IDS } from "../constants/brands";
 
 export interface WeatherCanvasHandle {
   downloadAsPng: () => void;
+  getDataUrl: () => string | null;
 }
 
 interface WeatherCanvasProps {
@@ -24,6 +25,7 @@ interface WeatherCanvasProps {
   brand: string;
   backgroundOverride?: string;
   config?: WeatherCanvasConfig;
+  onClick?: () => void;
 }
 
 function makeText(
@@ -46,7 +48,7 @@ function makeText(
 }
 
 export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>(
-  function WeatherCanvas({ posts, brand, backgroundOverride, config: configProp }, ref) {
+  function WeatherCanvas({ posts, brand, backgroundOverride, config: configProp, onClick }, ref) {
     const config = configProp ?? DEFAULT_WEATHER_CANVAS_CONFIG;
     const canvasElRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<StaticCanvas | null>(null);
@@ -345,6 +347,11 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
         link.download = `weather-malaysia-${posts[0]?.date ?? "today"}.png`;
         link.click();
       },
+      getDataUrl() {
+        const canvas = fabricRef.current;
+        if (!canvas) return null;
+        return canvas.toDataURL({ format: "png", multiplier: 2 });
+      },
     }));
 
     const { width: cw, height: ch } = config.canvas;
@@ -355,8 +362,9 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
           <p className="text-sm text-red-500 font-medium">{error}</p>
         )}
         <div
-          className="w-full overflow-hidden rounded-xl border border-neutral-200"
+          className={`w-full overflow-hidden rounded-xl border border-neutral-200${onClick ? " cursor-pointer hover:opacity-90 transition" : ""}`}
           style={{ maxWidth: 500, aspectRatio: `${cw} / ${ch}` }}
+          onClick={onClick}
         >
           <canvas
             ref={canvasElRef}

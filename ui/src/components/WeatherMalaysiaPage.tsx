@@ -1,9 +1,10 @@
-import { useState, useRef, memo } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   IconArrowLeft,
   IconCloudRain,
   IconDownload,
+  IconX,
 } from "@tabler/icons-react";
 import { useWeatherMalaysia } from "../hooks/useWeatherMalaysia";
 import { WeatherCanvas, type WeatherCanvasHandle } from "./WeatherCanvas";
@@ -19,7 +20,7 @@ import {
   type WeatherBackgroundsConfig,
 } from "../config/weatherCanvasConfig";
 
-type PostMode = "single" | "individual" | "grouped";
+type PostMode = "grouped" | "individual";
 
 interface WeatherGroup {
   label: string;
@@ -155,7 +156,6 @@ const WeatherImageCard = memo(function WeatherImageCard({
 // ─── Mode Toggle ─────────────────────────────────────────────────────────────
 
 const MODE_OPTIONS: { value: PostMode; label: string }[] = [
-  { value: "single", label: "All States (1 Post)" },
   { value: "grouped", label: "By Weather" },
   { value: "individual", label: "Individual (16 Posts)" },
 ];
@@ -192,14 +192,25 @@ export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
   const { posts, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState("");
-  const [mode, setMode] = useState<PostMode>("single");
+  const [mode, setMode] = useState<PostMode>("grouped");
   const [stage, setStage] = useState<"brand-select" | "review">(
     posts.length > 0 ? "review" : "brand-select",
   );
 
   const [sharedCaption, setSharedCaption] = useState("");
-  const canvasRef = useRef<WeatherCanvasHandle>(null);
   const groupedCanvasRefs = useRef<Map<string, WeatherCanvasHandle>>(new Map());
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  const closeLightbox = useCallback(() => setLightboxUrl(null), []);
+
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [lightboxUrl, closeLightbox]);
 
   // Schedule state
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -265,15 +276,7 @@ export function WeatherMalaysiaPage() {
     setIsScheduling(true);
 
     try {
-      let imageUrls: string[];
-
-      if (mode === "single") {
-        // In single-post mode, use the first post's image as the cover
-        // TODO: upload canvas PNG to Cloudinary for true single-post scheduling
-        imageUrls = [posts[0].imageUrl];
-      } else {
-        imageUrls = posts.map((p) => p.imageUrl);
-      }
+      const imageUrls = posts.map((p) => p.imageUrl);
 
       const res = await fetch(webhookUrl, {
         method: "POST",
@@ -301,11 +304,7 @@ export function WeatherMalaysiaPage() {
         data.status === "SUCCESS" ||
         data.status === "DRAFT_SAVED"
       ) {
-        toast.success(
-          mode === "single"
-            ? "Weather post scheduled!"
-            : "All weather posts scheduled!",
-        );
+        toast.success("Weather posts scheduled!");
         setScheduleStatus("done");
       } else {
         toast.error(data.message ?? "Something went wrong.");
@@ -399,8 +398,7 @@ export function WeatherMalaysiaPage() {
                 disabled={!brand}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-neutral-950 hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
               >
-                Generate Weather{" "}
-                {mode === "individual" ? "Posts" : "Post"}
+                Generate Weather Posts
               </button>
             </div>
           </div>
@@ -492,18 +490,14 @@ export function WeatherMalaysiaPage() {
                   <div className="flex items-center gap-4">
                     <p className="text-sm text-neutral-500">
                       <span className="font-semibold text-neutral-800">
-                        {mode === "single"
-                          ? "1"
-                          : mode === "grouped"
-                            ? groupPostsByWeather(posts).length
-                            : posts.length}
+                        {mode === "grouped"
+                          ? groupPostsByWeather(posts).length
+                          : posts.length}
                       </span>{" "}
                       weather{" "}
-                      {mode === "single"
-                        ? "post"
-                        : mode === "grouped"
-                          ? "post(s) by weather"
-                          : "posts"}{" "}
+                      {mode === "grouped"
+                        ? "post(s) by weather"
+                        : "posts"}{" "}
                       generated for{" "}
                       <span className="font-semibold text-neutral-800">
                         {brand}
@@ -522,23 +516,9 @@ export function WeatherMalaysiaPage() {
                   </button>
                 </div>
 
-                {/* Single post mode — canvas preview */}
-                {mode === "single" && (
-                  <div className="flex flex-col items-center gap-4">
-                    <WeatherCanvas ref={canvasRef} posts={posts} brand={brand} />
-                    <button
-                      onClick={() => canvasRef.current?.downloadAsPng()}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-neutral-950 text-white hover:bg-neutral-800 transition active:scale-[0.98]"
-                    >
-                      <IconDownload className="w-4 h-4" />
-                      Download PNG
-                    </button>
-                  </div>
-                )}
-
                 {/* Grouped by weather mode */}
                 {mode === "grouped" && (
-                  <div className="space-y-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {groupPostsByWeather(posts).map((group) => (
                       <div key={group.backgroundId} className="flex flex-col items-center gap-3">
                         <h3 className="text-sm font-semibold text-neutral-800">
@@ -558,6 +538,12 @@ export function WeatherMalaysiaPage() {
                           posts={group.posts}
                           brand={brand}
                           backgroundOverride={group.backgroundId}
+                          onClick={() => {
+                            const url = groupedCanvasRefs.current
+                              .get(group.backgroundId)
+                              ?.getDataUrl();
+                            if (url) setLightboxUrl(url);
+                          }}
                         />
                         <button
                           onClick={() =>
@@ -588,10 +574,7 @@ export function WeatherMalaysiaPage() {
                 <div className="mt-8 glass-card rounded-2xl p-6 max-w-2xl mx-auto space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-neutral-700 mb-1.5">
-                      Caption{" "}
-                      {mode === "individual"
-                        ? "for all posts"
-                        : "for post"}
+                      Caption for posts
                     </label>
                     <textarea
                       value={sharedCaption}
@@ -617,9 +600,7 @@ export function WeatherMalaysiaPage() {
                         ? "Scheduling…"
                         : scheduleStatus === "done"
                           ? "Scheduled!"
-                          : mode === "individual"
-                            ? `Schedule all ${posts.length} on FB`
-                            : "Schedule on FB"}
+                          : "Schedule on FB"}
                     </button>
                   </div>
                 </div>
@@ -639,6 +620,27 @@ export function WeatherMalaysiaPage() {
           </>
         )}
       </div>
+
+      {/* Lightbox modal */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in"
+          onClick={closeLightbox}
+        >
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-white"
+          >
+            <IconX className="w-5 h-5" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Weather preview"
+            className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </main>
   );
 }

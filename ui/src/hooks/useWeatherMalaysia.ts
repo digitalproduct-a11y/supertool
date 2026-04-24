@@ -62,7 +62,7 @@ export function useWeatherMalaysia() {
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const generate = useCallback(async (brand: string, mode: "single" | "individual" | "grouped" = "individual"): Promise<WeatherPost[]> => {
+  const generate = useCallback(async (brand: string, mode: "grouped" | "individual" = "grouped"): Promise<WeatherPost[]> => {
     const webhookUrl = import.meta.env.VITE_WEATHER_WEBHOOK_URL as
       | string
       | undefined;
@@ -92,7 +92,7 @@ export function useWeatherMalaysia() {
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, day, brand, mode: mode === "grouped" ? "single" : mode }),
+        body: JSON.stringify({ date, day, brand, mode }),
         signal: controller.signal,
       });
 
