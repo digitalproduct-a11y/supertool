@@ -5,6 +5,7 @@ export interface WeatherPost {
   state: string;
   location_id: string;
   date: string;
+  day: string;
   morning_forecast: string;
   afternoon_forecast: string;
   night_forecast: string;
@@ -12,6 +13,8 @@ export interface WeatherPost {
   summary_when: string;
   min_temp: number;
   max_temp: number;
+  translated_summary_forecast?: string;
+  translated_summary_when?: string;
   imageUrl: string;
   caption: string;
 }
@@ -59,21 +62,21 @@ export function useWeatherMalaysia() {
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const generate = useCallback(async (brand: string) => {
+  const generate = useCallback(async (brand: string, mode: "single" | "individual" | "grouped" = "individual"): Promise<WeatherPost[]> => {
     const webhookUrl = import.meta.env.VITE_WEATHER_WEBHOOK_URL as
       | string
       | undefined;
     if (!webhookUrl) {
       setError("Weather webhook URL not configured.");
-      return;
+      return [];
     }
 
     const { date, day } = getTodayMYT();
-    const cacheKey = `${brand}:${date}`;
+    const cacheKey = `${brand}:${date}:${mode}`;
 
     if (cachedResult?.key === cacheKey) {
       setPosts(cachedResult.posts);
-      return;
+      return cachedResult.posts;
     }
 
     controllerRef.current?.abort();
@@ -89,13 +92,30 @@ export function useWeatherMalaysia() {
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, day, brand }),
+        body: JSON.stringify({ date, day, brand, mode: mode === "grouped" ? "single" : mode }),
         signal: controller.signal,
       });
 
-      const data = (await res.json()) as WeatherResult;
+      if (!res.ok) {
+        setError(`Weather service error (${res.status}). Please try again.`);
+        return [];
+      }
 
-      if (controller.signal.aborted) return;
+      const text = await res.text();
+      if (!text) {
+        setError("Weather service returned an empty response. Please try again.");
+        return [];
+      }
+
+      let data: WeatherResult;
+      try {
+        data = JSON.parse(text) as WeatherResult;
+      } catch {
+        setError("Weather service returned an invalid response. Please try again.");
+        return [];
+      }
+
+      if (controller.signal.aborted) return [];
 
       if (data.success) {
         // Ensure every post has a caption — fallback to generic if empty
@@ -107,17 +127,20 @@ export function useWeatherMalaysia() {
         }));
         cachedResult = { key: cacheKey, posts: postsWithCaptions };
         setPosts(postsWithCaptions);
+        return postsWithCaptions;
       } else {
         setError(data.message || "Failed to generate weather posts.");
+        return [];
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
         setError("Request timed out. Please try again.");
-        return;
+        return [];
       }
       setError(
         e instanceof Error ? e.message : "Something went wrong. Please try again.",
       );
+      return [];
     } finally {
       clearTimeout(timeoutId);
       if (!controller.signal.aborted) setIsLoading(false);

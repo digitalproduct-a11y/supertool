@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@tabler/icons-react": "^3.40.0",
+    "@types/fabric": "^5.3.11",
+    "fabric": "^6.9.1",
     "jszip": "^3.10.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
