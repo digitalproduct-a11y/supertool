@@ -9,12 +9,19 @@ import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 
 type Stage = 'input' | 'select' | 'review'
 
+const EDITIONS = [
+  'Edisi Piala Dunia',
+  'Edisi Liga Super Malaysia',
+  'Edisi Piala Thomas/Uber',
+]
+
 export function DidYouKnowPage() {
   const navigate = useNavigate()
-  const { ideas, setIdeas, isLoading, error, fetchIdeas } = useDidYouKnow()
+  const { ideas, setIdeas, brandLogoPublicId, isLoading, error, fetchIdeas } = useDidYouKnow()
   const [stage, setStage] = useState<Stage>('input')
   const [selectedIdea, setSelectedIdea] = useState<DidYouKnowIdea | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const [selectedEdition, setSelectedEdition] = useState<string>('')
   const [context, setContext] = useState<string>('')
 
   const webhookUrl = import.meta.env.VITE_DIDYOUKNOW_WEBHOOK_URL as string | undefined
@@ -41,6 +48,10 @@ export function DidYouKnowPage() {
   const handleFetchIdeas = async () => {
     if (!selectedBrand) {
       toast.error('Please select a brand')
+      return
+    }
+    if (!selectedEdition) {
+      toast.error('Please select an edition')
       return
     }
     if (!context.trim()) {
@@ -123,6 +134,22 @@ export function DidYouKnowPage() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-neutral-950 mb-2">Edition</label>
+              <select
+                value={selectedEdition}
+                onChange={(e) => setSelectedEdition(e.target.value)}
+                className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+              >
+                <option value="">Select an edition...</option>
+                {EDITIONS.map((edition) => (
+                  <option key={edition} value={edition}>
+                    {edition}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-neutral-950 mb-2">Context</label>
               <textarea
                 value={context}
@@ -140,7 +167,7 @@ export function DidYouKnowPage() {
 
             <button
               onClick={handleFetchIdeas}
-              disabled={isLoading || !selectedBrand || !context.trim()}
+              disabled={isLoading || !selectedBrand || !selectedEdition || !context.trim()}
               className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
             >
               {isLoading ? 'Generating...' : 'Find Ideas'}
@@ -191,6 +218,8 @@ export function DidYouKnowPage() {
           <DidYouKnowCard
             idea={selectedIdea}
             brand={selectedBrand}
+            edition={selectedEdition}
+            brandLogoPublicId={brandLogoPublicId}
             onBack={handleBackToIdeas}
             onUpdateField={handleUpdateField}
           />

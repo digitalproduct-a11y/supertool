@@ -9,6 +9,7 @@ export interface DidYouKnowIdea {
 
 export function useDidYouKnow() {
   const [ideas, setIdeas] = useState<DidYouKnowIdea[]>([])
+  const [brandLogoPublicId, setBrandLogoPublicId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -49,6 +50,7 @@ export function useDidYouKnow() {
           caption: (idea.caption || '').slice(0, 300),
         }))
         setIdeas(limitedIdeas)
+        setBrandLogoPublicId(data.brandLogoPublicId || null)
       } else {
         console.error('Invalid response structure:', data)
         throw new Error(`Invalid response: ${JSON.stringify(data).slice(0, 100)}`)
@@ -60,5 +62,5 @@ export function useDidYouKnow() {
     }
   }
 
-  return { ideas, setIdeas, isLoading, error, fetchIdeas }
+  return { ideas, setIdeas, brandLogoPublicId, isLoading, error, fetchIdeas }
 }

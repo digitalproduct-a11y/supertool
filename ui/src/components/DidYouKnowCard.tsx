@@ -8,17 +8,24 @@ import { toast } from '../hooks/useToast'
 interface DidYouKnowCardProps {
   idea: DidYouKnowIdea
   brand: string
+  edition: string
+  brandLogoPublicId: string | null
   onBack: () => void
   onUpdateField: (field: 'headline' | 'fact' | 'caption', value: string) => void
 }
 
-export function DidYouKnowCard({ idea, brand, onBack, onUpdateField }: DidYouKnowCardProps) {
+export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack, onUpdateField }: DidYouKnowCardProps) {
   const [uploadedImageId, setUploadedImageId] = useState<string | null>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
-  const brandLogo = BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] || 'default_logo'
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
+  const brandLogo = brandLogoPublicId || (BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] || 'default_logo')
+  const brandLogoUrl = brandLogoPublicId
+    ? `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogoPublicId}`
+    : null
+
   const previewUrl = uploadedImageId
     ? buildDidYouKnowUrl(uploadedImageId, idea.headline, idea.fact, brandLogo)
     : null
@@ -212,8 +219,8 @@ export function DidYouKnowCard({ idea, brand, onBack, onUpdateField }: DidYouKno
 
                 {/* Content container */}
                 <div className="absolute inset-0 flex flex-col" style={{ padding: '0 20px' }}>
-                  {/* Eyebrow */}
-                  <div className="mt-6 mb-12 flex items-center gap-4">
+                  {/* Eyebrow + Logo */}
+                  <div className="mt-6 mb-12 flex items-center justify-between gap-4">
                     <span
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
@@ -224,12 +231,34 @@ export function DidYouKnowCard({ idea, brand, onBack, onUpdateField }: DidYouKno
                         fontWeight: 600,
                       }}
                     >
-                      Tahukah Anda? — {brand}
+                      Tahukah Anda?
                     </span>
+                    {brandLogoUrl && (
+                      <img
+                        src={brandLogoUrl}
+                        alt={brand}
+                        style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+                      />
+                    )}
                   </div>
 
                   {/* Spacer to push content to bottom */}
                   <div className="flex-1" />
+
+                  {/* Edition label above headline */}
+                  <div
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '12px',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      color: '#E9B949',
+                      fontWeight: 600,
+                      marginBottom: '8px',
+                    }}
+                  >
+                    {edition}
+                  </div>
 
                   {/* Headline */}
                   <h1
