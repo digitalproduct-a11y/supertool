@@ -224,7 +224,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                   {/* Spacer to push content to bottom */}
                   <div className="flex-1" />
 
-                  {/* Tahukah Anda above headline */}
+                  {/* Imbas Kembali above headline */}
                   <div
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
@@ -237,7 +237,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                       lineHeight: '1.3',
                     }}
                   >
-                    Tahukah Anda?<br />
+                    Imbas Kembali<br />
                     {edition}
                   </div>
 

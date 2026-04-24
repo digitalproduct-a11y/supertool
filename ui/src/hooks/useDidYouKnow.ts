@@ -24,7 +24,7 @@ export function useDidYouKnow() {
       }
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 120 * 1000)
+      const timeoutId = setTimeout(() => controller.abort(), 180 * 1000)
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
@@ -46,7 +46,7 @@ export function useDidYouKnow() {
         const limitedIdeas = data.ideas.map((idea: any) => ({
           id: idea.id || `idea-${Math.random()}`,
           headline: (idea.headline || '').slice(0, 35),
-          fact: (idea.fact || '').slice(0, 70),
+          fact: (idea.fact || '').slice(0, 300),
           caption: (idea.caption || '').slice(0, 300),
         }))
         setIdeas(limitedIdeas)
