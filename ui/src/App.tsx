@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
@@ -15,6 +15,7 @@ import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './components/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
 import { QuickFactPage } from './components/QuickFactPage'
+import { PrimeTalkPage } from './components/PrimeTalkPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -38,7 +39,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -55,6 +56,7 @@ const pathToTool: Record<string, ToolId> = {
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
   '/quick-fact': 'quick-fact',
+  '/prime-talk': 'prime-talk',
 }
 
 // Map trending-news subpages to scheduled-posts tool
@@ -80,6 +82,7 @@ const toolToPath: Record<ToolId, string> = {
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
   'quick-fact': '/quick-fact',
+  'prime-talk': '/prime-talk',
 }
 
 const topicToPath: Record<string, string> = {
@@ -90,16 +93,6 @@ const topicToPath: Record<string, string> = {
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
 
 const SPIKE_SEEN_KEY = 'spike_seen_urls'
-
-function getSpikeSeenUrls(): Set<string> {
-  try {
-    const raw = localStorage.getItem(SPIKE_SEEN_KEY)
-    if (!raw) return new Set()
-    return new Set(JSON.parse(raw) as string[])
-  } catch {
-    return new Set()
-  }
-}
 
 function saveSpikeSeenUrls(urls: string[]): void {
   localStorage.setItem(SPIKE_SEEN_KEY, JSON.stringify(urls))
@@ -818,34 +811,6 @@ function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [spikeUnreadCount, setSpikeUnreadCount] = useState(0)
-  const hasFetchedBadge = useRef(false)
-
-  // Background fetch to check for unread spike items on app load
-  useEffect(() => {
-    if (hasFetchedBadge.current) return
-    hasFetchedBadge.current = true
-    const webhookUrl = (import.meta.env.VITE_TRENDING_SPIKE_WEBHOOK_URL as string | undefined)?.trim()
-    if (!webhookUrl) return
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'get-spike-inbox' }),
-    })
-      .then(r => r.json())
-      .then((data: { success?: boolean; spikes?: Array<{ articleUrl?: string }> }) => {
-        if (data.success && Array.isArray(data.spikes)) {
-          const seenUrls = getSpikeSeenUrls()
-          const todayStr = new Date().toDateString()
-          const unread = data.spikes.filter((s: { articleUrl?: string; receivedAt?: string }) => {
-            if (!s.articleUrl || seenUrls.has(s.articleUrl)) return false
-            if (!s.receivedAt) return false
-            return new Date(s.receivedAt).toDateString() === todayStr
-          }).length
-          setSpikeUnreadCount(unread)
-        }
-      })
-      .catch(() => {})
-  }, [])
 
   function markSpikeRead(urls: string[]) {
     saveSpikeSeenUrls(urls)
@@ -947,6 +912,11 @@ function App() {
       <Route path="/quick-fact" element={
         <Layout {...layoutProps}>
           <QuickFactPage />
+        </Layout>
+      } />
+      <Route path="/prime-talk" element={
+        <Layout {...layoutProps}>
+          <PrimeTalkPage />
         </Layout>
       } />
     </Routes>
