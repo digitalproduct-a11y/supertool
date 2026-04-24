@@ -234,14 +234,14 @@ export function DidYouKnowCard({ idea, brand, onBack, onUpdateField }: DidYouKno
                   {/* Headline */}
                   <h1
                     style={{
-                      fontFamily: "'Instrument Serif', serif",
-                      fontSize: '38px',
-                      fontWeight: 400,
-                      fontStyle: 'italic',
+                      fontFamily: "'Montserrat', sans-serif",
+                      fontSize: '28px',
+                      fontWeight: 900,
+                      fontStyle: 'normal',
                       lineHeight: '0.98',
                       letterSpacing: '-1.2px',
                       color: '#faf7ee',
-                      margin: '0 0 16px 0',
+                      margin: '0 0 8px 0',
                       padding: '2px 0',
                       wordWrap: 'break-word',
                       overflowWrap: 'break-word',
