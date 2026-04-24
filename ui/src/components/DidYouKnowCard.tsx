@@ -201,51 +201,30 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                   style={{
                     background: `linear-gradient(180deg,
                       rgba(6,6,8,0) 0%,
-                      rgba(6,6,8,0.138) 28%,
+                      rgba(6,6,8,0.100) 30%,
                       rgba(6,6,8,0.506) 55%,
                       rgba(6,6,8,0.810) 78%,
                       rgba(6,6,8,0.92) 100%)`,
                   }}
                 />
 
-                {/* Top darkener for logo legibility */}
-                <div
-                  className="absolute left-0 right-0 top-0"
-                  style={{
-                    height: '280px',
-                    background: 'linear-gradient(180deg, rgba(6,6,8,.78), rgba(6,6,8,0))',
-                  }}
-                />
-
                 {/* Content container */}
                 <div className="absolute inset-0 flex flex-col" style={{ padding: '0 20px' }}>
-                  {/* Eyebrow + Logo */}
-                  <div className="mt-6 mb-12 flex items-center justify-between gap-4">
-                    <span
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: '14px',
-                        letterSpacing: '2px',
-                        textTransform: 'uppercase',
-                        color: '#E9B949',
-                        fontWeight: 600,
-                      }}
-                    >
-                      Tahukah Anda?
-                    </span>
-                    {brandLogoUrl && (
+                  {/* Logo at top */}
+                  {brandLogoUrl && (
+                    <div className="mt-2 mb-12 flex justify-end pr-5">
                       <img
                         src={brandLogoUrl}
                         alt={brand}
                         style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
                       />
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Spacer to push content to bottom */}
                   <div className="flex-1" />
 
-                  {/* Edition label above headline */}
+                  {/* Tahukah Anda above headline */}
                   <div
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
@@ -255,8 +234,10 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                       color: '#E9B949',
                       fontWeight: 600,
                       marginBottom: '8px',
+                      lineHeight: '1.3',
                     }}
                   >
+                    Tahukah Anda?<br />
                     {edition}
                   </div>
 
