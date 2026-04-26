@@ -8,6 +8,9 @@ import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
+import { LatestCurrencyRatePage } from './components/LatestCurrencyRatePage'
+import { LatestFuelPricePage } from './components/LatestFuelPricePage'
+import { KLCIIndexPage } from './components/KLCIIndexPage'
 import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
@@ -82,6 +85,9 @@ const toolToPath: Record<ToolId, string> = {
 const topicToPath: Record<string, string> = {
   'engagement-photos': '/engagement-posts/epl',
   'ucl': '/engagement-posts/ucl',
+  'latest-currency-rate': '/engagement-posts/latest-currency-rate',
+  'latest-fuel-price': '/engagement-posts/latest-fuel-price',
+  'klci-index': '/engagement-posts/klci-index',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -877,6 +883,21 @@ function App() {
       <Route path="/engagement-posts/worldcup" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="worldcup" />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/latest-currency-rate" element={
+        <Layout {...layoutProps}>
+          <LatestCurrencyRatePage />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/latest-fuel-price" element={
+        <Layout {...layoutProps}>
+          <LatestFuelPricePage />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/klci-index" element={
+        <Layout {...layoutProps}>
+          <KLCIIndexPage />
         </Layout>
       } />
       <Route path="/trending-news" element={
