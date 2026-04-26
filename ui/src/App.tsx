@@ -24,6 +24,11 @@ const WeatherMalaysiaPage = lazy(() =>
     default: m.WeatherMalaysiaPage,
   })),
 );
+const QuotePage = lazy(() =>
+  import("./components/QuotePage").then((m) => ({
+    default: m.QuotePage,
+  })),
+);
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -99,6 +104,7 @@ const topicToPath: Record<string, string> = {
   'ucl': '/engagement-posts/ucl',
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
+  'quote': '/engagement-posts/quote',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -932,6 +938,13 @@ function App() {
         <Layout {...layoutProps}>
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <WeatherMalaysiaPage />
+          </Suspense>
+        </Layout>
+      } />
+      <Route path="/engagement-posts/quote" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <QuotePage />
           </Suspense>
         </Layout>
       } />

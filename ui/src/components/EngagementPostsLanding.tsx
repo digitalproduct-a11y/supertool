@@ -1,7 +1,7 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCalendar, IconCloudRain } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCalendar, IconCloudRain, IconBlockquote } from '@tabler/icons-react'
 import type React from 'react'
 
-type ActiveTopicId = 'engagement-photos' | 'ucl' | 'on-this-day' | 'weather-malaysia'
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'on-this-day' | 'weather-malaysia' | 'quote'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -82,6 +82,19 @@ const sections: Section[] = [
         description: 'Generate daily weather forecast posts for all 16 states',
         icon: IconCloudRain,
         color: '#00E5D4',
+      },
+    ],
+  },
+  {
+    label: 'Article Quotes',
+    description: 'Extract impactful quotes from articles and generate branded images.',
+    topics: [
+      {
+        id: 'quote',
+        label: 'Quote',
+        description: 'Extract the most powerful quote from any article and create a branded image',
+        icon: IconBlockquote,
+        color: '#0055EE',
       },
     ],
   },
