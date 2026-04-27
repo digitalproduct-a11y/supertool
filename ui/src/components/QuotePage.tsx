@@ -33,6 +33,9 @@ interface QuoteResponse {
   fb_caption: string;
   brand: string;
   image_url?: string;
+  pexels_image_left_url?: string;
+  // n8n also returns pexels_image_right_url; currently unused in the UI
+  // (the side-circle layout only consumes one image).
 }
 
 interface QuoteErrorResponse {
@@ -73,6 +76,9 @@ export function QuotePage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [pexelsImageUrl, setPexelsImageUrl] = useState<string | null>(null);
+  // User toggle for the tabloid layout's decorative side circle. Off by default.
+  const [useSideCircle, setUseSideCircle] = useState(false);
   const [cutoutUrl, setCutoutUrl] = useState<string | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
@@ -136,6 +142,7 @@ export function QuotePage() {
     setQuoteData(null);
     setCaption("");
     setImageUrl(null);
+    setPexelsImageUrl(null);
     if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
     setCutoutUrl(null);
     setIsProcessingImage(false);
@@ -200,6 +207,8 @@ export function QuotePage() {
         });
         setCaption(data.fb_caption);
         setImageUrl(data.image_url || null);
+        // Use the LEFT URL as the single side-circle image; right URL ignored.
+        setPexelsImageUrl(data.pexels_image_left_url || null);
         setStage("preview");
 
         // Background removal (only when "Default Template" is OFF — i.e. user picked the cutout feature)
@@ -321,6 +330,7 @@ export function QuotePage() {
       setCaption("");
       setError(null);
       setImageUrl(null);
+      setPexelsImageUrl(null);
       if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
       setCutoutUrl(null);
     }
@@ -533,6 +543,41 @@ export function QuotePage() {
                   </p>
                 </div>
 
+                {/* Side Circle — only relevant for the Default Template (tabloid) layout */}
+                {useDefaultTemplate && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Side Circle
+                    </label>
+                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+                      {(
+                        [
+                          { value: true, label: "On" },
+                          { value: false, label: "Off" },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={String(opt.value)}
+                          type="button"
+                          onClick={() => setUseSideCircle(opt.value)}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
+                            useSideCircle === opt.value
+                              ? "bg-white text-gray-900 shadow-sm"
+                              : "text-gray-600 hover:text-gray-900"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      {useSideCircle
+                        ? "Adds a Pexels stock photo in a circular frame matched to the article topic"
+                        : "Hides the decorative circle"}
+                    </p>
+                  </div>
+                )}
+
                 {/* Generate button */}
                 <button
                   type="submit"
@@ -701,6 +746,7 @@ export function QuotePage() {
                   setQuoteData(null);
                   setCaption("");
                   setImageUrl(null);
+                  setPexelsImageUrl(null);
                   if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
                   setCutoutUrl(null);
                 }}
@@ -737,6 +783,9 @@ export function QuotePage() {
                       imageUrl={imageUrl}
                       cutoutImageUrl={cutoutUrl}
                       isProcessingCutout={isProcessingImage}
+                      pexelsImageUrl={
+                        useDefaultTemplate && useSideCircle ? pexelsImageUrl : null
+                      }
                       onClick={() => {
                         const dataUrl = canvasRef.current?.getDataUrl();
                         if (dataUrl) setLightboxUrl(dataUrl);

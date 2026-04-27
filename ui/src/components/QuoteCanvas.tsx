@@ -10,9 +10,11 @@ import {
   StaticCanvas,
   FabricImage,
   Rect,
+  Circle,
   Text,
   Textbox,
   Gradient,
+  Shadow,
   filters,
 } from "fabric";
 import {
@@ -41,6 +43,9 @@ interface QuoteCanvasProps {
   imageUrl?: string | null;
   cutoutImageUrl?: string | null;
   isProcessingCutout?: boolean;
+  // Pexels image URL for the tabloid layout's single side circle. When unset,
+  // empty, or the image fails to load, the circle renders nothing (silent fallback).
+  pexelsImageUrl?: string | null;
   onClick?: () => void;
 }
 
@@ -242,6 +247,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
       config: configProp,
       imageUrl,
       cutoutImageUrl,
+      pexelsImageUrl,
       onClick,
     },
     ref,
@@ -395,10 +401,80 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
             }
           }
 
-          // Layer 5: side-circle placeholders.
-          // Hidden by default (sideCircles.enabled = false). Future Pexels
-          // integration will populate leftImageId / rightImageId and clip
-          // a FabricImage to each circle path.
+          // Layer 5: single side circle. Renders a white halo behind a
+          // circular-clipped Pexels image, so the border sits flush against
+          // the image edge with no stroke seam. URL comes from props; fails
+          // silently if missing or the image won't load. The user toggle in
+          // QuotePage controls whether a URL is passed at all.
+          if (t.sideCircle.enabled && pexelsImageUrl) {
+            try {
+              const circleImg = await FabricImage.fromURL(pexelsImageUrl, {
+                crossOrigin: "anonymous",
+              });
+
+              const shadowCfg = t.sideCircle.shadow;
+              const fabricShadow = shadowCfg.enabled
+                ? new Shadow({
+                    color: shadowCfg.color,
+                    blur: shadowCfg.blur,
+                    offsetX: shadowCfg.offsetX,
+                    offsetY: shadowCfg.offsetY,
+                  })
+                : null;
+
+              const target = t.sideCircle.radius * 2;
+              const imgScale = Math.max(
+                target / circleImg.width!,
+                target / circleImg.height!,
+              );
+              circleImg.scale(imgScale);
+              circleImg.set({
+                left: t.sideCircle.center.x,
+                top: t.sideCircle.center.y,
+                originX: "center",
+                originY: "center",
+                selectable: false,
+                evented: false,
+                // Shadow projects from the clipped circular silhouette of the image.
+                shadow: fabricShadow,
+              });
+              // absolutePositioned makes the clipPath use canvas coords,
+              // so the image's own scale transform doesn't shrink the clip.
+              // Without this, large source Pexels images render with a clip
+              // far smaller than `radius`, leaving a gap from the stroke ring.
+              circleImg.clipPath = new Circle({
+                radius: t.sideCircle.radius,
+                originX: "center",
+                originY: "center",
+                left: t.sideCircle.center.x,
+                top: t.sideCircle.center.y,
+                absolutePositioned: true,
+              });
+              canvas.add(circleImg);
+
+              // Thin white stroke OUTSIDE the image edge.
+              // Path radius is offset by strokeWidth/2 so the stroke's inner
+              // edge sits flush with the image — no image content is covered.
+              if (t.sideCircle.strokeWidth > 0) {
+                const ring = new Circle({
+                  left: t.sideCircle.center.x,
+                  top: t.sideCircle.center.y,
+                  radius:
+                    t.sideCircle.radius + t.sideCircle.strokeWidth / 2,
+                  originX: "center",
+                  originY: "center",
+                  fill: "transparent",
+                  stroke: t.sideCircle.strokeColor,
+                  strokeWidth: t.sideCircle.strokeWidth,
+                  selectable: false,
+                  evented: false,
+                });
+                canvas.add(ring);
+              }
+            } catch {
+              // Image failed — leave the slot empty
+            }
+          }
 
           // Layer 6: bottom-anchored centered text stack.
           // Stack order: quote mark → punch → subtitle → author.
@@ -1141,7 +1217,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         setReady(true);
         setError(null);
       },
-      [quote, brand, config, imageUrl, cutoutImageUrl],
+      [quote, brand, config, imageUrl, cutoutImageUrl, pexelsImageUrl],
     );
 
     useEffect(() => {

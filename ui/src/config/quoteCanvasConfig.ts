@@ -31,16 +31,26 @@ export interface TabloidConfig {
     width: number; // target width (px)
     maxHeight: number; // height cap (px)
   };
-  sideCircles: {
+  sideCircle: {
+    // Master toggle. When true AND a URL is supplied via QuoteCanvas's
+    // pexelsImageUrl prop, the renderer draws a single circular Pexels image
+    // with a thin white halo and an optional drop shadow. Fails silently if
+    // the URL is missing or doesn't load. The user-facing on/off lives in
+    // QuotePage state.
     enabled: boolean;
     radius: number; // px
-    leftCenter: { x: number; y: number };
-    rightCenter: { x: number; y: number };
+    center: { x: number; y: number };
     strokeColor: string;
-    strokeWidth: number; // px
-    // Cloudinary public IDs for circle fill images (Pexels integration TODO)
-    leftImageId: string | null;
-    rightImageId: string | null;
+    strokeWidth: number; // px — halo thickness
+    shadow: {
+      // Soft drop shadow applied to the halo so the circle "lifts" off the
+      // photo (matching the reference design). Disable for a flat sticker look.
+      enabled: boolean;
+      color: string; // e.g. "rgba(0,0,0,0.5)"
+      blur: number; // px
+      offsetX: number; // px
+      offsetY: number; // px
+    };
   };
   bottomStack: {
     bottomPadding: number; // distance from canvas bottom to the last text line
@@ -414,17 +424,25 @@ function makeTabloidDefaults(): TabloidConfig {
       width: 180,
       maxHeight: 96,
     },
-    sideCircles: {
-      // Disabled in v1 — placeholders only. Future Pexels integration will
-      // populate leftImageId / rightImageId and flip enabled to true.
-      enabled: false,
-      radius: 150,
-      leftCenter: { x: 200, y: 460 },
-      rightCenter: { x: 880, y: 460 },
+    sideCircle: {
+      // Pexels-fed decorative circle. URL comes from QuoteCanvas's pexelsImageUrl
+      // prop (set in QuotePage from the n8n response). Whether the image is
+      // shown is gated client-side by the user's "Side Circle" toggle.
+      enabled: true,
+      radius: 120,
+      center: { x: 200, y: 460 },
       strokeColor: "#ffffff",
-      strokeWidth: 6,
-      leftImageId: null,
-      rightImageId: null,
+      strokeWidth: 8,
+      shadow: {
+        // Soft drop shadow that gives the circle its "lifted off the photo"
+        // look (mirrors the reference design). Tune blur for softness, offsetY
+        // for how far it drops, and color/alpha for darkness.
+        enabled: true,
+        color: "rgba(0,0,0,0.5)",
+        blur: 30,
+        offsetX: 0,
+        offsetY: 8,
+      },
     },
     bottomStack: {
       bottomPadding: 60,
