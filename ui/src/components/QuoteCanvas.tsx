@@ -6,13 +6,21 @@ import {
   useState,
   useCallback,
 } from "react";
-import { StaticCanvas, FabricImage, Rect, Text, Textbox } from "fabric";
+import {
+  StaticCanvas,
+  FabricImage,
+  Rect,
+  Text,
+  Textbox,
+  Gradient,
+  filters,
+} from "fabric";
 import {
   DEFAULT_QUOTE_CANVAS_CONFIG,
   type QuoteCanvasConfig,
   type TextLayerStyle,
 } from "../config/quoteCanvasConfig";
-import { BRAND_LOGO_IDS } from "../constants/brands";
+import { BRAND_LOGO_IDS, getBrandHex } from "../constants/brands";
 
 export interface QuoteCanvasHandle {
   downloadAsPng: () => void;
@@ -21,6 +29,7 @@ export interface QuoteCanvasHandle {
 
 export interface QuoteData {
   quote_text: string;
+  quote_punch: string;
   quote_author: string;
   quote_author_title?: string;
 }
@@ -35,28 +44,208 @@ interface QuoteCanvasProps {
   onClick?: () => void;
 }
 
-function makeText(
-  content: string,
-  style: TextLayerStyle,
-  opts: { left: number; top: number; width?: number },
-): Text {
-  return new Text(content, {
-    left: opts.left,
-    top: opts.top,
-    width: opts.width,
+// Multiply each RGB channel by `factor` (0..1). Used to derive the dark variant of brand hex.
+function darken(hex: string, factor: number): string {
+  const m = hex.replace("#", "");
+  if (m.length !== 6) return hex;
+  const r = Math.round(parseInt(m.slice(0, 2), 16) * factor);
+  const g = Math.round(parseInt(m.slice(2, 4), 16) * factor);
+  const b = Math.round(parseInt(m.slice(4, 6), 16) * factor);
+  const toHex = (n: number) => n.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+// Inline SVG noise as a data URI — mirrors the design's grain treatment.
+const GRAIN_SVG_URI =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>`,
+  );
+
+function hexToRgb(hex: string): [number, number, number] {
+  const m = hex.replace("#", "");
+  if (m.length !== 6) return [0, 0, 0];
+  return [
+    parseInt(m.slice(0, 2), 16),
+    parseInt(m.slice(2, 4), 16),
+    parseInt(m.slice(4, 6), 16),
+  ];
+}
+
+// Lerp between two hex colors at t∈[0,1]; returns a hex string.
+function mixHex(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bb] = hexToRgb(b);
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bl = Math.round(ab + (bb - ab) * t);
+  const toHex = (n: number) => n.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(bl)}`;
+}
+
+// Wrap a treated subject canvas with a brand-colored die-cut halo.
+// Approach: stamp the subject's alpha shape at N offset positions around a circle
+// (forming a dilated silhouette), then "source-in" recolor that silhouette with
+// the halo color, then composite the original subject on top. Crisp edges, no blur.
+function paintPaperCutoutHalo(
+  treated: HTMLCanvasElement,
+  outlineWidth: number,
+  haloColor: string,
+  shadow: { offsetY: number; blur: number; opacity: number },
+): HTMLCanvasElement {
+  const K = Math.max(0, Math.round(outlineWidth));
+  if (K === 0) return treated;
+  const w = treated.width + K * 2;
+  const h = treated.height + K * 2;
+
+  const silo = document.createElement("canvas");
+  silo.width = w;
+  silo.height = h;
+  const sctx = silo.getContext("2d");
+  if (!sctx) return treated;
+  const N = 16;
+  for (let i = 0; i < N; i++) {
+    const a = (i * 2 * Math.PI) / N;
+    const ox = K + Math.round(K * Math.cos(a));
+    const oy = K + Math.round(K * Math.sin(a));
+    sctx.drawImage(treated, ox, oy);
+  }
+  sctx.globalCompositeOperation = "source-in";
+  sctx.fillStyle = haloColor;
+  sctx.fillRect(0, 0, w, h);
+
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const ctx = out.getContext("2d");
+  if (!ctx) return silo;
+  if (shadow.opacity > 0 && (shadow.blur > 0 || shadow.offsetY !== 0)) {
+    ctx.filter = `drop-shadow(0 ${shadow.offsetY}px ${shadow.blur}px rgba(0,0,0,${shadow.opacity}))`;
+    ctx.drawImage(silo, 0, 0);
+    ctx.filter = "none";
+  } else {
+    ctx.drawImage(silo, 0, 0);
+  }
+  ctx.drawImage(treated, K, K);
+  return out;
+}
+
+// Crop the source image to `bounds` AND apply a tonal treatment (duotone /
+// grayscale / none) in a single offscreen-canvas pass. Returns a canvas that
+// can be passed to `new FabricImage(canvas, ...)`. The bounds crop ensures the
+// visible subject fills the result; the treatment recolors per-pixel.
+function preprocessSubject(
+  img: HTMLImageElement,
+  bounds: { x: number; y: number; width: number; height: number },
+  treatment: "duotone" | "grayscale" | "none",
+  duoDark: [number, number, number],
+  duoLight: [number, number, number],
+): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = bounds.width;
+  c.height = bounds.height;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return c;
+  ctx.drawImage(
+    img,
+    bounds.x,
+    bounds.y,
+    bounds.width,
+    bounds.height,
+    0,
+    0,
+    bounds.width,
+    bounds.height,
+  );
+  if (treatment === "none") return c;
+
+  const id = ctx.getImageData(0, 0, c.width, c.height);
+  const data = id.data;
+  if (treatment === "grayscale") {
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue;
+      const L =
+        0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      data[i] = data[i + 1] = data[i + 2] = L;
+    }
+  } else {
+    // duotone: lerp(dark, light, luminance)
+    const [dr, dg, db] = duoDark;
+    const [lr, lg, lb] = duoLight;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue;
+      const L =
+        (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) /
+        255;
+      data[i] = dr + (lr - dr) * L;
+      data[i + 1] = dg + (lg - dg) * L;
+      data[i + 2] = db + (lb - db) * L;
+    }
+  }
+  ctx.putImageData(id, 0, 0);
+  return c;
+}
+
+// Find the tight bounding box of non-transparent pixels in a bg-removed image.
+// Returns { x, y, width, height } in source-pixel coords, or null if the image
+// is empty / fully transparent. Alpha threshold of 20 ignores soft AA edges.
+function findAlphaBounds(
+  img: HTMLImageElement,
+): { x: number; y: number; width: number; height: number } | null {
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  if (!w || !h) return null;
+  const off = document.createElement("canvas");
+  off.width = w;
+  off.height = h;
+  const ctx = off.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, w, h).data;
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 20) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return null;
+  return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+}
+
+function applyTextStyle(style: TextLayerStyle) {
+  return {
     fontFamily: style.fontFamily,
     fontSize: style.fontSize,
     fontWeight: style.fontWeight as string,
+    fontStyle: style.fontStyle ?? "normal",
     fill: style.fill,
     lineHeight: style.lineHeight ?? 1.2,
+    charSpacing:
+      style.letterSpacing !== undefined ? style.letterSpacing * 1000 : 0,
     textAlign: style.textAlign ?? "left",
-    selectable: false,
-    evented: false,
-  });
+  } as const;
 }
 
 export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
-  function QuoteCanvas({ quote, brand, config: configProp, imageUrl, cutoutImageUrl, isProcessingCutout, onClick }, ref) {
+  function QuoteCanvas(
+    {
+      quote,
+      brand,
+      config: configProp,
+      imageUrl,
+      cutoutImageUrl,
+      onClick,
+    },
+    ref,
+  ) {
     const config = configProp ?? DEFAULT_QUOTE_CANVAS_CONFIG;
     const canvasElRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<StaticCanvas | null>(null);
@@ -67,25 +256,33 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
       async (canvas: StaticCanvas) => {
         canvas.clear();
         const { width, height } = config.canvas;
+        const brandHex = getBrandHex(brand);
 
-        // Background image — use article image if available, else default placeholder
-        const bgUrl = imageUrl
-          ? imageUrl
-          : `https://res.cloudinary.com/${config.backgroundImage.cloudName}/image/upload/${config.backgroundImage.publicId}`;
+        // Wait for custom fonts so Fabric measures/renders them correctly on first paint.
         try {
-          const bgImage = await FabricImage.fromURL(bgUrl, {
-            crossOrigin: "anonymous",
-          });
-          if (config.backgroundImage.scaleToFit) {
-            bgImage.scaleToWidth(width);
-            if (bgImage.getScaledHeight() < height) {
-              bgImage.scaleToHeight(height);
-            }
-          }
-          bgImage.set({ left: 0, top: 0, selectable: false, evented: false });
-          canvas.add(bgImage);
+          await Promise.all([
+            document.fonts.load(`700 116px Oswald`),
+            document.fonts.load(`italic 26px Barlow`),
+            document.fonts.load(`600 28px Barlow`),
+            document.fonts.load(`500 22px Barlow`),
+            document.fonts.load(`400 20px Barlow`),
+          ]);
         } catch {
-          // Fallback: dark overlay rectangle
+          // Continue with fallback fonts if loading fails
+        }
+
+        // ─── Tabloid layout branch ─────────────────────────────────────────
+        // Full-bleed photo, dark bottom gradient, top-left logo, bottom-
+        // centered headline stack. Used when Subject Cutout is OFF.
+        if (config.layoutVariant === "tabloid") {
+          const t = config.tabloid;
+          const duoDarkT = hexToRgb(config.photo.duotoneDark);
+          const duoLightT =
+            config.photo.duotoneLight === "auto"
+              ? hexToRgb(brandHex)
+              : hexToRgb(config.photo.duotoneLight);
+
+          // Layer 1: solid fallback fill (covered by photo when it loads)
           canvas.add(
             new Rect({
               left: 0,
@@ -97,146 +294,847 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
               evented: false,
             }),
           );
-        }
 
-        // Semi-transparent overlay for text readability
-        canvas.add(
-          new Rect({
+          // Layer 2: full-bleed cover-scaled photo
+          if (imageUrl) {
+            try {
+              const loaded = await FabricImage.fromURL(imageUrl, {
+                crossOrigin: "anonymous",
+              });
+              const elem = loaded.getElement() as HTMLImageElement;
+              const treated = preprocessSubject(
+                elem,
+                {
+                  x: 0,
+                  y: 0,
+                  width: elem.naturalWidth,
+                  height: elem.naturalHeight,
+                },
+                t.photoTreatment,
+                duoDarkT,
+                duoLightT,
+              );
+              const photo = new FabricImage(treated);
+              const photoScale = Math.max(
+                width / photo.width!,
+                height / photo.height!,
+              );
+              photo.scale(photoScale);
+              photo.set({
+                left: width / 2,
+                top: height / 2,
+                originX: "center",
+                originY: "center",
+                selectable: false,
+                evented: false,
+              });
+              canvas.add(photo);
+            } catch {
+              // Photo failed — fallback fill remains
+            }
+          }
+
+          // Layer 3: bottom darkening gradient
+          const gradH = Math.round(height * t.bottomGradient.coverageRatio);
+          const grad = new Rect({
+            left: 0,
+            top: height - gradH,
+            width,
+            height: gradH,
+            selectable: false,
+            evented: false,
+          });
+          grad.set(
+            "fill",
+            new Gradient({
+              type: "linear",
+              coords: { x1: 0, y1: 0, x2: 0, y2: gradH },
+              colorStops: [
+                {
+                  offset: 0,
+                  color: t.bottomGradient.color,
+                  opacity: t.bottomGradient.startOpacity,
+                },
+                {
+                  offset: 1,
+                  color: t.bottomGradient.color,
+                  opacity: t.bottomGradient.endOpacity,
+                },
+              ],
+            }),
+          );
+          canvas.add(grad);
+
+          // Layer 4: top-left brand logo
+          if (brand) {
+            const logoId =
+              BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] ?? "";
+            if (logoId) {
+              try {
+                const logoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${logoId}`;
+                const logoImg = await FabricImage.fromURL(logoUrl, {
+                  crossOrigin: "anonymous",
+                });
+                logoImg.scaleToWidth(t.logo.width);
+                if (logoImg.getScaledHeight() > t.logo.maxHeight) {
+                  logoImg.scaleToHeight(t.logo.maxHeight);
+                }
+                logoImg.set({
+                  // x is distance from the RIGHT edge for the tabloid layout
+                  left: width - t.logo.x,
+                  top: t.logo.y,
+                  originX: "right",
+                  originY: "top",
+                  selectable: false,
+                  evented: false,
+                });
+                canvas.add(logoImg);
+              } catch {
+                // Logo failed — skip
+              }
+            }
+          }
+
+          // Layer 5: side-circle placeholders.
+          // Hidden by default (sideCircles.enabled = false). Future Pexels
+          // integration will populate leftImageId / rightImageId and clip
+          // a FabricImage to each circle path.
+
+          // Layer 6: bottom-anchored centered text stack.
+          // Stack order: quote mark → punch → subtitle → author.
+          const qmCfg = t.bottomStack.quoteMark;
+          const quoteMark = qmCfg.enabled
+            ? new Text(qmCfg.text, {
+                ...applyTextStyle(qmCfg.style),
+                left: width / 2,
+                originX: "center",
+                top: 0,
+                selectable: false,
+                evented: false,
+              })
+            : null;
+
+          const punchTier = t.dynamicSizing.find(
+            (tier) => quote.quote_punch.length <= tier.maxLength,
+          );
+          const punchScale = punchTier?.scale ?? 1;
+          const punchFontSize = Math.round(
+            t.bottomStack.punch.fontSize * punchScale,
+          );
+          const punchStyle = applyTextStyle({
+            ...t.bottomStack.punch,
+            fontSize: punchFontSize,
+          });
+          const punchText = t.bottomStack.punch.uppercase
+            ? quote.quote_punch.toUpperCase()
+            : quote.quote_punch;
+          const stackInner = width - t.bottomStack.sidePadding * 2;
+          const punch = new Textbox(punchText, {
+            ...punchStyle,
+            width: Math.min(t.bottomStack.punchMaxWidth, stackInner),
+            left: width / 2,
+            originX: "center",
+            top: 0,
+            selectable: false,
+            evented: false,
+          });
+
+          const subtitleRaw = quote.quote_text;
+          // Scale subtitle font size based on raw quote length so long quotes
+          // wrap to fewer lines and don't push the punch off the canvas.
+          const subtitleTier = t.subtitleDynamicSizing.find(
+            (tier) => subtitleRaw.length <= tier.maxLength,
+          );
+          const subtitleScale = subtitleTier?.scale ?? 1;
+          const subtitleFontSize = Math.round(
+            t.bottomStack.subtitle.fontSize * subtitleScale,
+          );
+          const subtitleStyle = applyTextStyle({
+            ...t.bottomStack.subtitle,
+            fontSize: subtitleFontSize,
+          });
+          const subtitleText = t.bottomStack.subtitle.uppercase
+            ? subtitleRaw.toUpperCase()
+            : subtitleRaw;
+          const subtitle = new Textbox(subtitleText, {
+            ...subtitleStyle,
+            width: stackInner,
+            left: width / 2,
+            originX: "center",
+            top: 0,
+            selectable: false,
+            evented: false,
+          });
+
+          const authorTitleRaw = quote.quote_author_title?.trim();
+          const authorJoined = authorTitleRaw
+            ? `${quote.quote_author} • ${authorTitleRaw.replace(
+                /\b\w/g,
+                (c) => c.toUpperCase(),
+              )}`
+            : quote.quote_author;
+          const authorStyle = applyTextStyle(t.bottomStack.author);
+          const authorText = t.bottomStack.author.uppercase
+            ? authorJoined.toUpperCase()
+            : authorJoined;
+          const author = new Text(authorText, {
+            ...authorStyle,
+            left: width / 2,
+            originX: "center",
+            top: 0,
+            selectable: false,
+            evented: false,
+          });
+
+          // Stack assembly. authorPosition === "top" places author as a kicker
+          // above the quote mark so the whole group grows upward together —
+          // long quote_text never pushes other elements into the author block.
+          const authorEntry = {
+            obj: author,
+            height: author.getScaledHeight(),
+            marginBottom: t.bottomStack.authorMarginBottom,
+          };
+          const quoteMarkEntry = quoteMark
+            ? {
+                obj: quoteMark,
+                height: quoteMark.getScaledHeight(),
+                marginBottom: qmCfg.marginBottom,
+              }
+            : null;
+          const punchEntry = {
+            obj: punch,
+            height: punch.getScaledHeight(),
+            marginBottom: t.bottomStack.punchMarginBottom,
+          };
+          const subtitleEntry = {
+            obj: subtitle,
+            height: subtitle.getScaledHeight(),
+            marginBottom: t.bottomStack.subtitleMarginBottom,
+          };
+
+          const stackEntries: Array<{
+            obj: Text | Textbox;
+            height: number;
+            marginBottom: number;
+          }> = [];
+          if (t.bottomStack.authorPosition === "top") {
+            // quote mark → author kicker → punch → subtitle
+            if (quoteMarkEntry) stackEntries.push(quoteMarkEntry);
+            stackEntries.push(authorEntry, punchEntry, {
+              ...subtitleEntry,
+              marginBottom: 0, // last item — no trailing gap
+            });
+          } else {
+            if (quoteMarkEntry) stackEntries.push(quoteMarkEntry);
+            stackEntries.push(punchEntry, subtitleEntry, {
+              ...authorEntry,
+              marginBottom: 0,
+            });
+          }
+
+          const totalStackH = stackEntries.reduce(
+            (sum, e, i) =>
+              sum + e.height + (i < stackEntries.length - 1 ? e.marginBottom : 0),
+            0,
+          );
+          const stackBottom = height - t.bottomStack.bottomPadding;
+          let cursorY = stackBottom - totalStackH;
+          for (const entry of stackEntries) {
+            const isAuthor = entry.obj === author;
+            const isSubtitle = entry.obj === subtitle;
+            const isQuoteMark = entry.obj === quoteMark;
+            const offY = isAuthor
+              ? t.bottomStack.authorOffsetY
+              : isSubtitle
+                ? t.bottomStack.subtitleOffsetY
+                : isQuoteMark
+                  ? t.bottomStack.quoteMark.offsetY
+                  : 0;
+            const offX = isAuthor
+              ? t.bottomStack.authorOffsetX
+              : isSubtitle
+                ? t.bottomStack.subtitleOffsetX
+                : isQuoteMark
+                  ? t.bottomStack.quoteMark.offsetX
+                  : 0;
+            entry.obj.set({
+              top: cursorY + offY,
+              left: width / 2 + offX,
+            });
+            canvas.add(entry.obj);
+            cursorY += entry.height + entry.marginBottom;
+          }
+
+          canvas.renderAll();
+          setReady(true);
+          setError(null);
+          return;
+        }
+        // ───────────────────────────────────────────────────────────────────
+
+        // Resolve the canvas background and the color photo-fades should fade TO.
+        // For "paper" / "solid" the fade target is the flat fill; for "radial-wash"
+        // we use the corner color (white); for "image" we use the configured fadeTarget.
+        const bgStyle = config.canvas.backgroundStyle;
+        let bgFlatColor = "#ffffff";
+        if (bgStyle === "paper") {
+          bgFlatColor = config.canvas.paperTexture.color;
+        } else if (bgStyle === "solid") {
+          bgFlatColor = config.canvas.backgroundColor;
+        }
+        const fadeTargetColor =
+          bgStyle === "radial-wash"
+            ? "#ffffff"
+            : bgStyle === "image"
+              ? config.canvas.backgroundImage.fadeTarget
+              : bgFlatColor;
+
+        // Layer 1: background plate
+        if (bgStyle === "image") {
+          // Always paint the flat backgroundColor first as a fallback; image draws over it.
+          canvas.add(
+            new Rect({
+              left: 0,
+              top: 0,
+              width,
+              height,
+              fill: config.canvas.backgroundColor,
+              selectable: false,
+              evented: false,
+            }),
+          );
+          try {
+            const bgImg = await FabricImage.fromURL(
+              config.canvas.backgroundImage.url,
+              { crossOrigin: "anonymous" },
+            );
+            // Cover-scale the image to fill the canvas
+            const sX = width / bgImg.width!;
+            const sY = height / bgImg.height!;
+            const s = Math.max(sX, sY);
+            bgImg.scale(s);
+            bgImg.set({
+              left: width / 2,
+              top: height / 2,
+              originX: "center",
+              originY: "center",
+              opacity: config.canvas.backgroundImage.opacity,
+              selectable: false,
+              evented: false,
+            });
+            canvas.add(bgImg);
+          } catch {
+            // Fallback to the flat fill if the image can't load
+          }
+        } else if (bgStyle === "radial-wash") {
+          const innerColor = mixHex(
+            "#ffffff",
+            brandHex,
+            config.canvas.radialWash.innerColorMix,
+          );
+          const cx = width * config.canvas.radialWash.centerX;
+          const cy = height * config.canvas.radialWash.centerY;
+          const r = Math.max(width, height) * 0.85;
+          const wash = new Rect({
             left: 0,
             top: 0,
             width,
             height,
-            fill: "rgba(0, 0, 0, 0.45)",
             selectable: false,
             evented: false,
-          }),
-        );
-
-        // Cutout image layer (background-removed subject)
-        if (cutoutImageUrl && config.cutoutImage.enabled) {
+          });
+          wash.set(
+            "fill",
+            new Gradient({
+              type: "radial",
+              coords: { x1: cx, y1: cy, r1: 0, x2: cx, y2: cy, r2: r },
+              colorStops: [
+                { offset: 0, color: innerColor, opacity: 1 },
+                { offset: 1, color: "#ffffff", opacity: 1 },
+              ],
+            }),
+          );
+          canvas.add(wash);
+        } else {
+          canvas.add(
+            new Rect({
+              left: 0,
+              top: 0,
+              width,
+              height,
+              fill: bgFlatColor,
+              selectable: false,
+              evented: false,
+            }),
+          );
+        }
+        // Paper preset folds grain into Layer 1 to avoid double-stamping later.
+        if (bgStyle === "paper") {
           try {
-            const cutoutImg = await FabricImage.fromURL(cutoutImageUrl, {
+            const paperGrain = await FabricImage.fromURL(GRAIN_SVG_URI);
+            paperGrain.scaleToWidth(width);
+            if (paperGrain.getScaledHeight() < height) {
+              paperGrain.scaleToHeight(height);
+            }
+            paperGrain.set({
+              left: 0,
+              top: 0,
+              opacity: config.canvas.paperTexture.grainOpacity,
+              selectable: false,
+              evented: false,
+            });
+            canvas.add(paperGrain);
+          } catch {
+            // Grain is decorative
+          }
+        }
+
+        // Resolve duotone colors once (light = "auto" maps to current brand hex)
+        const duoDark = hexToRgb(config.photo.duotoneDark);
+        const duoLight =
+          config.photo.duotoneLight === "auto"
+            ? hexToRgb(brandHex)
+            : hexToRgb(config.photo.duotoneLight);
+        const treatment = config.photo.treatment;
+
+        const tonalFilters = (): filters.BaseFilter[] => {
+          const list: filters.BaseFilter[] = [];
+          if (config.photo.contrast) {
+            list.push(new filters.Contrast({ contrast: config.photo.contrast }));
+          }
+          if (config.photo.brightness) {
+            list.push(
+              new filters.Brightness({ brightness: config.photo.brightness }),
+            );
+          }
+          return list;
+        };
+
+        // Layer 2: photo or cutout
+        const useCutout = !!cutoutImageUrl && config.cutoutImage.enabled;
+        if (useCutout && cutoutImageUrl) {
+          try {
+            const loaded = await FabricImage.fromURL(cutoutImageUrl, {
               crossOrigin: "anonymous",
             });
-            const scaleW = config.cutoutImage.maxWidth / cutoutImg.width!;
-            const scaleH = config.cutoutImage.maxHeight / cutoutImg.height!;
+            const elem = loaded.getElement() as HTMLImageElement;
+            // Crop transparent padding + apply tonal treatment in one pass
+            const bounds =
+              findAlphaBounds(elem) ?? {
+                x: 0,
+                y: 0,
+                width: elem.naturalWidth,
+                height: elem.naturalHeight,
+              };
+            const treatedCanvas = preprocessSubject(
+              elem,
+              bounds,
+              treatment,
+              duoDark,
+              duoLight,
+            );
+            const halo = config.cutoutImage.paperCutout;
+            const haloColor = halo.color === "auto" ? brandHex : halo.color;
+            const finalSubject = halo.enabled
+              ? paintPaperCutoutHalo(treatedCanvas, halo.outlineWidth, haloColor, {
+                  offsetY: halo.shadowOffsetY,
+                  blur: halo.shadowBlur,
+                  opacity: halo.shadowOpacity,
+                })
+              : treatedCanvas;
+            const cutoutImg = new FabricImage(finalSubject);
+            const visibleW = cutoutImg.width!;
+            const visibleH = cutoutImg.height!;
+            // Cap width so the cutout never crosses into the right-side content area
+            const contentEdgeX = width - config.content.width;
+            const maxAllowedWidth = Math.max(
+              0,
+              Math.min(
+                config.cutoutImage.maxWidth,
+                contentEdgeX - config.cutoutImage.x,
+              ),
+            );
+            const scaleW = maxAllowedWidth / visibleW;
+            const scaleH = config.cutoutImage.maxHeight / visibleH;
             const scale = Math.min(scaleW, scaleH);
             cutoutImg.scale(scale);
+            // Aspect-aware vertical anchor: short subjects (e.g. head/shoulders
+            // bust shots) fill < `centerThreshold` of canvas height; bottom-
+            // anchoring strands them at the floor, so vertically center them
+            // instead. Tall subjects keep the configured anchor.
+            const heightFillRatio = (visibleH * scale) / height;
+            const isShort = heightFillRatio < config.cutoutImage.centerThreshold;
             cutoutImg.set({
               left: config.cutoutImage.x,
-              top: config.cutoutImage.y,
+              top: isShort ? height / 2 : config.cutoutImage.y,
               originX: config.cutoutImage.originX,
-              originY: config.cutoutImage.originY,
+              originY: isShort ? "center" : config.cutoutImage.originY,
               opacity: config.cutoutImage.opacity,
               selectable: false,
               evented: false,
             });
+            const tone = tonalFilters();
+            if (tone.length) {
+              cutoutImg.filters = tone;
+              cutoutImg.applyFilters();
+            }
             canvas.add(cutoutImg);
           } catch {
-            // Skip cutout if loading fails
+            // Skip cutout if loading fails — brand plate stays as backdrop
+          }
+        } else if (imageUrl) {
+          try {
+            const loaded = await FabricImage.fromURL(imageUrl, {
+              crossOrigin: "anonymous",
+            });
+            const elem = loaded.getElement() as HTMLImageElement;
+            // Photo isn't bg-removed, so no alpha bounds — use the full image
+            const treatedCanvas = preprocessSubject(
+              elem,
+              {
+                x: 0,
+                y: 0,
+                width: elem.naturalWidth,
+                height: elem.naturalHeight,
+              },
+              treatment,
+              duoDark,
+              duoLight,
+            );
+            const photo = new FabricImage(treatedCanvas);
+            // Scale photo to fill the configured photo box (cover-style)
+            const targetW = config.photo.width;
+            const targetH = config.photo.height;
+            const scale = Math.max(
+              targetW / photo.width!,
+              targetH / photo.height!,
+            );
+            photo.scale(scale);
+            // Anchor the photo by its CENTER at the box's center. With cover-scale,
+            // a landscape source would otherwise overflow far to the right when
+            // top-left anchored — pushing the subject off the left half. Centering
+            // keeps the source's middle (where the subject usually is) inside the box.
+            photo.set({
+              left: config.photo.x + targetW / 2,
+              top: config.photo.y + targetH / 2,
+              originX: "center",
+              originY: "center",
+              selectable: false,
+              evented: false,
+            });
+            const tone = tonalFilters();
+            if (tone.length) {
+              photo.filters = tone;
+              photo.applyFilters();
+            }
+            canvas.add(photo);
+
+            // Right-edge horizontal fade (transparent → background color)
+            const hFade = new Rect({
+              left: 0,
+              top: 0,
+              width,
+              height,
+              selectable: false,
+              evented: false,
+            });
+            hFade.set(
+              "fill",
+              new Gradient({
+                type: "linear",
+                coords: { x1: 0, y1: 0, x2: width, y2: 0 },
+                colorStops: [
+                  {
+                    offset: config.photoFade.horizontalStart,
+                    color: fadeTargetColor,
+                    opacity: 0,
+                  },
+                  {
+                    offset: config.photoFade.horizontalEnd,
+                    color: fadeTargetColor,
+                    opacity: 1,
+                  },
+                ],
+              }),
+            );
+            canvas.add(hFade);
+
+            // Bottom fade (transparent → background color)
+            const bFade = new Rect({
+              left: 0,
+              top: height - config.photoFade.bottomHeight,
+              width,
+              height: config.photoFade.bottomHeight,
+              selectable: false,
+              evented: false,
+            });
+            bFade.set(
+              "fill",
+              new Gradient({
+                type: "linear",
+                coords: {
+                  x1: 0,
+                  y1: 0,
+                  x2: 0,
+                  y2: config.photoFade.bottomHeight,
+                },
+                colorStops: [
+                  { offset: 0, color: fadeTargetColor, opacity: 0 },
+                  { offset: 1, color: fadeTargetColor, opacity: 1 },
+                ],
+              }),
+            );
+            canvas.add(bFade);
+          } catch {
+            // Photo failed — brand plate alone is fine
           }
         }
 
-        // Decorative quotation mark
-        if (config.quoteMark.enabled) {
-          const qm = makeText(config.quoteMark.text, config.quoteMark.style, {
-            left: config.quoteMark.x,
-            top: config.quoteMark.y,
-          });
-          qm.set({ originX: "center" });
-          canvas.add(qm);
-        }
-
-        // Dynamic sizing based on quote length
-        const tier = config.dynamicSizing.find(
-          (t) => quote.quote_text.length <= t.maxLength,
-        );
-        const scale = tier?.scale ?? 1;
-
-        // Quote text
-        const scaledFontSize = Math.round(
-          config.quoteText.style.fontSize * scale,
-        );
-        const quoteStyle: TextLayerStyle = {
-          ...config.quoteText.style,
-          fontSize: scaledFontSize,
-        };
-        const quoteTextObj = new Textbox(
-          `\u201C${quote.quote_text}\u201D`,
-          {
-            left: config.quoteText.x,
-            top: config.quoteText.y,
-            width: config.quoteText.maxWidth,
-            fontFamily: quoteStyle.fontFamily,
-            fontSize: quoteStyle.fontSize,
-            fontWeight: quoteStyle.fontWeight as string,
-            fill: quoteStyle.fill,
-            lineHeight: quoteStyle.lineHeight ?? 1.2,
-            textAlign: quoteStyle.textAlign ?? "center",
-            originX: "center",
+        // Layer 3: vignette (radial darken from edges inward)
+        if (config.vignette.enabled) {
+          const v = new Rect({
+            left: 0,
+            top: 0,
+            width,
+            height,
             selectable: false,
             evented: false,
-          },
-        );
-        canvas.add(quoteTextObj);
-
-        // Calculate where quote text ends
-        const quoteBottom =
-          config.quoteText.y + quoteTextObj.getScaledHeight();
-
-        // Author name
-        const authorNameObj = makeText(
-          `— ${quote.quote_author}`,
-          config.authorName.style,
-          {
-            left: config.authorName.x,
-            top: quoteBottom + config.authorName.offsetY,
-          },
-        );
-        authorNameObj.set({ originX: "center" });
-        canvas.add(authorNameObj);
-
-        // Author title (optional)
-        if (quote.quote_author_title) {
-          const authorTitleObj = makeText(
-            quote.quote_author_title,
-            config.authorTitle.style,
-            {
-              left: config.authorTitle.x,
-              top:
-                quoteBottom +
-                config.authorName.offsetY +
-                config.authorName.style.fontSize +
-                config.authorTitle.offsetY,
-            },
+          });
+          const cx = width * config.vignette.centerX;
+          const cy = height * config.vignette.centerY;
+          const radius = Math.max(width, height) * 0.7;
+          v.set(
+            "fill",
+            new Gradient({
+              type: "radial",
+              coords: {
+                x1: cx,
+                y1: cy,
+                r1: 0,
+                x2: cx,
+                y2: cy,
+                r2: radius,
+              },
+              colorStops: [
+                { offset: config.vignette.innerStop, color: "#000000", opacity: 0 },
+                { offset: 1, color: "#000000", opacity: config.vignette.outerAlpha },
+              ],
+            }),
           );
-          authorTitleObj.set({ originX: "center" });
-          canvas.add(authorTitleObj);
+          canvas.add(v);
         }
 
-        // Brand logo
-        if (config.brandLogo.enabled && brand) {
+        // Layer 4: standalone grain (skipped when "paper" already folded grain into Layer 1)
+        if (config.grain.enabled && bgStyle !== "paper") {
+          try {
+            const grain = await FabricImage.fromURL(GRAIN_SVG_URI);
+            grain.scaleToWidth(width);
+            if (grain.getScaledHeight() < height) {
+              grain.scaleToHeight(height);
+            }
+            grain.set({
+              left: 0,
+              top: 0,
+              opacity: config.grain.opacity,
+              selectable: false,
+              evented: false,
+            });
+            canvas.add(grain);
+          } catch {
+            // Grain is decorative; skip if it fails
+          }
+        }
+
+        // Right-side content layout starts here
+        const contentLeft = width - config.content.right - config.content.width;
+        const contentRight = width - config.content.right;
+        const innerLeft = contentLeft + config.content.paddingLeft;
+        const innerRight = contentRight - config.content.paddingRight;
+        const innerWidth = innerRight - innerLeft;
+
+        // The whole composition (quote mark → text → logo) lays out as a single
+        // vertically-centered stack. Each entry contributes height + marginBottom
+        // to the total; the block is then offset to center inside the content area.
+        const layers: Array<{
+          obj: Text | Textbox | FabricImage;
+          height: number;
+          marginBottom: number;
+          offsetY?: number; // optional fine-tune; doesn't affect the cursor
+        }> = [];
+
+        // Layer 5: open quote mark (first in stack)
+        if (config.quoteMark.enabled) {
+          const qmStyle = applyTextStyle(config.quoteMark.style);
+          const qm = new Text(config.quoteMark.text, {
+            ...qmStyle,
+            left: innerLeft + config.quoteMark.offsetX,
+            top: 0,
+            selectable: false,
+            evented: false,
+          });
+          layers.push({
+            obj: qm,
+            height: qm.getScaledHeight(),
+            marginBottom: config.quoteMark.gapBelow,
+          });
+        }
+
+        // Layer 6: intro (quote_text, italic Barlow, wraps)
+        const introStyle = applyTextStyle(config.quoteIntro.style);
+        const intro = new Textbox(quote.quote_text, {
+          ...introStyle,
+          width: Math.min(config.quoteIntro.maxWidth, innerWidth),
+          left: innerLeft,
+          top: 0,
+          selectable: false,
+          evented: false,
+        });
+        layers.push({
+          obj: intro,
+          height: intro.getScaledHeight(),
+          marginBottom: config.quoteIntro.marginBottom,
+        });
+
+        // Layer 7: punch (quote_punch, big Oswald uppercase, dynamic sizing, wraps)
+        const punchTier = config.dynamicSizing.find(
+          (t) => quote.quote_punch.length <= t.maxLength,
+        );
+        const punchScale = punchTier?.scale ?? 1;
+        const punchFontSize = Math.round(
+          config.quotePunch.style.fontSize * punchScale,
+        );
+        // "auto" sentinel resolves to the current brand hex
+        const punchFill =
+          config.quotePunch.style.fill === "auto"
+            ? brandHex
+            : config.quotePunch.style.fill;
+        const punchStyle = applyTextStyle({
+          ...config.quotePunch.style,
+          fontSize: punchFontSize,
+          fill: punchFill,
+        });
+        const punchText = config.quotePunch.style.uppercase
+          ? quote.quote_punch.toUpperCase()
+          : quote.quote_punch;
+        const punch = new Textbox(punchText, {
+          ...punchStyle,
+          width: Math.min(config.quotePunch.maxWidth, innerWidth),
+          left: innerLeft,
+          top: 0,
+          selectable: false,
+          evented: false,
+        });
+        layers.push({
+          obj: punch,
+          height: punch.getScaledHeight(),
+          marginBottom: config.quotePunch.marginBottom,
+        });
+
+        // Layer 8: author name
+        const authorNameStyle = applyTextStyle(config.authorName.style);
+        const authorName = new Text(quote.quote_author, {
+          ...authorNameStyle,
+          left: innerLeft,
+          top: 0,
+          selectable: false,
+          evented: false,
+        });
+        layers.push({
+          obj: authorName,
+          height: authorName.getScaledHeight(),
+          marginBottom: config.authorName.marginBottom,
+        });
+
+        // Layer 9: author title (only when present). Its marginBottom doubles as
+        // the gap before the logo when the brand strip is enabled.
+        const hasTitle =
+          !!quote.quote_author_title && !!quote.quote_author_title.trim();
+        if (hasTitle && quote.quote_author_title) {
+          const titleStyle = applyTextStyle(config.authorTitle.style);
+          const titleText = config.authorTitle.style.capitalize
+            ? quote.quote_author_title.replace(
+                /\b\w/g,
+                (c) => c.toUpperCase(),
+              )
+            : quote.quote_author_title;
+          const authorTitle = new Text(titleText, {
+            ...titleStyle,
+            left: innerLeft,
+            top: 0,
+            selectable: false,
+            evented: false,
+          });
+          layers.push({
+            obj: authorTitle,
+            height: authorTitle.getScaledHeight(),
+            marginBottom: config.brandStrip.enabled
+              ? config.brandStrip.marginTop
+              : 0,
+          });
+        }
+
+        // Layer 10: brand logo — last in the stack, after author title
+        if (config.brandStrip.enabled && brand) {
+          // If there's no title, attach the marginTop gap to the previous layer instead
+          if (!hasTitle && layers.length > 0) {
+            const prev = layers[layers.length - 1];
+            prev.marginBottom = Math.max(
+              prev.marginBottom,
+              config.brandStrip.marginTop,
+            );
+          }
           const logoId =
             BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] ?? "";
           if (logoId) {
-            const logoUrl = `https://res.cloudinary.com/${config.backgroundImage.cloudName}/image/upload/${logoId}`;
+            const logoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${logoId}`;
             try {
               const logoImg = await FabricImage.fromURL(logoUrl, {
                 crossOrigin: "anonymous",
               });
-              logoImg.scaleToWidth(config.brandLogo.width);
+              logoImg.scaleToWidth(config.brandStrip.logo.width);
+              if (logoImg.getScaledHeight() > config.brandStrip.logo.maxHeight) {
+                logoImg.scaleToHeight(config.brandStrip.logo.maxHeight);
+              }
+              // Center the logo horizontally inside the content column,
+              // then apply the configured offsetX (negative pulls left).
+              const contentCenterX = (innerLeft + innerRight) / 2;
               logoImg.set({
-                left: config.brandLogo.x,
-                top: config.brandLogo.y,
+                left: contentCenterX + config.brandStrip.offsetX,
+                top: 0,
                 originX: "center",
+                originY: "top",
                 selectable: false,
                 evented: false,
               });
-              canvas.add(logoImg);
+              layers.push({
+                obj: logoImg,
+                height: logoImg.getScaledHeight(),
+                marginBottom: 0,
+                offsetY: config.brandStrip.offsetY,
+              });
             } catch {
-              // Skip logo if it fails to load
+              // Skip logo if it fails to load — stack still centers without it
             }
           }
+        }
+
+        // Compute vertical offset to center the whole stack inside the content area
+        const totalHeight = layers.reduce(
+          (sum, l, i) =>
+            sum + l.height + (i < layers.length - 1 ? l.marginBottom : 0),
+          0,
+        );
+        const contentTop = config.content.paddingTop;
+        const contentBottom = height - config.content.paddingBottom;
+        const availableHeight = contentBottom - contentTop;
+        let cursorY =
+          contentTop + Math.max(0, (availableHeight - totalHeight) / 2);
+
+        for (const l of layers) {
+          // offsetY is a visual nudge — it doesn't affect where the next item lands
+          l.obj.set({ top: cursorY + (l.offsetY ?? 0) });
+          canvas.add(l.obj);
+          cursorY += l.height + l.marginBottom;
         }
 
         canvas.renderAll();
@@ -272,13 +1170,13 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         fabricRef.current = null;
         setReady(false);
       };
-    }, [quote, config, renderCanvas]);
+    }, [quote, brand, config, renderCanvas]);
 
     useImperativeHandle(ref, () => ({
       downloadAsPng() {
         const canvas = fabricRef.current;
         if (!canvas) return;
-        const dataUrl = canvas.toDataURL({ format: "png", multiplier: 2 });
+        const dataUrl = canvas.toDataURL({ format: "png", multiplier: 1 });
         const link = document.createElement("a");
         link.href = dataUrl;
         link.download = `quote-${quote.quote_author.replace(/\s+/g, "-").toLowerCase()}.png`;
@@ -287,7 +1185,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
       getDataUrl() {
         const canvas = fabricRef.current;
         if (!canvas) return null;
-        return canvas.toDataURL({ format: "png", multiplier: 2 });
+        return canvas.toDataURL({ format: "png", multiplier: 1 });
       },
     }));
 
@@ -300,7 +1198,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         )}
         <div
           className={`w-full overflow-hidden rounded-xl border border-neutral-200${onClick ? " cursor-pointer hover:opacity-90 transition" : ""}`}
-          style={{ maxWidth: 500, aspectRatio: `${cw} / ${ch}` }}
+          style={{ maxWidth: 720, aspectRatio: `${cw} / ${ch}` }}
           onClick={onClick}
         >
           <canvas
