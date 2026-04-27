@@ -97,7 +97,10 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
 
       const bgImage = await fabric.Image.fromURL(uploadedImageUrl)
       console.log('Background image loaded successfully')
-      bgImage.scaleToWidth(1080)
+      bgImage.set({
+        width: 1080,
+        height: 1350,
+      })
       canvas.add(bgImage)
       canvas.sendObjectToBack(bgImage)
       console.log('Background image added and positioned')
