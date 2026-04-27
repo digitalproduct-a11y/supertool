@@ -28,7 +28,6 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
   const [isDragging, setIsDragging] = useState(false)
 
   const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
-  const labelText = isMalay ? 'Tahukah Anda?' : 'Did You Know?'
   const translatedEdition = editionTranslations[edition]?.[isMalay ? 'ms' : 'en'] || edition
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
@@ -252,7 +251,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
                       width: 'fit-content',
                     }}
                   >
-                    {labelText} — {translatedEdition}
+                    {translatedEdition}
                   </div>
 
                   {/* Headline */}
