@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { IconDownload, IconChevronLeft } from '@tabler/icons-react'
-import * as fabric from 'fabric'
+import html2canvas from 'html2canvas'
 import { uploadToCloudinary } from '../utils/cloudinary'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 import { toast } from '../hooks/useToast'
@@ -25,8 +25,8 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const canvasInstance = useRef<fabric.Canvas | null>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
+  const downloadRef = useRef<HTMLDivElement>(null)
 
   const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
   const translatedEdition = editionTranslations[edition]?.[isMalay ? 'ms' : 'en'] || edition
@@ -74,152 +74,22 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
     if (file) handleFileUpload(file)
   }
 
-  const renderCanvas = async () => {
-    console.log('renderCanvas called', { canvas: !!canvasInstance.current, url: !!uploadedImageUrl })
-
-    if (!uploadedImageUrl) {
-      console.log('Skip render - no URL')
-      return
-    }
-
-    if (!canvasInstance.current) {
-      const initialized = initializeCanvas()
-      if (!initialized) {
-        console.log('Failed to initialize canvas')
-        return
-      }
-    }
-
-    try {
-      const canvas = canvasInstance.current!
-      console.log('Starting canvas render with URL:', uploadedImageUrl)
-      canvas.clear()
-
-      const bgImage = await fabric.Image.fromURL(uploadedImageUrl)
-      console.log('Background image loaded successfully')
-      bgImage.set({
-        left: 0,
-        top: 0,
-        scaleX: 1080 / (bgImage.width || 1080),
-        scaleY: 1350 / (bgImage.height || 1350),
-      })
-      canvas.add(bgImage)
-      canvas.sendObjectToBack(bgImage)
-      console.log('Background image added and positioned')
-
-      const gradient = new fabric.Rect({
-        width: 1080,
-        height: 1350,
-        fill: 'rgba(6,6,8,0.5)',
-        selectable: false,
-      })
-      canvas.add(gradient)
-      canvas.sendObjectToBack(gradient)
-      console.log('Gradient added')
-
-      const editionText = new fabric.Text(translatedEdition, {
-        fontFamily: 'Arial',
-        fontSize: 14,
-        fill: '#E9B949',
-        fontWeight: 'bold',
-        left: 40,
-        top: 1220,
-        selectable: false,
-      })
-      canvas.add(editionText)
-      console.log('Edition text added:', { text: translatedEdition, top: editionText.top, left: editionText.left })
-
-      const headlineText = new fabric.Text(idea.headline, {
-        fontFamily: 'Arial',
-        fontSize: 32,
-        fontWeight: 'bold',
-        fill: '#faf7ee',
-        left: 40,
-        top: 1050,
-        selectable: false,
-      })
-      canvas.add(headlineText)
-      console.log('Headline text added:', { text: idea.headline, top: headlineText.top, left: headlineText.left })
-
-      const factText = new fabric.Text(idea.fact.substring(0, 150), {
-        fontFamily: 'Arial',
-        fontSize: 13,
-        fill: 'rgba(245,242,234,.9)',
-        left: 40,
-        top: 1100,
-        selectable: false,
-      })
-      canvas.add(factText)
-      console.log('Fact text added:', { textLength: idea.fact.length, top: factText.top, left: factText.left })
-
-      if (brandLogoUrl) {
-        console.log('Loading logo from:', brandLogoUrl)
-        const logoImage = await fabric.Image.fromURL(brandLogoUrl, {
-          crossOrigin: 'anonymous',
-        })
-        logoImage.scaleToHeight(40)
-        logoImage.set({ left: 980, top: 50, selectable: false })
-        canvas.add(logoImage)
-        console.log('Logo loaded and added')
-      }
-
-      canvas.renderAll()
-      console.log('Canvas render complete')
-    } catch (err) {
-      console.error('Canvas rendering failed:', err)
-      toast.error('Canvas rendering failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
-    }
-  }
-
-  const initializeCanvas = () => {
-    if (canvasInstance.current) return
-    if (!canvasRef.current) {
-      console.log('Cannot initialize - canvas ref not available')
-      return false
-    }
-
-    console.log('Creating fabric canvas')
-    canvasInstance.current = new fabric.Canvas(canvasRef.current, {
-      width: 1080,
-      height: 1350,
-      backgroundColor: '#0a0a0c',
-    })
-    console.log('Canvas created:', canvasInstance.current)
-    return true
-  }
-
-  useEffect(() => {
-    return () => {
-      console.log('Disposing canvas')
-      canvasInstance.current?.dispose()
-    }
-  }, [])
-
-  useEffect(() => {
-    console.log('Render effect triggered:', { uploadedImageUrl, headline: idea.headline })
-    if (uploadedImageUrl) {
-      renderCanvas()
-    }
-  }, [uploadedImageUrl, idea.headline, idea.fact])
-
   const handleDownload = async () => {
-    if (!uploadedImageUrl) {
+    if (!uploadedImageUrl || !downloadRef.current) {
       toast.error('Please upload an image first')
       return
     }
 
     try {
-      if (!canvasInstance.current) {
-        const tempCanvas = new fabric.Canvas(document.createElement('canvas'), {
-          width: 1080,
-          height: 1350,
-          backgroundColor: '#0a0a0c',
-        })
-        canvasInstance.current = tempCanvas
-        await renderCanvas()
-      }
+      const canvas = await html2canvas(downloadRef.current, {
+        backgroundColor: null,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        width: 1080,
+        height: 1350,
+      })
 
-      const canvas = canvasInstance.current.getElement() as HTMLCanvasElement
       canvas.toBlob((blob) => {
         if (!blob) {
           toast.error('Failed to create image')
@@ -331,6 +201,7 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
           {uploadedImageUrl ? (
             <div className="rounded-lg overflow-hidden shadow-lg bg-neutral-900" style={{ aspectRatio: '1080/1350' }}>
               <div
+                ref={previewRef}
                 className="w-full h-full relative"
                 style={{
                   background: '#0a0a0c',
@@ -398,7 +269,7 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
                       fontFamily: "'Montserrat', sans-serif",
                       fontSize: '24px',
                       fontWeight: 900,
-                      fontStyle: 'normal',
+                      fontStyle: 'bold',
                       lineHeight: '0.98',
                       letterSpacing: '-1.2px',
                       color: '#faf7ee',
@@ -406,6 +277,7 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
                       padding: '2px 0',
                       wordWrap: 'break-word',
                       overflowWrap: 'break-word',
+                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
                     }}
                   >
                     {idea.headline}
@@ -454,6 +326,147 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
           )}
         </div>
       </div>
+
+      {/* Hidden download container - fixed 1080x1350 for precise capture */}
+      {uploadedImageUrl && (
+        <div
+          ref={downloadRef}
+          style={{
+            position: 'fixed',
+            left: '-9999px',
+            top: '-9999px',
+            width: '1080px',
+            height: '1350px',
+            background: '#0a0a0c',
+          }}
+        >
+          {/* Full-bleed background image */}
+          <img
+            src={uploadedImageUrl}
+            alt="background"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+
+          {/* Gradient overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: `linear-gradient(180deg,
+                rgba(6,6,8,0) 0%,
+                rgba(6,6,8,0.100) 30%,
+                rgba(6,6,8,0.506) 55%,
+                rgba(6,6,8,0.810) 78%,
+                rgba(6,6,8,0.92) 100%)`,
+            }}
+          />
+
+          {/* Content container */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '0 20px',
+            }}
+          >
+            {/* Logo at top */}
+            {brandLogoUrl && (
+              <div style={{ marginTop: '8px', marginBottom: '48px', display: 'flex', justifyContent: 'flex-end', paddingRight: '8px' }}>
+                <img
+                  src={brandLogoUrl}
+                  alt="brand"
+                  style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+                />
+              </div>
+            )}
+
+            {/* Spacer to push content to bottom */}
+            <div style={{ flex: 1 }} />
+
+            {/* Edition label */}
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '10px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                color: '#E9B949',
+                fontWeight: 600,
+                marginBottom: '8px',
+                lineHeight: '1.3',
+                backgroundColor: '#000000',
+                padding: '2px 4px',
+                display: 'inline-block',
+                width: 'fit-content',
+              }}
+            >
+              {translatedEdition}
+            </div>
+
+            {/* Headline */}
+            <h1
+              style={{
+                fontFamily: "'Montserrat', sans-serif",
+                fontSize: '28px',
+                fontWeight: 900,
+                fontStyle: 'normal',
+                lineHeight: '0.98',
+                letterSpacing: '-1.2px',
+                color: '#faf7ee',
+                margin: '0 0 8px 0',
+                padding: '2px 0',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+              }}
+            >
+              {idea.headline}
+            </h1>
+
+            {/* Divider */}
+            <div
+              style={{
+                width: '120px',
+                height: '1px',
+                background: 'rgba(250,247,238,.35)',
+                marginBottom: '12px',
+              }}
+            />
+
+            {/* Fact body with accent rule */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '12px', alignItems: 'stretch', marginBottom: '40px' }}>
+              <div
+                style={{
+                  width: '3px',
+                  background: '#E9B949',
+                  flexShrink: 0,
+                }}
+              />
+              <p
+                style={{
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  lineHeight: '1.5',
+                  color: 'rgba(245,242,234,.9)',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                {idea.fact}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
