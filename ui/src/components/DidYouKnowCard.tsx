@@ -44,11 +44,10 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
 
     setIsUploading(true)
     try {
-      // Create local preview URL
       const localUrl = URL.createObjectURL(file)
+      console.log('Local blob URL created:', localUrl)
       setUploadedImageUrl(localUrl)
 
-      // Also upload to Cloudinary for final download/export
       const publicId = await uploadToCloudinary(file)
       setUploadedImageId(publicId)
       toast.success('Image uploaded!')
@@ -76,17 +75,32 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
   }
 
   const renderCanvas = async () => {
-    if (!canvasInstance.current || !uploadedImageUrl) return
+    console.log('renderCanvas called', { canvas: !!canvasInstance.current, url: !!uploadedImageUrl })
+
+    if (!uploadedImageUrl) {
+      console.log('Skip render - no URL')
+      return
+    }
+
+    if (!canvasInstance.current) {
+      const initialized = initializeCanvas()
+      if (!initialized) {
+        console.log('Failed to initialize canvas')
+        return
+      }
+    }
 
     try {
-      canvasInstance.current.clear()
+      const canvas = canvasInstance.current!
+      console.log('Starting canvas render with URL:', uploadedImageUrl)
+      canvas.clear()
 
-      const bgImage = await fabric.Image.fromURL(uploadedImageUrl, {
-        crossOrigin: 'anonymous',
-      })
+      const bgImage = await fabric.Image.fromURL(uploadedImageUrl)
+      console.log('Background image loaded successfully')
       bgImage.scaleToWidth(1080)
-      canvasInstance.current.add(bgImage)
-      canvasInstance.current.sendObjectToBack(bgImage)
+      canvas.add(bgImage)
+      canvas.sendObjectToBack(bgImage)
+      console.log('Background image added and positioned')
 
       const gradient = new fabric.Rect({
         width: 1080,
@@ -94,7 +108,8 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
         fill: 'rgba(6,6,8,0.5)',
         selectable: false,
       })
-      canvasInstance.current.add(gradient)
+      canvas.add(gradient)
+      console.log('Gradient added')
 
       const editionText = new fabric.Textbox(translatedEdition, {
         fontFamily: "'JetBrains Mono', monospace",
@@ -105,7 +120,7 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
         top: 1180,
         selectable: false,
       })
-      canvasInstance.current.add(editionText)
+      canvas.add(editionText)
 
       const headlineText = new fabric.Textbox(idea.headline, {
         fontFamily: "'Montserrat', sans-serif",
@@ -117,7 +132,7 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
         width: 1040,
         selectable: false,
       })
-      canvasInstance.current.add(headlineText)
+      canvas.add(headlineText)
 
       const factText = new fabric.Textbox(idea.fact, {
         fontFamily: "'Montserrat', sans-serif",
@@ -128,39 +143,54 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
         width: 1000,
         selectable: false,
       })
-      canvasInstance.current.add(factText)
+      canvas.add(factText)
+      console.log('Text elements added')
 
       if (brandLogoUrl) {
+        console.log('Loading logo from:', brandLogoUrl)
         const logoImage = await fabric.Image.fromURL(brandLogoUrl, {
           crossOrigin: 'anonymous',
         })
         logoImage.scaleToHeight(40)
         logoImage.set({ left: 980, top: 50, selectable: false })
-        canvasInstance.current.add(logoImage)
+        canvas.add(logoImage)
+        console.log('Logo loaded and added')
       }
 
-      canvasInstance.current.renderAll()
+      canvas.renderAll()
+      console.log('Canvas render complete')
     } catch (err) {
       console.error('Canvas rendering failed:', err)
-      toast.error('Canvas rendering failed')
+      toast.error('Canvas rendering failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 
-  useEffect(() => {
-    if (!canvasRef.current) return
+  const initializeCanvas = () => {
+    if (canvasInstance.current) return
+    if (!canvasRef.current) {
+      console.log('Cannot initialize - canvas ref not available')
+      return false
+    }
 
+    console.log('Creating fabric canvas')
     canvasInstance.current = new fabric.Canvas(canvasRef.current, {
       width: 1080,
       height: 1350,
       backgroundColor: '#0a0a0c',
     })
+    console.log('Canvas created:', canvasInstance.current)
+    return true
+  }
 
+  useEffect(() => {
     return () => {
+      console.log('Disposing canvas')
       canvasInstance.current?.dispose()
     }
   }, [])
 
   useEffect(() => {
+    console.log('Render effect triggered:', { uploadedImageUrl, headline: idea.headline })
     if (uploadedImageUrl) {
       renderCanvas()
     }
