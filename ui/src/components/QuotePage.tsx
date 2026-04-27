@@ -10,8 +10,8 @@ import {
 } from "@tabler/icons-react";
 import { QuoteCanvas, type QuoteCanvasHandle, type QuoteData } from "./QuoteCanvas";
 import { ScheduleModal } from "./ScheduleModal";
-import { Spinner } from "./ds/Spinner";
 import { getCredentials } from "../utils/fbCredentials";
+import { uploadToCloudinary } from "../utils/cloudinary";
 import { toast } from "../hooks/useToast";
 import {
   BRANDS,
@@ -19,10 +19,7 @@ import {
   detectBrandFromUrl,
   detectBrandInfoFromUrl,
 } from "../constants/brands";
-import {
-  DEFAULT_QUOTE_CANVAS_CONFIG,
-  TABLOID_QUOTE_CANVAS_CONFIG,
-} from "../config/quoteCanvasConfig";
+import { TABLOID_QUOTE_CANVAS_CONFIG } from "../config/quoteCanvasConfig";
 import type { CaptionTitleMode } from "../types";
 
 interface QuoteResponse {
@@ -72,8 +69,6 @@ export function QuotePage() {
   const [url, setUrl] = useState("");
   const [brand, setBrand] = useState("");
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>("ai");
-  // "Default Template" toggle. ON = tabloid template (full-bleed photo). OFF = subject cutout feature (bg-removed + side-text layout).
-  const [useDefaultTemplate, setUseDefaultTemplate] = useState(true);
   const [stage, setStage] = useState<Stage>("input");
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
   const [caption, setCaption] = useState("");
@@ -93,12 +88,8 @@ export function QuotePage() {
   const customBgInputRef = useRef<HTMLInputElement>(null);
   // User toggle for the tabloid layout's decorative side circle. Off by default.
   const [useSideCircle, setUseSideCircle] = useState(false);
-  const [cutoutUrl, setCutoutUrl] = useState<string | null>(null);
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
-  const config = useDefaultTemplate
-    ? TABLOID_QUOTE_CANVAS_CONFIG
-    : DEFAULT_QUOTE_CANVAS_CONFIG;
+  const config = TABLOID_QUOTE_CANVAS_CONFIG;
 
   const canvasRef = useRef<QuoteCanvasHandle>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -127,13 +118,6 @@ export function QuotePage() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [lightboxUrl, closeLightbox]);
-
-  // Cleanup cutout object URL on unmount/reset
-  useEffect(() => {
-    return () => {
-      if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
-    };
-  }, [cutoutUrl]);
 
   // Cleanup custom side-circle object URL on unmount/replace
   useEffect(() => {
@@ -207,9 +191,6 @@ export function QuotePage() {
     setCustomCircleUrl(null);
     if (customBgUrl) URL.revokeObjectURL(customBgUrl);
     setCustomBgUrl(null);
-    if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
-    setCutoutUrl(null);
-    setIsProcessingImage(false);
     setQuoteIndex(0);
     setStepIndex(0);
     setScheduleStatus("idle");
@@ -280,27 +261,6 @@ export function QuotePage() {
         setPexelsUrls(urls.length ? urls : fallback);
         setPexelsIndex(0);
         setStage("preview");
-
-        // Background removal (only when "Default Template" is OFF — i.e. user picked the cutout feature)
-        if (data.image_url && !useDefaultTemplate && config.cutoutImage.enabled) {
-          setIsProcessingImage(true);
-          try {
-            const imgRes = await fetch(data.image_url, { mode: "cors" });
-            const blob = await imgRes.blob();
-            const { removeBackground } = await import(
-              "@imgly/background-removal"
-            );
-            const resultBlob = await removeBackground(blob, {
-              model: "medium",
-              output: { format: "image/png", quality: 0.9 },
-            });
-            setCutoutUrl(URL.createObjectURL(resultBlob));
-          } catch {
-            // Silently fail — canvas works without cutout
-          } finally {
-            setIsProcessingImage(false);
-          }
-        }
       } else {
         setError(data.message || "Failed to extract quote from article.");
       }
@@ -334,8 +294,8 @@ export function QuotePage() {
       return;
     }
 
-    const imageUrl = canvasRef.current?.getDataUrl();
-    if (!imageUrl) {
+    const dataUrl = canvasRef.current?.getDataUrl();
+    if (!dataUrl) {
       toast.error("Image not ready.");
       return;
     }
@@ -351,11 +311,22 @@ export function QuotePage() {
     setIsScheduling(true);
 
     try {
+      // FB needs a public URL — upload the canvas PNG to Cloudinary first.
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File(
+        [blob],
+        `quote-${brand.toLowerCase()}-${Date.now()}.png`,
+        { type: "image/png" },
+      );
+      const publicId = await uploadToCloudinary(file);
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
+      const fb_ai_image_url = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`;
+
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fb_ai_image_url: imageUrl,
+          fb_ai_image_url,
           fb_ai_caption: caption,
           brand: brand.toLowerCase(),
           scheduled_for: scheduledFor,
@@ -382,8 +353,12 @@ export function QuotePage() {
         toast.error(data.message ?? "Something went wrong.");
         setScheduleStatus("error");
       }
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message.startsWith("Upload failed")
+          ? "Image upload failed. Please try again."
+          : "Network error. Please try again.";
+      toast.error(msg);
       setScheduleStatus("error");
     } finally {
       setIsScheduling(false);
@@ -406,8 +381,6 @@ export function QuotePage() {
       setCustomCircleUrl(null);
       if (customBgUrl) URL.revokeObjectURL(customBgUrl);
       setCustomBgUrl(null);
-      if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
-      setCutoutUrl(null);
     }
   }
 
@@ -584,10 +557,10 @@ export function QuotePage() {
                   </p>
                 </div>
 
-                {/* Default Template */}
+                {/* Side Circle — tabloid layout's decorative photo circle */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Default Template
+                    Side Circle
                   </label>
                   <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
                     {(
@@ -599,9 +572,9 @@ export function QuotePage() {
                       <button
                         key={String(opt.value)}
                         type="button"
-                        onClick={() => setUseDefaultTemplate(opt.value)}
+                        onClick={() => setUseSideCircle(opt.value)}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                          useDefaultTemplate === opt.value
+                          useSideCircle === opt.value
                             ? "bg-white text-gray-900 shadow-sm"
                             : "text-gray-600 hover:text-gray-900"
                         }`}
@@ -611,46 +584,11 @@ export function QuotePage() {
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-gray-500">
-                    {useDefaultTemplate
-                      ? "Uses the default branded template with the article photo as-is"
-                      : "Removes the photo background and shows only the subject"}
+                    {useSideCircle
+                      ? "Adds a Pexels stock photo in a circular frame matched to the article topic"
+                      : "Hides the decorative circle"}
                   </p>
                 </div>
-
-                {/* Side Circle — only relevant for the Default Template (tabloid) layout */}
-                {useDefaultTemplate && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Side Circle
-                    </label>
-                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-                      {(
-                        [
-                          { value: true, label: "On" },
-                          { value: false, label: "Off" },
-                        ] as const
-                      ).map((opt) => (
-                        <button
-                          key={String(opt.value)}
-                          type="button"
-                          onClick={() => setUseSideCircle(opt.value)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                            useSideCircle === opt.value
-                              ? "bg-white text-gray-900 shadow-sm"
-                              : "text-gray-600 hover:text-gray-900"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      {useSideCircle
-                        ? "Adds a Pexels stock photo in a circular frame matched to the article topic"
-                        : "Hides the decorative circle"}
-                    </p>
-                  </div>
-                )}
 
                 {/* Generate button */}
                 <button
@@ -832,8 +770,6 @@ export function QuotePage() {
                   setCustomCircleUrl(null);
                   if (customBgUrl) URL.revokeObjectURL(customBgUrl);
                   setCustomBgUrl(null);
-                  if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
-                  setCutoutUrl(null);
                 }}
                 className="text-xs text-neutral-500 hover:text-neutral-800 transition"
               >
@@ -844,90 +780,72 @@ export function QuotePage() {
             <div className="flex flex-col gap-6">
               {/* Canvas */}
               <div className="flex flex-col items-center gap-3">
-                {isProcessingImage ? (
-                  <div className="w-full" style={{ maxWidth: 720 }}>
-                    <div
-                      className="w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50 flex flex-col items-center justify-center gap-3"
-                      style={{
-                        aspectRatio: `${config.canvas.width} / ${config.canvas.height}`,
-                      }}
+                <QuoteCanvas
+                  ref={canvasRef}
+                  quote={quoteData}
+                  brand={brand}
+                  config={config}
+                  imageUrl={customBgUrl ?? imageUrl}
+                  pexelsImageUrl={
+                    useSideCircle
+                      ? (customCircleUrl ?? pexelsUrls[pexelsIndex] ?? null)
+                      : null
+                  }
+                  onClick={() => {
+                    const dataUrl = canvasRef.current?.getDataUrl();
+                    if (dataUrl) setLightboxUrl(dataUrl);
+                  }}
+                />
+                {/* Hidden file inputs (background + side circle) */}
+                <input
+                  ref={customBgInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCustomBgFile}
+                />
+                <input
+                  ref={customCircleInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCustomCircleFile}
+                />
+
+                {/* Action button cluster */}
+                <div
+                  className="w-full space-y-2"
+                  style={{ maxWidth: 720 }}
+                >
+                  {/* Row 1 — primary: Upload Background + Download */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => customBgInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
                     >
-                      <Spinner size="lg" />
-                      <p className="text-xs text-neutral-400 animate-pulse">
-                        Extracting subject from image...
-                      </p>
-                    </div>
+                      <IconUpload className="w-4 h-4" />
+                      {customBgUrl ? "Replace background" : "Upload Custom Image"}
+                    </button>
+                    <button
+                      onClick={() => canvasRef.current?.downloadAsPng()}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition"
+                    >
+                      <IconDownload className="w-4 h-4" />
+                      Download
+                    </button>
                   </div>
-                ) : (
-                  <>
-                    <QuoteCanvas
-                      ref={canvasRef}
-                      quote={quoteData}
-                      brand={brand}
-                      config={config}
-                      imageUrl={customBgUrl ?? imageUrl}
-                      cutoutImageUrl={cutoutUrl}
-                      isProcessingCutout={isProcessingImage}
-                      pexelsImageUrl={
-                        useDefaultTemplate && useSideCircle
-                          ? (customCircleUrl ?? pexelsUrls[pexelsIndex] ?? null)
-                          : null
-                      }
-                      onClick={() => {
-                        const dataUrl = canvasRef.current?.getDataUrl();
-                        if (dataUrl) setLightboxUrl(dataUrl);
-                      }}
-                    />
-                    {/* Hidden file inputs (background + side circle) */}
-                    <input
-                      ref={customBgInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleCustomBgFile}
-                    />
-                    <input
-                      ref={customCircleInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleCustomCircleFile}
-                    />
-
-                    {/* Action button cluster */}
-                    <div
-                      className="w-full space-y-2"
-                      style={{ maxWidth: 720 }}
+                  {customBgUrl && (
+                    <button
+                      onClick={handleResetCustomBg}
+                      className="text-xs text-neutral-500 hover:text-neutral-800 transition"
                     >
-                      {/* Row 1 — primary: Upload Background + Download */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => customBgInputRef.current?.click()}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
-                        >
-                          <IconUpload className="w-4 h-4" />
-                          {customBgUrl ? "Replace background" : "Upload Custom Image"}
-                        </button>
-                        <button
-                          onClick={() => canvasRef.current?.downloadAsPng()}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition"
-                        >
-                          <IconDownload className="w-4 h-4" />
-                          Download
-                        </button>
-                      </div>
-                      {customBgUrl && (
-                        <button
-                          onClick={handleResetCustomBg}
-                          className="text-xs text-neutral-500 hover:text-neutral-800 transition"
-                        >
-                          Reset to article photo
-                        </button>
-                      )}
+                      Reset to article photo
+                    </button>
+                  )}
 
-                      {/* Row 2 — secondary: Upload Circle + Refresh Pexels (only when Side Circle is on) */}
-                      {useDefaultTemplate && useSideCircle && (
-                        <>
+                  {/* Row 2 — secondary: Upload Circle + Refresh Pexels (only when Side Circle is on) */}
+                  {useSideCircle && (
+                    <>
                           <div className="flex gap-2 pt-1">
                             <button
                               onClick={() => customCircleInputRef.current?.click()}
@@ -960,11 +878,9 @@ export function QuotePage() {
                               Reset to Pexels image
                             </button>
                           )}
-                        </>
-                      )}
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Caption + schedule */}

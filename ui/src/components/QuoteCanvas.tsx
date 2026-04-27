@@ -41,23 +41,10 @@ interface QuoteCanvasProps {
   brand: string;
   config?: QuoteCanvasConfig;
   imageUrl?: string | null;
-  cutoutImageUrl?: string | null;
-  isProcessingCutout?: boolean;
   // Pexels image URL for the tabloid layout's single side circle. When unset,
   // empty, or the image fails to load, the circle renders nothing (silent fallback).
   pexelsImageUrl?: string | null;
   onClick?: () => void;
-}
-
-// Multiply each RGB channel by `factor` (0..1). Used to derive the dark variant of brand hex.
-function darken(hex: string, factor: number): string {
-  const m = hex.replace("#", "");
-  if (m.length !== 6) return hex;
-  const r = Math.round(parseInt(m.slice(0, 2), 16) * factor);
-  const g = Math.round(parseInt(m.slice(2, 4), 16) * factor);
-  const b = Math.round(parseInt(m.slice(4, 6), 16) * factor);
-  const toHex = (n: number) => n.toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 // Inline SVG noise as a data URI — mirrors the design's grain treatment.
@@ -86,53 +73,6 @@ function mixHex(a: string, b: string, t: number): string {
   const bl = Math.round(ab + (bb - ab) * t);
   const toHex = (n: number) => n.toString(16).padStart(2, "0");
   return `#${toHex(r)}${toHex(g)}${toHex(bl)}`;
-}
-
-// Wrap a treated subject canvas with a brand-colored die-cut halo.
-// Approach: stamp the subject's alpha shape at N offset positions around a circle
-// (forming a dilated silhouette), then "source-in" recolor that silhouette with
-// the halo color, then composite the original subject on top. Crisp edges, no blur.
-function paintPaperCutoutHalo(
-  treated: HTMLCanvasElement,
-  outlineWidth: number,
-  haloColor: string,
-  shadow: { offsetY: number; blur: number; opacity: number },
-): HTMLCanvasElement {
-  const K = Math.max(0, Math.round(outlineWidth));
-  if (K === 0) return treated;
-  const w = treated.width + K * 2;
-  const h = treated.height + K * 2;
-
-  const silo = document.createElement("canvas");
-  silo.width = w;
-  silo.height = h;
-  const sctx = silo.getContext("2d");
-  if (!sctx) return treated;
-  const N = 16;
-  for (let i = 0; i < N; i++) {
-    const a = (i * 2 * Math.PI) / N;
-    const ox = K + Math.round(K * Math.cos(a));
-    const oy = K + Math.round(K * Math.sin(a));
-    sctx.drawImage(treated, ox, oy);
-  }
-  sctx.globalCompositeOperation = "source-in";
-  sctx.fillStyle = haloColor;
-  sctx.fillRect(0, 0, w, h);
-
-  const out = document.createElement("canvas");
-  out.width = w;
-  out.height = h;
-  const ctx = out.getContext("2d");
-  if (!ctx) return silo;
-  if (shadow.opacity > 0 && (shadow.blur > 0 || shadow.offsetY !== 0)) {
-    ctx.filter = `drop-shadow(0 ${shadow.offsetY}px ${shadow.blur}px rgba(0,0,0,${shadow.opacity}))`;
-    ctx.drawImage(silo, 0, 0);
-    ctx.filter = "none";
-  } else {
-    ctx.drawImage(silo, 0, 0);
-  }
-  ctx.drawImage(treated, K, K);
-  return out;
 }
 
 // Crop the source image to `bounds` AND apply a tonal treatment (duotone /
@@ -191,40 +131,6 @@ function preprocessSubject(
   return c;
 }
 
-// Find the tight bounding box of non-transparent pixels in a bg-removed image.
-// Returns { x, y, width, height } in source-pixel coords, or null if the image
-// is empty / fully transparent. Alpha threshold of 20 ignores soft AA edges.
-function findAlphaBounds(
-  img: HTMLImageElement,
-): { x: number; y: number; width: number; height: number } | null {
-  const w = img.naturalWidth;
-  const h = img.naturalHeight;
-  if (!w || !h) return null;
-  const off = document.createElement("canvas");
-  off.width = w;
-  off.height = h;
-  const ctx = off.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return null;
-  ctx.drawImage(img, 0, 0);
-  const data = ctx.getImageData(0, 0, w, h).data;
-  let minX = w;
-  let minY = h;
-  let maxX = -1;
-  let maxY = -1;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      if (data[(y * w + x) * 4 + 3] > 20) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-  if (maxX < 0) return null;
-  return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
-}
-
 function applyTextStyle(style: TextLayerStyle) {
   return {
     fontFamily: style.fontFamily,
@@ -246,7 +152,6 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
       brand,
       config: configProp,
       imageUrl,
-      cutoutImageUrl,
       pexelsImageUrl,
       onClick,
     },
@@ -773,8 +678,8 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
             : hexToRgb(config.photo.duotoneLight);
         const treatment = config.photo.treatment;
 
-        const tonalFilters = (): filters.BaseFilter[] => {
-          const list: filters.BaseFilter[] = [];
+        const tonalFilters = (): filters.BaseFilter<string>[] => {
+          const list: filters.BaseFilter<string>[] = [];
           if (config.photo.contrast) {
             list.push(new filters.Contrast({ contrast: config.photo.contrast }));
           }
@@ -786,79 +691,8 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
           return list;
         };
 
-        // Layer 2: photo or cutout
-        const useCutout = !!cutoutImageUrl && config.cutoutImage.enabled;
-        if (useCutout && cutoutImageUrl) {
-          try {
-            const loaded = await FabricImage.fromURL(cutoutImageUrl, {
-              crossOrigin: "anonymous",
-            });
-            const elem = loaded.getElement() as HTMLImageElement;
-            // Crop transparent padding + apply tonal treatment in one pass
-            const bounds =
-              findAlphaBounds(elem) ?? {
-                x: 0,
-                y: 0,
-                width: elem.naturalWidth,
-                height: elem.naturalHeight,
-              };
-            const treatedCanvas = preprocessSubject(
-              elem,
-              bounds,
-              treatment,
-              duoDark,
-              duoLight,
-            );
-            const halo = config.cutoutImage.paperCutout;
-            const haloColor = halo.color === "auto" ? brandHex : halo.color;
-            const finalSubject = halo.enabled
-              ? paintPaperCutoutHalo(treatedCanvas, halo.outlineWidth, haloColor, {
-                  offsetY: halo.shadowOffsetY,
-                  blur: halo.shadowBlur,
-                  opacity: halo.shadowOpacity,
-                })
-              : treatedCanvas;
-            const cutoutImg = new FabricImage(finalSubject);
-            const visibleW = cutoutImg.width!;
-            const visibleH = cutoutImg.height!;
-            // Cap width so the cutout never crosses into the right-side content area
-            const contentEdgeX = width - config.content.width;
-            const maxAllowedWidth = Math.max(
-              0,
-              Math.min(
-                config.cutoutImage.maxWidth,
-                contentEdgeX - config.cutoutImage.x,
-              ),
-            );
-            const scaleW = maxAllowedWidth / visibleW;
-            const scaleH = config.cutoutImage.maxHeight / visibleH;
-            const scale = Math.min(scaleW, scaleH);
-            cutoutImg.scale(scale);
-            // Aspect-aware vertical anchor: short subjects (e.g. head/shoulders
-            // bust shots) fill < `centerThreshold` of canvas height; bottom-
-            // anchoring strands them at the floor, so vertically center them
-            // instead. Tall subjects keep the configured anchor.
-            const heightFillRatio = (visibleH * scale) / height;
-            const isShort = heightFillRatio < config.cutoutImage.centerThreshold;
-            cutoutImg.set({
-              left: config.cutoutImage.x,
-              top: isShort ? height / 2 : config.cutoutImage.y,
-              originX: config.cutoutImage.originX,
-              originY: isShort ? "center" : config.cutoutImage.originY,
-              opacity: config.cutoutImage.opacity,
-              selectable: false,
-              evented: false,
-            });
-            const tone = tonalFilters();
-            if (tone.length) {
-              cutoutImg.filters = tone;
-              cutoutImg.applyFilters();
-            }
-            canvas.add(cutoutImg);
-          } catch {
-            // Skip cutout if loading fails — brand plate stays as backdrop
-          }
-        } else if (imageUrl) {
+        // Layer 2: photo
+        if (imageUrl) {
           try {
             const loaded = await FabricImage.fromURL(imageUrl, {
               crossOrigin: "anonymous",
@@ -1217,36 +1051,67 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         setReady(true);
         setError(null);
       },
-      [quote, brand, config, imageUrl, cutoutImageUrl, pexelsImageUrl],
+      [quote, brand, config, imageUrl, pexelsImageUrl],
     );
 
+    // Double-buffered render: build the new frame on a detached canvas, then
+    // blit it onto the visible <canvas> in a single drawImage call. This keeps
+    // the previous frame on screen while async work (font loading, image
+    // fetches) completes — no flicker when brand/config changes.
     useEffect(() => {
       if (!canvasElRef.current || !quote.quote_text) return;
 
-      canvasElRef.current.width = config.canvas.width;
-      canvasElRef.current.height = config.canvas.height;
+      let cancelled = false;
+      const { width, height, backgroundColor } = config.canvas;
 
-      const canvas = new StaticCanvas(canvasElRef.current, {
-        width: config.canvas.width,
-        height: config.canvas.height,
-        backgroundColor: config.canvas.backgroundColor,
+      const offscreenEl = document.createElement("canvas");
+      offscreenEl.width = width;
+      offscreenEl.height = height;
+      const offscreen = new StaticCanvas(offscreenEl, {
+        width,
+        height,
+        backgroundColor,
       });
-      fabricRef.current = canvas;
 
-      renderCanvas(canvas).then(() => {
-        const el = canvasElRef.current;
-        if (el) {
-          el.style.width = "100%";
-          el.style.height = "100%";
+      renderCanvas(offscreen).then(() => {
+        if (cancelled) {
+          offscreen.dispose();
+          return;
         }
+        const visibleEl = canvasElRef.current;
+        if (!visibleEl) {
+          offscreen.dispose();
+          return;
+        }
+        if (visibleEl.width !== width) visibleEl.width = width;
+        if (visibleEl.height !== height) visibleEl.height = height;
+        const ctx = visibleEl.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(offscreenEl, 0, 0);
+        }
+        visibleEl.style.width = "100%";
+        visibleEl.style.height = "100%";
+
+        // Swap fabric ref so downloadAsPng/getDataUrl reflect the latest frame
+        const prev = fabricRef.current;
+        fabricRef.current = offscreen;
+        if (prev) prev.dispose();
       });
 
       return () => {
-        canvas.dispose();
-        fabricRef.current = null;
-        setReady(false);
+        cancelled = true;
       };
     }, [quote, brand, config, renderCanvas]);
+
+    useEffect(() => {
+      return () => {
+        if (fabricRef.current) {
+          fabricRef.current.dispose();
+          fabricRef.current = null;
+        }
+      };
+    }, []);
 
     useImperativeHandle(ref, () => ({
       downloadAsPng() {

@@ -11,6 +11,7 @@ import { WeatherCanvas, type WeatherCanvasHandle } from "./WeatherCanvas";
 import { ScheduleModal } from "./ScheduleModal";
 import { Spinner } from "./ds/Spinner";
 import { getCredentials } from "../utils/fbCredentials";
+import { uploadToCloudinary } from "../utils/cloudinary";
 
 import { toast } from "../hooks/useToast";
 import { BRANDS } from "../constants/brands";
@@ -276,7 +277,38 @@ export function WeatherMalaysiaPage() {
     setIsScheduling(true);
 
     try {
-      const imageUrls = posts.map((p) => p.imageUrl);
+      // FB needs public URLs. Grouped mode renders client-side canvases —
+      // upload each one to Cloudinary. Individual mode already has public
+      // imageUrls from the n8n response.
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
+      let imageUrls: string[];
+      if (mode === "grouped") {
+        const groups = groupPostsByWeather(posts);
+        const dataUrls = groups.map((g) => {
+          const handle = groupedCanvasRefs.current.get(g.backgroundId);
+          return handle?.getDataUrl() ?? null;
+        });
+        if (dataUrls.some((u) => !u)) {
+          toast.error("Some images aren't ready yet.");
+          setIsScheduling(false);
+          return;
+        }
+        const uploads = await Promise.all(
+          (dataUrls as string[]).map(async (dataUrl, i) => {
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File(
+              [blob],
+              `weather-${brand.toLowerCase()}-${groups[i].backgroundId}-${Date.now()}.png`,
+              { type: "image/png" },
+            );
+            const publicId = await uploadToCloudinary(file);
+            return `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`;
+          }),
+        );
+        imageUrls = uploads;
+      } else {
+        imageUrls = posts.map((p) => p.imageUrl);
+      }
 
       const res = await fetch(webhookUrl, {
         method: "POST",
@@ -310,8 +342,12 @@ export function WeatherMalaysiaPage() {
         toast.error(data.message ?? "Something went wrong.");
         setScheduleStatus("error");
       }
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message.startsWith("Upload failed")
+          ? "Image upload failed. Please try again."
+          : "Network error. Please try again.";
+      toast.error(msg);
       setScheduleStatus("error");
     } finally {
       setIsScheduling(false);
