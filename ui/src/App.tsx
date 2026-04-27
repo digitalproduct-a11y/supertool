@@ -833,7 +833,7 @@ function App() {
       } />
       <Route path="/spike-news" element={
         <Layout {...layoutProps}>
-          <SpikeNewsPage onMarkRead={markSpikeRead} />
+          <SpikeNewsPage />
         </Layout>
       } />
       <Route path="/affiliate-links" element={
