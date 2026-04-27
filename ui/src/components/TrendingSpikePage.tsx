@@ -322,84 +322,130 @@ export function TrendingSpikePage() {
               </div>
             )}
 
-            {/* Trending articles — 3-column layout */}
-            {trendingItems.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                {(['News', 'Sport', 'Entertainment'] as const).map(type => {
-                  let items = trendingItems.filter(i => {
+            {/* Trending articles — 4-column layout */}
+            {trendingItems.length > 0 && (() => {
+              const GEMPAK_RECOMMENDED = ['rojak daily', 'astro awani', 'xuan']
+
+              const sortByDate = (arr: TrendingItem[]) =>
+                [...arr].sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
+
+              const passesFilter = (i: TrendingItem) =>
+                selectedSources.size === 0 || selectedSources.has(i.brand)
+
+              const gempakRecommended = sortByDate(
+                trendingItems.filter(i => passesFilter(i) && GEMPAK_RECOMMENDED.includes(i.source.toLowerCase()))
+              )
+              const gempakOther = sortByDate(
+                trendingItems.filter(i => passesFilter(i) && !GEMPAK_RECOMMENDED.includes(i.source.toLowerCase()))
+              )
+              const gempakTotal = gempakRecommended.length + gempakOther.length
+
+              const typeColumns = (['News', 'Sport', 'Entertainment'] as const).map(type => {
+                const items = sortByDate(
+                  trendingItems.filter(i => {
                     if (i.type.toLowerCase() !== type.toLowerCase()) return false
-                    if (selectedSources.size > 0 && !selectedSources.has(i.brand)) return false
-                    return true
+                    return passesFilter(i)
                   })
-                  if (type === 'Entertainment') {
-                    const entertainmentOrder = ['Gempak', 'Rojak Daily', 'XUAN', 'Astro Ulagam']
-                    items = [...items].sort((a, b) => {
-                      const ai = entertainmentOrder.findIndex(s => s.toLowerCase() === a.source.toLowerCase())
-                      const bi = entertainmentOrder.findIndex(s => s.toLowerCase() === b.source.toLowerCase())
-                      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
-                    })
-                  }
-                  items = [...items].sort((a, b) => {
-                    const ta = a.publishedAt ?? ''
-                    const tb = b.publishedAt ?? ''
-                    return tb.localeCompare(ta)
-                  })
-                  if (items.length === 0) return null
-                  const emoji = type === 'News' ? '📰' : type === 'Sport' ? '⚽' : '🎬'
-                  return (
-                    <div key={type} className="glass-card rounded-2xl overflow-hidden">
-                      <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-neutral-700">{emoji} {type}</h2>
-                        <span className="text-xs text-neutral-400">{items.length}</span>
+                )
+                return { type, items }
+              }).filter(c => c.items.length > 0)
+
+              const renderArticleRow = (item: TrendingItem) => (
+                <div key={item.id} className="p-3 hover:bg-neutral-50/50 transition-colors">
+                  <div className="flex gap-2.5">
+                    <div className="w-24 shrink-0">
+                      <ImageThumb url={item.imageUrl} alt={item.title || item.url} aspectRatio="video" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-1">
+                        <span className="text-neutral-800 font-medium text-xs line-clamp-2 leading-snug flex-1">
+                          {item.title || item.url}
+                        </span>
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-neutral-300 hover:text-neutral-600 transition mt-0.5"
+                          title="Open article"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
                       </div>
-                      <div className="divide-y divide-neutral-50">
-                        {items.map(item => (
-                          <div key={item.id} className="p-3 hover:bg-neutral-50/50 transition-colors">
-                            <div className="flex gap-2.5">
-                              <div className="w-24 shrink-0">
-                                <ImageThumb url={item.imageUrl} alt={item.title || item.url} aspectRatio="video" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start gap-1">
-                                  <span className="text-neutral-800 font-medium text-xs line-clamp-2 leading-snug flex-1">
-                                    {item.title || item.url}
-                                  </span>
-                                  <a
-                                    href={item.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="shrink-0 text-neutral-300 hover:text-neutral-600 transition mt-0.5"
-                                    title="Open article"
-                                  >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                  </a>
-                                </div>
-                                <div className="flex items-center justify-between mt-1.5 gap-2">
-                                  <div className="min-w-0">
-                                    <span className="text-[10px] text-neutral-400 font-medium capitalize block truncate">{item.source}</span>
-                                    {item.publishedAt && (
-                                      <span className="text-[10px] text-neutral-300 block truncate">{item.publishedAt}</span>
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() => handleGeneratePost(item)}
-                                    className="shrink-0 px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-[10px] font-semibold transition active:scale-[0.97]"
-                                  >
-                                    Generate
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex items-center justify-between mt-1.5 gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-neutral-400 font-medium capitalize block truncate">{item.source}</span>
+                          {item.publishedAt && (
+                            <span className="text-[10px] text-neutral-300 block truncate">{item.publishedAt}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleGeneratePost(item)}
+                          className="shrink-0 px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-[10px] font-semibold transition active:scale-[0.97]"
+                        >
+                          Generate
+                        </button>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            )}
+                  </div>
+                </div>
+              )
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+
+                  {/* Gempak brand card */}
+                  {gempakTotal > 0 && (
+                    <div className="glass-card rounded-2xl overflow-hidden">
+                      <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-neutral-700">✨ Gempak</h2>
+                        <span className="text-xs text-neutral-400">{gempakTotal}</span>
+                      </div>
+
+                      {gempakRecommended.length > 0 && (
+                        <>
+                          <div className="px-3 pt-2 pb-1">
+                            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Recommended sources</span>
+                          </div>
+                          <div className="divide-y divide-neutral-50">
+                            {gempakRecommended.map(renderArticleRow)}
+                          </div>
+                        </>
+                      )}
+
+                      {gempakOther.length > 0 && (
+                        <>
+                          <div className="px-3 pt-3 pb-1 border-t border-neutral-100 mt-1">
+                            <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide">Other sources</span>
+                          </div>
+                          <div className="divide-y divide-neutral-50">
+                            {gempakOther.map(renderArticleRow)}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* News / Sport / Entertainment columns */}
+                  {typeColumns.map(({ type, items }) => {
+                    const emoji = type === 'News' ? '📰' : type === 'Sport' ? '⚽' : '🎬'
+                    return (
+                      <div key={type} className="glass-card rounded-2xl overflow-hidden">
+                        <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
+                          <h2 className="text-sm font-semibold text-neutral-700">{emoji} {type}</h2>
+                          <span className="text-xs text-neutral-400">{items.length}</span>
+                        </div>
+                        <div className="divide-y divide-neutral-50">
+                          {items.map(renderArticleRow)}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                </div>
+              )
+            })()}
 
             {/* Empty state */}
             {trendingItems.length === 0 && !isFetchingTrending && (

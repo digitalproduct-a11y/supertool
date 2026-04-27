@@ -8,6 +8,7 @@ const BRANDS = [
   'Era Sabah',
   'Era Sarawak',
   'Gegar',
+  'Gempak',
   'Goxuan',
   'Hitz',
   'Hotspot',

@@ -1,7 +1,7 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCurrency, IconDroplet, IconTrendingUp } from '@tabler/icons-react'
 import type React from 'react'
 
-type ActiveTopicId = 'engagement-photos' | 'ucl'
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'latest-fuel-price' | 'latest-currency-rate' | 'klci-index'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -41,6 +41,39 @@ const sections: Section[] = [
         icon: IconTrophy,
         color: '#0055EE',
       },
+    ],
+  },
+  {
+    label: 'Markets & Data',
+    description: 'Real-time market data and financial information.',
+    topics: [
+      {
+        id: 'latest-currency-rate',
+        label: 'Latest Currency Rate',
+        description: 'Daily foreign exchange rates for major currencies',
+        icon: IconCurrency,
+        color: '#10B981',
+      },
+      {
+        id: 'latest-fuel-price',
+        label: 'Latest Fuel Price',
+        description: 'Weekly Malaysian fuel price updates',
+        icon: IconDroplet,
+        color: '#F59E0B',
+      },
+      {
+        id: 'klci-index',
+        label: 'KLCI Index Closing',
+        description: 'Kuala Lumpur Composite Index daily closing',
+        icon: IconTrendingUp,
+        color: '#EF4444',
+      },
+    ],
+  },
+  {
+    label: 'Coming Soon',
+    description: 'More exciting features coming soon.',
+    topics: [
       {
         id: 'worldcup',
         label: 'International Football',
@@ -57,12 +90,6 @@ const sections: Section[] = [
         color: '#F05A35',
         comingSoon: true,
       },
-    ],
-  },
-  {
-    label: 'Entertainment',
-    description: 'Create engaging content for entertainment and lifestyle.',
-    topics: [
       {
         id: 'coming-soon-4',
         label: 'Celebrity News',

@@ -8,6 +8,9 @@ import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
 import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
+import { LatestCurrencyRatePage } from './components/LatestCurrencyRatePage'
+import { LatestFuelPricePage } from './components/LatestFuelPricePage'
+import { KLCIIndexPage } from './components/KLCIIndexPage'
 import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
@@ -49,8 +52,8 @@ const pathToTool: Record<string, ToolId> = {
   '/spike-news': 'spike-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',
-  '/engagement-photos': 'engagement-posts',
-  '/engagement-photos/epl': 'engagement-photos',
+  '/engagement-posts': 'engagement-posts',
+  '/engagement-posts/epl': 'engagement-photos',
   '/trending-news': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
@@ -75,8 +78,8 @@ const toolToPath: Record<ToolId, string> = {
   'spike-news': '/spike-news',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
-  'engagement-posts': '/engagement-photos',
-  'engagement-photos': '/engagement-photos/epl',
+  'engagement-posts': '/engagement-posts',
+  'engagement-photos': '/engagement-posts/epl',
   'scheduled-posts': '/trending-news',
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
@@ -86,8 +89,11 @@ const toolToPath: Record<ToolId, string> = {
 }
 
 const topicToPath: Record<string, string> = {
-  'engagement-photos': '/engagement-photos/epl',
-  'ucl': '/engagement-photos/ucl',
+  'engagement-photos': '/engagement-posts/epl',
+  'ucl': '/engagement-posts/ucl',
+  'latest-currency-rate': '/engagement-posts/latest-currency-rate',
+  'latest-fuel-price': '/engagement-posts/latest-fuel-price',
+  'klci-index': '/engagement-posts/klci-index',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -864,24 +870,39 @@ function App() {
           <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
         </Layout>
       } />
-      <Route path="/engagement-photos" element={
+      <Route path="/engagement-posts" element={
         <Layout {...layoutProps}>
           <EngagementPostsLanding onSelectTopic={(id) => navigate(topicToPath[id])} />
         </Layout>
       } />
-      <Route path="/engagement-photos/epl" element={
+      <Route path="/engagement-posts/epl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="epl" />
         </Layout>
       } />
-      <Route path="/engagement-photos/ucl" element={
+      <Route path="/engagement-posts/ucl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="ucl" />
         </Layout>
       } />
-      <Route path="/engagement-photos/worldcup" element={
+      <Route path="/engagement-posts/worldcup" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="worldcup" />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/latest-currency-rate" element={
+        <Layout {...layoutProps}>
+          <LatestCurrencyRatePage />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/latest-fuel-price" element={
+        <Layout {...layoutProps}>
+          <LatestFuelPricePage />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/klci-index" element={
+        <Layout {...layoutProps}>
+          <KLCIIndexPage />
         </Layout>
       } />
       <Route path="/trending-news" element={

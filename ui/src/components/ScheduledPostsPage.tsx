@@ -42,6 +42,7 @@ export const RECOMMENDED_SOURCES: Record<string, string[]> = {
   'Era Sabah':       ['astro awani', 'astro arena', 'gempak'],
   'Zayan':           ['astro awani', 'astro arena', 'gempak'],
   'Gegar':           ['astro awani', 'astro arena', 'gempak'],
+  'Gempak':          ['rojak daily', 'astro awani', 'xuan'],
   'Media Hiburan':   ['gempak', 'rojak daily'],
   'Mingguan Wanita': ['gempak', 'rojak daily'],
   'Astro Ulagam':    ['astro awani', 'stadium astro', 'rojak daily'],
@@ -551,15 +552,21 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
                       </label>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                      {Object.entries(relevantGroups).map(([source, items]) => (
-                        <SourceGroup
-                          key={source}
-                          source={source}
-                          items={items}
-                          selectedIds={selectedIds}
-                          onToggle={toggleId}
-                        />
-                      ))}
+                      {Object.entries(relevantGroups)
+                        .sort(([a], [b]) => {
+                          const ai = recommended.findIndex(s => s.toLowerCase() === a.toLowerCase())
+                          const bi = recommended.findIndex(s => s.toLowerCase() === b.toLowerCase())
+                          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+                        })
+                        .map(([source, items]) => (
+                          <SourceGroup
+                            key={source}
+                            source={source}
+                            items={items}
+                            selectedIds={selectedIds}
+                            onToggle={toggleId}
+                          />
+                        ))}
                     </div>
                   </div>
                 )}
