@@ -4,12 +4,9 @@ import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
 import { AffiliateLinksPage } from './components/AffiliateLinksPage'
-import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
-import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
 import { DidYouKnowPage } from './components/DidYouKnowPage'
-import { SpikeNewsPage } from './components/SpikeNewsPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -816,24 +813,9 @@ function App() {
           <CarouselPage />
         </Layout>
       } />
-      <Route path="/trending-news-to-fb" element={
-        <Layout {...layoutProps}>
-          <TrendingSpikePage />
-        </Layout>
-      } />
-      <Route path="/spike-news" element={
-        <Layout {...layoutProps}>
-          <SpikeNewsPage />
-        </Layout>
-      } />
       <Route path="/affiliate-links" element={
         <Layout {...layoutProps}>
           <AffiliateLinksPage />
-        </Layout>
-      } />
-      <Route path="/affiliate-article-editor" element={
-        <Layout {...layoutProps} showSuggest={false}>
-          <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
         </Layout>
       } />
       <Route path="/engagement-photos" element={
