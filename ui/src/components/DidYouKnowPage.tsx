@@ -17,7 +17,7 @@ const EDITIONS = [
 
 export function DidYouKnowPage() {
   const navigate = useNavigate()
-  const { ideas, setIdeas, brandLogoPublicId, isLoading, error, fetchIdeas } = useDidYouKnow()
+  const { ideas, setIdeas, brandLogoPublicId, language, isLoading, error, fetchIdeas } = useDidYouKnow()
   const [stage, setStage] = useState<Stage>('input')
   const [selectedIdea, setSelectedIdea] = useState<DidYouKnowIdea | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string>('')
@@ -220,6 +220,7 @@ export function DidYouKnowPage() {
             brand={selectedBrand}
             edition={selectedEdition}
             brandLogoPublicId={brandLogoPublicId}
+            language={language}
             onBack={handleBackToIdeas}
             onUpdateField={handleUpdateField}
           />
