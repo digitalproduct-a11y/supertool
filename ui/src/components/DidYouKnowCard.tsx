@@ -117,15 +117,15 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-950 mb-2">Fact (≤300 chars)</label>
+            <label className="block text-sm font-medium text-neutral-950 mb-2">Fact (≤400 chars)</label>
             <textarea
               value={idea.fact}
-              onChange={(e) => onUpdateField('fact', e.target.value.slice(0, 300))}
-              maxLength={300}
+              onChange={(e) => onUpdateField('fact', e.target.value.slice(0, 400))}
+              maxLength={400}
               rows={4}
               className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 resize-none"
             />
-            <p className="text-xs text-neutral-400 mt-1">{idea.fact.length}/300</p>
+            <p className="text-xs text-neutral-400 mt-1">{idea.fact.length}/400</p>
           </div>
 
           <div>
@@ -228,17 +228,20 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                   <div
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: '12px',
+                      fontSize: '10px',
                       letterSpacing: '1px',
                       textTransform: 'uppercase',
                       color: '#E9B949',
                       fontWeight: 600,
                       marginBottom: '8px',
                       lineHeight: '1.3',
+                      backgroundColor: '#000000',
+                      padding: '2px 4px',
+                      display: 'inline-block',
+                      width: 'fit-content',
                     }}
                   >
-                    Imbas Kembali<br />
-                    {edition}
+                    Imbas Kembali — {edition}
                   </div>
 
                   {/* Headline */}
@@ -255,6 +258,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                       padding: '2px 0',
                       wordWrap: 'break-word',
                       overflowWrap: 'break-word',
+                      WebkitTextStroke: '0.7px #faf7ee',
                     }}
                   >
                     {idea.headline}
