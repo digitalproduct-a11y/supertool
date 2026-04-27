@@ -120,7 +120,11 @@ export function ResultPreview({
     if (!resolvedPasscode) return
     setDraftState('posting')
     try {
-      const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : result.imageUrl
+      const latestBaseUrl = uploadedPublicId
+        ? buildCloudinaryUrl(uploadedPublicId, result.title || '', result.imageUrl)
+        : result.imageUrl
+      const latestImageUrl = updateTitleInImageUrl(latestBaseUrl, result.title || '', title)
+      const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : latestImageUrl
       const allExtras = replacementAiPhoto ? [replacementAiPhoto, ...extraPhotos] : extraPhotos
       const base64Extras = allExtras.length > 0
         ? await Promise.all(allExtras.map(file => new Promise<string>((res, rej) => {

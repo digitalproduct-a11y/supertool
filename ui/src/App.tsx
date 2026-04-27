@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react'
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
@@ -7,12 +7,36 @@ import { AffiliateLinksPage } from './components/AffiliateLinksPage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
 import { DidYouKnowPage } from './components/DidYouKnowPage'
+import { ScheduledPostsPage } from './components/ScheduledPostsPage'
+import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
+import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
+import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
+import { SpikeNewsPage } from './components/SpikeNewsPage'
+import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
+import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
+
+const OnThisDayPage = lazy(() =>
+  import("./components/OnThisDayPage").then((m) => ({
+    default: m.OnThisDayPage,
+  })),
+);
+const WeatherMalaysiaPage = lazy(() =>
+  import("./components/WeatherMalaysiaPage").then((m) => ({
+    default: m.WeatherMalaysiaPage,
+  })),
+);
+const QuotePage = lazy(() =>
+  import("./components/QuotePage").then((m) => ({
+    default: m.QuotePage,
+  })),
+);
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
 import { GetStartedPage } from './components/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
+import { Spinner } from './components/ds/Spinner'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
 import { FBCredentialsModal } from './components/FBCredentialsModal'
@@ -30,7 +54,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'on-this-day' | 'weather-malaysia'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -40,9 +64,11 @@ const pathToTool: Record<string, ToolId> = {
   '/spike-news': 'spike-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',
-  '/engagement-photos': 'engagement-posts',
-  '/engagement-photos/epl': 'engagement-photos',
-  '/trending-news': 'scheduled-posts',
+  '/engagement-posts': 'engagement-posts',
+  '/engagement-posts/epl': 'engagement-photos',
+  '/engagement-posts/on-this-day-malaysia': 'on-this-day',
+  '/engagement-posts/weather-malaysia': 'weather-malaysia',
+  '/scheduled-posts': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
@@ -64,20 +90,31 @@ const toolToPath: Record<ToolId, string> = {
   'spike-news': '/spike-news',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
-  'engagement-posts': '/engagement-photos',
-  'engagement-photos': '/engagement-photos/epl',
-  'scheduled-posts': '/trending-news',
+  'engagement-posts': '/engagement-posts',
+  'engagement-photos': '/engagement-posts/epl',
+  'scheduled-posts': '/scheduled-posts',
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
+  'on-this-day': '/engagement-posts/on-this-day-malaysia',
+  'weather-malaysia': '/engagement-posts/weather-malaysia',
 }
 
 const topicToPath: Record<string, string> = {
-  'engagement-photos': '/engagement-photos/epl',
-  'ucl': '/engagement-photos/ucl',
+  'engagement-photos': '/engagement-posts/epl',
+  'ucl': '/engagement-posts/ucl',
+  'on-this-day': '/engagement-posts/on-this-day-malaysia',
+  'weather-malaysia': '/engagement-posts/weather-malaysia',
+  'quote': '/engagement-posts/quote',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
+
+const SPIKE_SEEN_KEY = 'spike_seen_urls'
+
+function saveSpikeSeenUrls(urls: string[]): void {
+  localStorage.setItem(SPIKE_SEEN_KEY, JSON.stringify(urls))
+}
 
 // ─── Kult colours ─────────────────────────────────────────────────────────────
 
@@ -786,10 +823,17 @@ function CarouselPage() {
 function App() {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [spikeUnreadCount, setSpikeUnreadCount] = useState(0)
+
+  function markSpikeRead(urls: string[]) {
+    saveSpikeSeenUrls(urls)
+    setSpikeUnreadCount(0)
+  }
 
   const layoutProps = {
     isSidebarCollapsed,
     onCollapsedChange: setIsSidebarCollapsed,
+    spikeUnreadCount,
   }
 
   return (
@@ -818,22 +862,27 @@ function App() {
           <AffiliateLinksPage />
         </Layout>
       } />
-      <Route path="/engagement-photos" element={
+      <Route path="/affiliate-article-editor" element={
+        <Layout {...layoutProps} showSuggest={false}>
+          <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
+        </Layout>
+      } />
+      <Route path="/engagement-posts" element={
         <Layout {...layoutProps}>
           <EngagementPostsLanding onSelectTopic={(id) => navigate(topicToPath[id])} />
         </Layout>
       } />
-      <Route path="/engagement-photos/epl" element={
+      <Route path="/engagement-posts/epl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="epl" />
         </Layout>
       } />
-      <Route path="/engagement-photos/ucl" element={
+      <Route path="/engagement-posts/ucl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="ucl" />
         </Layout>
       } />
-      <Route path="/engagement-photos/worldcup" element={
+      <Route path="/engagement-posts/worldcup" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="worldcup" />
         </Layout>
@@ -841,6 +890,27 @@ function App() {
       <Route path="/engagement-photos/didyouknow" element={
         <Layout {...layoutProps}>
           <DidYouKnowPage />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/on-this-day-malaysia" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <OnThisDayPage />
+          </Suspense>
+        </Layout>
+      } />
+      <Route path="/engagement-posts/weather-malaysia" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <WeatherMalaysiaPage />
+          </Suspense>
+        </Layout>
+      } />
+      <Route path="/engagement-posts/quote" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <QuotePage />
+          </Suspense>
         </Layout>
       } />
     </Routes>

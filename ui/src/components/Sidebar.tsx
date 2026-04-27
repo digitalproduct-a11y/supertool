@@ -15,7 +15,22 @@ import {
   IconBolt,
 } from "@tabler/icons-react";
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId =
+  | "home"
+  | "fb-post"
+  | "trending-news"
+  | "spike-news"
+  | "affiliate-links"
+  | "article-generator"
+  | "engagement-posts"
+  | "engagement-photos"
+  | "scheduled-posts"
+  | "shopee-top-products"
+  | "post-queue"
+  | "photo-carousel"
+  | "social-affiliate-posting"
+  | "on-this-day"
+  | "weather-malaysia";
 
 interface NavItem {
   id: ToolId | string;
@@ -81,20 +96,22 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
 ];
 
 const TOOL_NAMES: Record<ToolId, string> = {
-  home: 'KULT Digital Kit',
-  'fb-post': 'Photo post',
-  'photo-carousel': 'Photo carousel post',
-  'trending-news': 'Trending News',
-  'spike-news': 'Spike News',
-  'affiliate-links': 'Shopee Affiliate Links',
-  'article-generator': 'Affiliate Article Editor',
-  'engagement-posts': 'Engagement posts',
-  'engagement-photos': 'English Premier League',
-  'shopee-top-products': 'Shopee Top Products',
-  'scheduled-posts': 'Trending news',
-  'post-queue': 'Scheduled queue',
-  'social-affiliate-posting': 'Social Affiliate Posting',
-}
+  home: "KULT Digital Kit",
+  "fb-post": "Article to FB Photos",
+  "photo-carousel": "Article to Photo Carousels",
+  "trending-news": "Trending News to FB Photos",
+  "spike-news": "Spike News",
+  "affiliate-links": "Shopee Affiliate Links",
+  "article-generator": "Affiliate Article Editor",
+  "engagement-posts": "Engagement Posts",
+  "engagement-photos": "EPL Engagement Posts",
+  "shopee-top-products": "Shopee Top Products",
+  "scheduled-posts": "Schedule Trending News",
+  "post-queue": "Scheduled queue",
+  "social-affiliate-posting": "Social Affiliate Posting",
+  "on-this-day": "On This Day",
+  "weather-malaysia": "Weather Malaysia",
+};
 
 const floatingBtnClass =
   "fixed top-4 left-4 z-50 p-2 rounded-lg bg-zinc-900 text-neutral-500 hover:text-neutral-200 hover:bg-white/8 transition-all duration-300";

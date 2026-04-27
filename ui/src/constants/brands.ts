@@ -138,6 +138,48 @@ export function detectBrandInfoFromUrl(
   return lookupByUrl(url);
 }
 
+// Source of truth: https://astroproduct.app.n8n.cloud/projects/FAqnoIGG9IK6ZkDY/datatables/WrA94W8RTzSvEhyS
+// Re-pull via n8n MCP `n8n_manage_datatable` (tableId: WrA94W8RTzSvEhyS) when brands change.
+// Values mirror the data table — do not edit by hand without updating the table first.
+export const BRAND_HEX: Record<BrandName, string> = {
+  "Astro Awani": "#ff4500",
+  "Astro Arena": "#1473e6",
+  "Astro Ulagam": "#000000",
+  Era: "#000000",
+  "Era Sabah": "#000000",
+  "Era Sarawak": "#000000",
+  Gegar: "#000000",
+  Gempak: "#e50448",
+  Goxuan: "#000000",
+  Hitz: "#000000",
+  Hotspot: "#CB2029",
+  Impiana: "#000000",
+  Keluarga: "#000000",
+  Lite: "#000000",
+  Maskulin: "#000000",
+  "Media Hiburan": "#000000",
+  Meletop: "#000000",
+  Melody: "#000000",
+  "Mingguan Wanita": "#000000",
+  Mix: "#000000",
+  MY: "#000000",
+  Nona: "#000000",
+  "Pa&Ma": "#000000",
+  Raaga: "#000000",
+  Rasa: "#000000",
+  Remaja: "#000000",
+  "Roda Panas": "#000000",
+  "Rojak Daily": "#e50448",
+  Sinar: "#000000",
+  "Stadium Astro": "#1473e6",
+  XUAN: "#8900f2",
+  Zayan: "#000000",
+};
+
+export function getBrandHex(brand: string): string {
+  return (BRAND_HEX as Record<string, string>)[brand] ?? "#000000";
+}
+
 export const BRAND_LOGO_IDS: Record<BrandName, string> = {
   "Astro Awani": "astro_awani_logo",
   "Astro Arena": "astro_arena_logo",

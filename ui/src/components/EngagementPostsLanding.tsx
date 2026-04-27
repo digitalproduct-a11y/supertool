@@ -1,8 +1,8 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconBulb } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconBulb, IconCalendar, IconCloudRain, IconBlockquote } from '@tabler/icons-react'
 import type React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-type ActiveTopicId = 'engagement-photos' | 'ucl' | 'didyouknow'
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'didyouknow' | 'on-this-day' | 'weather-malaysia' | 'quote'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -64,6 +64,45 @@ const sections: Section[] = [
         icon: IconFlame,
         color: '#F05A35',
         comingSoon: true,
+      },
+    ],
+  },
+  {
+    label: 'On This Day',
+    description: 'Discover historical events and create timely engagement posts.',
+    topics: [
+      {
+        id: 'on-this-day',
+        label: 'On This Day — Malaysia',
+        description: 'Historical events from Malaysia — what happened today in history',
+        icon: IconCalendar,
+        color: '#0055EE',
+      },
+    ],
+  },
+  {
+    label: 'Weather',
+    description: 'Generate daily weather forecast posts for social media.',
+    topics: [
+      {
+        id: 'weather-malaysia',
+        label: 'Weather Malaysia',
+        description: 'Generate daily weather forecast posts for all 16 states',
+        icon: IconCloudRain,
+        color: '#00E5D4',
+      },
+    ],
+  },
+  {
+    label: 'Article Quotes',
+    description: 'Extract impactful quotes from articles and generate branded images.',
+    topics: [
+      {
+        id: 'quote',
+        label: 'Quote',
+        description: 'Extract the most powerful quote from any article and create a branded image',
+        icon: IconBlockquote,
+        color: '#0055EE',
       },
     ],
   },

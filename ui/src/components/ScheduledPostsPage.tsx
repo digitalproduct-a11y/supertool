@@ -367,8 +367,8 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
       callGenerateWebhook({
         url: r.item.url,
         brand: displayBrand,
-        titleMode: 'original',
-        captionTitleMode: 'original',
+        title_mode: 'ai',
+        caption_title_mode: 'ai',
       }).then(data => {
         const result = Array.isArray(data) ? data[0] : data
         setBulkResults(prev => prev.map((p, i) =>

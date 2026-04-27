@@ -27,7 +27,8 @@ type ToolId =
   | "shopee-top-products"
   | "photo-carousel"
   | "social-affiliate-posting"
-  | "post-queue";
+  | "post-queue"
+  | "on-this-day";
 
 interface Tool {
   id: ToolId;
