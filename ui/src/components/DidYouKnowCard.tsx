@@ -1,13 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { IconDownload, IconChevronLeft } from '@tabler/icons-react'
-import { buildDidYouKnowUrl, uploadToCloudinary } from '../utils/cloudinary'
-import { BRAND_LOGO_IDS } from '../constants/brands'
+import * as fabric from 'fabric'
+import { uploadToCloudinary } from '../utils/cloudinary'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 import { toast } from '../hooks/useToast'
 
 interface DidYouKnowCardProps {
   idea: DidYouKnowIdea
-  brand: string
   edition: string
   brandLogoPublicId: string | null
   language: string
@@ -21,23 +20,20 @@ const editionTranslations: Record<string, Record<string, string>> = {
   'Edisi Piala Thomas/Uber': { ms: 'Edisi Piala Thomas/Uber', en: 'Thomas/Uber Cup Edition' },
 }
 
-export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
+export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
   const [uploadedImageId, setUploadedImageId] = useState<string | null>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const canvasInstance = useRef<fabric.Canvas | null>(null)
 
   const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
   const translatedEdition = editionTranslations[edition]?.[isMalay ? 'ms' : 'en'] || edition
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
-  const brandLogo = brandLogoPublicId || (BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] || 'default_logo')
   const brandLogoUrl = brandLogoPublicId
     ? `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogoPublicId}`
-    : null
-
-  const previewUrl = uploadedImageId
-    ? buildDidYouKnowUrl(uploadedImageId, idea.headline, idea.fact, brandLogo)
     : null
 
   const handleFileUpload = async (file: File) => {
@@ -79,22 +75,113 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
     if (file) handleFileUpload(file)
   }
 
+  const renderCanvas = async () => {
+    if (!canvasInstance.current || !uploadedImageUrl) return
+
+    try {
+      canvasInstance.current.clear()
+
+      const bgImage = await fabric.Image.fromURL(uploadedImageUrl)
+      bgImage.scaleToWidth(1080)
+      canvasInstance.current.add(bgImage)
+      canvasInstance.current.sendObjectToBack(bgImage)
+
+      const gradient = new fabric.Rect({
+        width: 1080,
+        height: 1350,
+        fill: 'rgba(6,6,8,0.5)',
+        selectable: false,
+      })
+      canvasInstance.current.add(gradient)
+
+      const editionText = new fabric.Textbox(translatedEdition, {
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10,
+        fill: '#E9B949',
+        fontWeight: 600,
+        left: 20,
+        top: 1180,
+        selectable: false,
+      })
+      canvasInstance.current.add(editionText)
+
+      const headlineText = new fabric.Textbox(idea.headline, {
+        fontFamily: "'Montserrat', sans-serif",
+        fontSize: 28,
+        fontWeight: 900,
+        fill: '#faf7ee',
+        left: 20,
+        top: 1100,
+        width: 1040,
+        selectable: false,
+      })
+      canvasInstance.current.add(headlineText)
+
+      const factText = new fabric.Textbox(idea.fact, {
+        fontFamily: "'Montserrat', sans-serif",
+        fontSize: 12,
+        fill: 'rgba(245,242,234,.9)',
+        left: 35,
+        top: 1220,
+        width: 1000,
+        selectable: false,
+      })
+      canvasInstance.current.add(factText)
+
+      if (brandLogoUrl) {
+        const logoImage = await fabric.Image.fromURL(brandLogoUrl)
+        logoImage.scaleToHeight(40)
+        logoImage.set({ left: 980, top: 50, selectable: false })
+        canvasInstance.current.add(logoImage)
+      }
+
+      canvasInstance.current.renderAll()
+    } catch (err) {
+      toast.error('Canvas rendering failed')
+    }
+  }
+
+  useEffect(() => {
+    if (!canvasRef.current) return
+
+    canvasInstance.current = new fabric.Canvas(canvasRef.current, {
+      width: 1080,
+      height: 1350,
+      backgroundColor: '#0a0a0c',
+    })
+
+    return () => {
+      canvasInstance.current?.dispose()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (uploadedImageUrl) {
+      renderCanvas()
+    }
+  }, [uploadedImageUrl, idea.headline, idea.fact])
+
   const handleDownload = async () => {
-    if (!previewUrl) {
+    if (!canvasInstance.current) {
       toast.error('Please upload an image first')
       return
     }
 
     try {
-      const response = await fetch(previewUrl + '?dl=download')
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `didyouknow-${idea.id}.jpg`
-      link.click()
-      URL.revokeObjectURL(url)
-      toast.success('Downloaded!')
+      const canvas = canvasInstance.current.getElement() as HTMLCanvasElement
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast.error('Failed to create image')
+          return
+        }
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `didyouknow-${idea.id}.png`
+        link.click()
+        URL.revokeObjectURL(url)
+        toast.success('Downloaded!')
+      }, 'image/png')
     } catch {
       toast.error('Download failed')
     }
@@ -190,125 +277,12 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
         <div>
           <p className="text-sm font-medium text-neutral-950 mb-2">Preview</p>
           {uploadedImageUrl ? (
-            <div className="rounded-lg overflow-hidden shadow-lg bg-neutral-900" style={{ aspectRatio: '1080/1350' }}>
-              {/* Tribune poster design */}
-              <div
-                className="w-full h-full relative"
-                style={{
-                  background: '#0a0a0c',
-                }}
-              >
-                {/* Full-bleed background image */}
-                <img
-                  src={uploadedImageUrl}
-                  alt="background"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-
-                {/* Gradient overlay */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(180deg,
-                      rgba(6,6,8,0) 0%,
-                      rgba(6,6,8,0.100) 30%,
-                      rgba(6,6,8,0.506) 55%,
-                      rgba(6,6,8,0.810) 78%,
-                      rgba(6,6,8,0.92) 100%)`,
-                  }}
-                />
-
-                {/* Content container */}
-                <div className="absolute inset-0 flex flex-col" style={{ padding: '0 20px' }}>
-                  {/* Logo at top */}
-                  {brandLogoUrl && (
-                    <div className="mt-2 mb-12 flex justify-end pr-2">
-                      <img
-                        src={brandLogoUrl}
-                        alt={brand}
-                        style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Spacer to push content to bottom */}
-                  <div className="flex-1" />
-
-                  {/* Label above headline */}
-                  <div
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: '10px',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                      color: '#E9B949',
-                      fontWeight: 600,
-                      marginBottom: '8px',
-                      lineHeight: '1.3',
-                      backgroundColor: '#000000',
-                      padding: '2px 4px',
-                      display: 'inline-block',
-                      width: 'fit-content',
-                    }}
-                  >
-                    {translatedEdition}
-                  </div>
-
-                  {/* Headline */}
-                  <h1
-                    style={{
-                      fontFamily: "'Montserrat', sans-serif",
-                      fontSize: '24px',
-                      fontWeight: 900,
-                      fontStyle: 'normal',
-                      lineHeight: '0.98',
-                      letterSpacing: '-1.2px',
-                      color: '#faf7ee',
-                      margin: '0 0 8px 0',
-                      padding: '2px 0',
-                      wordWrap: 'break-word',
-                      overflowWrap: 'break-word',
-                      WebkitTextStroke: '0.7px #faf7ee',
-                    }}
-                  >
-                    {idea.headline}
-                  </h1>
-
-                  {/* Divider */}
-                  <div
-                    style={{
-                      width: '120px',
-                      height: '1px',
-                      background: 'rgba(250,247,238,.35)',
-                      marginBottom: '12px',
-                    }}
-                  />
-
-                  {/* Fact body with accent rule */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '12px', alignItems: 'stretch', marginBottom: '40px' }}>
-                    <div
-                      style={{
-                        width: '3px',
-                        background: '#E9B949',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <p
-                      style={{
-                        fontFamily: "'Montserrat', sans-serif",
-                        fontSize: '12px',
-                        fontWeight: 400,
-                        lineHeight: '1.5',
-                        color: 'rgba(245,242,234,.9)',
-                        margin: 0,
-                        padding: 0,
-                      }}
-                    >
-                      {idea.fact}
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="rounded-lg overflow-hidden shadow-lg" style={{ aspectRatio: '1080/1350' }}>
+              <canvas
+                ref={canvasRef}
+                className="w-full h-full"
+                style={{ display: 'block' }}
+              />
             </div>
           ) : (
             <div className="rounded-lg border border-neutral-200 bg-neutral-50 aspect-[1080/1350] flex items-center justify-center">
