@@ -81,7 +81,9 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
     try {
       canvasInstance.current.clear()
 
-      const bgImage = await fabric.Image.fromURL(uploadedImageUrl)
+      const bgImage = await fabric.Image.fromURL(uploadedImageUrl, {
+        crossOrigin: 'anonymous',
+      })
       bgImage.scaleToWidth(1080)
       canvasInstance.current.add(bgImage)
       canvasInstance.current.sendObjectToBack(bgImage)
@@ -129,7 +131,9 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
       canvasInstance.current.add(factText)
 
       if (brandLogoUrl) {
-        const logoImage = await fabric.Image.fromURL(brandLogoUrl)
+        const logoImage = await fabric.Image.fromURL(brandLogoUrl, {
+          crossOrigin: 'anonymous',
+        })
         logoImage.scaleToHeight(40)
         logoImage.set({ left: 980, top: 50, selectable: false })
         canvasInstance.current.add(logoImage)
@@ -137,6 +141,7 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
 
       canvasInstance.current.renderAll()
     } catch (err) {
+      console.error('Canvas rendering failed:', err)
       toast.error('Canvas rendering failed')
     }
   }
