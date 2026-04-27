@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
 import { HomePage } from './components/HomePage'
@@ -9,12 +9,7 @@ import { TrendingSpikePage } from './components/TrendingSpikePage'
 import { EngagementPhotosPage } from './components/EngagementPhotosPage'
 import { EngagementPostsLanding } from './components/EngagementPostsLanding'
 import { DidYouKnowPage } from './components/DidYouKnowPage'
-import { ScheduledPostsPage } from './components/ScheduledPostsPage'
-import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
-import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
-import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './components/SpikeNewsPage'
-import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -308,11 +303,6 @@ function SuggestButton() {
       )}
     </div>
   )
-}
-
-function ScheduledPostsBrandPage() {
-  const { brandSlug } = useParams<{ brandSlug: string }>()
-  return <ScheduledPostsPage brand={brandSlug || ''} />
 }
 
 function Layout({ children, showSuggest = true, isSidebarCollapsed, onCollapsedChange, spikeUnreadCount = 0 }: {
@@ -869,31 +859,6 @@ function App() {
       <Route path="/engagement-photos/didyouknow" element={
         <Layout {...layoutProps}>
           <DidYouKnowPage />
-        </Layout>
-      } />
-      <Route path="/trending-news" element={
-        <Layout {...layoutProps}>
-          <ScheduledPostsLanding onSelectBrand={() => {}} />
-        </Layout>
-      } />
-      <Route path="/trending-news/:brandSlug" element={
-        <Layout {...layoutProps}>
-          <ScheduledPostsBrandPage />
-        </Layout>
-      } />
-      <Route path="/shopee-top-products" element={
-        <Layout {...layoutProps}>
-          <ShopeeTopProductsPage />
-        </Layout>
-      } />
-      <Route path="/post-queue" element={
-        <Layout {...layoutProps} showSuggest={false}>
-          <ZernioScheduledPostsPage />
-        </Layout>
-      } />
-      <Route path="/social-affiliate-posting" element={
-        <Layout {...layoutProps}>
-          <SocialAffiliatePostingPage />
         </Layout>
       } />
     </Routes>
