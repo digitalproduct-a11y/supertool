@@ -10,15 +10,26 @@ interface DidYouKnowCardProps {
   brand: string
   edition: string
   brandLogoPublicId: string | null
+  language: string
   onBack: () => void
   onUpdateField: (field: 'headline' | 'fact' | 'caption', value: string) => void
 }
 
-export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack, onUpdateField }: DidYouKnowCardProps) {
+const editionTranslations: Record<string, Record<string, string>> = {
+  'Edisi Piala Dunia': { ms: 'Edisi Piala Dunia', en: 'World Cup Edition' },
+  'Edisi Liga Super Malaysia': { ms: 'Edisi Liga Super Malaysia', en: 'Super League Malaysia Edition' },
+  'Edisi Piala Thomas/Uber': { ms: 'Edisi Piala Thomas/Uber', en: 'Thomas/Uber Cup Edition' },
+}
+
+export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
   const [uploadedImageId, setUploadedImageId] = useState<string | null>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+
+  const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
+  const labelText = isMalay ? 'Tahukah Anda?' : 'Did You Know?'
+  const translatedEdition = editionTranslations[edition]?.[isMalay ? 'ms' : 'en'] || edition
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
   const brandLogo = brandLogoPublicId || (BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] || 'default_logo')
@@ -224,7 +235,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                   {/* Spacer to push content to bottom */}
                   <div className="flex-1" />
 
-                  {/* Imbas Kembali above headline */}
+                  {/* Label above headline */}
                   <div
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
@@ -241,7 +252,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                       width: 'fit-content',
                     }}
                   >
-                    Imbas Kembali — {edition}
+                    {labelText} — {translatedEdition}
                   </div>
 
                   {/* Headline */}

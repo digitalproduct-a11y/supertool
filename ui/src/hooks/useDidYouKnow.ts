@@ -10,6 +10,7 @@ export interface DidYouKnowIdea {
 export function useDidYouKnow() {
   const [ideas, setIdeas] = useState<DidYouKnowIdea[]>([])
   const [brandLogoPublicId, setBrandLogoPublicId] = useState<string | null>(null)
+  const [language, setLanguage] = useState<string>('en')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,12 +46,13 @@ export function useDidYouKnow() {
       if (data?.success && data?.ideas && Array.isArray(data.ideas)) {
         const limitedIdeas = data.ideas.map((idea: any) => ({
           id: idea.id || `idea-${Math.random()}`,
-          headline: (idea.headline || '').slice(0, 35),
+          headline: (idea.headline || '').slice(0, 80),
           fact: (idea.fact || '').slice(0, 400),
           caption: (idea.caption || '').slice(0, 300),
         }))
         setIdeas(limitedIdeas)
         setBrandLogoPublicId(data.brandLogoPublicId || null)
+        setLanguage(data.language || 'en')
       } else {
         console.error('Invalid response structure:', data)
         throw new Error(`Invalid response: ${JSON.stringify(data).slice(0, 100)}`)
@@ -62,5 +64,5 @@ export function useDidYouKnow() {
     }
   }
 
-  return { ideas, setIdeas, brandLogoPublicId, isLoading, error, fetchIdeas }
+  return { ideas, setIdeas, brandLogoPublicId, language, isLoading, error, fetchIdeas }
 }
