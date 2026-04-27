@@ -4,6 +4,8 @@ import {
   IconArrowLeft,
   IconBlockquote,
   IconDownload,
+  IconRefresh,
+  IconUpload,
   IconX,
 } from "@tabler/icons-react";
 import { QuoteCanvas, type QuoteCanvasHandle, type QuoteData } from "./QuoteCanvas";
@@ -34,8 +36,10 @@ interface QuoteResponse {
   brand: string;
   image_url?: string;
   pexels_image_left_url?: string;
-  // n8n also returns pexels_image_right_url; currently unused in the UI
-  // (the side-circle layout only consumes one image).
+  pexels_image_right_url?: string;
+  // Up to 6 Pexels matches — frontend cycles through these via the
+  // Refresh button. Array is preferred; left/right kept for back-compat.
+  pexels_image_urls?: string[];
 }
 
 interface QuoteErrorResponse {
@@ -76,7 +80,17 @@ export function QuotePage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [pexelsImageUrl, setPexelsImageUrl] = useState<string | null>(null);
+  // All Pexels matches returned by n8n (up to 6). The Refresh button cycles
+  // pexelsIndex through them — no extra round-trips.
+  const [pexelsUrls, setPexelsUrls] = useState<string[]>([]);
+  const [pexelsIndex, setPexelsIndex] = useState(0);
+  // User-uploaded image that overrides the Pexels match for the side circle.
+  // Stored as an object URL so the canvas can render it without any upload step.
+  const [customCircleUrl, setCustomCircleUrl] = useState<string | null>(null);
+  const customCircleInputRef = useRef<HTMLInputElement>(null);
+  // User-uploaded background image (overrides the article photo).
+  const [customBgUrl, setCustomBgUrl] = useState<string | null>(null);
+  const customBgInputRef = useRef<HTMLInputElement>(null);
   // User toggle for the tabloid layout's decorative side circle. Off by default.
   const [useSideCircle, setUseSideCircle] = useState(false);
   const [cutoutUrl, setCutoutUrl] = useState<string | null>(null);
@@ -121,6 +135,51 @@ export function QuotePage() {
     };
   }, [cutoutUrl]);
 
+  // Cleanup custom side-circle object URL on unmount/replace
+  useEffect(() => {
+    return () => {
+      if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
+    };
+  }, [customCircleUrl]);
+
+  // Cleanup custom background object URL on unmount/replace
+  useEffect(() => {
+    return () => {
+      if (customBgUrl) URL.revokeObjectURL(customBgUrl);
+    };
+  }, [customBgUrl]);
+
+  function handleCustomCircleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
+    setCustomCircleUrl(URL.createObjectURL(file));
+    e.target.value = "";
+  }
+
+  function handleResetCustomCircle() {
+    if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
+    setCustomCircleUrl(null);
+  }
+
+  function handleCustomBgFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (customBgUrl) URL.revokeObjectURL(customBgUrl);
+    setCustomBgUrl(URL.createObjectURL(file));
+    e.target.value = "";
+  }
+
+  function handleResetCustomBg() {
+    if (customBgUrl) URL.revokeObjectURL(customBgUrl);
+    setCustomBgUrl(null);
+  }
+
+  function handleRefreshPexels() {
+    if (pexelsUrls.length < 2) return;
+    setPexelsIndex((i) => (i + 1) % pexelsUrls.length);
+  }
+
   // Auto-detect brand from URL. Caption title mode is left as-is — AI is the default.
   function handleUrlChange(newUrl: string) {
     setUrl(newUrl);
@@ -142,7 +201,12 @@ export function QuotePage() {
     setQuoteData(null);
     setCaption("");
     setImageUrl(null);
-    setPexelsImageUrl(null);
+    setPexelsUrls([]);
+    setPexelsIndex(0);
+    if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
+    setCustomCircleUrl(null);
+    if (customBgUrl) URL.revokeObjectURL(customBgUrl);
+    setCustomBgUrl(null);
     if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
     setCutoutUrl(null);
     setIsProcessingImage(false);
@@ -207,8 +271,14 @@ export function QuotePage() {
         });
         setCaption(data.fb_caption);
         setImageUrl(data.image_url || null);
-        // Use the LEFT URL as the single side-circle image; right URL ignored.
-        setPexelsImageUrl(data.pexels_image_left_url || null);
+        // Pexels matches: prefer the array; fall back to the legacy left URL.
+        const urls =
+          (data.pexels_image_urls?.filter(Boolean) ?? []) as string[];
+        const fallback = data.pexels_image_left_url
+          ? [data.pexels_image_left_url]
+          : [];
+        setPexelsUrls(urls.length ? urls : fallback);
+        setPexelsIndex(0);
         setStage("preview");
 
         // Background removal (only when "Default Template" is OFF — i.e. user picked the cutout feature)
@@ -330,7 +400,12 @@ export function QuotePage() {
       setCaption("");
       setError(null);
       setImageUrl(null);
-      setPexelsImageUrl(null);
+      setPexelsUrls([]);
+      setPexelsIndex(0);
+      if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
+      setCustomCircleUrl(null);
+      if (customBgUrl) URL.revokeObjectURL(customBgUrl);
+      setCustomBgUrl(null);
       if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
       setCutoutUrl(null);
     }
@@ -371,10 +446,9 @@ export function QuotePage() {
           />
         </div>
 
-        {/* Input Stage */}
-        {stage === "input" && (
-          <div className="max-w-md">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
+          {/* Left column — form, always visible */}
+          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -645,61 +719,67 @@ export function QuotePage() {
                   </div>
                 )}
               </form>
-            </div>
           </div>
-        )}
 
-        {/* Generating Stage */}
-        {stage === "generating" && (
+          {/* Right column — idle / generating / preview / error */}
+          <div id="quote-preview-panel">
+            {stage === "input" && (
+              <div className="glass-card rounded-2xl p-12 min-h-[420px] flex flex-col items-center justify-center text-center">
+                <IconBlockquote className="w-12 h-12 text-neutral-200 mb-3" />
+                <p className="text-sm font-medium text-neutral-500">
+                  Generated quote will appear here
+                </p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Paste an article URL on the left and hit Generate.
+                </p>
+              </div>
+            )}
+
+            {/* Generating Stage */}
+            {stage === "generating" && (
           <>
             {isLoading && (
-              <div className="glass-card rounded-2xl p-12 flex flex-col items-center gap-6 text-center">
-                <Spinner size="lg" />
-                <div className="space-y-3">
-                  <div className="flex flex-col items-start gap-2 text-left">
-                    {LOADING_STEPS.map((step, i) => (
-                      <div
-                        key={step}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        {i < stepIndex ? (
-                          <svg
-                            className="w-4 h-4 text-green-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2.5}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        ) : i === stepIndex ? (
-                          <div className="w-4 h-4 border-2 border-neutral-400 border-t-neutral-900 rounded-full animate-spin" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full border-2 border-neutral-200" />
-                        )}
-                        <span
-                          className={
-                            i <= stepIndex
-                              ? "text-neutral-800 font-medium"
-                              : "text-neutral-400"
-                          }
-                        >
-                          {step}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <p
-                    key={quoteIndex}
-                    className="text-xs text-neutral-400 italic animate-fade-slide-up"
-                  >
-                    {LOADING_QUOTES[quoteIndex]}
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
+                <div className="text-4xl inline-block animate-bounce">💬</div>
+                <div className="flex justify-center gap-2">
+                  {LOADING_STEPS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`h-2 rounded-full transition-all duration-700 ${
+                        idx < stepIndex
+                          ? "bg-green-500 w-4"
+                          : idx === stepIndex
+                            ? "w-4 animate-pulse"
+                            : "bg-neutral-200 w-2"
+                      }`}
+                      style={
+                        idx === stepIndex
+                          ? {
+                              background:
+                                "linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)",
+                            }
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    {LOADING_STEPS[stepIndex]}
+                  </p>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Step {stepIndex + 1} of {LOADING_STEPS.length}
                   </p>
                 </div>
+                <p
+                  key={quoteIndex}
+                  className="text-sm text-neutral-500 italic animate-fade"
+                >
+                  {LOADING_QUOTES[quoteIndex]}
+                </p>
+                <p className="text-xs text-neutral-400">
+                  Taking ~30 seconds to process
+                </p>
               </div>
             )}
 
@@ -746,7 +826,12 @@ export function QuotePage() {
                   setQuoteData(null);
                   setCaption("");
                   setImageUrl(null);
-                  setPexelsImageUrl(null);
+                  setPexelsUrls([]);
+                  setPexelsIndex(0);
+                  if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
+                  setCustomCircleUrl(null);
+                  if (customBgUrl) URL.revokeObjectURL(customBgUrl);
+                  setCustomBgUrl(null);
                   if (cutoutUrl) URL.revokeObjectURL(cutoutUrl);
                   setCutoutUrl(null);
                 }}
@@ -756,7 +841,7 @@ export function QuotePage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
+            <div className="flex flex-col gap-6">
               {/* Canvas */}
               <div className="flex flex-col items-center gap-3">
                 {isProcessingImage ? (
@@ -780,24 +865,104 @@ export function QuotePage() {
                       quote={quoteData}
                       brand={brand}
                       config={config}
-                      imageUrl={imageUrl}
+                      imageUrl={customBgUrl ?? imageUrl}
                       cutoutImageUrl={cutoutUrl}
                       isProcessingCutout={isProcessingImage}
                       pexelsImageUrl={
-                        useDefaultTemplate && useSideCircle ? pexelsImageUrl : null
+                        useDefaultTemplate && useSideCircle
+                          ? (customCircleUrl ?? pexelsUrls[pexelsIndex] ?? null)
+                          : null
                       }
                       onClick={() => {
                         const dataUrl = canvasRef.current?.getDataUrl();
                         if (dataUrl) setLightboxUrl(dataUrl);
                       }}
                     />
-                    <button
-                      onClick={() => canvasRef.current?.downloadAsPng()}
-                      className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition active:scale-[0.98]"
+                    {/* Hidden file inputs (background + side circle) */}
+                    <input
+                      ref={customBgInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCustomBgFile}
+                    />
+                    <input
+                      ref={customCircleInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCustomCircleFile}
+                    />
+
+                    {/* Action button cluster */}
+                    <div
+                      className="w-full space-y-2"
+                      style={{ maxWidth: 720 }}
                     >
-                      <IconDownload className="w-3.5 h-3.5" />
-                      Download Image
-                    </button>
+                      {/* Row 1 — primary: Upload Background + Download */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => customBgInputRef.current?.click()}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
+                        >
+                          <IconUpload className="w-4 h-4" />
+                          {customBgUrl ? "Replace background" : "Upload Custom Image"}
+                        </button>
+                        <button
+                          onClick={() => canvasRef.current?.downloadAsPng()}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition"
+                        >
+                          <IconDownload className="w-4 h-4" />
+                          Download
+                        </button>
+                      </div>
+                      {customBgUrl && (
+                        <button
+                          onClick={handleResetCustomBg}
+                          className="text-xs text-neutral-500 hover:text-neutral-800 transition"
+                        >
+                          Reset to article photo
+                        </button>
+                      )}
+
+                      {/* Row 2 — secondary: Upload Circle + Refresh Pexels (only when Side Circle is on) */}
+                      {useDefaultTemplate && useSideCircle && (
+                        <>
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              onClick={() => customCircleInputRef.current?.click()}
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
+                            >
+                              <IconUpload className="w-3.5 h-3.5" />
+                              {customCircleUrl
+                                ? "Replace side-circle image"
+                                : "Upload Custom Side Circle"}
+                            </button>
+                            <button
+                              onClick={handleRefreshPexels}
+                              disabled={pexelsUrls.length < 2}
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                              title={
+                                pexelsUrls.length < 2
+                                  ? "Only one Pexels match available"
+                                  : `Showing ${pexelsIndex + 1} of ${pexelsUrls.length}`
+                              }
+                            >
+                              <IconRefresh className="w-3.5 h-3.5" />
+                              Refresh Pexels
+                            </button>
+                          </div>
+                          {customCircleUrl && (
+                            <button
+                              onClick={handleResetCustomCircle}
+                              className="text-xs text-neutral-500 hover:text-neutral-800 transition"
+                            >
+                              Reset to Pexels image
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -848,7 +1013,9 @@ export function QuotePage() {
               />
             )}
           </div>
-        )}
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Lightbox */}
