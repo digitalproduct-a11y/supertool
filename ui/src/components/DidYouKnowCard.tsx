@@ -111,36 +111,34 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
       canvas.add(gradient)
       console.log('Gradient added')
 
-      const editionText = new fabric.Textbox(translatedEdition, {
-        fontFamily: "'JetBrains Mono', monospace",
+      const editionText = new fabric.Text(translatedEdition, {
+        fontFamily: 'monospace',
         fontSize: 10,
         fill: '#E9B949',
-        fontWeight: 600,
+        fontWeight: '600',
         left: 20,
         top: 1180,
         selectable: false,
       })
       canvas.add(editionText)
 
-      const headlineText = new fabric.Textbox(idea.headline, {
-        fontFamily: "'Montserrat', sans-serif",
+      const headlineText = new fabric.Text(idea.headline, {
+        fontFamily: 'sans-serif',
         fontSize: 28,
-        fontWeight: 900,
+        fontWeight: '900',
         fill: '#faf7ee',
         left: 20,
         top: 1100,
-        width: 1040,
         selectable: false,
       })
       canvas.add(headlineText)
 
-      const factText = new fabric.Textbox(idea.fact, {
-        fontFamily: "'Montserrat', sans-serif",
+      const factText = new fabric.Text(idea.fact, {
+        fontFamily: 'sans-serif',
         fontSize: 12,
         fill: 'rgba(245,242,234,.9)',
         left: 35,
         top: 1220,
-        width: 1000,
         selectable: false,
       })
       canvas.add(factText)
