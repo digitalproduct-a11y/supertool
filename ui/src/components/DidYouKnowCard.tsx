@@ -97,27 +97,14 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
 
       const bgImage = await fabric.Image.fromURL(uploadedImageUrl)
       console.log('Background image loaded successfully')
-
-      const imgWidth = bgImage.width || 1
-      const imgHeight = bgImage.height || 1
-      const scaleX = 1080 / imgWidth
-      const scaleY = 1350 / imgHeight
-      const scale = Math.max(scaleX, scaleY)
-
       bgImage.set({
-        scaleX: scale,
-        scaleY: scale,
-        left: 540 - (imgWidth * scale) / 2,
-        top: 675 - (imgHeight * scale) / 2,
+        left: 0,
+        top: 0,
+        scaleX: 1080 / (bgImage.width || 1080),
+        scaleY: 1350 / (bgImage.height || 1350),
       })
       canvas.add(bgImage)
       canvas.sendObjectToBack(bgImage)
-      canvas.clipPath = new fabric.Rect({
-        left: 0,
-        top: 0,
-        width: 1080,
-        height: 1350,
-      })
       console.log('Background image added and positioned')
 
       const gradient = new fabric.Rect({
