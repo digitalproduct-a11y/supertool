@@ -46,7 +46,7 @@ export function useDidYouKnow() {
         const limitedIdeas = data.ideas.map((idea: any) => ({
           id: idea.id || `idea-${Math.random()}`,
           headline: (idea.headline || '').slice(0, 35),
-          fact: (idea.fact || '').slice(0, 300),
+          fact: (idea.fact || '').slice(0, 400),
           caption: (idea.caption || '').slice(0, 300),
         }))
         setIdeas(limitedIdeas)
