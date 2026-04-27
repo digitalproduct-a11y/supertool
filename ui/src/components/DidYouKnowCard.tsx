@@ -116,37 +116,39 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
       console.log('Gradient added')
 
       const editionText = new fabric.Text(translatedEdition, {
-        fontFamily: 'monospace',
-        fontSize: 10,
+        fontFamily: 'Arial',
+        fontSize: 14,
         fill: '#E9B949',
-        fontWeight: '600',
-        left: 20,
-        top: 1180,
-        selectable: false,
-      })
-      canvas.add(editionText)
-
-      const headlineText = new fabric.Text(idea.headline, {
-        fontFamily: 'sans-serif',
-        fontSize: 28,
-        fontWeight: '900',
-        fill: '#faf7ee',
-        left: 20,
-        top: 1100,
-        selectable: false,
-      })
-      canvas.add(headlineText)
-
-      const factText = new fabric.Text(idea.fact, {
-        fontFamily: 'sans-serif',
-        fontSize: 12,
-        fill: 'rgba(245,242,234,.9)',
-        left: 35,
+        fontWeight: 'bold',
+        left: 40,
         top: 1220,
         selectable: false,
       })
+      canvas.add(editionText)
+      console.log('Edition text added:', { text: translatedEdition, top: editionText.top, left: editionText.left })
+
+      const headlineText = new fabric.Text(idea.headline, {
+        fontFamily: 'Arial',
+        fontSize: 32,
+        fontWeight: 'bold',
+        fill: '#faf7ee',
+        left: 40,
+        top: 1050,
+        selectable: false,
+      })
+      canvas.add(headlineText)
+      console.log('Headline text added:', { text: idea.headline, top: headlineText.top, left: headlineText.left })
+
+      const factText = new fabric.Text(idea.fact.substring(0, 150), {
+        fontFamily: 'Arial',
+        fontSize: 13,
+        fill: 'rgba(245,242,234,.9)',
+        left: 40,
+        top: 1100,
+        selectable: false,
+      })
       canvas.add(factText)
-      console.log('Text elements added')
+      console.log('Fact text added:', { textLength: idea.fact.length, top: factText.top, left: factText.left })
 
       if (brandLogoUrl) {
         console.log('Loading logo from:', brandLogoUrl)
