@@ -203,12 +203,22 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
   }, [uploadedImageUrl, idea.headline, idea.fact])
 
   const handleDownload = async () => {
-    if (!canvasInstance.current) {
+    if (!uploadedImageUrl) {
       toast.error('Please upload an image first')
       return
     }
 
     try {
+      if (!canvasInstance.current) {
+        const tempCanvas = new fabric.Canvas(document.createElement('canvas'), {
+          width: 1080,
+          height: 1350,
+          backgroundColor: '#0a0a0c',
+        })
+        canvasInstance.current = tempCanvas
+        await renderCanvas()
+      }
+
       const canvas = canvasInstance.current.getElement() as HTMLCanvasElement
       canvas.toBlob((blob) => {
         if (!blob) {
@@ -223,8 +233,9 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
         URL.revokeObjectURL(url)
         toast.success('Downloaded!')
       }, 'image/png')
-    } catch {
-      toast.error('Download failed')
+    } catch (err) {
+      console.error('Download error:', err)
+      toast.error('Download failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 
