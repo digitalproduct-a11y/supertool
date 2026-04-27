@@ -212,7 +212,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                 <div className="absolute inset-0 flex flex-col" style={{ padding: '0 20px' }}>
                   {/* Logo at top */}
                   {brandLogoUrl && (
-                    <div className="mt-2 mb-12 flex justify-end pr-5">
+                    <div className="mt-2 mb-12 flex justify-end pr-2">
                       <img
                         src={brandLogoUrl}
                         alt={brand}
@@ -245,7 +245,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, onBack
                   <h1
                     style={{
                       fontFamily: "'Montserrat', sans-serif",
-                      fontSize: '28px',
+                      fontSize: '24px',
                       fontWeight: 900,
                       fontStyle: 'normal',
                       lineHeight: '0.98',
