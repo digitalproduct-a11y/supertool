@@ -318,12 +318,123 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
         <div>
           <p className="text-sm font-medium text-neutral-950 mb-2">Preview</p>
           {uploadedImageUrl ? (
-            <div className="rounded-lg overflow-hidden shadow-lg" style={{ aspectRatio: '1080/1350' }}>
-              <canvas
-                ref={canvasRef}
-                className="w-full h-full"
-                style={{ display: 'block' }}
-              />
+            <div className="rounded-lg overflow-hidden shadow-lg bg-neutral-900" style={{ aspectRatio: '1080/1350' }}>
+              <div
+                className="w-full h-full relative"
+                style={{
+                  background: '#0a0a0c',
+                }}
+              >
+                {/* Full-bleed background image */}
+                <img
+                  src={uploadedImageUrl}
+                  alt="background"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+
+                {/* Gradient overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(180deg,
+                      rgba(6,6,8,0) 0%,
+                      rgba(6,6,8,0.100) 30%,
+                      rgba(6,6,8,0.506) 55%,
+                      rgba(6,6,8,0.810) 78%,
+                      rgba(6,6,8,0.92) 100%)`,
+                  }}
+                />
+
+                {/* Content container */}
+                <div className="absolute inset-0 flex flex-col" style={{ padding: '0 20px' }}>
+                  {/* Logo at top */}
+                  {brandLogoUrl && (
+                    <div className="mt-2 mb-12 flex justify-end pr-2">
+                      <img
+                        src={brandLogoUrl}
+                        alt="brand"
+                        style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Spacer to push content to bottom */}
+                  <div className="flex-1" />
+
+                  {/* Edition label */}
+                  <div
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '10px',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      color: '#E9B949',
+                      fontWeight: 600,
+                      marginBottom: '8px',
+                      lineHeight: '1.3',
+                      backgroundColor: '#000000',
+                      padding: '2px 4px',
+                      display: 'inline-block',
+                      width: 'fit-content',
+                    }}
+                  >
+                    {translatedEdition}
+                  </div>
+
+                  {/* Headline */}
+                  <h1
+                    style={{
+                      fontFamily: "'Montserrat', sans-serif",
+                      fontSize: '24px',
+                      fontWeight: 900,
+                      fontStyle: 'normal',
+                      lineHeight: '0.98',
+                      letterSpacing: '-1.2px',
+                      color: '#faf7ee',
+                      margin: '0 0 8px 0',
+                      padding: '2px 0',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                    }}
+                  >
+                    {idea.headline}
+                  </h1>
+
+                  {/* Divider */}
+                  <div
+                    style={{
+                      width: '120px',
+                      height: '1px',
+                      background: 'rgba(250,247,238,.35)',
+                      marginBottom: '12px',
+                    }}
+                  />
+
+                  {/* Fact body with accent rule */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '12px', alignItems: 'stretch', marginBottom: '40px' }}>
+                    <div
+                      style={{
+                        width: '3px',
+                        background: '#E9B949',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <p
+                      style={{
+                        fontFamily: "'Montserrat', sans-serif",
+                        fontSize: '12px',
+                        fontWeight: 400,
+                        lineHeight: '1.5',
+                        color: 'rgba(245,242,234,.9)',
+                        margin: 0,
+                        padding: 0,
+                      }}
+                    >
+                      {idea.fact}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="rounded-lg border border-neutral-200 bg-neutral-50 aspect-[1080/1350] flex items-center justify-center">
