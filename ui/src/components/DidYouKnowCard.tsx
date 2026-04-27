@@ -109,6 +109,7 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
         selectable: false,
       })
       canvas.add(gradient)
+      canvas.sendObjectToBack(gradient)
       console.log('Gradient added')
 
       const editionText = new fabric.Text(translatedEdition, {
