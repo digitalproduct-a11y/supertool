@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { IconDownload, IconChevronLeft } from '@tabler/icons-react'
-import { buildDidYouKnowUrl, uploadToCloudinary } from '../utils/cloudinary'
+import html2canvas from 'html2canvas'
+import { uploadToCloudinary } from '../utils/cloudinary'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 import { toast } from '../hooks/useToast'
@@ -22,6 +23,7 @@ const editionTranslations: Record<string, Record<string, string>> = {
 }
 
 export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
+  const previewRef = useRef<HTMLDivElement>(null)
   const [uploadedImageId, setUploadedImageId] = useState<string | null>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -37,9 +39,6 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
     ? `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogo}`
     : null
 
-  const previewUrl = uploadedImageId
-    ? buildDidYouKnowUrl(uploadedImageId, idea.headline, idea.fact, brandLogo)
-    : null
 
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -81,20 +80,22 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
   }
 
   const handleDownload = async () => {
-    if (!previewUrl) {
-      toast.error('Please upload an image first')
+    if (!previewRef.current) {
+      toast.error('Preview not ready')
       return
     }
 
     try {
-      const response = await fetch(previewUrl + '?dl=download')
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
+      const canvas = await html2canvas(previewRef.current, {
+        useCORS: true,
+        scale: 1080 / previewRef.current.offsetWidth,
+        width: previewRef.current.offsetWidth,
+        height: previewRef.current.offsetHeight,
+      })
       const link = document.createElement('a')
-      link.href = url
+      link.href = canvas.toDataURL('image/jpeg', 0.95)
       link.download = `didyouknow-${idea.id}.jpg`
       link.click()
-      URL.revokeObjectURL(url)
       toast.success('Downloaded!')
     } catch {
       toast.error('Download failed')
@@ -198,6 +199,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
             <div className="rounded-lg overflow-hidden shadow-lg bg-neutral-900" style={{ aspectRatio: '1080/1350' }}>
               {/* Tribune poster design */}
               <div
+                ref={previewRef}
                 className="w-full h-full relative"
                 style={{
                   background: '#0a0a0c',
