@@ -243,6 +243,7 @@ export interface CarouselResult {
   brand: string
   caption: string
   images: CarouselImage[]
+  articleImages: string[]
 }
 
 export interface CarouselError {
