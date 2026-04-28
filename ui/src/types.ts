@@ -243,7 +243,7 @@ export interface CarouselResult {
   brand: string
   caption: string
   images: CarouselImage[]
-  articleImages: string[]
+  articleImages: string[]   // raw image URLs extracted from article body by n8n
 }
 
 export interface CarouselError {
