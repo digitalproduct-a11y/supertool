@@ -1,8 +1,47 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { BRANDS } from '../constants/brands'
 import { IconChevronLeft, IconDownload, IconRefresh } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
+import { ScheduleModal } from './ScheduleModal'
+import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+
+async function callZernioWebhook(
+  imageUrl: string,
+  caption: string,
+  brand: string,
+  scheduledFor: string | undefined,
+  passcode: string,
+): Promise<{ success: boolean; message: string; status?: string }> {
+  const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
+  if (!webhookUrl) return { success: false, message: 'Webhook not configured.' }
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fb_ai_image_url: imageUrl,
+        fb_ai_caption: caption,
+        brand: brand.toLowerCase(),
+        ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
+        passcode,
+      }),
+    })
+    const data = await res.json() as { success?: boolean; status?: string; message?: string }
+    if (data.status === 'AUTH_ERROR') {
+      clearCredentials(brand.toLowerCase())
+      return { success: false, message: data.message ?? 'Invalid passcode.', status: 'AUTH_ERROR' }
+    }
+    if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
+      saveCredentials(brand.toLowerCase(), passcode)
+      return { success: true, message: data.message ?? 'Scheduled!' }
+    }
+    return { success: false, message: data.message ?? 'Something went wrong.' }
+  } catch {
+    return { success: false, message: 'Network error. Please try again.' }
+  }
+}
 
 export function KLCIIndexPage() {
   const navigate = useNavigate()
@@ -12,6 +51,27 @@ export function KLCIIndexPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
+  const [scheduleState, setScheduleState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+
+  async function handleSchedule(scheduledFor: string, passcode: string) {
+    if (!imageUrl) return
+    setScheduleState('posting')
+    const finalPasscode = passcode || getCredentials(selectedBrand.toLowerCase()) || ''
+    const response = await callZernioWebhook(imageUrl, caption, selectedBrand, scheduledFor, finalPasscode)
+    if (response.status === 'AUTH_ERROR') {
+      setShowScheduleModal(true)
+      setScheduleState('idle')
+      toast.error('Invalid passcode. Please try again.')
+    } else if (response.success) {
+      setScheduleState('done')
+      setShowScheduleModal(false)
+      toast.success('Scheduled on Facebook!')
+    } else {
+      setScheduleState('error')
+      toast.error(response.message || "Couldn't schedule. Please try again.")
+    }
+  }
 
   const handleGenerate = async () => {
     if (!selectedBrand) {
@@ -78,7 +138,7 @@ export function KLCIIndexPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={() => navigate('/engagement-photos')}
+              onClick={() => navigate('/engagement-posts')}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />
@@ -164,22 +224,36 @@ export function KLCIIndexPage() {
                       <IconDownload className="w-4 h-4" />
                       Download Image
                     </button>
-                    <div className="relative group flex-1">
-                      <button
-                        disabled
-                        className="w-full px-4 py-3 bg-neutral-200 text-neutral-400 rounded-xl text-sm font-semibold cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8H7m5-8V5m0 0H7" />
-                        </svg>
-                        Schedule on FB
-                      </button>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-neutral-950 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                        Coming soon
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => setShowScheduleModal(true)}
+                      disabled={scheduleState === 'posting'}
+                      className="flex-1 px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                    >
+                      {scheduleState === 'posting' ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                          </svg>
+                          Scheduling…
+                        </>
+                      ) : 'Schedule on FB'}
+                    </button>
                   </div>
+                  {scheduleState === 'error' && (
+                    <p className="text-xs text-red-500">✗ Failed to schedule. Try again.</p>
+                  )}
                 </div>
+              )}
+              {showScheduleModal && imageUrl && createPortal(
+                <ScheduleModal
+                  brand={selectedBrand}
+                  hasCredentials={!!getCredentials(selectedBrand.toLowerCase())}
+                  isPosting={scheduleState === 'posting'}
+                  onConfirm={(sf, passcode) => void handleSchedule(sf ?? '', passcode ?? '')}
+                  onClose={() => setShowScheduleModal(false)}
+                />,
+                document.body
               )}
             </div>
           </div>

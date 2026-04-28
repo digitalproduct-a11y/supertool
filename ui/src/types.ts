@@ -403,3 +403,38 @@ export interface QuickFactError {
 }
 
 export type QuickFactResponse = QuickFactResult | QuickFactError
+
+// Prime Talk Post Generator types
+export interface PrimeTalkTopic {
+  id: string
+  title: string
+  summary: string
+  suitable_angle_ids: number[]
+}
+
+export interface PrimeTalkAnalysisResponse {
+  success: true
+  topics: PrimeTalkTopic[]
+  script_analysis: Record<string, unknown>
+}
+
+export interface PrimeTalkAnalysisError {
+  success: false
+  message: string
+}
+
+export type PrimeTalkAnalysisResult = PrimeTalkAnalysisResponse | PrimeTalkAnalysisError
+
+export interface TopicAngleSelection {
+  topicId: string
+  topicTitle: string
+  topicSummary: string
+  angleId: number
+  angleLabel: string
+}
+
+export interface PrimeTalkGenerateRequest {
+  script_analysis: Record<string, unknown>
+  selections: TopicAngleSelection[]
+  brand: 'hotspot'
+}

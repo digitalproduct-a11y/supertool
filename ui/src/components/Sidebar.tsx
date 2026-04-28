@@ -17,7 +17,7 @@ import {
   IconBulb,
 } from "@tabler/icons-react";
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk'
 
 interface NavItem {
   id: ToolId | string;
@@ -59,6 +59,11 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     section: "Affiliate",
     items: [
       {
+        id: "shopee-top-products",
+        label: "Shopee top products",
+        icon: IconBrandShopee,
+      },
+      {
         id: "affiliate-links",
         label: "Shopee affiliate links",
         icon: IconLink,
@@ -72,11 +77,6 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
         id: "social-affiliate-posting",
         label: "Social affiliate post",
         icon: IconBrandThreads,
-      },
-      {
-        id: "shopee-top-products",
-        label: "Shopee top products",
-        icon: IconBrandShopee,
       },
     ],
   },
@@ -103,6 +103,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'post-queue': 'Scheduled queue',
   'social-affiliate-posting': 'Social Affiliate Posting',
   'quick-fact': 'Quick Fact Generator',
+  'prime-talk': 'Prime Talk',
 }
 
 const floatingBtnClass =

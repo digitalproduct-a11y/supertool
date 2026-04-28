@@ -35,6 +35,12 @@ interface IdeaCardProps {
   cachedPhotos?: Record<string, any[]>
   downloadPrefix?: string
   uploadPreset?: string
+  headlineFontSpec?: string
+  subtitleFontSpec?: string
+  playerLabel?: string
+  logoSize?: number
+  showTypeOnImage?: boolean
+  subtitleY?: number
 }
 
 export default function IdeaCard({
@@ -47,6 +53,12 @@ export default function IdeaCard({
   cachedPhotos,
   downloadPrefix = 'epl-post',
   uploadPreset,
+  headlineFontSpec,
+  subtitleFontSpec,
+  playerLabel,
+  logoSize = 150,
+  showTypeOnImage = false,
+  subtitleY = 1100,
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -66,17 +78,22 @@ export default function IdeaCard({
 
   const buildPreviewUrl = (headline: string, subtitle: string, photoPublicId: string | null) => {
     const enc = (t: string) => encodeURIComponent(encodeURIComponent(t))
-    const photoId = photoPublicId || DEFAULT_PHOTO
+    const hFont = headlineFontSpec ?? 'Montserrat_90_bold_normal_center_line_spacing_-20'
+    const sFont = subtitleFontSpec ?? 'Montserrat_38_normal_center_line_spacing_0'
+    const isExternalUrl = photoPublicId?.startsWith('http')
+    const uploadType = isExternalUrl ? 'fetch' : 'upload'
+    const finalPhotoId = isExternalUrl ? encodeURIComponent(photoPublicId!) : (photoPublicId || DEFAULT_PHOTO)
     return [
-      'https://res.cloudinary.com/dymmqtqyg/image/upload',
+      `https://res.cloudinary.com/dymmqtqyg/image/${uploadType}`,
       'c_fill,g_face,w_1080,h_1350',
       'c_pad,w_1080,h_1350,g_north',
       'l_black_fade_pexvn5,c_fill,w_1080,h_1350/fl_layer_apply,g_south,y_0',
-      `l_text:Montserrat_90_bold_normal_center_line_spacing_-20:${enc(headline)},co_rgb:FFFFFF,c_fit,w_900/fl_layer_apply,g_north,x_0,y_900`,
-      `l_text:Montserrat_38_normal_center_line_spacing_0:${enc(subtitle)},co_rgb:FFFFFF,c_fit,w_850/fl_layer_apply,g_north,x_0,y_1100`,
-      `l_${brandLogoId},w_150/fl_layer_apply,g_south,y_35`,
-      photoId,
-    ].join('/')
+      showTypeOnImage && idea.type ? `l_text:${sFont}:${enc(idea.type)},co_rgb:FFD700,c_fit,w_700/fl_layer_apply,g_north,x_0,y_845` : null,
+      `l_text:${hFont}:${enc(headline)},co_rgb:FFFFFF,c_fit,w_900/fl_layer_apply,g_north,x_0,y_900`,
+      `l_text:${sFont}:${enc(subtitle)},co_rgb:FFFFFF,c_fit,w_850/fl_layer_apply,g_north,x_0,y_${subtitleY}`,
+      `l_${brandLogoId},w_${logoSize}/fl_layer_apply,g_south,y_35`,
+      finalPhotoId,
+    ].filter(Boolean).join('/')
   }
 
   const previewUrl = buildPreviewUrl(committedHeadline, committedSubtitle, idea.photo_public_id)
@@ -109,7 +126,7 @@ export default function IdeaCard({
               Context: <span className="font-medium text-gray-700">{idea.context}</span>{' | '}
             </>
           )}
-          Reference player: <span className="font-medium text-gray-700">{idea.player}</span>
+          {playerLabel ?? 'Reference player'}: <span className="font-medium text-gray-700">{idea.player}</span>
           {idea.club && (
             <>
               {' | '}Club: <span className="font-medium text-gray-700">{idea.club}</span>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { IconChevronLeft } from '@tabler/icons-react'
 import { BRANDS, type BrandName } from '../constants/brands'
 import type { QuickFactResult, QuickFactItem } from '../types'
 import { toast } from '../hooks/useToast'
@@ -70,6 +71,7 @@ async function callZernioWebhook(
 }
 
 export function QuickFactPage() {
+  const navigate = useNavigate()
   const [pageState, setPageState] = useState<PageState>('idle')
   const [url, setUrl] = useState('')
   const [brand, setBrand] = useState<BrandName | ''>('')
@@ -128,10 +130,11 @@ export function QuickFactPage() {
     }
   }
 
-  async function handleSchedule(scheduledFor: string | undefined, passcode: string) {
+  async function handleSchedule(scheduledFor: string, passcode: string) {
     if (!result) return
     setScheduleState('posting')
-    const response = await callZernioWebhook(previewImageUrl, caption, result.brand, scheduledFor, passcode)
+    const finalPasscode = passcode || getCredentials(result.brand.toLowerCase()) || ''
+    const response = await callZernioWebhook(previewImageUrl, caption, result.brand, scheduledFor, finalPasscode)
     if (response.status === 'AUTH_ERROR') {
       setShowScheduleModal(true)
       setScheduleState('idle')
@@ -186,8 +189,16 @@ export function QuickFactPage() {
 
         {/* Page header */}
         <div className="mb-8">
-          <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Quick Fact Generator</h1>
-          <p className="text-neutral-500 mt-1 text-sm">Turn any article into a key-facts photo post for Facebook</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
+            >
+              <IconChevronLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Quick Fact Generator</h1>
+          </div>
+          <p className="text-neutral-500 mt-1 text-sm ml-11">Turn any article into a key-facts photo post for Facebook</p>
           <div className="mt-3 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
@@ -272,7 +283,7 @@ export function QuickFactPage() {
                 brand={result.brand}
                 hasCredentials={!!getCredentials(result.brand.toLowerCase())}
                 isPosting={scheduleState === 'posting'}
-                onConfirm={(sf, passcode) => void handleSchedule(sf, passcode)}
+                onConfirm={(sf, passcode) => void handleSchedule(sf, passcode ?? '')}
                 onClose={() => setShowScheduleModal(false)}
               />,
               document.body
@@ -280,7 +291,7 @@ export function QuickFactPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
 
-              {/* Left: image preview + download */}
+              {/* Left: image preview + caption + actions */}
               <div className="lg:self-start lg:sticky lg:top-6">
                 <div className="bg-neutral-50 rounded-2xl overflow-hidden border border-gray-200 aspect-[4/5] w-full shadow-[0_2px_24px_rgba(0,0,0,0.07)]">
                   <img
@@ -290,15 +301,71 @@ export function QuickFactPage() {
                     onError={e => { (e.target as HTMLImageElement).src = '' }}
                   />
                 </div>
-                <button
-                  onClick={handleDownload}
-                  className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Download
-                </button>
+
+                {/* Caption */}
+                <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4 mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Caption</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">{caption.length}/600</span>
+                      <button onClick={handleCopy} title="Copy caption" className="text-neutral-400 hover:text-neutral-700 transition">
+                        {copied
+                          ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    value={caption}
+                    onChange={e => setCaption(e.target.value.slice(0, 600))}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed transition"
+                  />
+                </div>
+
+                {/* Action buttons */}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 rounded-xl text-sm font-medium transition"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Image
+                  </button>
+                  <button
+                    onClick={() => setShowScheduleModal(true)}
+                    disabled={scheduleState === 'posting'}
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition"
+                  >
+                    {scheduleState === 'posting' ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Scheduling…
+                      </>
+                    ) : 'Schedule on FB'}
+                  </button>
+                </div>
+
+                {/* Post-schedule feedback */}
+                {scheduleState === 'done' && (
+                  <div className="mt-3">
+                    <button
+                      onClick={handleReset}
+                      className="text-sm text-neutral-500 hover:text-neutral-900 transition"
+                    >
+                      ← Generate another
+                    </button>
+                  </div>
+                )}
+                {scheduleState === 'error' && (
+                  <p className="text-xs text-red-500 mt-2">✗ Failed to schedule. Try again.</p>
+                )}
               </div>
 
               {/* Right: editable fields */}
@@ -368,68 +435,6 @@ export function QuickFactPage() {
                   />
                 </div>
 
-                {/* Caption */}
-                <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Caption</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{caption.length}/600</span>
-                      <button onClick={handleCopy} title="Copy caption" className="text-neutral-400 hover:text-neutral-700 transition">
-                        {copied
-                          ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                          : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                        }
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    value={caption}
-                    onChange={e => setCaption(e.target.value.slice(0, 600))}
-                    rows={7}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed transition"
-                  />
-                </div>
-
-                {/* Schedule on FB */}
-                <div>
-                  <button
-                    onClick={() => setShowScheduleModal(true)}
-                    disabled={scheduleState === 'posting'}
-                    className="w-full py-3 px-4 font-medium rounded-xl transition text-sm bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white"
-                  >
-                    {scheduleState === 'posting' ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                        Scheduling…
-                      </span>
-                    ) : 'Schedule on FB'}
-                  </button>
-                  {scheduleState === 'done' && (
-                    <div className="text-center space-y-1 mt-2">
-                      <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
-                      <p className="text-xs text-neutral-400">
-                        To view or delete your scheduled post, check{' '}
-                        <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
-                          here
-                        </Link>.
-                      </p>
-                    </div>
-                  )}
-                  {scheduleState === 'error' && (
-                    <p className="text-xs text-red-500 text-center mt-1">✗ Failed to schedule. Try again.</p>
-                  )}
-                </div>
-
-                {/* Generate another */}
-                <button
-                  onClick={handleReset}
-                  className="w-full py-2 px-4 text-sm text-gray-500 hover:text-gray-700 transition"
-                >
-                  ← Generate another
-                </button>
 
               </div>
             </div>

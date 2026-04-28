@@ -12,6 +12,8 @@ import {
   IconBrandThreads,
   IconBolt,
   IconCalendarClock,
+  IconBrandShopee,
+  IconBulb,
 } from "@tabler/icons-react";
 
 type ToolId =
@@ -27,7 +29,8 @@ type ToolId =
   | "shopee-top-products"
   | "photo-carousel"
   | "social-affiliate-posting"
-  | "post-queue";
+  | "post-queue"
+  | "quick-fact";
 
 interface Tool {
   id: ToolId;
@@ -95,6 +98,13 @@ const sections: Section[] = [
         color: "#0055EE",
         icon: IconHeart,
       },
+      {
+        id: "quick-fact",
+        label: "Quick Fact Post",
+        description: "Turn any article into a branded quick-fact image card",
+        color: "#0055EE",
+        icon: IconBulb,
+      },
     ],
   },
   {
@@ -102,6 +112,13 @@ const sections: Section[] = [
     description:
       "Generate affiliate content faster and drive more commissions.",
     tools: [
+      {
+        id: "shopee-top-products",
+        label: "Shopee Top Products",
+        description: "Showcase top Shopee affiliate products with prices and links",
+        color: "#EE4D2D",
+        icon: IconBrandShopee,
+      },
       {
         id: "affiliate-links",
         label: "Shopee Affiliate Links",

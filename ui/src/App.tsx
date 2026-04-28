@@ -59,7 +59,7 @@ const pathToTool: Record<string, ToolId> = {
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
   '/quick-fact': 'quick-fact',
-  '/prime-talk': 'prime-talk',
+  '/engagement-photos/prime-talk': 'engagement-posts',
 }
 
 // Map trending-news subpages to scheduled-posts tool
@@ -85,7 +85,7 @@ const toolToPath: Record<ToolId, string> = {
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
   'quick-fact': '/quick-fact',
-  'prime-talk': '/prime-talk',
+  'prime-talk': '/engagement-photos/prime-talk',
 }
 
 const topicToPath: Record<string, string> = {
@@ -94,6 +94,8 @@ const topicToPath: Record<string, string> = {
   'latest-currency-rate': '/engagement-posts/latest-currency-rate',
   'latest-fuel-price': '/engagement-posts/latest-fuel-price',
   'klci-index': '/engagement-posts/klci-index',
+  'prime-talk': '/engagement-photos/prime-talk',
+  'shopee-top-products': '/shopee-top-products',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -935,7 +937,7 @@ function App() {
           <QuickFactPage />
         </Layout>
       } />
-      <Route path="/prime-talk" element={
+      <Route path="/engagement-photos/prime-talk" element={
         <Layout {...layoutProps}>
           <PrimeTalkPage />
         </Layout>
