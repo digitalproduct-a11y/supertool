@@ -14,6 +14,7 @@ import {
   type TextLayerStyle,
 } from "../config/weatherCanvasConfig";
 import { BRAND_LOGO_IDS } from "../constants/brands";
+import { loadBrandFont } from "../utils/brandFonts";
 
 export interface WeatherCanvasHandle {
   downloadAsPng: () => void;
@@ -25,6 +26,9 @@ interface WeatherCanvasProps {
   brand: string;
   backgroundOverride?: string;
   config?: WeatherCanvasConfig;
+  // Brand display font (`font_use` from Brand Tone & Voice). Drives the
+  // state name family. Empty/null falls back to the canvas default.
+  fontUse?: string | null;
   onClick?: () => void;
 }
 
@@ -48,7 +52,7 @@ function makeText(
 }
 
 export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>(
-  function WeatherCanvas({ posts, brand, backgroundOverride, config: configProp, onClick }, ref) {
+  function WeatherCanvas({ posts, brand, backgroundOverride, config: configProp, fontUse, onClick }, ref) {
     const config = configProp ?? DEFAULT_WEATHER_CANVAS_CONFIG;
     const canvasElRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<StaticCanvas | null>(null);
@@ -58,6 +62,16 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
     const renderCanvas = useCallback(
       async (canvas: StaticCanvas) => {
         canvas.clear();
+
+        // Resolve the brand display font once per render. Empty string when
+        // no font_use is configured — the title layer's default applies.
+        const brandFamily = await loadBrandFont(fontUse);
+        const titleStyle: TextLayerStyle = brandFamily
+          ? {
+              ...config.stateBlock.locationName,
+              fontFamily: brandFamily,
+            }
+          : config.stateBlock.locationName;
         const { width, height } = config.canvas;
 
         // Load background image
@@ -194,7 +208,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
 
             // Left side: state name + forecast (summary_when)
             canvas.add(
-              makeText(post.state, scaled(config.stateBlock.locationName, scaledNameSize), {
+              makeText(post.state, scaled(titleStyle, scaledNameSize), {
                 left: innerLeft,
                 top: innerTop,
               }),
@@ -266,7 +280,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
             let textY = y + pad;
 
             canvas.add(
-              makeText(post.state, config.stateBlock.locationName, {
+              makeText(post.state, titleStyle, {
                 left: x + pad,
                 top: textY,
               }),
@@ -309,7 +323,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
         setReady(true);
         setError(null);
       },
-      [posts, brand, backgroundOverride, config],
+      [posts, brand, backgroundOverride, config, fontUse],
     );
 
     useEffect(() => {

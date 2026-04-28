@@ -37,6 +37,9 @@ interface QuoteResponse {
   // Up to 6 Pexels matches — frontend cycles through these via the
   // Refresh button. Array is preferred; left/right kept for back-compat.
   pexels_image_urls?: string[];
+  // Brand display font name from the Brand Tone & Voice data table.
+  // Either a Google Fonts family or a "Fonts:Name.ttf" Cloudinary asset id.
+  font_use?: string;
 }
 
 interface QuoteErrorResponse {
@@ -75,6 +78,7 @@ export function QuotePage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [fontUse, setFontUse] = useState<string | null>(null);
   // All Pexels matches returned by n8n (up to 6). The Refresh button cycles
   // pexelsIndex through them — no extra round-trips.
   const [pexelsUrls, setPexelsUrls] = useState<string[]>([]);
@@ -185,6 +189,7 @@ export function QuotePage() {
     setQuoteData(null);
     setCaption("");
     setImageUrl(null);
+    setFontUse(null);
     setPexelsUrls([]);
     setPexelsIndex(0);
     if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
@@ -252,6 +257,7 @@ export function QuotePage() {
         });
         setCaption(data.fb_caption);
         setImageUrl(data.image_url || null);
+        setFontUse(data.font_use || null);
         // Pexels matches: prefer the array; fall back to the legacy left URL.
         const urls =
           (data.pexels_image_urls?.filter(Boolean) ?? []) as string[];
@@ -375,6 +381,7 @@ export function QuotePage() {
       setCaption("");
       setError(null);
       setImageUrl(null);
+      setFontUse(null);
       setPexelsUrls([]);
       setPexelsIndex(0);
       if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
@@ -764,6 +771,7 @@ export function QuotePage() {
                   setQuoteData(null);
                   setCaption("");
                   setImageUrl(null);
+                  setFontUse(null);
                   setPexelsUrls([]);
                   setPexelsIndex(0);
                   if (customCircleUrl) URL.revokeObjectURL(customCircleUrl);
@@ -791,6 +799,7 @@ export function QuotePage() {
                       ? (customCircleUrl ?? pexelsUrls[pexelsIndex] ?? null)
                       : null
                   }
+                  fontUse={fontUse}
                   onClick={() => {
                     const dataUrl = canvasRef.current?.getDataUrl();
                     if (dataUrl) setLightboxUrl(dataUrl);

@@ -24,6 +24,7 @@ import {
 } from "../config/quoteCanvasConfig";
 import { BRAND_LOGO_IDS, getBrandHex } from "../constants/brands";
 import { withSubjectAwareCrop } from "../utils/cloudinary";
+import { loadBrandFont, getBrandFontWeight } from "../utils/brandFonts";
 
 export interface QuoteCanvasHandle {
   downloadAsPng: () => void;
@@ -45,6 +46,9 @@ interface QuoteCanvasProps {
   // Pexels image URL for the tabloid layout's single side circle. When unset,
   // empty, or the image fails to load, the circle renders nothing (silent fallback).
   pexelsImageUrl?: string | null;
+  // Brand display font from the Brand Tone & Voice data table (`font_use`).
+  // Drives the punch headline's family. Empty/null falls back to the default.
+  fontUse?: string | null;
   onClick?: () => void;
 }
 
@@ -154,6 +158,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
       config: configProp,
       imageUrl,
       pexelsImageUrl,
+      fontUse,
       onClick,
     },
     ref,
@@ -174,14 +179,56 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         const brandHex = getBrandHex(brand);
 
         // Wait for custom fonts so Fabric measures/renders them correctly on first paint.
+        // Brand font (from font_use) is loaded in parallel — empty string when
+        // no value is configured, in which case the canvas keeps its default.
+        let brandFamily = "";
         try {
-          await Promise.all([
+          const [resolvedBrandFamily] = await Promise.all([
+            loadBrandFont(fontUse),
             document.fonts.load(`700 116px Oswald`),
             document.fonts.load(`italic 26px Barlow`),
             document.fonts.load(`600 28px Barlow`),
             document.fonts.load(`500 22px Barlow`),
             document.fonts.load(`400 20px Barlow`),
           ]);
+          brandFamily = resolvedBrandFamily;
+          // Wait for the document's full font set to be ready. Fabric's
+          // Textbox measures glyph widths the moment it's constructed; if the
+          // font is registered but the canvas 2D context hasn't picked up the
+          // new metrics yet, words get pre-wrapped with fallback widths and
+          // render with phantom gaps even after the real font swaps in.
+          await document.fonts.ready;
+          // Prime the offscreen canvas's font cache for every (weight, size)
+          // combo the tabloid layout will use with the brand family. The
+          // first measureText with a new font on a canvas context is what
+          // binds the metrics — without this warm-up the first Textbox
+          // layout still uses fallback widths and "SEMANGAT" gets wrapped
+          // into character chunks that don't collapse when the real font
+          // swaps in.
+          if (brandFamily && config.layoutVariant === "tabloid") {
+            const ctx = (
+              canvas.getElement() as HTMLCanvasElement
+            ).getContext("2d");
+            if (ctx) {
+              const prevFont = ctx.font;
+              const t = config.tabloid;
+              const canonical = getBrandFontWeight(fontUse);
+              const punchWeight = canonical ?? t.bottomStack.punch.fontWeight;
+              const subtitleWeight =
+                canonical ?? t.bottomStack.subtitle.fontWeight;
+              const authorWeight = canonical ?? t.bottomStack.author.fontWeight;
+              const combos: Array<[number | string, number]> = [
+                [punchWeight, t.bottomStack.punch.fontSize],
+                [subtitleWeight, t.bottomStack.subtitle.fontSize],
+                [authorWeight, t.bottomStack.author.fontSize],
+              ];
+              for (const [weight, size] of combos) {
+                ctx.font = `${weight} ${size}px "${brandFamily}"`;
+                ctx.measureText("AGWMQ");
+              }
+              ctx.font = prevFont;
+            }
+          }
         } catch {
           // Continue with fallback fonts if loading fails
         }
@@ -415,9 +462,24 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
           const punchFontSize = Math.round(
             t.bottomStack.punch.fontSize * punchScale,
           );
+          // When the brand font ships at a single weight (Anton, Archivo
+          // Black, Bebas Neue), force the canvas to use that weight so the
+          // browser doesn't synthesize faux-bold (which causes Fabric to
+          // measure with corrupt widths and the punch to wrap mid-word).
+          const canonicalWeight = brandFamily
+            ? getBrandFontWeight(fontUse)
+            : null;
           const punchStyle = applyTextStyle({
             ...t.bottomStack.punch,
+            fontFamily: brandFamily || t.bottomStack.punch.fontFamily,
+            fontWeight: canonicalWeight ?? t.bottomStack.punch.fontWeight,
             fontSize: punchFontSize,
+            // Defaults below were tuned for Oswald. Brand fonts have
+            // different metrics (Bebas Neue's caps sit high in the em-box,
+            // Archivo Black is heavier) so we restore neutral tracking and
+            // line-height when a brand font is applied.
+            letterSpacing: brandFamily ? 0 : t.bottomStack.punch.letterSpacing,
+            lineHeight: brandFamily ? 1 : t.bottomStack.punch.lineHeight,
           });
           const punchText = t.bottomStack.punch.uppercase
             ? quote.quote_punch.toUpperCase()
@@ -445,6 +507,8 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
           );
           const subtitleStyle = applyTextStyle({
             ...t.bottomStack.subtitle,
+            fontFamily: brandFamily || t.bottomStack.subtitle.fontFamily,
+            fontWeight: canonicalWeight ?? t.bottomStack.subtitle.fontWeight,
             fontSize: subtitleFontSize,
           });
           const subtitleText = t.bottomStack.subtitle.uppercase
@@ -467,7 +531,11 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
                 (c) => c.toUpperCase(),
               )}`
             : quote.quote_author;
-          const authorStyle = applyTextStyle(t.bottomStack.author);
+          const authorStyle = applyTextStyle({
+            ...t.bottomStack.author,
+            fontFamily: brandFamily || t.bottomStack.author.fontFamily,
+            fontWeight: canonicalWeight ?? t.bottomStack.author.fontWeight,
+          });
           const authorText = t.bottomStack.author.uppercase
             ? authorJoined.toUpperCase()
             : authorJoined;
@@ -1068,7 +1136,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         canvas.renderAll();
         return true;
       },
-      [quote, brand, config, imageUrl, pexelsImageUrl],
+      [quote, brand, config, imageUrl, pexelsImageUrl, fontUse],
     );
 
     // Double-buffered render: build the new frame on a detached canvas, then

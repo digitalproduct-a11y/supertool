@@ -191,7 +191,7 @@ function ModeToggle({
 
 export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
-  const { posts, isLoading, error, generate } = useWeatherMalaysia();
+  const { posts, fontUse, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState("");
   const [mode, setMode] = useState<PostMode>("grouped");
   const [stage, setStage] = useState<"brand-select" | "review">(
@@ -574,6 +574,7 @@ export function WeatherMalaysiaPage() {
                           posts={group.posts}
                           brand={brand}
                           backgroundOverride={group.backgroundId}
+                          fontUse={fontUse}
                           onClick={() => {
                             const url = groupedCanvasRefs.current
                               .get(group.backgroundId)

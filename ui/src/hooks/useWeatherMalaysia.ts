@@ -22,6 +22,8 @@ export interface WeatherPost {
 interface WeatherResponse {
   success: true;
   posts: WeatherPost[];
+  // Brand display font name from the Brand Tone & Voice data table.
+  font_use?: string;
 }
 
 interface WeatherError {
@@ -42,7 +44,11 @@ const MALAY_DAYS = [
 ] as const;
 
 // Module-level cache keyed on brand+date
-let cachedResult: { key: string; posts: WeatherPost[] } | null = null;
+let cachedResult: {
+  key: string;
+  posts: WeatherPost[];
+  fontUse: string | null;
+} | null = null;
 
 function getTodayMYT(): { date: string; day: string } {
   const now = new Date();
@@ -57,6 +63,9 @@ function getTodayMYT(): { date: string; day: string } {
 export function useWeatherMalaysia() {
   const [posts, setPosts] = useState<WeatherPost[]>(
     cachedResult?.posts ?? [],
+  );
+  const [fontUse, setFontUse] = useState<string | null>(
+    cachedResult?.fontUse ?? null,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +85,7 @@ export function useWeatherMalaysia() {
 
     if (cachedResult?.key === cacheKey) {
       setPosts(cachedResult.posts);
+      setFontUse(cachedResult.fontUse);
       return cachedResult.posts;
     }
 
@@ -125,8 +135,14 @@ export function useWeatherMalaysia() {
             p.caption ||
             `${p.state}: ${p.summary_forecast} (${p.summary_when}). Suhu ${p.min_temp}°C–${p.max_temp}°C.`,
         }));
-        cachedResult = { key: cacheKey, posts: postsWithCaptions };
+        const resolvedFontUse = data.font_use || null;
+        cachedResult = {
+          key: cacheKey,
+          posts: postsWithCaptions,
+          fontUse: resolvedFontUse,
+        };
         setPosts(postsWithCaptions);
+        setFontUse(resolvedFontUse);
         return postsWithCaptions;
       } else {
         setError(data.message || "Failed to generate weather posts.");
@@ -147,5 +163,5 @@ export function useWeatherMalaysia() {
     }
   }, []);
 
-  return { posts, setPosts, isLoading, error, generate };
+  return { posts, setPosts, fontUse, isLoading, error, generate };
 }
