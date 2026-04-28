@@ -1,7 +1,7 @@
-import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCurrency, IconDroplet, IconTrendingUp } from '@tabler/icons-react'
+import { IconFlame, IconTrophy, IconWorld, IconMusicStar, IconCurrency, IconDroplet, IconTrendingUp, IconNews } from '@tabler/icons-react'
 import type React from 'react'
 
-type ActiveTopicId = 'engagement-photos' | 'ucl' | 'latest-fuel-price' | 'latest-currency-rate' | 'klci-index'
+type ActiveTopicId = 'engagement-photos' | 'ucl' | 'latest-fuel-price' | 'latest-currency-rate' | 'klci-index' | 'prime-talk'
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void
@@ -67,6 +67,19 @@ const sections: Section[] = [
         description: 'Kuala Lumpur Composite Index daily closing',
         icon: IconTrendingUp,
         color: '#EF4444',
+      },
+    ],
+  },
+  {
+    label: 'News',
+    description: 'Create engagement posts from TV show scripts and news content.',
+    topics: [
+      {
+        id: 'prime-talk',
+        label: 'Prime Talk 《八点最日报》',
+        description: 'Turn Prime Talk episode scripts into Simplified Chinese Facebook image cards',
+        icon: IconNews,
+        color: '#E03F3F',
       },
     ],
   },

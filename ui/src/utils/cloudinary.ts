@@ -155,3 +155,38 @@ export async function uploadToCloudinary(file: File): Promise<string> {
   const data = await res.json()
   return data.public_id as string
 }
+
+/**
+ * Replaces the encoded text for a single bullet-point fact layer in a Cloudinary URL.
+ * Uses the same encoding strategies as updateTitleInImageUrl, but replaces only the
+ * first match (facts appear once; title layers can appear twice for shadow brands).
+ *
+ * factIndex is reserved for future use when the n8n URL structure is finalised.
+ */
+export function updateFactInImageUrl(
+  imageUrl: string,
+  _factIndex: number,
+  oldText: string,
+  newText: string
+): string {
+  if (!oldText || !newText) return imageUrl
+
+  const normalizedOld = normalizeTitle(oldText)
+
+  const strategies: Array<[(s: string) => string, (s: string) => string]> = [
+    [cloudinaryTextEncode, s => s],
+    [cloudinaryTextEncode, s => s.toUpperCase()],
+    [singleEncode, s => s],
+    [singleEncode, s => s.toUpperCase()],
+    [encodeURIComponent, s => s],
+  ]
+
+  for (const [encode, caseTransform] of strategies) {
+    const encodedOld = encode(caseTransform(normalizedOld))
+    if (encodedOld && imageUrl.includes(encodedOld)) {
+      return imageUrl.replace(encodedOld, encode(caseTransform(newText)))
+    }
+  }
+
+  return imageUrl
+}

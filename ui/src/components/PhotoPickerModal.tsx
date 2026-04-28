@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface PhotoPickerModalProps {
   playerName: string
@@ -20,6 +20,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
   const [isDragging, setIsDragging] = useState(false)
   const [showUploadSection, setShowUploadSection] = useState(false)
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load photos from pre-cached bulk search results
   useEffect(() => {
@@ -173,9 +174,17 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
               )}
               <p className="text-xs font-medium text-gray-700 mb-3 uppercase">Upload Photo</p>
 
+              {/* Single file input, referenced by both the drag zone and footer button */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
+                className="hidden"
+              />
               {!previewUrl ? (
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition ${
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition cursor-pointer ${
                     isDragging
                       ? 'border-neutral-900 bg-neutral-50'
                       : 'border-gray-300 bg-white'
@@ -183,41 +192,25 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="photo-upload"
-                  />
-                  <label htmlFor="photo-upload" className="cursor-pointer inline-block w-full">
-                    <p className="text-sm font-medium text-neutral-950">
-                      Click to upload or drag & drop
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF (max 10MB)</p>
-                  </label>
+                  <p className="text-sm font-medium text-neutral-950">
+                    Click to upload or drag & drop
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF (max 10MB)</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="bg-gray-100 rounded-lg overflow-hidden mx-auto w-32">
                     <img src={previewUrl} alt="Preview" className="w-full h-auto" />
                   </div>
-                  <label htmlFor="photo-upload" className="cursor-pointer block">
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2 text-xs text-neutral-600 hover:text-neutral-900 border border-gray-300 rounded-lg transition"
-                    >
-                      Change Photo
-                    </button>
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="photo-upload"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full px-3 py-2 text-xs text-neutral-600 hover:text-neutral-900 border border-gray-300 rounded-lg transition"
+                  >
+                    Change Photo
+                  </button>
                 </div>
               )}
 
@@ -250,10 +243,16 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
         <div className="border-t border-gray-200 px-4 py-3 flex gap-3">
           <button
             onClick={() => {
-              setShowUploadSection(!showUploadSection)
-              setSelectedPhotoId(null)
-              setUploadFile(null)
-              setPreviewUrl(null)
+              if (showUploadSection && photos.length > 0) {
+                // Back to photo grid
+                setShowUploadSection(false)
+                setSelectedPhotoId(null)
+                setUploadFile(null)
+                setPreviewUrl(null)
+              } else {
+                // Open file picker directly
+                fileInputRef.current?.click()
+              }
             }}
             className="flex-1 px-4 py-2 text-neutral-600 hover:text-neutral-900 border border-gray-300 rounded-lg text-xs font-medium transition"
           >

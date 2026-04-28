@@ -13,9 +13,11 @@ import {
   IconCalendarClock,
   IconBrandThreads,
   IconBolt,
+  IconBrandShopee,
+  IconBulb,
 } from "@tabler/icons-react";
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk'
 
 interface NavItem {
   id: ToolId | string;
@@ -50,11 +52,17 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
       { id: 'spike-news', label: 'Spike news', icon: IconBolt },
       { id: 'scheduled-posts', label: 'Trending news', icon: IconTrendingUp },
       { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
+      { id: 'quick-fact', label: 'Quick fact post', icon: IconBulb },
     ],
   },
   {
     section: "Affiliate",
     items: [
+      {
+        id: "shopee-top-products",
+        label: "Shopee top products",
+        icon: IconBrandShopee,
+      },
       {
         id: "affiliate-links",
         label: "Shopee affiliate links",
@@ -94,6 +102,8 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'scheduled-posts': 'Trending news',
   'post-queue': 'Scheduled queue',
   'social-affiliate-posting': 'Social Affiliate Posting',
+  'quick-fact': 'Quick Fact Generator',
+  'prime-talk': 'Prime Talk',
 }
 
 const floatingBtnClass =

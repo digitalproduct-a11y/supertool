@@ -17,6 +17,8 @@ import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './components/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
+import { QuickFactPage } from './components/QuickFactPage'
+import { PrimeTalkPage } from './components/PrimeTalkPage'
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
@@ -40,7 +42,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -56,6 +58,8 @@ const pathToTool: Record<string, ToolId> = {
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
+  '/quick-fact': 'quick-fact',
+  '/engagement-photos/prime-talk': 'engagement-posts',
 }
 
 // Map trending-news subpages to scheduled-posts tool
@@ -80,6 +84,8 @@ const toolToPath: Record<ToolId, string> = {
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
+  'quick-fact': '/quick-fact',
+  'prime-talk': '/engagement-photos/prime-talk',
 }
 
 const topicToPath: Record<string, string> = {
@@ -88,12 +94,13 @@ const topicToPath: Record<string, string> = {
   'latest-currency-rate': '/engagement-posts/latest-currency-rate',
   'latest-fuel-price': '/engagement-posts/latest-fuel-price',
   'klci-index': '/engagement-posts/klci-index',
+  'prime-talk': '/engagement-photos/prime-talk',
+  'shopee-top-products': '/shopee-top-products',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
 
 const SPIKE_SEEN_KEY = 'spike_seen_urls'
-
 
 function saveSpikeSeenUrls(urls: string[]): void {
   localStorage.setItem(SPIKE_SEEN_KEY, JSON.stringify(urls))
@@ -923,6 +930,16 @@ function App() {
       <Route path="/social-affiliate-posting" element={
         <Layout {...layoutProps}>
           <SocialAffiliatePostingPage />
+        </Layout>
+      } />
+      <Route path="/quick-fact" element={
+        <Layout {...layoutProps}>
+          <QuickFactPage />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/prime-talk" element={
+        <Layout {...layoutProps}>
+          <PrimeTalkPage />
         </Layout>
       } />
     </Routes>
