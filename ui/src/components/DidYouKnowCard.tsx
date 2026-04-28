@@ -88,17 +88,18 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
     try {
       const canvas = await html2canvas(previewRef.current, {
         useCORS: true,
-        scale: 1080 / previewRef.current.offsetWidth,
-        width: previewRef.current.offsetWidth,
-        height: previewRef.current.offsetHeight,
+        allowTaint: true,
+        backgroundColor: '#0a0a0c',
+        scale: 2,
+        logging: false,
       })
       const link = document.createElement('a')
       link.href = canvas.toDataURL('image/jpeg', 0.95)
       link.download = `didyouknow-${idea.id}.jpg`
       link.click()
       toast.success('Downloaded!')
-    } catch {
-      toast.error('Download failed')
+    } catch (err) {
+      toast.error('Download failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 

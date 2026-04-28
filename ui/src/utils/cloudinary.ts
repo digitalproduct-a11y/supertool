@@ -163,8 +163,7 @@ export async function uploadToCloudinary(file: File): Promise<string> {
 export function buildDidYouKnowUrl(
   baseImagePublicId: string,
   headline: string,
-  fact: string,
-  brandLogoId: string
+  fact: string
 ): string {
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
   if (!cloudName) throw new Error('Cloudinary cloud name not configured')
