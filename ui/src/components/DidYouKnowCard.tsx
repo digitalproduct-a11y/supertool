@@ -29,6 +29,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
 
   const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
   const translatedEdition = editionTranslations[edition]?.[isMalay ? 'ms' : 'en'] || edition
+  const captionHeader = isMalay ? 'TAHUKAH ANDA?' : 'DID YOU KNOW?'
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
   const brandLogo = brandLogoPublicId || (BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] || 'default_logo')
@@ -141,11 +142,15 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
           <div>
             <label className="block text-sm font-medium text-neutral-950 mb-2">Caption (≤300 chars)</label>
             <textarea
-              value={idea.caption}
-              onChange={(e) => onUpdateField('caption', e.target.value.slice(0, 300))}
+              value={`${captionHeader}\n\n${idea.caption}`}
+              onChange={(e) => {
+                const fullText = e.target.value
+                const captionOnly = fullText.replace(/^(TAHUKAH ANDA\?|DID YOU KNOW\?)\n\n/, '')
+                onUpdateField('caption', captionOnly.slice(0, 300))
+              }}
               maxLength={300}
               rows={3}
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 resize-none"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 resize-none font-mono"
             />
             <p className="text-xs text-neutral-400 mt-1">{idea.caption.length}/300</p>
           </div>
