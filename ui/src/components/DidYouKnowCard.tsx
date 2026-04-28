@@ -32,8 +32,8 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
   const brandLogo = brandLogoPublicId || (BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] || 'default_logo')
-  const brandLogoUrl = brandLogoPublicId
-    ? `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogoPublicId}`
+  const brandLogoUrl = brandLogo
+    ? `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogo}`
     : null
 
   const previewUrl = uploadedImageId
