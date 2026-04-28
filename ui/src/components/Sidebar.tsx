@@ -17,7 +17,25 @@ import {
   IconBulb,
 } from "@tabler/icons-react";
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk'
+type ToolId =
+  | 'home'
+  | 'fb-post'
+  | 'trending-news'
+  | 'spike-news'
+  | 'affiliate-links'
+  | 'article-generator'
+  | 'engagement-posts'
+  | 'engagement-photos'
+  | 'scheduled-posts'
+  | 'shopee-top-products'
+  | 'post-queue'
+  | 'photo-carousel'
+  | 'social-affiliate-posting'
+  | 'quick-fact'
+  | 'prime-talk'
+  | 'on-this-day'
+  | 'weather-malaysia'
+  | 'quote'
 
 interface NavItem {
   id: ToolId | string;
@@ -104,6 +122,9 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'social-affiliate-posting': 'Social Affiliate Posting',
   'quick-fact': 'Quick Fact Generator',
   'prime-talk': 'Prime Talk',
+  'on-this-day': 'On This Day',
+  'weather-malaysia': 'Weather Malaysia',
+  'quote': 'Quote',
 }
 
 const floatingBtnClass =
