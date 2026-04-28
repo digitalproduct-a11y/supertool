@@ -554,9 +554,9 @@ export function WeatherMalaysiaPage() {
 
                 {/* Grouped by weather mode */}
                 {mode === "grouped" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="flex flex-wrap justify-center items-center gap-6">
                     {groupPostsByWeather(posts).map((group) => (
-                      <div key={group.backgroundId} className="flex flex-col items-center gap-3">
+                      <div key={group.backgroundId} className="flex flex-col items-center gap-3 w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]">
                         <h3 className="text-sm font-semibold text-neutral-800">
                           {group.label}{" "}
                           <span className="font-normal text-neutral-500">

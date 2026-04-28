@@ -200,18 +200,27 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
               }),
             );
 
-            const forecastLine = [
-              post.translated_summary_forecast || post.summary_forecast,
-              post.translated_summary_when || post.summary_when,
-            ]
-              .filter(Boolean)
-              .join(" · ");
-            canvas.add(
-              makeText(forecastLine, scaled(config.stateBlock.forecast, scaledForecastSize), {
-                left: innerLeft,
-                top: innerTop + scaledNameSize + s(4),
-              }),
-            );
+            const forecastValue = post.translated_summary_forecast || post.summary_forecast;
+            const whenValue = post.translated_summary_when || post.summary_when;
+            const forecastTop = innerTop + scaledNameSize + s(4);
+            let cursorX = innerLeft;
+            if (forecastValue) {
+              const forecastPart = makeText(
+                whenValue ? `${forecastValue} · ` : forecastValue,
+                scaled(config.stateBlock.forecast, scaledForecastSize),
+                { left: cursorX, top: forecastTop },
+              );
+              canvas.add(forecastPart);
+              cursorX += forecastPart.width ?? 0;
+            }
+            if (whenValue) {
+              canvas.add(
+                makeText(whenValue, scaled(config.stateBlock.forecastWhen, scaledForecastSize), {
+                  left: cursorX,
+                  top: forecastTop,
+                }),
+              );
+            }
 
             // Right side: temperature
             const tempText = makeText(

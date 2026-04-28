@@ -64,6 +64,7 @@ export interface WeatherCanvasConfig {
   stateBlock: {
     locationName: TextLayerStyle;
     forecast: TextLayerStyle;
+    forecastWhen: TextLayerStyle;
     temperature: TextLayerStyle;
     backgroundBox: {
       enabled: boolean;
@@ -187,6 +188,13 @@ export const DEFAULT_WEATHER_CANVAS_CONFIG: WeatherCanvasConfig = {
       fontFamily: "Arial",
       fontSize: 16,
       fontWeight: "normal",
+      fill: "#ffffff",
+      textAlign: "left",
+    },
+    forecastWhen: {
+      fontFamily: "Arial",
+      fontSize: 16,
+      fontWeight: "bold",
       fill: "#ffffff",
       textAlign: "left",
     },
