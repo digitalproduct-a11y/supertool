@@ -190,3 +190,59 @@ export function updateFactInImageUrl(
 
   return imageUrl
 }
+
+/**
+ * Extracts the raw base image URL from a Cloudinary /image/fetch/ URL.
+ * Pexels images in the carousel are served as Cloudinary fetch URLs; this
+ * recovers the original Pexels URL so we can re-upload without double-overlays.
+ * Returns null if the URL is not a Cloudinary fetch URL.
+ */
+export function extractBaseImageUrl(cloudinaryUrl: string): string | null {
+  const fetchPrefix = '/image/fetch/'
+  const prefixIdx = cloudinaryUrl.indexOf(fetchPrefix)
+  if (prefixIdx === -1) return null
+
+  const afterPrefix = cloudinaryUrl.substring(prefixIdx + fetchPrefix.length)
+  const segments = afterPrefix.split('/')
+
+  // The last segment with a comma is the final transform layer.
+  // The encoded source URL follows it as a single segment (/ chars are %2F).
+  let lastTransformIdx = -1
+  for (let i = 0; i < segments.length; i++) {
+    if (segments[i].includes(',')) lastTransformIdx = i
+  }
+
+  if (lastTransformIdx < 0 || lastTransformIdx >= segments.length - 1) return null
+
+  return decodeURIComponent(segments[lastTransformIdx + 1])
+}
+
+/**
+ * Uploads an image from a URL to Cloudinary using the temp uploads preset.
+ * Cloudinary fetches the URL server-side (avoids browser CORS issues).
+ * Returns the public_id on success.
+ */
+export async function uploadUrlToCloudinary(url: string): Promise<string> {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error('Cloudinary configuration missing')
+  }
+
+  const formData = new FormData()
+  formData.append('file', url)          // Cloudinary accepts a URL string as the file param
+  formData.append('upload_preset', uploadPreset)
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    { method: 'POST', body: formData }
+  )
+
+  if (!res.ok) {
+    throw new Error(`Upload failed: ${res.status}`)
+  }
+
+  const data = await res.json()
+  return data.public_id as string
+}
