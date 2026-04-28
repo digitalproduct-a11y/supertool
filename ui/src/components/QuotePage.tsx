@@ -846,12 +846,12 @@ export function QuotePage() {
                   {/* Row 2 — secondary: Upload Circle + Refresh Pexels (only when Side Circle is on) */}
                   {useSideCircle && (
                     <>
-                          <div className="flex gap-2 pt-1">
+                          <div className="flex gap-2">
                             <button
                               onClick={() => customCircleInputRef.current?.click()}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
                             >
-                              <IconUpload className="w-3.5 h-3.5" />
+                              <IconUpload className="w-4 h-4" />
                               {customCircleUrl
                                 ? "Replace side-circle image"
                                 : "Upload Custom Side Circle"}
@@ -859,14 +859,14 @@ export function QuotePage() {
                             <button
                               onClick={handleRefreshPexels}
                               disabled={pexelsUrls.length < 2}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
                               title={
                                 pexelsUrls.length < 2
                                   ? "Only one Pexels match available"
                                   : `Showing ${pexelsIndex + 1} of ${pexelsUrls.length}`
                               }
                             >
-                              <IconRefresh className="w-3.5 h-3.5" />
+                              <IconRefresh className="w-4 h-4" />
                               Refresh Pexels
                             </button>
                           </div>
@@ -883,17 +883,105 @@ export function QuotePage() {
                 </div>
               </div>
 
-              {/* Caption + schedule */}
+              {/* Editable quote + caption fields — match CarouselResultPreview styling */}
               <div className="glass-card rounded-2xl p-6 space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-700 mb-1.5">
-                    Caption for post
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                      Punch
+                    </label>
+                    <span className="text-xs text-gray-400">
+                      {quoteData.quote_punch.length}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={quoteData.quote_punch}
+                    onChange={(e) =>
+                      setQuoteData({ ...quoteData, quote_punch: e.target.value })
+                    }
+                    placeholder="Enter punch headline…"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                      Quote Text
+                    </label>
+                    <span className="text-xs text-gray-400">
+                      {quoteData.quote_text.length}
+                    </span>
+                  </div>
+                  <textarea
+                    value={quoteData.quote_text}
+                    onChange={(e) =>
+                      setQuoteData({ ...quoteData, quote_text: e.target.value })
+                    }
+                    rows={3}
+                    placeholder="Enter quote text…"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed transition"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                      Author
+                    </label>
+                    <span className="text-xs text-gray-400">
+                      {quoteData.quote_author.length}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={quoteData.quote_author}
+                    onChange={(e) =>
+                      setQuoteData({ ...quoteData, quote_author: e.target.value })
+                    }
+                    placeholder="Enter author name…"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                      Author Title
+                    </label>
+                    <span className="text-xs text-gray-400">
+                      {(quoteData.quote_author_title ?? "").length}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={quoteData.quote_author_title ?? ""}
+                    onChange={(e) =>
+                      setQuoteData({
+                        ...quoteData,
+                        quote_author_title: e.target.value,
+                      })
+                    }
+                    placeholder="Enter author title…"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                      Caption
+                    </label>
+                    <span className="text-xs text-gray-400">
+                      {caption.length}/600
+                    </span>
+                  </div>
                   <textarea
                     value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    rows={5}
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
+                    onChange={(e) => setCaption(e.target.value.slice(0, 600))}
+                    rows={8}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed transition"
                   />
                 </div>
 

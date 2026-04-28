@@ -23,6 +23,7 @@ import {
   type TextLayerStyle,
 } from "../config/quoteCanvasConfig";
 import { BRAND_LOGO_IDS, getBrandHex } from "../constants/brands";
+import { withSubjectAwareCrop } from "../utils/cloudinary";
 
 export interface QuoteCanvasHandle {
   downloadAsPng: () => void;
@@ -164,7 +165,10 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
     const [error, setError] = useState<string | null>(null);
 
     const renderCanvas = useCallback(
-      async (canvas: StaticCanvas) => {
+      async (
+        canvas: StaticCanvas,
+        isCancelled: () => boolean = () => false,
+      ): Promise<boolean> => {
         canvas.clear();
         const { width, height } = config.canvas;
         const brandHex = getBrandHex(brand);
@@ -181,11 +185,13 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         } catch {
           // Continue with fallback fonts if loading fails
         }
+        if (isCancelled()) return false;
 
         // ─── Tabloid layout branch ─────────────────────────────────────────
         // Full-bleed photo, dark bottom gradient, top-left logo, bottom-
         // centered headline stack. Used when Subject Cutout is OFF.
         if (config.layoutVariant === "tabloid") {
+         try {
           const t = config.tabloid;
           const duoDarkT = hexToRgb(config.photo.duotoneDark);
           const duoLightT =
@@ -209,9 +215,14 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
           // Layer 2: full-bleed cover-scaled photo
           if (imageUrl) {
             try {
-              const loaded = await FabricImage.fromURL(imageUrl, {
+              // Subject-aware Cloudinary crop keeps the article's main
+              // subject in frame instead of relying on geometric center.
+              // Pass-through for blob: (custom uploads) and external URLs.
+              const sourceUrl = withSubjectAwareCrop(imageUrl, width, height);
+              const loaded = await FabricImage.fromURL(sourceUrl, {
                 crossOrigin: "anonymous",
               });
+              if (isCancelled()) return false;
               const elem = loaded.getElement() as HTMLImageElement;
               const treated = preprocessSubject(
                 elem,
@@ -286,6 +297,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
                 const logoImg = await FabricImage.fromURL(logoUrl, {
                   crossOrigin: "anonymous",
                 });
+                if (isCancelled()) return false;
                 logoImg.scaleToWidth(t.logo.width);
                 if (logoImg.getScaledHeight() > t.logo.maxHeight) {
                   logoImg.scaleToHeight(t.logo.maxHeight);
@@ -316,6 +328,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
               const circleImg = await FabricImage.fromURL(pexelsImageUrl, {
                 crossOrigin: "anonymous",
               });
+              if (isCancelled()) return false;
 
               const shadowCfg = t.sideCircle.shadow;
               const fabricShadow = shadowCfg.enabled
@@ -547,9 +560,14 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
           }
 
           canvas.renderAll();
-          setReady(true);
-          setError(null);
-          return;
+          return true;
+         } catch (e) {
+          // Surface tabloid render failures instead of leaving a partial frame.
+          // The caller skips the blit when we return false, so the previous
+          // good frame stays on screen.
+          console.error("QuoteCanvas tabloid render failed", e);
+          return false;
+         }
         }
         // ───────────────────────────────────────────────────────────────────
 
@@ -1048,8 +1066,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         }
 
         canvas.renderAll();
-        setReady(true);
-        setError(null);
+        return true;
       },
       [quote, brand, config, imageUrl, pexelsImageUrl],
     );
@@ -1058,10 +1075,19 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
     // blit it onto the visible <canvas> in a single drawImage call. This keeps
     // the previous frame on screen while async work (font loading, image
     // fetches) completes — no flicker when brand/config changes.
+    //
+    // Each render gets a generation id; only the most recent render is allowed
+    // to swap fabricRef and blit. Earlier in-flight renders that finish late
+    // (e.g. slow image fetch) are discarded. A render that throws or is
+    // cancelled returns `false` from renderCanvas and is also discarded —
+    // leaving the previous good frame on screen instead of overwriting it
+    // with a partial.
+    const renderGenRef = useRef(0);
     useEffect(() => {
       if (!canvasElRef.current || !quote.quote_text) return;
 
-      let cancelled = false;
+      const myGen = ++renderGenRef.current;
+      const isCancelled = () => myGen !== renderGenRef.current;
       const { width, height, backgroundColor } = config.canvas;
 
       const offscreenEl = document.createElement("canvas");
@@ -1073,8 +1099,8 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         backgroundColor,
       });
 
-      renderCanvas(offscreen).then(() => {
-        if (cancelled) {
+      renderCanvas(offscreen, isCancelled).then((ok) => {
+        if (!ok || isCancelled()) {
           offscreen.dispose();
           return;
         }
@@ -1087,8 +1113,16 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         if (visibleEl.height !== height) visibleEl.height = height;
         const ctx = visibleEl.getContext("2d");
         if (ctx) {
+          // Render via toCanvasElement (the same path toDataURL uses) instead
+          // of reading lowerCanvasEl directly. Fabric's lowerCanvasEl can
+          // miss late-painted Text/Textbox glyphs when fonts resolve after
+          // the initial renderAll; toCanvasElement always paints a fresh
+          // frame from the object model, which is why the Download button
+          // produces the correct image even when the on-screen blit is
+          // partial.
+          const sourceEl = offscreen.toCanvasElement(1) as HTMLCanvasElement;
           ctx.clearRect(0, 0, width, height);
-          ctx.drawImage(offscreenEl, 0, 0);
+          ctx.drawImage(sourceEl, 0, 0);
         }
         visibleEl.style.width = "100%";
         visibleEl.style.height = "100%";
@@ -1097,10 +1131,13 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         const prev = fabricRef.current;
         fabricRef.current = offscreen;
         if (prev) prev.dispose();
+        setReady(true);
+        setError(null);
       });
 
       return () => {
-        cancelled = true;
+        // Bumping the generation invalidates this render — its .then() will
+        // see isCancelled() === true and dispose without blitting.
       };
     }, [quote, brand, config, renderCanvas]);
 

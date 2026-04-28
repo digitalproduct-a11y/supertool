@@ -3,85 +3,103 @@
  * Must match n8n's cloudinaryTextEncode function exactly.
  */
 export function cloudinaryTextEncode(str: string): string {
-  let encoded = encodeURIComponent(str).replace(/[!'()*]/g, (c) =>
-    '%' + c.charCodeAt(0).toString(16).toUpperCase()
-  )
-  return encoded.replace(/%/g, '%25')
+  const encoded = encodeURIComponent(str).replace(
+    /[!'()*]/g,
+    (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
+  );
+  return encoded.replace(/%/g, "%25");
 }
 
 // Mirrors n8n's normalize() used across brand Image Layout nodes:
 // collapse whitespace, straight-quote smart quotes, hyphenate dashes.
 function normalizeTitle(s: string): string {
   return s
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .trim()
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2013\u2014]/g, "-");
 }
 
 const singleEncode = (s: string) =>
-  encodeURIComponent(s).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase())
+  encodeURIComponent(s).replace(
+    /[!'()*]/g,
+    (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
+  );
 
 /**
  * Replaces the encoded original title in a Cloudinary imageUrl with a new encoded title.
  * Uses replaceAll so brands with two title layers (e.g. Rasa shadow + main) both update.
  * Tries double-encoded and uppercase variants to cover all brand templates.
  */
-export function updateTitleInImageUrl(imageUrl: string, originalTitle: string, newTitle: string): string {
-  if (!originalTitle || !newTitle) return imageUrl
+export function updateTitleInImageUrl(
+  imageUrl: string,
+  originalTitle: string,
+  newTitle: string,
+): string {
+  if (!originalTitle || !newTitle) return imageUrl;
 
-  const normalizedOriginal = normalizeTitle(originalTitle)
+  const normalizedOriginal = normalizeTitle(originalTitle);
 
   // Each strategy: [encode fn, case transform]
   // The same case transform is applied to original (for matching) and new title (for replacement),
   // so brands that render UPPERCASE (ERA, Hitz, Gegar, etc.) stay UPPERCASE after edits.
   const strategies: Array<[(s: string) => string, (s: string) => string]> = [
-    [cloudinaryTextEncode, s => s],               // double-encoded, as-is (most brands)
-    [cloudinaryTextEncode, s => s.toUpperCase()], // double-encoded, uppercase (ERA, Hitz, Gegar, etc.)
-    [singleEncode, s => s],                       // single-encoded, as-is (fallback)
-    [singleEncode, s => s.toUpperCase()],         // single-encoded, uppercase (fallback)
-    [encodeURIComponent, s => s],                 // plain encodeURIComponent (fallback)
-  ]
+    [cloudinaryTextEncode, (s) => s], // double-encoded, as-is (most brands)
+    [cloudinaryTextEncode, (s) => s.toUpperCase()], // double-encoded, uppercase (ERA, Hitz, Gegar, etc.)
+    [singleEncode, (s) => s], // single-encoded, as-is (fallback)
+    [singleEncode, (s) => s.toUpperCase()], // single-encoded, uppercase (fallback)
+    [encodeURIComponent, (s) => s], // plain encodeURIComponent (fallback)
+  ];
 
   for (const [encode, caseTransform] of strategies) {
-    const encodedOriginal = encode(caseTransform(normalizedOriginal))
+    const encodedOriginal = encode(caseTransform(normalizedOriginal));
     if (encodedOriginal && imageUrl.includes(encodedOriginal)) {
       // replaceAll: Rasa has two layers (shadow + main) with the same encoded text
-      return imageUrl.replaceAll(encodedOriginal, encode(caseTransform(newTitle)))
+      return imageUrl.replaceAll(
+        encodedOriginal,
+        encode(caseTransform(newTitle)),
+      );
     }
   }
 
-  return imageUrl
+  return imageUrl;
 }
 
 /**
  * Replaces the encoded original subtitle in a Cloudinary imageUrl with a new encoded subtitle.
  * Only used for Era Sarawak and Era Sabah which have a sub_title text layer.
  */
-export function updateSubtitleInImageUrl(imageUrl: string, originalSubtitle: string, newSubtitle: string): string {
-  if (!originalSubtitle) return imageUrl
+export function updateSubtitleInImageUrl(
+  imageUrl: string,
+  originalSubtitle: string,
+  newSubtitle: string,
+): string {
+  if (!originalSubtitle) return imageUrl;
 
-  const normalizedOriginal = normalizeTitle(originalSubtitle)
+  const normalizedOriginal = normalizeTitle(originalSubtitle);
 
   const strategies: Array<(s: string) => string> = [
     cloudinaryTextEncode,
     singleEncode,
     encodeURIComponent,
-  ]
+  ];
 
   for (const encode of strategies) {
-    const encodedOriginal = encode(normalizedOriginal)
+    const encodedOriginal = encode(normalizedOriginal);
     if (encodedOriginal && imageUrl.includes(encodedOriginal)) {
-      return imageUrl.replaceAll(encodedOriginal, encode(normalizeTitle(newSubtitle)))
+      return imageUrl.replaceAll(
+        encodedOriginal,
+        encode(normalizeTitle(newSubtitle)),
+      );
     }
   }
 
-  return imageUrl
+  return imageUrl;
 }
 
 /** Brands that have a subtitle text layer in their Cloudinary template. */
-export const SUBTITLE_BRANDS = new Set(['era sarawak', 'era sabah'])
+export const SUBTITLE_BRANDS = new Set(["era sarawak", "era sabah"]);
 
 /**
  * Replaces the base image in a Cloudinary URL while preserving all overlay
@@ -94,37 +112,69 @@ export const SUBTITLE_BRANDS = new Set(['era sarawak', 'era sabah'])
  * .../image/upload/{transforms}/{old_public_id.jpg}  → .../image/upload/{transforms}/{newPublicId}
  * .../image/fetch/{transforms}/{encodedPexelsUrl}    → .../image/upload/{transforms}/{newPublicId}
  */
-export function replaceBaseImage(originalUrl: string, newPublicId: string): string {
-  const uploadPrefix = '/image/upload/'
-  const fetchPrefix  = '/image/fetch/'
+export function replaceBaseImage(
+  originalUrl: string,
+  newPublicId: string,
+): string {
+  const uploadPrefix = "/image/upload/";
+  const fetchPrefix = "/image/fetch/";
 
-  let prefixIdx = originalUrl.indexOf(uploadPrefix)
-  let prefixLen = uploadPrefix.length
+  let prefixIdx = originalUrl.indexOf(uploadPrefix);
+  let prefixLen = uploadPrefix.length;
 
   if (prefixIdx === -1) {
-    prefixIdx = originalUrl.indexOf(fetchPrefix)
-    prefixLen = fetchPrefix.length
+    prefixIdx = originalUrl.indexOf(fetchPrefix);
+    prefixLen = fetchPrefix.length;
   }
 
-  if (prefixIdx === -1) return originalUrl
+  if (prefixIdx === -1) return originalUrl;
 
-  const base = originalUrl.substring(0, prefixIdx)
-  const afterPrefix = originalUrl.substring(prefixIdx + prefixLen)
-  const segments = afterPrefix.split('/')
+  const base = originalUrl.substring(0, prefixIdx);
+  const afterPrefix = originalUrl.substring(prefixIdx + prefixLen);
+  const segments = afterPrefix.split("/");
 
   // Find the last segment that contains a comma — that's the final transform.
   // Encoded Pexels URLs (%2F, %2C etc.) contain no literal commas, so they're
   // correctly identified as the base image segment, not a transform.
-  let lastTransformIdx = -1
+  let lastTransformIdx = -1;
   for (let i = 0; i < segments.length; i++) {
-    if (segments[i].includes(',')) lastTransformIdx = i
+    if (segments[i].includes(",")) lastTransformIdx = i;
   }
 
-  if (lastTransformIdx < 0) return originalUrl
+  if (lastTransformIdx < 0) return originalUrl;
 
-  const transforms = segments.slice(0, lastTransformIdx + 1).join('/')
+  const transforms = segments.slice(0, lastTransformIdx + 1).join("/");
   // Always produce an upload URL regardless of whether source was fetch or upload
-  return `${base}/image/upload/${transforms}/${newPublicId}`
+  return `${base}/image/upload/${transforms}/${newPublicId}`;
+}
+
+/**
+ * Rewrites a Cloudinary `/image/upload/` URL to fetch a subject-aware crop
+ * sized for the target canvas. Uses Cloudinary's free-tier `g_auto`, which
+ * picks the focal region using content analysis — keeps the article's main
+ * subject in frame instead of relying on geometric center.
+ *
+ * Returns the original URL unchanged for non-Cloudinary inputs (blob:, data:,
+ * external URLs) and for URLs that already carry a `c_fill`/`g_auto` segment
+ * (idempotent — safe to call repeatedly).
+ */
+export function withSubjectAwareCrop(
+  url: string | null | undefined,
+  width: number,
+  height: number,
+): string {
+  if (!url) return "";
+  if (!url.includes("/image/upload/")) return url;
+  if (/\/(c_fill|g_auto)[,/]/.test(url)) return url;
+
+  const w = Math.round(width);
+  const h = Math.round(height);
+  // Reduce ar to lowest terms so the param matches Cloudinary's expected form
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const g = gcd(w, h);
+  const transform = `c_fill,g_auto,ar_${w / g}:${h / g},w_${w},h_${h},f_auto,q_auto`;
+
+  return url.replace("/image/upload/", `/image/upload/${transform}/`);
 }
 
 /**
@@ -132,26 +182,30 @@ export function replaceBaseImage(originalUrl: string, newPublicId: string): stri
  * Returns the public_id on success.
  */
 export async function uploadToCloudinary(file: File): Promise<string> {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as
+    | string
+    | undefined;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as
+    | string
+    | undefined;
 
   if (!cloudName || !uploadPreset) {
-    throw new Error('Cloudinary configuration missing')
+    throw new Error("Cloudinary configuration missing");
   }
 
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('upload_preset', uploadPreset)
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    { method: 'POST', body: formData }
-  )
+    { method: "POST", body: formData },
+  );
 
   if (!res.ok) {
-    throw new Error(`Upload failed: ${res.status}`)
+    throw new Error(`Upload failed: ${res.status}`);
   }
 
-  const data = await res.json()
-  return data.public_id as string
+  const data = await res.json();
+  return data.public_id as string;
 }
