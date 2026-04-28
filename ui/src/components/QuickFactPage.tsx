@@ -133,7 +133,7 @@ export function QuickFactPage() {
   async function handleSchedule(scheduledFor: string, passcode: string) {
     if (!result) return
     setScheduleState('posting')
-    const finalPasscode = passcode || getCredentials(result.brand.toLowerCase()) || ''
+    const finalPasscode = passcode || getCredentials(result.brand.toLowerCase())?.passcode || ''
     const response = await callZernioWebhook(previewImageUrl, caption, result.brand, scheduledFor, finalPasscode)
     if (response.status === 'AUTH_ERROR') {
       setShowScheduleModal(true)

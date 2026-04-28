@@ -57,7 +57,7 @@ export function LatestFuelPricePage() {
   async function handleSchedule(scheduledFor: string, passcode: string) {
     if (!imageUrl) return
     setScheduleState('posting')
-    const finalPasscode = passcode || getCredentials(selectedBrand.toLowerCase()) || ''
+    const finalPasscode = passcode || getCredentials(selectedBrand.toLowerCase())?.passcode || ''
     const response = await callZernioWebhook(imageUrl, caption, selectedBrand, scheduledFor, finalPasscode)
     if (response.status === 'AUTH_ERROR') {
       setShowScheduleModal(true)
