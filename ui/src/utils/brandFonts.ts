@@ -1,57 +1,103 @@
 // Brand-aware font loader. Resolves a `font_use` value (from the Brand Tone &
-// Voice data table) into a CSS font-family that's been registered with
-// document.fonts, so Fabric.js renders the correct glyphs on canvas.
+// Voice data table at n8n table WrA94W8RTzSvEhyS) into a CSS font-family
+// that's been registered with document.fonts, so Fabric.js renders the
+// correct glyphs on canvas.
 //
 // `font_use` values come in two shapes:
 //   1. A Cloudinary asset reference, e.g. "Fonts:LeagueSpartan-Bold.ttf" —
 //      this is the form n8n hands to Cloudinary's `l_text:` overlay engine.
-//      Cloudinary does NOT expose these fonts as direct download URLs, so
-//      we map each known Cloudinary font reference to its closest free
-//      Google Fonts equivalent (table below). The mapping is decoupled
-//      from the Cloudinary path so n8n image overlays and client canvases
-//      can use different actual font files while staying visually aligned.
+//      We bundle the same .ttf/.otf files locally under `/fonts/` and
+//      register them via @font-face so the on-screen preview matches the
+//      Cloudinary output exactly (and loads instantly, no network round-
+//      trip to Google Fonts).
 //   2. A plain Google Fonts family name, e.g. "Montserrat" — we inject a
 //      Google Fonts <link> on first use and wait for it to load.
 
-// Map each known Cloudinary `font_use` value to a Google Fonts equivalent.
-// `weight` is the canonical weight to load and to use in `document.fonts.load`;
-// the canvas itself can render any weight available in the loaded family.
-const CLOUDINARY_TO_GOOGLE: Record<string, { family: string; weight: number }> =
-  {
-    "Fonts:LeagueSpartan-Bold.ttf": { family: "League Spartan", weight: 700 },
-    "fonts:leaguespartan.ttf": { family: "League Spartan", weight: 700 },
-    "Fonts:Anton-Regular.ttf": { family: "Anton", weight: 400 },
-    "Fonts:ArchivoBlack-Regular.ttf": { family: "Archivo Black", weight: 400 },
-    // ITC Avant Garde is a paid typeface — League Spartan is the closest
-    // free geometric grotesque match for headline weights.
-    "Fonts:ITCAvantGardeStdBold.ttf": { family: "League Spartan", weight: 700 },
-    // canvasans is a custom upload — Bebas Neue is the closest free
-    // condensed display sans available on Google Fonts.
-    "Fonts:canvasans.ttf": { family: "Bebas Neue", weight: 400 },
-    // Heavy CJK — Noto Sans SC has full Simplified Chinese coverage.
-    "Fonts:SourceHanSansCN-Heavy-2.otf": {
-      family: "Noto Sans SC",
-      weight: 900,
-    },
-    "Fonts:方正兰亭特黑简体.ttf": { family: "Noto Sans SC", weight: 900 },
-  };
+type LocalFont = { family: string; weight: number; src: string };
+
+// Map each known Cloudinary `font_use` value to a local font file under
+// `ui/public/fonts/`. The `family` is the CSS font-family string we declare
+// in @font-face and that Fabric uses on the canvas. `weight` is the canonical
+// weight to load and to use in `document.fonts.load`.
+const CLOUDINARY_TO_LOCAL: Record<string, LocalFont> = {
+  "Fonts:LeagueSpartan-Bold.ttf": {
+    family: "League Spartan",
+    weight: 700,
+    src: "/fonts/LeagueSpartan-Bold.ttf",
+  },
+  "fonts:leaguespartan.ttf": {
+    family: "League Spartan",
+    weight: 400,
+    src: "/fonts/leaguespartan.ttf",
+  },
+  "Fonts:Anton-Regular.ttf": {
+    family: "Anton",
+    weight: 400,
+    src: "/fonts/Anton-Regular.ttf",
+  },
+  "Fonts:ArchivoBlack-Regular.ttf": {
+    family: "Archivo Black",
+    weight: 400,
+    src: "/fonts/ArchivoBlack-Regular.ttf",
+  },
+  "Fonts:ITCAvantGardeStdBold.ttf": {
+    family: "ITC Avant Garde Std",
+    weight: 700,
+    src: "/fonts/ITCAvantGardeStd-Bold.ttf",
+  },
+  "Fonts:canvasans.ttf": {
+    family: "Canva Sans",
+    weight: 400,
+    src: "/fonts/CanvaSans-VF.ttf",
+  },
+  "Fonts:SourceHanSansCN-Heavy-2.otf": {
+    family: "Source Han Sans CN",
+    weight: 900,
+    src: "/fonts/SourceHanSansCN-Heavy-2.otf",
+  },
+  "Fonts:方正兰亭特黑简体.ttf": {
+    family: "FZ LanTingHei S",
+    weight: 900,
+    // URL-encode the CJK filename so the browser fetches it correctly.
+    src: `/fonts/${encodeURIComponent("方正兰亭特黑简体.ttf")}`,
+  },
+};
 
 // Cache by raw `font_use` input so repeated calls (same brand re-rendered)
 // resolve synchronously after the first network round-trip.
 const cache = new Map<string, Promise<string>>();
 const injectedGoogleFamilies = new Set<string>();
+const injectedLocalFamilies = new Set<string>();
 
 // The "canonical" weight a brand font ships at. Callers use this to ensure
 // the canvas requests a real weight that exists in the font file — single-
-// weight families (Anton, Archivo Black, Bebas Neue) only have 400, so a
-// fontWeight of 700 either falls back or triggers faux-bold and corrupt
-// Textbox metrics. Returns null for plain Google family names where any
-// weight in 100–900 is available.
+// weight families (Anton, Archivo Black) only have 400, so a fontWeight of
+// 700 either falls back or triggers faux-bold and corrupt Textbox metrics.
+// Returns null for plain Google family names where any weight in 100–900 is
+// available.
 export function getBrandFontWeight(
   fontUse: string | null | undefined,
 ): number | null {
   if (!fontUse) return null;
-  return CLOUDINARY_TO_GOOGLE[fontUse]?.weight ?? null;
+  return CLOUDINARY_TO_LOCAL[fontUse]?.weight ?? null;
+}
+
+function injectFontFace(family: string, weight: number, src: string): void {
+  if (injectedLocalFamilies.has(family)) return;
+  const style = document.createElement("style");
+  style.dataset.brandFont = family;
+  style.textContent = `@font-face{font-family:"${family}";src:url("${src}");font-weight:${weight};font-style:normal;font-display:swap;}`;
+  document.head.appendChild(style);
+  injectedLocalFamilies.add(family);
+}
+
+async function loadLocalFont(font: LocalFont): Promise<string> {
+  injectFontFace(font.family, font.weight, font.src);
+  // Trigger metric load so Fabric measures glyphs correctly on first paint.
+  await document.fonts
+    .load(`${font.weight} 64px "${font.family}"`)
+    .catch(() => undefined);
+  return font.family;
 }
 
 async function loadGoogleFont(name: string, weights: number[]): Promise<string> {
@@ -91,10 +137,10 @@ export function loadBrandFont(
 
   const promise = (async () => {
     try {
-      // Translate Cloudinary asset refs to their Google Fonts equivalent.
-      const mapped = CLOUDINARY_TO_GOOGLE[fontUse];
-      if (mapped) {
-        return await loadGoogleFont(mapped.family, [mapped.weight]);
+      // Cloudinary asset ref → bundled local font file.
+      const local = CLOUDINARY_TO_LOCAL[fontUse];
+      if (local) {
+        return await loadLocalFont(local);
       }
       // Plain Google Fonts family name (e.g. "Montserrat", "Open Sans").
       return await loadGoogleFont(fontUse, [400, 700]);
