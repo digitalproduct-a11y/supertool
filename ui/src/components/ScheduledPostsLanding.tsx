@@ -141,7 +141,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Hero */}
         <div className="mb-10">

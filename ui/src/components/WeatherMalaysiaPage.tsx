@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  IconArrowLeft,
+  IconChevronLeft,
   IconCloudRain,
   IconDownload,
   IconX,
@@ -369,27 +369,20 @@ export function WeatherMalaysiaPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-950 transition mb-4"
-          >
-            <IconArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <div className="flex items-center gap-3">
-            <IconCloudRain
-              className="w-8 h-8"
-              style={{ color: "#00E5D4" }}
-            />
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-                Weather Malaysia
-              </h1>
-              <p className="text-neutral-500 text-sm">
-                Generate daily weather forecast posts for all states
-              </p>
-            </div>
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={handleBack}
+              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
+            >
+              <IconChevronLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
+              Weather Malaysia
+            </h1>
           </div>
+          <p className="text-neutral-500 text-sm">
+            Generate daily weather forecast posts for all states
+          </p>
           <div
             className="mt-4 h-[3px] rounded-full animate-stripe-grow"
             style={{

@@ -212,7 +212,9 @@ export function PrimeTalkPage() {
   }
 
   function handleBack() {
-    if (stage === 'select-angles') {
+    if (stage === 'upload') {
+      window.history.back()
+    } else if (stage === 'select-angles') {
       reset()
       setStage('upload')
     } else if (stage === 'review') {
@@ -226,14 +228,12 @@ export function PrimeTalkPage() {
       <div className="bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="flex items-center gap-3 mb-3">
-            {stage !== 'upload' && stage !== 'analyzing' && (
-              <button
-                onClick={handleBack}
-                className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
-              >
-                <IconChevronLeft className="w-5 h-5" />
-              </button>
-            )}
+            <button
+              onClick={handleBack}
+              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
+            >
+              <IconChevronLeft className="w-5 h-5" />
+            </button>
             <h1 className="text-2xl font-semibold text-neutral-950">Prime Talk 《八点最日报》 Post Generator</h1>
           </div>
           <p className="text-sm text-neutral-600">Turn Prime Talk episode scripts into ready-to-post Facebook image cards</p>
