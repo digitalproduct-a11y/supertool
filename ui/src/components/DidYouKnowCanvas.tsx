@@ -26,6 +26,7 @@ interface DidYouKnowCanvasProps {
   imageUrl: string | null
   brandLogoPublicId: string | null
   translatedEdition: string
+  language: string
   onClick?: () => void
 }
 
@@ -38,6 +39,7 @@ export const DidYouKnowCanvas = forwardRef<
     imageUrl,
     brandLogoPublicId,
     translatedEdition,
+    language,
     onClick,
   },
   ref,
@@ -236,13 +238,16 @@ export const DidYouKnowCanvas = forwardRef<
       cursorY -= headlineH + cfg.editionLabel.marginBottom
 
       // Add edition label with black background
-      const editionText = translatedEdition.toUpperCase()
+      const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
+      const prefix = isMalay ? 'IMBAS KEMBALI' : 'THROWBACK'
+      const editionText = `${prefix} - ${translatedEdition}`.toUpperCase()
       const editionObj = new Text(editionText, {
         fontFamily: cfg.editionLabel.fontFamily,
         fontSize: cfg.editionLabel.fontSize,
         fontWeight: cfg.editionLabel.fontWeight,
         fill: cfg.editionLabel.color,
         charSpacing: cfg.editionLabel.charSpacing,
+        originX: 'left',
         originY: 'top',
         selectable: false,
         evented: false,
@@ -259,6 +264,7 @@ export const DidYouKnowCanvas = forwardRef<
         width: editionBgW,
         height: editionBgH,
         fill: cfg.editionLabel.backgroundColor,
+        originX: 'left',
         originY: 'top',
         selectable: false,
         evented: false,

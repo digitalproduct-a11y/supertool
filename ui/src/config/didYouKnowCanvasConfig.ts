@@ -104,7 +104,7 @@ export const DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG: DidYouKnowCanvasConfig = {
     paddingV: 2,
     charSpacing: 100,
     marginBottom: 20,
-    leftOffset: 210,
+    leftOffset: 40,
   },
   headline: {
     fontFamily: 'Montserrat',
@@ -138,7 +138,7 @@ export const DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG: DidYouKnowCanvasConfig = {
   },
   fact: {
     fontFamily: 'Montserrat',
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '400',
     fill: 'rgba(245,242,234,0.9)',
     lineHeight: 1.3,
