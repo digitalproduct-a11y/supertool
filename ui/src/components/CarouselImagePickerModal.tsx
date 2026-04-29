@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { CarouselImage } from '../types'
 
@@ -75,6 +75,14 @@ export function CarouselImagePickerModal({
 
   const canConfirm = selectedUrl !== null || stagedFile !== null
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   return createPortal(
     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col shadow-[0_2px_24px_rgba(0,0,0,0.12)]">
@@ -86,6 +94,7 @@ export function CarouselImagePickerModal({
             <p className="text-sm text-gray-600 mt-1">Pick an image or upload your own</p>
           </div>
           <button
+            type="button"
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-900 text-2xl leading-none transition"
           >
@@ -104,6 +113,7 @@ export function CarouselImagePickerModal({
                 {articleImages.map((url) => (
                   <div key={url} className="relative">
                     <button
+                      type="button"
                       onClick={() => handleGridSelect(url)}
                       className={`w-full block rounded-lg overflow-hidden border-2 transition ${
                         selectedUrl === url ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
@@ -130,6 +140,7 @@ export function CarouselImagePickerModal({
                 {pexelsImages.map((img) => (
                   <div key={img.id} className="relative">
                     <button
+                      type="button"
                       onClick={() => handleGridSelect(img.src)}
                       className={`w-full block rounded-lg overflow-hidden border-2 transition ${
                         selectedUrl === img.src ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
@@ -183,6 +194,7 @@ export function CarouselImagePickerModal({
                   <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-48 object-contain" />
                 </div>
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full px-3 py-2 text-xs text-neutral-600 hover:text-neutral-900 border border-gray-300 rounded-lg transition"
                 >
@@ -197,12 +209,14 @@ export function CarouselImagePickerModal({
         {/* Footer */}
         <div className="border-t border-gray-200 px-4 py-3 flex gap-3 flex-shrink-0">
           <button
+            type="button"
             onClick={handleClose}
             className="flex-1 px-4 py-2 text-neutral-600 hover:text-neutral-900 border border-gray-300 rounded-lg text-xs font-medium transition"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleConfirm}
             disabled={!canConfirm}
             className="flex-1 px-4 py-2 bg-neutral-950 hover:bg-neutral-800 disabled:bg-gray-300 disabled:text-gray-400 text-white rounded-lg text-xs font-medium transition active:scale-[0.98]"
