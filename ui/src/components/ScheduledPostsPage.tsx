@@ -46,7 +46,7 @@ export const RECOMMENDED_SOURCES: Record<string, string[]> = {
   'Media Hiburan':   ['gempak', 'rojak daily'],
   'Mingguan Wanita': ['gempak', 'rojak daily'],
   'Astro Ulagam':    ['astro awani', 'stadium astro', 'rojak daily'],
-  'Rojak Daily':     ['stadium astro'],
+  'Rojak Daily':     ['astro ulagam', 'xuan', 'gempak'],
   'Lite':            ['astro awani', 'stadium astro', 'rojak daily'],
   'Hitz':            ['astro awani', 'stadium astro', 'rojak daily'],
   'Mix':             ['astro awani', 'stadium astro', 'rojak daily'],
