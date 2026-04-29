@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import JSZip from 'jszip'
@@ -25,6 +25,7 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [replacements, setReplacements] = useState<Map<string, ImageReplacement>>(new Map())
+  const replacementsRef = useRef(replacements)
   const [title, setTitle] = useState(result.title ?? '')
   const [caption, setCaption] = useState(result.caption ?? '')
   const [isZipping, setIsZipping] = useState(false)
@@ -53,12 +54,17 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
     setSlideTitles(map)
   }, [result.images])
 
+  // Keep ref in sync with replacements state
+  useEffect(() => { replacementsRef.current = replacements }, [replacements])
+
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
-      replacements.forEach(r => URL.revokeObjectURL(r.previewUrl))
+      replacementsRef.current.forEach(r => {
+        if (r.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(r.previewUrl)
+      })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Derived: active (non-deleted) images
   const activeImages = result.images.filter(img => !deletedIds.has(img.id))
@@ -237,52 +243,56 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
       return
     }
     setIsZipping(true)
-    const zip = new JSZip()
-    let failCount = 0
+    try {
+      const zip = new JSZip()
+      let failCount = 0
 
-    for (let i = 0; i < activeImages.length; i++) {
-      const img = activeImages[i]
-      const replacement = replacements.get(img.id)
-      const url = getDisplayUrl(img.id, img.src)
-      try {
-        let blob: Blob
-        // Use raw file only if upload hasn't completed yet (no cloudinaryUrl)
-        if (replacement && !replacement.cloudinaryUrl) {
-          if (replacement.file) {
-            blob = replacement.file
+      for (let i = 0; i < activeImages.length; i++) {
+        const img = activeImages[i]
+        const replacement = replacements.get(img.id)
+        const url = getDisplayUrl(img.id, img.src)
+        try {
+          let blob: Blob
+          // Use raw file only if upload hasn't completed yet (no cloudinaryUrl)
+          if (replacement && !replacement.cloudinaryUrl) {
+            if (replacement.file) {
+              blob = replacement.file
+            } else {
+              const res = await fetch(replacement.previewUrl)
+              if (!res.ok) throw new Error(`HTTP ${res.status}`)
+              blob = await res.blob()
+            }
           } else {
-            const res = await fetch(replacement.previewUrl)
+            const res = await fetch(url)
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             blob = await res.blob()
           }
-        } else {
-          const res = await fetch(url)
-          if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          blob = await res.blob()
+          zip.file(`${result.brand}_${String(i + 1).padStart(2, '0')}.jpg`, blob)
+        } catch {
+          failCount++
         }
-        zip.file(`${result.brand}_${String(i + 1).padStart(2, '0')}.jpg`, blob)
-      } catch {
-        failCount++
       }
-    }
 
-    const successCount = activeImages.length - failCount
-    if (successCount === 0) {
-      toast.error('All downloads failed. Please check your connection.')
+      const successCount = activeImages.length - failCount
+      if (successCount === 0) {
+        toast.error('All downloads failed. Please check your connection.')
+        return
+      }
+      if (failCount > 0) {
+        toast.error(`${failCount} image(s) could not be fetched and were skipped.`)
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(zipBlob)
+      a.download = `${result.brand}_carousel_${Date.now()}.zip`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (e) {
+      toast.error('Failed to create ZIP.')
+    } finally {
       setIsZipping(false)
-      return
     }
-    if (failCount > 0) {
-      toast.error(`${failCount} image(s) could not be fetched and were skipped.`)
-    }
-
-    const zipBlob = await zip.generateAsync({ type: 'blob' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(zipBlob)
-    a.download = `${result.brand}_carousel_${Date.now()}.zip`
-    a.click()
-    URL.revokeObjectURL(a.href)
-    setIsZipping(false)
   }
 
   function handleCopy() {

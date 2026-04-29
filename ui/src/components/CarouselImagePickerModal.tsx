@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import type { CarouselImage } from '../types'
 
@@ -57,10 +57,10 @@ export function CarouselImagePickerModal({
     if (file && file.type.startsWith('image/')) handleFileStage(file)
   }
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     onClose()
-  }
+  }, [previewUrl, onClose])
 
   const handleConfirm = () => {
     if (selectedUrl) {
@@ -81,7 +81,7 @@ export function CarouselImagePickerModal({
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [handleClose])
 
   return createPortal(
     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
