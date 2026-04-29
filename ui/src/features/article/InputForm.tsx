@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react'
-import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl, detectBrandInfoFromUrl } from '../constants/brands'
-import type { TitleMode, CaptionTitleMode } from '../types'
+import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl, detectBrandInfoFromUrl } from '../../constants/brands'
+import type { TitleMode, CaptionTitleMode } from '../../types'
 
 interface InputFormProps {
   url: string

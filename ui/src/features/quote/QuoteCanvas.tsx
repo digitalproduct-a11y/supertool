@@ -21,10 +21,10 @@ import {
   DEFAULT_QUOTE_CANVAS_CONFIG,
   type QuoteCanvasConfig,
   type TextLayerStyle,
-} from "../config/quoteCanvasConfig";
-import { BRAND_LOGO_IDS, getBrandHex } from "../constants/brands";
-import { withSubjectAwareCrop } from "../utils/cloudinary";
-import { loadBrandFont, getBrandFontWeight } from "../utils/brandFonts";
+} from "../../config/quoteCanvasConfig";
+import { BRAND_LOGO_IDS, getBrandHex } from "../../constants/brands";
+import { withSubjectAwareCrop } from "../../utils/cloudinary";
+import { loadBrandFont, getBrandFontWeight } from "../../utils/brandFonts";
 
 export interface QuoteCanvasHandle {
   downloadAsPng: () => void;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { TrendingTopic } from '../hooks/useEngagementPhotos'
+import type { TrendingTopic } from '../../hooks/useEngagementPhotos'
 
 const POST_TYPES = [
   { id: 'challenge', label: 'Challenge' },

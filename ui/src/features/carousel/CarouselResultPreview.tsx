@@ -2,11 +2,11 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import JSZip from 'jszip'
-import type { CarouselResult } from '../types'
-import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl, replaceBaseImage, uploadToCloudinary } from '../utils/cloudinary'
-import { ScheduleModal } from './ScheduleModal'
-import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import type { CarouselResult } from '../../types'
+import { toast } from '../../hooks/useToast'
+import { updateTitleInImageUrl, replaceBaseImage, uploadToCloudinary } from '../../utils/cloudinary'
+import { ScheduleModal } from '../../components/ScheduleModal'
+import { getCredentials, saveCredentials, clearCredentials } from '../../utils/fbCredentials'
 
 interface ImageReplacement {
   file: File

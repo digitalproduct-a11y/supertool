@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { SocialAffiliateFormData } from '../types'
-import { BRANDS } from '../constants/brands'
+import type { SocialAffiliateFormData } from '../../types'
+import { BRANDS } from '../../constants/brands'
 
 const TONE_OPTIONS = [
   { value: 'problem-solution', label: 'Problem–Solution' },

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { CAROUSEL_PROGRESS_STEPS } from '../types'
+import { CAROUSEL_PROGRESS_STEPS } from '../../types'
 
 interface CarouselProgressStepsProps {
   isComplete: boolean

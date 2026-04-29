@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { SocialAffiliateThreadPost } from '../types'
+import type { SocialAffiliateThreadPost } from '../../types'
 
 interface SocialAffiliatePostCardProps {
   post: SocialAffiliateThreadPost

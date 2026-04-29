@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useSocialAffiliatePosting } from '../hooks/useSocialAffiliatePosting'
 import type { SocialAffiliateFormData } from '../types'
-import { SocialAffiliateInputForm } from '../components/SocialAffiliateInputForm'
-import { SocialAffiliateResultsMeta } from '../components/SocialAffiliateResultsMeta'
-import { SocialAffiliateThreadsSection } from '../components/SocialAffiliateThreadsSection'
-import { SocialAffiliateFacebookSection } from '../components/SocialAffiliateFacebookSection'
+import { SocialAffiliateInputForm } from '../features/social-affiliate/SocialAffiliateInputForm'
+import { SocialAffiliateResultsMeta } from '../features/social-affiliate/SocialAffiliateResultsMeta'
+import { SocialAffiliateThreadsSection } from '../features/social-affiliate/SocialAffiliateThreadsSection'
+import { SocialAffiliateFacebookSection } from '../features/social-affiliate/SocialAffiliateFacebookSection'
 import { Spinner } from '../components/ds/Spinner'
 
 const LOADING_MESSAGES = [

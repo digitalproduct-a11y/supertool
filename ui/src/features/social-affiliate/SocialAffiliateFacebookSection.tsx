@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { SocialAffiliateFacebookResult } from '../types'
+import type { SocialAffiliateFacebookResult } from '../../types'
 
 interface SocialAffiliateFacebookSectionProps {
   data: SocialAffiliateFacebookResult

@@ -1,4 +1,4 @@
-import type { SocialAffiliateGenerationResult } from '../types'
+import type { SocialAffiliateGenerationResult } from '../../types'
 
 const TONE_LABELS: Record<string, string> = {
   'problem-solution': 'Problem–Solution',

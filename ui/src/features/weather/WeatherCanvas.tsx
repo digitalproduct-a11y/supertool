@@ -7,14 +7,14 @@ import {
   useCallback,
 } from "react";
 import { StaticCanvas, FabricImage, Rect, Text } from "fabric";
-import type { WeatherPost } from "../hooks/useWeatherMalaysia";
+import type { WeatherPost } from "../../hooks/useWeatherMalaysia";
 import {
   DEFAULT_WEATHER_CANVAS_CONFIG,
   type WeatherCanvasConfig,
   type TextLayerStyle,
-} from "../config/weatherCanvasConfig";
-import { BRAND_LOGO_IDS } from "../constants/brands";
-import { loadBrandFont } from "../utils/brandFonts";
+} from "../../config/weatherCanvasConfig";
+import { BRAND_LOGO_IDS } from "../../constants/brands";
+import { loadBrandFont } from "../../utils/brandFonts";
 
 export interface WeatherCanvasHandle {
   downloadAsPng: () => void;

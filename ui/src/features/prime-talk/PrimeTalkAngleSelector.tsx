@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { PrimeTalkTopic, TopicAngleSelection } from '../types'
-import { PRIME_TALK_ANGLES } from '../constants/primeTalkAngles'
+import type { PrimeTalkTopic, TopicAngleSelection } from '../../types'
+import { PRIME_TALK_ANGLES } from '../../constants/primeTalkAngles'
 
 interface PrimeTalkAngleSelectorProps {
   topics: PrimeTalkTopic[]

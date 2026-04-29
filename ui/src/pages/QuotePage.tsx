@@ -9,8 +9,8 @@ import {
   IconUpload,
   IconX,
 } from "@tabler/icons-react";
-import { QuoteCanvas, type QuoteCanvasHandle, type QuoteData } from "../components/QuoteCanvas";
-import { ImageCropAdjuster, type CropRegion } from "../components/ImageCropAdjuster";
+import { QuoteCanvas, type QuoteCanvasHandle, type QuoteData } from "../features/quote/QuoteCanvas";
+import { ImageCropAdjuster, type CropRegion } from "../features/quote/ImageCropAdjuster";
 import { ScheduleModal } from "../components/ScheduleModal";
 import { getCredentials } from "../utils/fbCredentials";
 import { uploadToCloudinary } from "../utils/cloudinary";

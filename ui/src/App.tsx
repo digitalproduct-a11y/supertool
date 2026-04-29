@@ -34,9 +34,9 @@ const QuotePage = lazy(() =>
     default: m.QuotePage,
   })),
 )
-import { InputForm } from './components/InputForm'
-import { PreviewPanel } from './components/PreviewPanel'
-import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
+import { InputForm } from './features/article/InputForm'
+import { PreviewPanel } from './features/article/PreviewPanel'
+import { CarouselPreviewPanel } from './features/carousel/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
 import { GetStartedPage } from './pages/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
