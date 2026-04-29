@@ -347,7 +347,12 @@ export const DidYouKnowCanvas = forwardRef<
       const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 1 })
       const link = document.createElement('a')
       link.href = dataUrl
-      link.download = `didyouknow-${idea.id}.png`
+      const sanitizedHeadline = idea.headline
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 100)
+      link.download = `${sanitizedHeadline}.png`
       link.click()
     },
     getDataUrl() {
