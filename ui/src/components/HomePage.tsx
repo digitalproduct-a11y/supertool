@@ -86,8 +86,8 @@ const sections: Section[] = [
       },
       {
         id: "scheduled-posts",
-        label: "Trending News",
-        description: "Browse trending articles and generate posts for your brand",
+        label: "News Bank",
+        description: "Browse latest and trending news, generate posts for your brand",
         color: "#0055EE",
         icon: IconTrendingUp,
       },

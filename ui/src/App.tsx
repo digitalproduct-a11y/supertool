@@ -13,6 +13,8 @@ import { LatestFuelPricePage } from './components/LatestFuelPricePage'
 import { KLCIIndexPage } from './components/KLCIIndexPage'
 import { ScheduledPostsPage } from './components/ScheduledPostsPage'
 import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
+import { NewsBankLanding } from './components/NewsBankLanding'
+import { NewsBankBrandPage } from './components/NewsBankPage'
 import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './components/SpikeNewsPage'
@@ -55,6 +57,7 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
   '/trending-news': 'scheduled-posts',
+  '/news-bank': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
@@ -62,9 +65,9 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-photos/prime-talk': 'engagement-posts',
 }
 
-// Map trending-news subpages to scheduled-posts tool
+// Map trending-news and news-bank subpages to scheduled-posts tool
 function getActiveTool(pathname: string): ToolId {
-  if (pathname.startsWith('/trending-news')) {
+  if (pathname.startsWith('/trending-news') || pathname.startsWith('/news-bank')) {
     return 'scheduled-posts'
   }
   return pathToTool[pathname] ?? 'home'
@@ -80,7 +83,7 @@ const toolToPath: Record<ToolId, string> = {
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-posts',
   'engagement-photos': '/engagement-posts/epl',
-  'scheduled-posts': '/trending-news',
+  'scheduled-posts': '/news-bank',
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
@@ -907,14 +910,20 @@ function App() {
           <KLCIIndexPage />
         </Layout>
       } />
-      <Route path="/trending-news" element={
-        <Layout {...layoutProps}>
-          <ScheduledPostsLanding onSelectBrand={() => {}} />
-        </Layout>
-      } />
+      <Route path="/trending-news" element={<Navigate to="/news-bank" replace />} />
       <Route path="/trending-news/:brandSlug" element={
         <Layout {...layoutProps}>
           <ScheduledPostsBrandPage />
+        </Layout>
+      } />
+      <Route path="/news-bank" element={
+        <Layout {...layoutProps}>
+          <NewsBankLanding />
+        </Layout>
+      } />
+      <Route path="/news-bank/:brandSlug" element={
+        <Layout {...layoutProps}>
+          <NewsBankBrandPage />
         </Layout>
       } />
       <Route path="/shopee-top-products" element={
