@@ -268,7 +268,11 @@ export function extractBaseImageUrl(cloudinaryUrl: string): string | null {
 
   if (lastTransformIdx < 0 || lastTransformIdx >= segments.length - 1) return null
 
-  return decodeURIComponent(segments[lastTransformIdx + 1])
+  try {
+    return decodeURIComponent(segments[lastTransformIdx + 1])
+  } catch {
+    return null
+  }
 }
 
 /**
