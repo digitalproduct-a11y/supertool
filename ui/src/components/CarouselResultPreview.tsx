@@ -11,7 +11,7 @@ import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCr
 
 interface ImageReplacement {
   file?: File              // present for file uploads, absent for URL picks
-  previewUrl: string       // blob URL (file uploads) or raw URL (url picks) for instant preview
+  previewUrl: string       // blob URL (file uploads) or Cloudinary fetch URL (url picks) for instant preview
   cloudinaryUrl?: string   // final URL with overlays applied
   isUploading?: boolean
 }
