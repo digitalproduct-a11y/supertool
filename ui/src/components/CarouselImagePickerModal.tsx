@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import type { CarouselImage } from '../types'
+import { extractBaseImageUrl } from '../utils/cloudinary'
 
 interface CarouselImagePickerModalProps {
   articleImages: string[]
@@ -137,7 +138,9 @@ export function CarouselImagePickerModal({
             <div>
               <p className="text-xs font-medium text-gray-700 mb-3 uppercase tracking-wide">From Pexels</p>
               <div className="grid grid-cols-2 gap-3">
-                {pexelsImages.map((img) => (
+                {pexelsImages.map((img) => {
+                  const displaySrc = extractBaseImageUrl(img.src) ?? img.src
+                  return (
                   <div key={img.id} className="relative">
                     <button
                       type="button"
@@ -146,7 +149,7 @@ export function CarouselImagePickerModal({
                         selectedUrl === img.src ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
                       }`}
                     >
-                      <img src={img.src} alt={img.alt} className="w-full h-auto" />
+                      <img src={displaySrc} alt={img.alt} className="w-full h-auto" />
                     </button>
                     {selectedUrl === img.src && (
                       <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded">
@@ -154,7 +157,8 @@ export function CarouselImagePickerModal({
                       </div>
                     )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
