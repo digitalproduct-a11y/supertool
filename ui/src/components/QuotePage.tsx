@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import {
   IconChevronLeft,
   IconBlockquote,
+  IconCrop,
   IconDownload,
   IconRefresh,
   IconUpload,
   IconX,
 } from "@tabler/icons-react";
 import { QuoteCanvas, type QuoteCanvasHandle, type QuoteData } from "./QuoteCanvas";
+import { ImageCropAdjuster, type CropRegion } from "./ImageCropAdjuster";
 import { ScheduleModal } from "./ScheduleModal";
 import { getCredentials } from "../utils/fbCredentials";
 import { uploadToCloudinary } from "../utils/cloudinary";
@@ -90,6 +92,10 @@ export function QuotePage() {
   // User-uploaded background image (overrides the article photo).
   const [customBgUrl, setCustomBgUrl] = useState<string | null>(null);
   const customBgInputRef = useRef<HTMLInputElement>(null);
+  // Manual crop region (source-pixel bounds) for the active background image.
+  // Null = use Cloudinary's `g_auto` subject-aware crop.
+  const [manualCrop, setManualCrop] = useState<CropRegion | null>(null);
+  const [showCropAdjuster, setShowCropAdjuster] = useState(false);
   // User toggle for the tabloid layout's decorative side circle. Off by default.
   const [useSideCircle, setUseSideCircle] = useState(false);
 
@@ -155,12 +161,14 @@ export function QuotePage() {
     if (!file) return;
     if (customBgUrl) URL.revokeObjectURL(customBgUrl);
     setCustomBgUrl(URL.createObjectURL(file));
+    setManualCrop(null);
     e.target.value = "";
   }
 
   function handleResetCustomBg() {
     if (customBgUrl) URL.revokeObjectURL(customBgUrl);
     setCustomBgUrl(null);
+    setManualCrop(null);
   }
 
   function handleRefreshPexels() {
@@ -196,6 +204,7 @@ export function QuotePage() {
     setCustomCircleUrl(null);
     if (customBgUrl) URL.revokeObjectURL(customBgUrl);
     setCustomBgUrl(null);
+    setManualCrop(null);
     setQuoteIndex(0);
     setStepIndex(0);
     setScheduleStatus("idle");
@@ -388,6 +397,7 @@ export function QuotePage() {
       setCustomCircleUrl(null);
       if (customBgUrl) URL.revokeObjectURL(customBgUrl);
       setCustomBgUrl(null);
+      setManualCrop(null);
     }
   }
 
@@ -771,6 +781,7 @@ export function QuotePage() {
                   setCustomCircleUrl(null);
                   if (customBgUrl) URL.revokeObjectURL(customBgUrl);
                   setCustomBgUrl(null);
+                  setManualCrop(null);
                 }}
                 className="text-xs text-neutral-500 hover:text-neutral-800 transition"
               >
@@ -787,6 +798,7 @@ export function QuotePage() {
                   brand={brand}
                   config={config}
                   imageUrl={customBgUrl ?? imageUrl}
+                  cropRegion={manualCrop}
                   pexelsImageUrl={
                     useSideCircle
                       ? (customCircleUrl ?? pexelsUrls[pexelsIndex] ?? null)
@@ -836,6 +848,23 @@ export function QuotePage() {
                       Download
                     </button>
                   </div>
+                  {(customBgUrl ?? imageUrl) && (
+                    <button
+                      onClick={() => setShowCropAdjuster(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
+                    >
+                      <IconCrop className="w-4 h-4" />
+                      {manualCrop ? "Edit crop" : "Adjust crop"}
+                    </button>
+                  )}
+                  {manualCrop && (
+                    <button
+                      onClick={() => setManualCrop(null)}
+                      className="text-xs text-neutral-500 hover:text-neutral-800 transition"
+                    >
+                      Reset crop to auto
+                    </button>
+                  )}
                   {customBgUrl && (
                     <button
                       onClick={handleResetCustomBg}
@@ -1023,6 +1052,33 @@ export function QuotePage() {
           </div>
         </div>
       </div>
+
+      {/* Manual crop adjuster */}
+      {showCropAdjuster && (customBgUrl ?? imageUrl) && (
+        <ImageCropAdjuster
+          imageUrl={customBgUrl ?? imageUrl!}
+          aspectRatio={config.canvas.width / config.canvas.height}
+          initialRegion={
+            manualCrop
+              ? {
+                  x: manualCrop.x,
+                  y: manualCrop.y,
+                  width: manualCrop.width,
+                  height: manualCrop.height,
+                }
+              : null
+          }
+          onSave={(region) => {
+            setManualCrop(region);
+            setShowCropAdjuster(false);
+          }}
+          onReset={() => {
+            setManualCrop(null);
+            setShowCropAdjuster(false);
+          }}
+          onCancel={() => setShowCropAdjuster(false)}
+        />
+      )}
 
       {/* Lightbox */}
       {lightboxUrl && (

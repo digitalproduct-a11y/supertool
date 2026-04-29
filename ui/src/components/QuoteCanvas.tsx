@@ -43,6 +43,9 @@ interface QuoteCanvasProps {
   brand: string;
   config?: QuoteCanvasConfig;
   imageUrl?: string | null;
+  // Manual crop region in source-image pixels. When set, overrides the
+  // Cloudinary `g_auto` subject-aware crop and uses these bounds verbatim.
+  cropRegion?: { x: number; y: number; width: number; height: number } | null;
   // Pexels image URL for the tabloid layout's single side circle. When unset,
   // empty, or the image fails to load, the circle renders nothing (silent fallback).
   pexelsImageUrl?: string | null;
@@ -157,6 +160,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
       brand,
       config: configProp,
       imageUrl,
+      cropRegion,
       pexelsImageUrl,
       fontUse,
       onClick,
@@ -262,23 +266,34 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
           // Layer 2: full-bleed cover-scaled photo
           if (imageUrl) {
             try {
-              // Subject-aware Cloudinary crop keeps the article's main
-              // subject in frame instead of relying on geometric center.
-              // Pass-through for blob: (custom uploads) and external URLs.
-              const sourceUrl = withSubjectAwareCrop(imageUrl, width, height);
+              // When a manual crop region is set, load the original image
+              // and pass the region as bounds. Otherwise use Cloudinary's
+              // subject-aware (`g_auto`) crop. Pass-through for blob: and
+              // external URLs.
+              const sourceUrl = cropRegion
+                ? imageUrl
+                : withSubjectAwareCrop(imageUrl, width, height);
               const loaded = await FabricImage.fromURL(sourceUrl, {
                 crossOrigin: "anonymous",
               });
               if (isCancelled()) return false;
               const elem = loaded.getElement() as HTMLImageElement;
+              const bounds = cropRegion
+                ? {
+                    x: cropRegion.x,
+                    y: cropRegion.y,
+                    width: cropRegion.width,
+                    height: cropRegion.height,
+                  }
+                : {
+                    x: 0,
+                    y: 0,
+                    width: elem.naturalWidth,
+                    height: elem.naturalHeight,
+                  };
               const treated = preprocessSubject(
                 elem,
-                {
-                  x: 0,
-                  y: 0,
-                  width: elem.naturalWidth,
-                  height: elem.naturalHeight,
-                },
+                bounds,
                 t.photoTreatment,
                 duoDarkT,
                 duoLightT,
@@ -785,14 +800,22 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
             });
             const elem = loaded.getElement() as HTMLImageElement;
             // Photo isn't bg-removed, so no alpha bounds — use the full image
+            // (or the manual crop region when provided).
             const treatedCanvas = preprocessSubject(
               elem,
-              {
-                x: 0,
-                y: 0,
-                width: elem.naturalWidth,
-                height: elem.naturalHeight,
-              },
+              cropRegion
+                ? {
+                    x: cropRegion.x,
+                    y: cropRegion.y,
+                    width: cropRegion.width,
+                    height: cropRegion.height,
+                  }
+                : {
+                    x: 0,
+                    y: 0,
+                    width: elem.naturalWidth,
+                    height: elem.naturalHeight,
+                  },
               treatment,
               duoDark,
               duoLight,
@@ -1136,7 +1159,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
         canvas.renderAll();
         return true;
       },
-      [quote, brand, config, imageUrl, pexelsImageUrl, fontUse],
+      [quote, brand, config, imageUrl, cropRegion, pexelsImageUrl, fontUse],
     );
 
     // Double-buffered render: build the new frame on a detached canvas, then
