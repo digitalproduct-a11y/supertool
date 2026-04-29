@@ -26,6 +26,7 @@ export interface DidYouKnowCanvasConfig {
     paddingV: number;
     charSpacing: number;
     marginBottom: number;
+    leftOffset: number;
   };
   headline: {
     fontFamily: string;
@@ -36,6 +37,7 @@ export interface DidYouKnowCanvasConfig {
     charSpacing: number;
     maxWidth: number;
     marginBottom: number;
+    leftOffset: number;
     shadow: {
       color: string;
       blur: number;
@@ -48,11 +50,13 @@ export interface DidYouKnowCanvasConfig {
     height: number;
     color: string;
     marginBottom: number;
+    leftOffset: number;
   };
   accentBar: {
     width: number;
     color: string;
     gap: number;
+    leftOffset: number;
   };
   fact: {
     fontFamily: string;
@@ -61,6 +65,7 @@ export interface DidYouKnowCanvasConfig {
     fill: string;
     lineHeight: number;
     maxWidth: number;
+    leftOffset: number;
   };
   layout: {
     sidePadding: number;
@@ -91,24 +96,26 @@ export const DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG: DidYouKnowCanvasConfig = {
   },
   editionLabel: {
     fontFamily: 'JetBrains Mono',
-    fontSize: 10,
+    fontSize: 28,
     fontWeight: '600',
-    color: '#E9B949',
+    color: '#ffffff',
     backgroundColor: '#000000',
     paddingH: 4,
     paddingV: 2,
     charSpacing: 100,
-    marginBottom: 8,
+    marginBottom: 20,
+    leftOffset: 210,
   },
   headline: {
     fontFamily: 'Montserrat',
-    fontSize: 28,
+    fontSize: 48,
     fontWeight: '900',
-    fill: '#faf7ee',
+    fill: '#f0b812',
     lineHeight: 0.98,
     charSpacing: -43,
-    maxWidth: 968,
-    marginBottom: 8,
+    maxWidth: 1000,
+    marginBottom: 20,
+    leftOffset: 540,
     shadow: {
       color: 'rgba(0,0,0,0.5)',
       blur: 4,
@@ -117,26 +124,29 @@ export const DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG: DidYouKnowCanvasConfig = {
     },
   },
   divider: {
-    width: 120,
-    height: 1,
+    width: 400,
+    height: 3,
     color: 'rgba(250,247,238,0.35)',
-    marginBottom: 12,
+    marginBottom: 30,
+    leftOffset: 240,
   },
   accentBar: {
     width: 3,
     color: '#E9B949',
-    gap: 12,
+    gap: 16,
+    leftOffset: 56,
   },
   fact: {
     fontFamily: 'Montserrat',
-    fontSize: 12,
+    fontSize: 28,
     fontWeight: '400',
     fill: 'rgba(245,242,234,0.9)',
-    lineHeight: 1.5,
-    maxWidth: 953,
+    lineHeight: 1.3,
+    maxWidth: 970,
+    leftOffset: 550,
   },
   layout: {
     sidePadding: 56,
-    bottomPadding: 40,
+    bottomPadding: 56,
   },
 };

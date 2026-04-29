@@ -1,8 +1,6 @@
 import { useState, useRef } from 'react'
 import { IconDownload, IconChevronLeft } from '@tabler/icons-react'
-import html2canvas from 'html2canvas'
-import { uploadToCloudinary } from '../utils/cloudinary'
-import { BRAND_LOGO_IDS } from '../constants/brands'
+import { DidYouKnowCanvas, type DidYouKnowCanvasHandle } from './DidYouKnowCanvas'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 import { toast } from '../hooks/useToast'
 
@@ -23,21 +21,15 @@ const editionTranslations: Record<string, Record<string, string>> = {
 }
 
 export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
-  const previewRef = useRef<HTMLDivElement>(null)
-  const [uploadedImageId, setUploadedImageId] = useState<string | null>(null)
+  const canvasRef = useRef<DidYouKnowCanvasHandle>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
   const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
   const translatedEdition = editionTranslations[edition]?.[isMalay ? 'ms' : 'en'] || edition
   const captionHeader = isMalay ? 'TAHUKAH ANDA?' : 'DID YOU KNOW?'
 
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
-  const brandLogo = brandLogoPublicId || (BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] || 'default_logo')
-  const brandLogoUrl = brandLogo
-    ? `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogo}`
-    : null
+  const brandLogo = brandLogoPublicId || 'default_logo'
 
 
   const handleFileUpload = async (file: File) => {
@@ -46,21 +38,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
       return
     }
 
-    setIsUploading(true)
-    try {
-      // Create local preview URL
-      const localUrl = URL.createObjectURL(file)
-      setUploadedImageUrl(localUrl)
-
-      // Also upload to Cloudinary for final download/export
-      const publicId = await uploadToCloudinary(file)
-      setUploadedImageId(publicId)
-      toast.success('Image uploaded!')
-    } catch (err) {
-      toast.error('Upload failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
-    } finally {
-      setIsUploading(false)
-    }
+    setUploadedImageUrl(URL.createObjectURL(file))
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -79,28 +57,14 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
     if (file) handleFileUpload(file)
   }
 
-  const handleDownload = async () => {
-    if (!previewRef.current) {
+  const handleDownload = () => {
+    if (!canvasRef.current) {
       toast.error('Preview not ready')
       return
     }
 
-    try {
-      const canvas = await html2canvas(previewRef.current, {
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#0a0a0c',
-        scale: 2,
-        logging: false,
-      })
-      const link = document.createElement('a')
-      link.href = canvas.toDataURL('image/jpeg', 0.95)
-      link.download = `didyouknow-${idea.id}.jpg`
-      link.click()
-      toast.success('Downloaded!')
-    } catch (err) {
-      toast.error('Download failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
-    }
+    canvasRef.current.downloadAsPng()
+    toast.success('Downloaded!')
   }
 
   return (
@@ -164,7 +128,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-lg p-6 text-center transition ${
               isDragging ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200'
-            } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+            }`}
           >
             <input
               type="file"
@@ -172,17 +136,14 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
               onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
               className="hidden"
               id="image-upload"
-              disabled={isUploading}
             />
             <label htmlFor="image-upload" className="block cursor-pointer">
-              <p className="text-sm font-medium text-neutral-950">
-                {isUploading ? 'Uploading...' : 'Upload background image'}
-              </p>
+              <p className="text-sm font-medium text-neutral-950">Upload background image</p>
               <p className="text-xs text-neutral-500 mt-1">Drag & drop or click to browse</p>
             </label>
           </div>
 
-          {uploadedImageId && (
+          {uploadedImageUrl && (
             <button
               onClick={handleDownload}
               className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
@@ -193,136 +154,18 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
           )}
         </div>
 
-        {/* Right: Live preview */}
+        {/* Right: Preview */}
         <div>
           <p className="text-sm font-medium text-neutral-950 mb-2">Preview</p>
-          {uploadedImageUrl ? (
-            <div className="rounded-lg overflow-hidden shadow-lg bg-neutral-900" style={{ aspectRatio: '1080/1350' }}>
-              {/* Tribune poster design */}
-              <div
-                ref={previewRef}
-                className="w-full h-full relative"
-                style={{
-                  background: '#0a0a0c',
-                }}
-              >
-                {/* Full-bleed background image */}
-                <img
-                  src={uploadedImageUrl}
-                  alt="background"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-
-                {/* Gradient overlay */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(180deg,
-                      rgba(6,6,8,0) 0%,
-                      rgba(6,6,8,0.100) 30%,
-                      rgba(6,6,8,0.506) 55%,
-                      rgba(6,6,8,0.810) 78%,
-                      rgba(6,6,8,0.92) 100%)`,
-                  }}
-                />
-
-                {/* Content container */}
-                <div className="absolute inset-0 flex flex-col" style={{ padding: '0 20px' }}>
-                  {/* Logo at top */}
-                  {brandLogoUrl && (
-                    <div className="mt-2 mb-12 flex justify-end pr-2">
-                      <img
-                        src={brandLogoUrl}
-                        alt={brand}
-                        style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Spacer to push content to bottom */}
-                  <div className="flex-1" />
-
-                  {/* Label above headline */}
-                  <div
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: '10px',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                      color: '#E9B949',
-                      fontWeight: 600,
-                      marginBottom: '8px',
-                      lineHeight: '1.3',
-                      backgroundColor: '#000000',
-                      padding: '2px 4px',
-                      display: 'inline-block',
-                      width: 'fit-content',
-                    }}
-                  >
-                    {translatedEdition}
-                  </div>
-
-                  {/* Headline */}
-                  <h1
-                    style={{
-                      fontFamily: "'Montserrat', sans-serif",
-                      fontSize: '24px',
-                      fontWeight: 900,
-                      fontStyle: 'normal',
-                      lineHeight: '0.98',
-                      letterSpacing: '-1.2px',
-                      color: '#faf7ee',
-                      margin: '0 0 8px 0',
-                      padding: '2px 0',
-                      wordWrap: 'break-word',
-                      overflowWrap: 'break-word',
-                      WebkitTextStroke: '0.7px #faf7ee',
-                    }}
-                  >
-                    {idea.headline}
-                  </h1>
-
-                  {/* Divider */}
-                  <div
-                    style={{
-                      width: '120px',
-                      height: '1px',
-                      background: 'rgba(250,247,238,.35)',
-                      marginBottom: '12px',
-                    }}
-                  />
-
-                  {/* Fact body with accent rule */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '12px', alignItems: 'stretch', marginBottom: '40px' }}>
-                    <div
-                      style={{
-                        width: '3px',
-                        background: '#E9B949',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <p
-                      style={{
-                        fontFamily: "'Montserrat', sans-serif",
-                        fontSize: '12px',
-                        fontWeight: 400,
-                        lineHeight: '1.5',
-                        color: 'rgba(245,242,234,.9)',
-                        margin: 0,
-                        padding: 0,
-                      }}
-                    >
-                      {idea.fact}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 aspect-[1080/1350] flex items-center justify-center">
-              <p className="text-sm text-neutral-500">Upload an image to see preview</p>
-            </div>
-          )}
+          <div className="w-full rounded-xl border border-neutral-200 overflow-hidden" style={{ aspectRatio: '1080 / 1350', backgroundColor: '#f5f5f5' }}>
+            <DidYouKnowCanvas
+              ref={canvasRef}
+              idea={idea}
+              imageUrl={uploadedImageUrl}
+              brandLogoPublicId={brandLogo}
+              translatedEdition={translatedEdition}
+            />
+          </div>
         </div>
       </div>
     </div>

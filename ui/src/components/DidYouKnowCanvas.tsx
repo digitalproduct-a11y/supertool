@@ -12,14 +12,9 @@ import {
   Rect,
   Text,
   Textbox,
-  Gradient,
-  Shadow,
 } from 'fabric'
-import {
-  DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG,
-  type DidYouKnowCanvasConfig,
-} from '../config/didYouKnowCanvasConfig'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
+import { DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG } from '../config/didYouKnowCanvasConfig'
 
 export interface DidYouKnowCanvasHandle {
   downloadAsPng: () => void
@@ -31,7 +26,6 @@ interface DidYouKnowCanvasProps {
   imageUrl: string | null
   brandLogoPublicId: string | null
   translatedEdition: string
-  config?: DidYouKnowCanvasConfig
   onClick?: () => void
 }
 
@@ -44,109 +38,104 @@ export const DidYouKnowCanvas = forwardRef<
     imageUrl,
     brandLogoPublicId,
     translatedEdition,
-    config: configProp,
     onClick,
   },
   ref,
 ) {
-  const config = configProp ?? DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG
   const canvasElRef = useRef<HTMLCanvasElement>(null)
   const fabricRef = useRef<StaticCanvas | null>(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const CANVAS_WIDTH = 1080
+  const CANVAS_HEIGHT = 1350
+
   const renderCanvas = useCallback(
     async (canvas: StaticCanvas) => {
       canvas.clear()
-      const { width, height } = config.canvas
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
 
+      const cfg = DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG
+
+      // Preload fonts
       try {
         await Promise.all([
-          document.fonts.load(`900 28px Montserrat`),
-          document.fonts.load(`400 12px Montserrat`),
-          document.fonts.load(`600 10px "JetBrains Mono"`),
+          document.fonts.load('900 28px Montserrat'),
+          document.fonts.load('400 12px Montserrat'),
+          document.fonts.load('600 10px "JetBrains Mono"'),
         ])
       } catch {
-        // Continue with fallback fonts if loading fails
+        // Continue with fallback
       }
 
-      // Layer 1: Dark bg fallback
-      canvas.add(
-        new Rect({
-          left: 0,
-          top: 0,
-          width,
-          height,
-          fill: config.canvas.backgroundColor,
-          selectable: false,
-          evented: false,
-        }),
-      )
+      const w = CANVAS_WIDTH
+      const h = CANVAS_HEIGHT
 
-      // Layer 2: Full-bleed photo (fill height, center-anchor, crop sides if needed)
+      // Layer 1: Background image (smart scaling based on aspect ratio)
       if (imageUrl) {
         try {
           const photo = await FabricImage.fromURL(imageUrl, {
             crossOrigin: 'anonymous',
           })
 
-          const imgHeight = photo.height!
+          const scaleX = w / photo.width!
+          const scaleY = h / photo.height!
 
-          // Scale to fill canvas height, width crops if needed
-          const scale = height / imgHeight
+          // Fill entire canvas (zoom in if needed)
+          const scale = Math.max(scaleX, scaleY)
 
-          const faceTop = height * 0.35
           photo.set({
             scaleX: scale,
             scaleY: scale,
-            left: width / 2,
-            top: faceTop,
+            left: w / 2,
+            top: 0,
             originX: 'center',
-            originY: 'center',
+            originY: 'top',
             selectable: false,
             evented: false,
           })
           canvas.add(photo)
         } catch {
-          // Photo failed — dark bg remains
+          // Image failed — dark bg remains
         }
       }
 
-      // Layer 3: Gradient overlay (multi-stop linear)
-      const gradRect = new Rect({
+      // Layer 1.5: Gradient overlay (black, bottom-to-top)
+      // Create gradient on canvas context
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = w
+      tempCanvas.height = h
+      const ctx = tempCanvas.getContext('2d')!
+      const grad = ctx.createLinearGradient(0, h, 0, 0)
+      grad.addColorStop(0, 'rgba(0, 0.8, 1, 1)')
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, w, h)
+
+      const gradientImage = await FabricImage.fromURL(tempCanvas.toDataURL())
+      gradientImage.set({
         left: 0,
         top: 0,
-        width,
-        height,
+        originX: 'left',
+        originY: 'top',
         selectable: false,
         evented: false,
       })
-      gradRect.set(
-        'fill',
-        new Gradient({
-          type: 'linear',
-          coords: { x1: 0, y1: 0, x2: 0, y2: height },
-          colorStops: config.gradient.colorStops.map((s) => ({
-            offset: s.offset,
-            color: config.gradient.color,
-            opacity: s.opacity,
-          })),
-        }),
-      )
-      canvas.add(gradRect)
+      canvas.add(gradientImage)
 
-      // Layer 4: Brand logo (top-right)
+      // Layer 2: Brand logo (top-right, small)
       if (brandLogoPublicId) {
         try {
-          const logoUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogoPublicId}`
+          const logoHeight = 90
+          const logoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/h_${logoHeight},c_scale/${brandLogoPublicId}`
           const logo = await FabricImage.fromURL(logoUrl, {
             crossOrigin: 'anonymous',
           })
-          logo.scaleToHeight(config.logo.height)
+
           logo.set({
-            left: width - config.logo.marginRight,
-            top: config.logo.marginTop,
+            height: logoHeight,
+            scaleToHeight: logoHeight,
+            left: w - 40,
+            top: 40,
             originX: 'right',
             originY: 'top',
             selectable: false,
@@ -154,329 +143,187 @@ export const DidYouKnowCanvas = forwardRef<
           })
           canvas.add(logo)
         } catch {
-          // Logo failed — skip
+          // Logo failed — continue
         }
       }
 
-      // Layers 5–10: Bottom-anchored content stack
-      // Create all text objects first, measure, then position
+      // Layer 5-9: Bottom layout (anchored from bottom, measured upward)
+      const bottomPad = cfg.layout.bottomPadding
 
-      // Temporarily add text to canvas to get proper measurements
-      // Create temporary text for measurement only
-      const tempLabelText = new Text(translatedEdition.toUpperCase(), {
-        fontFamily: config.editionLabel.fontFamily,
-        fontSize: config.editionLabel.fontSize,
-        fontWeight: config.editionLabel.fontWeight,
-        fill: config.editionLabel.color,
-        charSpacing: config.editionLabel.charSpacing,
-        left: 0,
-        top: 0,
+      // Measure headline first
+      const headlineObj = new Textbox(idea.headline, {
+        fontFamily: cfg.headline.fontFamily,
+        fontSize: cfg.headline.fontSize,
+        fontWeight: cfg.headline.fontWeight,
+        fill: cfg.headline.fill,
+        lineHeight: cfg.headline.lineHeight,
+        charSpacing: cfg.headline.charSpacing,
+        width: cfg.headline.maxWidth,
+        originY: 'top',
         selectable: false,
         evented: false,
       })
+      const headlineH = headlineObj.getScaledHeight()
 
-      const tempHeadline = new Textbox(idea.headline, {
-        fontFamily: config.headline.fontFamily,
-        fontSize: config.headline.fontSize,
-        fontWeight: config.headline.fontWeight,
-        fill: config.headline.fill,
-        lineHeight: config.headline.lineHeight,
-        charSpacing: config.headline.charSpacing,
-        width: config.headline.maxWidth,
-        left: 0,
-        top: 0,
-        selectable: false,
-        evented: false,
-        shadow: new Shadow({
-          color: config.headline.shadow.color,
-          blur: config.headline.shadow.blur,
-          offsetX: config.headline.shadow.offsetX,
-          offsetY: config.headline.shadow.offsetY,
-        }),
-      })
-
-      const tempFactTextbox = new Textbox(idea.fact, {
-        fontFamily: config.fact.fontFamily,
-        fontSize: config.fact.fontSize,
-        fontWeight: config.fact.fontWeight,
-        fill: config.fact.fill,
-        lineHeight: config.fact.lineHeight,
-        width: config.fact.maxWidth,
-        left: 0,
-        top: 0,
+      // Measure fact text
+      const factWidth = cfg.fact.maxWidth
+      const factObj = new Textbox(idea.fact, {
+        fontFamily: cfg.fact.fontFamily,
+        fontSize: cfg.fact.fontSize,
+        fontWeight: cfg.fact.fontWeight,
+        fill: cfg.fact.fill,
+        lineHeight: cfg.fact.lineHeight,
+        width: factWidth,
+        originX: 'center',
         selectable: false,
         evented: false,
       })
+      const factH = factObj.getScaledHeight()
 
-      // Temporarily add to canvas to measure
-      canvas.add(tempLabelText)
-      canvas.add(tempHeadline)
-      canvas.add(tempFactTextbox)
-      canvas.renderAll()
+      // Position from bottom up
+      let cursorY = h - bottomPad
 
-      // Measure heights from temporary objects
-      const factHeight = tempFactTextbox.getScaledHeight()
-      const headlineHeight = tempHeadline.getScaledHeight()
-      const labelBgWidth =
-        tempLabelText.getScaledWidth() + 2 * config.editionLabel.paddingH
-      const labelBgHeight =
-        config.editionLabel.fontSize + 2 * config.editionLabel.paddingV
+      // Add fact + accent bar (highest priority, bottom-most)
+      const factX = cfg.fact.leftOffset
+      const factLeftEdge = factX - (cfg.fact.maxWidth / 2)
+      const accentBarX = factLeftEdge - cfg.accentBar.gap - cfg.accentBar.width
 
-      // Layer 8: Divider
-      const divider = new Rect({
-        left: 0,
-        top: 0,
-        width: config.divider.width,
-        height: config.divider.height,
-        fill: config.divider.color,
-        selectable: false,
-        evented: false,
-      })
-
-      // Layer 9: Accent bar (height = fact text height)
       const accentBar = new Rect({
-        left: 0,
-        top: 0,
-        width: config.accentBar.width,
-        height: factHeight,
-        fill: config.accentBar.color,
+        left: accentBarX,
+        top: cursorY - factH,
+        width: cfg.accentBar.width,
+        height: factH,
+        fill: cfg.accentBar.color,
+        originX: 'left',
+        originY: 'top',
         selectable: false,
         evented: false,
       })
+      canvas.add(accentBar)
 
-      // Stack assembly: compute total height and position from bottom
-      const labelBlockHeight =
-        labelBgHeight + config.editionLabel.marginBottom
-      const headlineBlockHeight =
-        headlineHeight + config.headline.marginBottom
-      const dividerBlockHeight =
-        divider.height + config.divider.marginBottom
-      const factBlockHeight = factHeight
-
-      const totalStackHeight =
-        labelBlockHeight +
-        headlineBlockHeight +
-        dividerBlockHeight +
-        factBlockHeight
-
-      const stackBottom = height - config.layout.bottomPadding
-      let cursorY = stackBottom - totalStackHeight
-
-      // Clear and rebuild with proper positioning
-      canvas.clear()
-
-      // Re-add all base layers
-      canvas.add(
-        new Rect({
-          left: 0,
-          top: 0,
-          width,
-          height,
-          fill: config.canvas.backgroundColor,
-          selectable: false,
-          evented: false,
-        }),
-      )
-
-      // Re-add photo if exists
-      if (imageUrl) {
-        try {
-          const photo = await FabricImage.fromURL(imageUrl, {
-            crossOrigin: 'anonymous',
-          })
-          const scale = Math.max(width / photo.width!, height / photo.height!)
-          const faceTop = height * 0.35
-          photo.set({
-            scaleX: scale,
-            scaleY: scale,
-            left: width / 2,
-            top: faceTop,
-            originX: 'center',
-            originY: 'center',
-            selectable: false,
-            evented: false,
-          })
-          canvas.add(photo)
-        } catch {
-          // Photo failed
-        }
-      }
-
-      // Re-add gradient
-      const gradRect2 = new Rect({
-        left: 0,
-        top: 0,
-        width,
-        height,
-        selectable: false,
-        evented: false,
+      factObj.set({
+        left: factX,
+        top: cursorY - factH,
+        originY: 'top',
       })
-      gradRect2.set(
-        'fill',
-        new Gradient({
-          type: 'linear',
-          coords: { x1: 0, y1: 0, x2: 0, y2: height },
-          colorStops: config.gradient.colorStops.map((s) => ({
-            offset: s.offset,
-            color: config.gradient.color,
-            opacity: s.opacity,
-          })),
-        }),
-      )
-      canvas.add(gradRect2)
+      canvas.add(factObj)
 
-      // Re-add logo if exists
-      if (brandLogoPublicId) {
-        try {
-          const logoUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${brandLogoPublicId}`
-          const logo = await FabricImage.fromURL(logoUrl, {
-            crossOrigin: 'anonymous',
-          })
-          logo.scaleToHeight(config.logo.height)
-          logo.set({
-            left: width - config.logo.marginRight,
-            top: config.logo.marginTop,
-            originX: 'right',
-            originY: 'top',
-            selectable: false,
-            evented: false,
-          })
-          canvas.add(logo)
-        } catch {
-          // Logo failed
-        }
-      }
+      cursorY -= factH + cfg.divider.marginBottom
 
-      // Edition label bg rect (sized from measured text)
-      const labelBgRect = new Rect({
-        left: config.layout.sidePadding,
+      // Add divider
+      const divider = new Rect({
+        left: cfg.divider.leftOffset,
         top: cursorY,
-        width: labelBgWidth,
-        height: labelBgHeight,
-        fill: config.editionLabel.backgroundColor,
+        width: cfg.divider.width,
+        height: cfg.divider.height,
+        fill: cfg.divider.color,
+        originY: 'top',
         selectable: false,
         evented: false,
-      })
-      canvas.add(labelBgRect)
-
-      // Edition label text (recreated fresh)
-      const labelText = new Text(translatedEdition.toUpperCase(), {
-        fontFamily: config.editionLabel.fontFamily,
-        fontSize: config.editionLabel.fontSize,
-        fontWeight: config.editionLabel.fontWeight,
-        fill: config.editionLabel.color,
-        charSpacing: config.editionLabel.charSpacing,
-        left: config.layout.sidePadding + config.editionLabel.paddingH,
-        top: cursorY + config.editionLabel.paddingV,
-        selectable: false,
-        evented: false,
-      })
-      canvas.add(labelText)
-      cursorY += labelBlockHeight
-
-      // Headline (recreated fresh)
-      const headline = new Textbox(idea.headline, {
-        fontFamily: config.headline.fontFamily,
-        fontSize: config.headline.fontSize,
-        fontWeight: config.headline.fontWeight,
-        fill: config.headline.fill,
-        lineHeight: config.headline.lineHeight,
-        charSpacing: config.headline.charSpacing,
-        width: config.headline.maxWidth,
-        left: config.layout.sidePadding,
-        top: cursorY,
-        selectable: false,
-        evented: false,
-        shadow: new Shadow({
-          color: config.headline.shadow.color,
-          blur: config.headline.shadow.blur,
-          offsetX: config.headline.shadow.offsetX,
-          offsetY: config.headline.shadow.offsetY,
-        }),
-      })
-      canvas.add(headline)
-      cursorY += headlineBlockHeight
-
-      // Divider
-      divider.set({
-        left: config.layout.sidePadding,
-        top: cursorY,
       })
       canvas.add(divider)
-      cursorY += dividerBlockHeight
 
-      // Fact block (accent bar + text side-by-side)
-      const factTop = cursorY
-      accentBar.set({
-        left: config.layout.sidePadding,
-        top: factTop,
+      cursorY -= cfg.headline.marginBottom
+
+      // Add headline
+      headlineObj.set({
+        left: cfg.headline.leftOffset,
+        top: cursorY - headlineH,
+        originY: 'top',
       })
+      canvas.add(headlineObj)
 
-      // Fact text (recreated fresh)
-      const factTextbox = new Textbox(idea.fact, {
-        fontFamily: config.fact.fontFamily,
-        fontSize: config.fact.fontSize,
-        fontWeight: config.fact.fontWeight,
-        fill: config.fact.fill,
-        lineHeight: config.fact.lineHeight,
-        width: config.fact.maxWidth,
-        left:
-          config.layout.sidePadding +
-          config.accentBar.width +
-          config.accentBar.gap,
-        top: factTop,
+      cursorY -= headlineH + cfg.editionLabel.marginBottom
+
+      // Add edition label with black background
+      const editionText = translatedEdition.toUpperCase()
+      const editionObj = new Text(editionText, {
+        fontFamily: cfg.editionLabel.fontFamily,
+        fontSize: cfg.editionLabel.fontSize,
+        fontWeight: cfg.editionLabel.fontWeight,
+        fill: cfg.editionLabel.color,
+        charSpacing: cfg.editionLabel.charSpacing,
+        originY: 'top',
         selectable: false,
         evented: false,
       })
 
-      canvas.add(accentBar)
-      canvas.add(factTextbox)
+      const editionW = editionObj.getScaledWidth()
+      const editionH = editionObj.getScaledHeight()
+      const editionBgW = editionW + cfg.editionLabel.paddingH * 2
+      const editionBgH = editionH + cfg.editionLabel.paddingV * 2
+
+      const editionBg = new Rect({
+        left: cfg.editionLabel.leftOffset,
+        top: cursorY - editionBgH,
+        width: editionBgW,
+        height: editionBgH,
+        fill: cfg.editionLabel.backgroundColor,
+        originY: 'top',
+        selectable: false,
+        evented: false,
+      })
+      canvas.add(editionBg)
+
+      editionObj.set({
+        left: cfg.editionLabel.leftOffset + cfg.editionLabel.paddingH,
+        top: cursorY - editionBgH + cfg.editionLabel.paddingV,
+      })
+      canvas.add(editionObj)
 
       canvas.renderAll()
       setReady(true)
       setError(null)
     },
-    [idea, imageUrl, brandLogoPublicId, translatedEdition, config],
+    [idea, imageUrl, brandLogoPublicId, translatedEdition],
   )
 
-  // Render directly on visible canvas
+  // Render directly to visible canvas
   useEffect(() => {
-    if (!canvasElRef.current) return
+    if (!canvasElRef.current || !imageUrl) return
 
     let cancelled = false
-    const { width, height, backgroundColor } = config.canvas
 
-    const visibleEl = canvasElRef.current
-
-    // Dispose old canvas if it exists
-    const prevCanvas = fabricRef.current
-    if (prevCanvas) {
-      prevCanvas.dispose()
+    // Dispose old canvas completely before creating new one
+    if (fabricRef.current) {
+      fabricRef.current.dispose()
       fabricRef.current = null
     }
 
-    visibleEl.width = width
-    visibleEl.height = height
+    const visibleEl = canvasElRef.current
+
+    // Clear Fabric's internal state from the canvas element
+    ;(visibleEl as any).__fabricjsInstance = undefined
+    ;(visibleEl as any).__currentFabric = undefined
+
+    // Reset canvas element to clear any previous state
+    visibleEl.width = CANVAS_WIDTH
+    visibleEl.height = CANVAS_HEIGHT
 
     const canvas = new StaticCanvas(visibleEl, {
-      width,
-      height,
-      backgroundColor,
+      width: CANVAS_WIDTH,
+      height: CANVAS_HEIGHT,
+      backgroundColor: 'transparent',
     })
-
-    fabricRef.current = canvas
 
     renderCanvas(canvas).then(() => {
       if (cancelled) {
         canvas.dispose()
-        fabricRef.current = null
+        return
       }
+
+      visibleEl.style.width = '100%'
+      visibleEl.style.height = '100%'
+
+      const prev = fabricRef.current
+      fabricRef.current = canvas
+      if (prev) prev.dispose()
     })
 
     return () => {
       cancelled = true
     }
-  }, [idea, imageUrl, brandLogoPublicId, translatedEdition, config, renderCanvas])
+  }, [idea, imageUrl, brandLogoPublicId, translatedEdition, renderCanvas])
 
   useEffect(() => {
     return () => {
@@ -504,37 +351,44 @@ export const DidYouKnowCanvas = forwardRef<
     },
   }))
 
-  const { width: cw, height: ch } = config.canvas
-
   return (
-    <div className="flex flex-col items-center gap-4" style={{ width: 'inherit' }}>
+    <div className="flex flex-col items-center gap-4 w-full">
       {error && (
         <p className="text-sm text-red-500 font-medium">{error}</p>
       )}
       {imageUrl ? (
         <div
-          className={`rounded-xl border border-neutral-200${onClick ? ' cursor-pointer hover:opacity-90 transition' : ''}`}
-          style={{ width: '100%' }}
+          className={`w-full rounded-xl border border-neutral-200 overflow-hidden${onClick ? ' cursor-pointer hover:opacity-90 transition' : ''}`}
+          style={{
+            aspectRatio: '1080 / 1350',
+            backgroundColor: '#000',
+          }}
           onClick={onClick}
         >
           <canvas
             ref={canvasElRef}
-            width={cw}
-            height={ch}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
             style={{
               display: 'block',
               width: '100%',
-              height: 'auto',
+              height: '100%',
             }}
           />
           {!ready && (
-            <div className="flex items-center justify-center h-64 text-sm text-neutral-400">
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-neutral-400">
               Rendering preview...
             </div>
           )}
         </div>
       ) : (
-        <div className="flex items-center justify-center bg-neutral-50 border border-neutral-200 rounded-xl" style={{ width: '400px', minHeight: '400px' }}>
+        <div
+          className="w-full flex items-center justify-center bg-neutral-50 border border-neutral-200 rounded-xl"
+          style={{
+            aspectRatio: '1080 / 1350',
+            minHeight: '400px',
+          }}
+        >
           <p className="text-sm text-neutral-500">Upload an image to see preview</p>
         </div>
       )}
