@@ -7,9 +7,9 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useWeatherMalaysia } from "../hooks/useWeatherMalaysia";
-import { WeatherCanvas, type WeatherCanvasHandle } from "./WeatherCanvas";
-import { ScheduleModal } from "./ScheduleModal";
-import { Spinner } from "./ds/Spinner";
+import { WeatherCanvas, type WeatherCanvasHandle } from "../components/WeatherCanvas";
+import { ScheduleModal } from "../components/ScheduleModal";
+import { Spinner } from "../components/ds/Spinner";
 import { getCredentials } from "../utils/fbCredentials";
 import { uploadToCloudinary } from "../utils/cloudinary";
 

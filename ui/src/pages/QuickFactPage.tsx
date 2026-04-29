@@ -6,7 +6,7 @@ import { BRANDS, type BrandName } from '../constants/brands'
 import type { QuickFactResult, QuickFactItem } from '../types'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl, updateFactInImageUrl } from '../utils/cloudinary'
-import { ScheduleModal } from './ScheduleModal'
+import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 type PageState = 'idle' | 'loading' | 'result' | 'error'

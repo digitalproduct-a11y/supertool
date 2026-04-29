@@ -32,7 +32,7 @@ import type {
   ArticleGeneratorStep,
 } from '../types'
 import { BRANDS } from '../constants/brands'
-import { GuideModal } from './ds/GuideModal'
+import { GuideModal } from '../components/ds/GuideModal'
 
 const STEPS: { step: ArticleGeneratorStep; label: string; shortLabel: string }[] = [
   { step: 'input', label: 'Input', shortLabel: 'Input' },

@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import { IconShoppingCart, IconExternalLink, IconRefresh, IconStar } from '@tabler/icons-react'
 import { BRANDS, type BrandName } from '../constants/brands'
-import { GuideModal } from './ds/GuideModal'
-import { Spinner } from './ds/Spinner'
+import { GuideModal } from '../components/ds/GuideModal'
+import { Spinner } from '../components/ds/Spinner'
 import { useShopeeTopProducts, type ShopeeTopProduct } from '../hooks/useShopeeTopProducts'
 
 function formatPrice(price: number): string {

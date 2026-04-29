@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from 'react'
 import { toast } from '../hooks/useToast'
 import { IconRefresh } from '@tabler/icons-react'
-import { Spinner } from './ds/Spinner'
-import { GuideModal } from './ds/GuideModal'
-import { GenerateView, ImageThumb } from './GeneratePostView'
-import type { GenerateSource } from './GeneratePostView'
+import { Spinner } from '../components/ds/Spinner'
+import { GuideModal } from '../components/ds/GuideModal'
+import { GenerateView, ImageThumb } from '../components/GeneratePostView'
+import type { GenerateSource } from '../components/GeneratePostView'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import { GuideModal } from './ds/GuideModal'
+import { GuideModal } from '../components/ds/GuideModal'
 
 // WIP: Using n8n form directly while we rebuild this page
 const N8N_FORM_URL = 'https://astroproduct.app.n8n.cloud/form/3702bab6-58a2-4a22-b226-7989c9ca13a8'

@@ -2,9 +2,9 @@ import { useState, useCallback, useEffect } from 'react'
 import { toast } from '../hooks/useToast'
 import { detectBrandFromUrl } from '../constants/brands'
 import { IconRefresh } from '@tabler/icons-react'
-import { Spinner } from './ds/Spinner'
-import { GenerateView } from './GeneratePostView'
-import type { GenerateSource } from './GeneratePostView'
+import { Spinner } from '../components/ds/Spinner'
+import { GenerateView } from '../components/GeneratePostView'
+import type { GenerateSource } from '../components/GeneratePostView'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

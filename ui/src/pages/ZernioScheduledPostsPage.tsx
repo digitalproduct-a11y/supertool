@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { IconRefresh, IconTrash, IconCalendarClock } from '@tabler/icons-react'
 import { useZernioScheduledPosts } from '../hooks/useZernioScheduledPosts'
-import { Pagination } from './ds/Pagination'
+import { Pagination } from '../components/ds/Pagination'
 import { getCredentials, saveCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
 import type { ZernioPost } from '../types'

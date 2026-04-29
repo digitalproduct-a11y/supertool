@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconChevronLeft, IconCalendar, IconExternalLink } from '@tabler/icons-react'
-import { Spinner } from './ds/Spinner'
+import { Spinner } from '../components/ds/Spinner'
 
 interface OnThisDayEvent {
   onThisDayTitle: string

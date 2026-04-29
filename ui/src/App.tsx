@@ -2,35 +2,35 @@ import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
-import { HomePage } from './components/HomePage'
-import { AffiliateLinksPage } from './components/AffiliateLinksPage'
-import { ArticleGeneratorPage } from './components/ArticleGeneratorPage'
-import { TrendingSpikePage } from './components/TrendingSpikePage'
-import { EngagementPhotosPage } from './components/EngagementPhotosPage'
-import { EngagementPostsLanding } from './components/EngagementPostsLanding'
-import { LatestCurrencyRatePage } from './components/LatestCurrencyRatePage'
-import { LatestFuelPricePage } from './components/LatestFuelPricePage'
-import { KLCIIndexPage } from './components/KLCIIndexPage'
-import { ScheduledPostsPage } from './components/ScheduledPostsPage'
-import { ScheduledPostsLanding } from './components/ScheduledPostsLanding'
-import { ShopeeTopProductsPage } from './components/ShopeeTopProductsPage'
-import { ZernioScheduledPostsPage } from './components/ZernioScheduledPostsPage'
-import { SpikeNewsPage } from './components/SpikeNewsPage'
-import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
-import { QuickFactPage } from './components/QuickFactPage'
-import { PrimeTalkPage } from './components/PrimeTalkPage'
+import { HomePage } from './pages/HomePage'
+import { AffiliateLinksPage } from './pages/AffiliateLinksPage'
+import { ArticleGeneratorPage } from './pages/ArticleGeneratorPage'
+import { TrendingSpikePage } from './pages/TrendingSpikePage'
+import { EngagementPhotosPage } from './pages/EngagementPhotosPage'
+import { EngagementPostsLanding } from './pages/EngagementPostsLanding'
+import { LatestCurrencyRatePage } from './pages/LatestCurrencyRatePage'
+import { LatestFuelPricePage } from './pages/LatestFuelPricePage'
+import { KLCIIndexPage } from './pages/KLCIIndexPage'
+import { ScheduledPostsPage } from './pages/ScheduledPostsPage'
+import { ScheduledPostsLanding } from './pages/ScheduledPostsLanding'
+import { ShopeeTopProductsPage } from './pages/ShopeeTopProductsPage'
+import { ZernioScheduledPostsPage } from './pages/ZernioScheduledPostsPage'
+import { SpikeNewsPage } from './pages/SpikeNewsPage'
+import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
+import { QuickFactPage } from './pages/QuickFactPage'
+import { PrimeTalkPage } from './pages/PrimeTalkPage'
 const OnThisDayPage = lazy(() =>
-  import('./components/OnThisDayPage').then((m) => ({
+  import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,
   })),
 )
 const WeatherMalaysiaPage = lazy(() =>
-  import('./components/WeatherMalaysiaPage').then((m) => ({
+  import('./pages/WeatherMalaysiaPage').then((m) => ({
     default: m.WeatherMalaysiaPage,
   })),
 )
 const QuotePage = lazy(() =>
-  import('./components/QuotePage').then((m) => ({
+  import('./pages/QuotePage').then((m) => ({
     default: m.QuotePage,
   })),
 )
@@ -38,7 +38,7 @@ import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
-import { GetStartedPage } from './components/GetStartedPage'
+import { GetStartedPage } from './pages/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
 import { Spinner } from './components/ds/Spinner'
 import { ToastContainer } from './components/ds/Toast'

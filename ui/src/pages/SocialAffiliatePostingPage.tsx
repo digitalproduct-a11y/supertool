@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useSocialAffiliatePosting } from '../hooks/useSocialAffiliatePosting'
 import type { SocialAffiliateFormData } from '../types'
-import { SocialAffiliateInputForm } from './SocialAffiliateInputForm'
-import { SocialAffiliateResultsMeta } from './SocialAffiliateResultsMeta'
-import { SocialAffiliateThreadsSection } from './SocialAffiliateThreadsSection'
-import { SocialAffiliateFacebookSection } from './SocialAffiliateFacebookSection'
-import { Spinner } from './ds/Spinner'
+import { SocialAffiliateInputForm } from '../components/SocialAffiliateInputForm'
+import { SocialAffiliateResultsMeta } from '../components/SocialAffiliateResultsMeta'
+import { SocialAffiliateThreadsSection } from '../components/SocialAffiliateThreadsSection'
+import { SocialAffiliateFacebookSection } from '../components/SocialAffiliateFacebookSection'
+import { Spinner } from '../components/ds/Spinner'
 
 const LOADING_MESSAGES = [
   'Tengah cari info produk...',

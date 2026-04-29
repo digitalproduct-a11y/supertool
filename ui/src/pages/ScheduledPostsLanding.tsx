@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { RECOMMENDED_SOURCES } from './ScheduledPostsPage'
+import { RECOMMENDED_SOURCES } from '../constants/scheduledPostSources'
 
 const BRANDS = [
   'Astro Ulagam',

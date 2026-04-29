@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { BRANDS } from '../constants/brands'
 import { IconChevronLeft, IconDownload, IconRefresh } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
-import { ScheduleModal } from './ScheduleModal'
+import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 async function callZernioWebhook(
@@ -43,9 +43,9 @@ async function callZernioWebhook(
   }
 }
 
-export function LatestCurrencyRatePage() {
+export function LatestFuelPricePage() {
   const navigate = useNavigate()
-  const webhookUrl = import.meta.env.VITE_LATEST_CURRENCY_RATE_WEBHOOK_URL as string | undefined
+  const webhookUrl = import.meta.env.VITE_LATEST_FUEL_PRICE_WEBHOOK_URL as string | undefined
 
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -123,7 +123,7 @@ export function LatestCurrencyRatePage() {
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `currency-rate-${selectedBrand}-${new Date().toISOString().split('T')[0]}.png`
+      link.download = `fuel-price-${selectedBrand}-${new Date().toISOString().split('T')[0]}.png`
       link.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -143,9 +143,9 @@ export function LatestCurrencyRatePage() {
             >
               <IconChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-semibold text-neutral-950">Latest Currency Rate</h1>
+            <h1 className="text-2xl font-semibold text-neutral-950">Latest Fuel Price</h1>
           </div>
-          <p className="text-sm text-neutral-600">Generate daily foreign exchange rate graphics</p>
+          <p className="text-sm text-neutral-600">Generate weekly Malaysian fuel price graphics</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
       </div>
@@ -153,7 +153,7 @@ export function LatestCurrencyRatePage() {
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
         <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm text-blue-900">💱 Currency rates update Monday–Friday. No updates on weekends.</p>
+          <p className="text-sm text-blue-900">⛽ Fuel prices update weekly on Thursdays.</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
           {/* LEFT: Controls */}
@@ -279,7 +279,7 @@ export function LatestCurrencyRatePage() {
                   </div>
                 </div>
               ) : imageUrl ? (
-                <img src={imageUrl} alt="Currency Rate" className="w-full h-auto" />
+                <img src={imageUrl} alt="Fuel Price" className="w-full h-auto" />
               ) : (
                 <div className="flex-1 flex items-center justify-center text-center">
                   <div>
