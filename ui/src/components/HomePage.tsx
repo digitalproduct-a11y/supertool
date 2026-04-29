@@ -30,7 +30,10 @@ type ToolId =
   | "photo-carousel"
   | "social-affiliate-posting"
   | "post-queue"
-  | "quick-fact";
+  | "quick-fact"
+  | "on-this-day"
+  | "weather-malaysia"
+  | "quote";
 
 interface Tool {
   id: ToolId;

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import './index.css'
 import { Sidebar } from './components/Sidebar'
@@ -21,12 +21,28 @@ import { SpikeNewsPage } from './components/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './components/SocialAffiliatePostingPage'
 import { QuickFactPage } from './components/QuickFactPage'
 import { PrimeTalkPage } from './components/PrimeTalkPage'
+const OnThisDayPage = lazy(() =>
+  import('./components/OnThisDayPage').then((m) => ({
+    default: m.OnThisDayPage,
+  })),
+)
+const WeatherMalaysiaPage = lazy(() =>
+  import('./components/WeatherMalaysiaPage').then((m) => ({
+    default: m.WeatherMalaysiaPage,
+  })),
+)
+const QuotePage = lazy(() =>
+  import('./components/QuotePage').then((m) => ({
+    default: m.QuotePage,
+  })),
+)
 import { InputForm } from './components/InputForm'
 import { PreviewPanel } from './components/PreviewPanel'
 import { CarouselPreviewPanel } from './components/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
 import { GetStartedPage } from './components/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
+import { Spinner } from './components/ds/Spinner'
 import { ToastContainer } from './components/ds/Toast'
 import { useWorkflow } from './hooks/useWorkflow'
 import { FBCredentialsModal } from './components/FBCredentialsModal'
@@ -44,7 +60,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -63,6 +79,9 @@ const pathToTool: Record<string, ToolId> = {
   '/social-affiliate-posting': 'social-affiliate-posting',
   '/quick-fact': 'quick-fact',
   '/engagement-photos/prime-talk': 'engagement-posts',
+  '/engagement-posts/on-this-day-malaysia': 'on-this-day',
+  '/engagement-posts/weather-malaysia': 'weather-malaysia',
+  '/engagement-posts/quote': 'quote',
 }
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
@@ -89,6 +108,9 @@ const toolToPath: Record<ToolId, string> = {
   'social-affiliate-posting': '/social-affiliate-posting',
   'quick-fact': '/quick-fact',
   'prime-talk': '/engagement-photos/prime-talk',
+  'on-this-day': '/engagement-posts/on-this-day-malaysia',
+  'weather-malaysia': '/engagement-posts/weather-malaysia',
+  'quote': '/engagement-posts/quote',
 }
 
 const topicToPath: Record<string, string> = {
@@ -99,6 +121,9 @@ const topicToPath: Record<string, string> = {
   'klci-index': '/engagement-posts/klci-index',
   'prime-talk': '/engagement-photos/prime-talk',
   'shopee-top-products': '/shopee-top-products',
+  'on-this-day': '/engagement-posts/on-this-day-malaysia',
+  'weather-malaysia': '/engagement-posts/weather-malaysia',
+  'quote': '/engagement-posts/quote',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -949,6 +974,27 @@ function App() {
       <Route path="/engagement-photos/prime-talk" element={
         <Layout {...layoutProps}>
           <PrimeTalkPage />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/on-this-day-malaysia" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <OnThisDayPage />
+          </Suspense>
+        </Layout>
+      } />
+      <Route path="/engagement-posts/weather-malaysia" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <WeatherMalaysiaPage />
+          </Suspense>
+        </Layout>
+      } />
+      <Route path="/engagement-posts/quote" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <QuotePage />
+          </Suspense>
         </Layout>
       } />
     </Routes>

@@ -185,7 +185,7 @@ export function QuickFactPage() {
 
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Page header */}
         <div className="mb-8">

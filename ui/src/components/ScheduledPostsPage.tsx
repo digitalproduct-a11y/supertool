@@ -46,7 +46,7 @@ export const RECOMMENDED_SOURCES: Record<string, string[]> = {
   'Media Hiburan':   ['gempak', 'rojak daily'],
   'Mingguan Wanita': ['gempak', 'rojak daily'],
   'Astro Ulagam':    ['astro awani', 'astro awani international', 'stadium astro', 'rojak daily'],
-  'Rojak Daily':     ['stadium astro', 'astro awani international'],
+  'Rojak Daily':     ['astro ulagam', 'xuan', 'gempak'],
   'Lite':            ['astro awani', 'astro awani international', 'stadium astro', 'rojak daily'],
   'Hitz':            ['astro awani', 'astro awani international', 'stadium astro', 'rojak daily'],
   'Mix':             ['astro awani', 'stadium astro', 'rojak daily'],
@@ -429,7 +429,7 @@ export function ScheduledPostsPage({ brand }: { brand: string }) {
 
   return (
     <main className={`pt-20 md:pt-10 px-4 md:px-8 transition-all ${view === 'browse' && selectedIds.size > 0 ? 'pb-32' : 'pb-12'}`}>
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <div className="mb-6">

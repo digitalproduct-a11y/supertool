@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/webhook/:path*", "destination": "https://astroproduct.app.n8n.cloud/webhook/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "installCommand": "npm install"
