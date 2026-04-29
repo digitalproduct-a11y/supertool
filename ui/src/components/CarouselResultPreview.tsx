@@ -1,18 +1,19 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import JSZip from 'jszip'
 import type { CarouselResult } from '../types'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl, replaceBaseImage, uploadToCloudinary } from '../utils/cloudinary'
+import { updateTitleInImageUrl, replaceBaseImage, uploadToCloudinary, uploadUrlToCloudinary, extractBaseImageUrl } from '../utils/cloudinary'
 import { ScheduleModal } from './ScheduleModal'
+import { CarouselImagePickerModal } from './CarouselImagePickerModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 interface ImageReplacement {
-  file: File
-  previewUrl: string          // blob URL for instant preview while uploading
-  cloudinaryUrl?: string      // final URL with overlays applied to new image
-  isUploading?: boolean       // upload in progress
+  file?: File              // present for file uploads, absent for URL picks
+  previewUrl: string       // blob URL (file uploads) or raw URL (url picks) for instant preview
+  cloudinaryUrl?: string   // final URL with overlays applied
+  isUploading?: boolean
 }
 
 interface CarouselResultPreviewProps {
@@ -38,8 +39,8 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [isPosting, setIsPosting] = useState(false)
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const replaceTargetIdRef = useRef<string | null>(null)
+  const [showImagePicker, setShowImagePicker] = useState(false)
+  const [pickerTargetId, setPickerTargetId] = useState<string | null>(null)
 
   // Sync fields when result changes
   useEffect(() => { setTitle(result.title ?? '') }, [result.title])
@@ -113,7 +114,12 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
       let blob: Blob
       // Use raw file only if upload hasn't completed yet (no cloudinaryUrl)
       if (replacement && !replacement.cloudinaryUrl) {
-        blob = replacement.file
+        if (replacement.file) {
+          blob = replacement.file
+        } else {
+          const res = await fetch(replacement.previewUrl)
+          blob = await res.blob()
+        }
       } else {
         const res = await fetch(url)
         blob = await res.blob()
@@ -128,41 +134,37 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
     }
   }
 
-  // Replace image — open file picker
-  function openReplace(imageId: string) {
-    replaceTargetIdRef.current = imageId
-    fileInputRef.current?.click()
+  function openPicker(imageId: string) {
+    setPickerTargetId(imageId)
+    setShowImagePicker(true)
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    const targetId = replaceTargetIdRef.current
-    if (!file || !targetId) return
-    const previewUrl = URL.createObjectURL(file)
+  function handlePickerSelect(payload: { kind: 'file'; file: File } | { kind: 'url'; url: string }) {
+    const targetId = pickerTargetId
+    setShowImagePicker(false)
+    setPickerTargetId(null)
+    if (!targetId) return
+
     const originalImage = result.images.find(img => img.id === targetId)
+    if (!originalImage) return
 
-    // Instant blob preview + mark as uploading
-    setReplacements(prev => {
-      const next = new Map(prev)
-      const old = next.get(targetId)
-      if (old) URL.revokeObjectURL(old.previewUrl)
-      next.set(targetId, { file, previewUrl, isUploading: true })
-      return next
-    })
-    e.target.value = ''
-    replaceTargetIdRef.current = null
-
-    // Background upload → rebuild URL with overlays
-    if (originalImage) {
+    if (payload.kind === 'file') {
+      const file = payload.file
+      const previewUrl = URL.createObjectURL(file)
+      setReplacements(prev => {
+        const next = new Map(prev)
+        const old = next.get(targetId)
+        if (old?.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(old.previewUrl)
+        next.set(targetId, { file, previewUrl, isUploading: true })
+        return next
+      })
       uploadToCloudinary(file)
         .then(publicId => {
           const cloudinaryUrl = replaceBaseImage(originalImage.src, publicId)
           setReplacements(prev => {
             const next = new Map(prev)
             const current = next.get(targetId)
-            if (current) {
-              next.set(targetId, { ...current, cloudinaryUrl, isUploading: false })
-            }
+            if (current) next.set(targetId, { ...current, cloudinaryUrl, isUploading: false })
             return next
           })
         })
@@ -171,9 +173,36 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
           setReplacements(prev => {
             const next = new Map(prev)
             const current = next.get(targetId)
-            if (current) {
-              next.set(targetId, { ...current, isUploading: false })
-            }
+            if (current) next.set(targetId, { ...current, isUploading: false })
+            return next
+          })
+        })
+    } else {
+      // URL pick — use raw Pexels URL if this is a Cloudinary fetch URL, to avoid double-overlays
+      const rawUrl = extractBaseImageUrl(payload.url) ?? payload.url
+      setReplacements(prev => {
+        const next = new Map(prev)
+        const old = next.get(targetId)
+        if (old?.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(old.previewUrl)
+        next.set(targetId, { previewUrl: payload.url, isUploading: true })
+        return next
+      })
+      uploadUrlToCloudinary(rawUrl)
+        .then(publicId => {
+          const cloudinaryUrl = replaceBaseImage(originalImage.src, publicId)
+          setReplacements(prev => {
+            const next = new Map(prev)
+            const current = next.get(targetId)
+            if (current) next.set(targetId, { ...current, cloudinaryUrl, isUploading: false })
+            return next
+          })
+        })
+        .catch(() => {
+          toast.error('Image upload failed. Overlays won\'t be applied.')
+          setReplacements(prev => {
+            const next = new Map(prev)
+            const current = next.get(targetId)
+            if (current) next.set(targetId, { ...current, isUploading: false })
             return next
           })
         })
@@ -219,7 +248,13 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
         let blob: Blob
         // Use raw file only if upload hasn't completed yet (no cloudinaryUrl)
         if (replacement && !replacement.cloudinaryUrl) {
-          blob = replacement.file
+          if (replacement.file) {
+            blob = replacement.file
+          } else {
+            const res = await fetch(replacement.previewUrl)
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            blob = await res.blob()
+          }
         } else {
           const res = await fetch(url)
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -305,15 +340,6 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
         document.body
       )}
 
-      {/* Hidden file input for image replacement */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
       {/* Main image viewer */}
       <div className="relative bg-neutral-50 rounded-xl overflow-hidden border border-gray-200 aspect-[4/5] w-full">
         {currentImage ? (
@@ -380,13 +406,14 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
       {currentImage && (
         <div className="space-y-2">
           <button
-            onClick={() => openReplace(currentImage.id)}
+            type="button"
+            onClick={() => openPicker(currentImage.id)}
             className="w-full py-2 rounded-lg text-sm font-medium border border-dashed border-neutral-300 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            Upload custom image
+            Change Image
           </button>
           <div className="flex gap-2">
             <button
@@ -469,7 +496,7 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
                 {!isDeleted && (
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-center gap-1 pt-1.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); openReplace(img.id) }}
+                      onClick={(e) => { e.stopPropagation(); openPicker(img.id) }}
                       title="Replace"
                       className="w-6 h-6 rounded bg-white/20 hover:bg-white/40 text-white flex items-center justify-center transition-colors"
                     >
@@ -645,6 +672,15 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
           <p className="text-xs text-red-500 text-center">✗ Failed to schedule. Try again.</p>
         )}
       </div>
+
+      {showImagePicker && pickerTargetId && (
+        <CarouselImagePickerModal
+          articleImages={result.articleImages ?? []}
+          pexelsImages={result.images.filter(img => img.type === 'pexels').slice(0, 10)}
+          onSelect={handlePickerSelect}
+          onClose={() => { setShowImagePicker(false); setPickerTargetId(null) }}
+        />
+      )}
     </div>
   )
 }
