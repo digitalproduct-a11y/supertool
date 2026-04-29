@@ -107,7 +107,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
   const [articleCounts, setArticleCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(false)
 
-  const DISABLED_BRANDS = new Set(['Raaga', 'Mix', 'Rojak Daily'])
+  const DISABLED_BRANDS = new Set(['Raaga', 'Mix'])
 
   useEffect(() => {
     // Use cache if available and same-day

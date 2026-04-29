@@ -325,6 +325,7 @@ export function TrendingSpikePage() {
             {/* Trending articles — 4-column layout */}
             {trendingItems.length > 0 && (() => {
               const GEMPAK_RECOMMENDED = ['rojak daily', 'astro awani', 'xuan']
+              const ROJAK_DAILY_RECOMMENDED = ['astro ulagam', 'xuan', 'gempak']
 
               const sortByDate = (arr: TrendingItem[]) =>
                 [...arr].sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
@@ -339,6 +340,14 @@ export function TrendingSpikePage() {
                 trendingItems.filter(i => passesFilter(i) && !GEMPAK_RECOMMENDED.includes(i.source.toLowerCase()))
               )
               const gempakTotal = gempakRecommended.length + gempakOther.length
+
+              const rojakRecommended = sortByDate(
+                trendingItems.filter(i => passesFilter(i) && ROJAK_DAILY_RECOMMENDED.includes(i.source.toLowerCase()))
+              )
+              const rojakOther = sortByDate(
+                trendingItems.filter(i => passesFilter(i) && !ROJAK_DAILY_RECOMMENDED.includes(i.source.toLowerCase()))
+              )
+              const rojakTotal = rojakRecommended.length + rojakOther.length
 
               const typeColumns = (['News', 'Sport', 'Entertainment'] as const).map(type => {
                 const items = sortByDate(
@@ -393,7 +402,7 @@ export function TrendingSpikePage() {
               )
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
 
                   {/* Gempak brand card */}
                   {gempakTotal > 0 && (
@@ -421,6 +430,38 @@ export function TrendingSpikePage() {
                           </div>
                           <div className="divide-y divide-neutral-50">
                             {gempakOther.map(renderArticleRow)}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Rojak Daily brand card */}
+                  {rojakTotal > 0 && (
+                    <div className="glass-card rounded-2xl overflow-hidden">
+                      <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-neutral-700">✨ Rojak Daily</h2>
+                        <span className="text-xs text-neutral-400">{rojakTotal}</span>
+                      </div>
+
+                      {rojakRecommended.length > 0 && (
+                        <>
+                          <div className="px-3 pt-2 pb-1">
+                            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Recommended sources</span>
+                          </div>
+                          <div className="divide-y divide-neutral-50">
+                            {rojakRecommended.map(renderArticleRow)}
+                          </div>
+                        </>
+                      )}
+
+                      {rojakOther.length > 0 && (
+                        <>
+                          <div className="px-3 pt-3 pb-1 border-t border-neutral-100 mt-1">
+                            <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide">Other sources</span>
+                          </div>
+                          <div className="divide-y divide-neutral-50">
+                            {rojakOther.map(renderArticleRow)}
                           </div>
                         </>
                       )}
