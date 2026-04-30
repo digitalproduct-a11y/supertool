@@ -304,3 +304,29 @@ export async function uploadUrlToCloudinary(url: string): Promise<string> {
   const data = await res.json()
   return data.public_id as string
 }
+
+/**
+ * Builds a Cloudinary transformation URL for "Did You Know" cards (Tribune design).
+ * Layout: full-bleed photo → gradient overlay → headline (serif italic) → fact with accent rule.
+ */
+export function buildDidYouKnowUrl(
+  baseImagePublicId: string,
+  headline: string,
+  fact: string
+): string {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+  if (!cloudName) throw new Error('Cloudinary cloud name not configured')
+
+  const encHead = cloudinaryTextEncode(headline)
+  const encFact = cloudinaryTextEncode(fact)
+
+  const transforms = [
+    'c_fill,g_center,w_1080,h_1350',
+    'l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_15,w_1080,h_1350/l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_55,w_1080,h_1350/l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_88,w_1080,h_1350/l_gradient:msl_on_transparent,angle_180,co_rgb:060608,e_grayscale,o_92,w_1080,h_1350',
+    'l_text:arial_1:__,co_rgb:060608,o_78,y_-535,g_north,h_280,w_1080',
+    `l_text:Georgia_italic_72:${encHead},co_rgb:faf7ee,y_300,g_south,w_900,c_fit`,
+    `l_text:Arial_18:${encFact},co_rgb:f5f2ea,y_80,g_south,w_900,c_fit`,
+  ].join('/')
+
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transforms}/${baseImagePublicId}`
+}

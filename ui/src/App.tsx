@@ -20,6 +20,7 @@ import { SpikeNewsPage } from './pages/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
 import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
+import { DidYouKnowPage } from './components/DidYouKnowPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,
@@ -123,6 +124,7 @@ const topicToPath: Record<string, string> = {
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
+  'didyouknow': '/engagement-photos/didyouknow',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -973,6 +975,11 @@ function App() {
       <Route path="/engagement-photos/prime-talk" element={
         <Layout {...layoutProps}>
           <PrimeTalkPage />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/didyouknow" element={
+        <Layout {...layoutProps}>
+          <DidYouKnowPage />
         </Layout>
       } />
       <Route path="/engagement-posts/on-this-day-malaysia" element={

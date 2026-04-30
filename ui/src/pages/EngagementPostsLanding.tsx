@@ -10,6 +10,7 @@ import {
   IconCalendar,
   IconCloudRain,
   IconBlockquote,
+  IconBulb,
 } from "@tabler/icons-react";
 import type React from "react";
 
@@ -22,7 +23,8 @@ type ActiveTopicId =
   | "prime-talk"
   | "on-this-day"
   | "weather-malaysia"
-  | "quote";
+  | "quote"
+  | "didyouknow";
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void;
@@ -135,6 +137,14 @@ const sections: Section[] = [
           "Extract the most powerful quote from any article and create a branded image",
         icon: IconBlockquote,
         color: "#0055EE",
+      },
+      {
+        id: "didyouknow",
+        label: "Did You Know?",
+        description:
+          "Generate fun facts and interesting moments with context-based search",
+        icon: IconBulb,
+        color: "#F05A35",
       },
     ],
   },
