@@ -11,6 +11,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/webhook-test': {
+        target: 'https://astroproduct.app.n8n.cloud',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })

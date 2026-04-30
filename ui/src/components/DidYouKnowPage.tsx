@@ -217,7 +217,6 @@ export function DidYouKnowPage() {
         {stage === 'review' && selectedIdea && (
           <DidYouKnowCard
             idea={selectedIdea}
-            brand={selectedBrand}
             edition={selectedEdition}
             brandLogoPublicId={brandLogoPublicId}
             language={language}

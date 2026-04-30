@@ -8,6 +8,9 @@
     "cloudinary-env-config",
     "cloudinary-smd",
     "cloudinary-analysis",
-    "vercel"
-  ]
+    "vercel",
+    "tavily-mcp",
+    "templated"
+  ],
+  "enableAllProjectMcpServers": false
 }

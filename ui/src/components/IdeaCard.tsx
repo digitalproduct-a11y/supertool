@@ -219,7 +219,8 @@ export default function IdeaCard({
                     isPosting={isScheduling}
                     onConfirm={async (scheduledFor, passcode) => {
                       setIsScheduling(true)
-                      const result = await onScheduleOnFB(previewUrl, idea.caption, selectedBrand, scheduledFor, passcode)
+                      const latestUrl = buildPreviewUrl(idea.headline, idea.subtitle, idea.photo_public_id)
+                      const result = await onScheduleOnFB(latestUrl, idea.caption, selectedBrand, scheduledFor, passcode)
                       setIsScheduling(false)
                       setShowScheduleModal(false)
                       setScheduleStatus(result.success ? 'done' : 'error')

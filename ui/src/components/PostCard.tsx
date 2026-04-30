@@ -88,11 +88,14 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
     if (!webhookUrl) { toast.error('Webhook not configured.'); return }
     setIsPosting(true)
     try {
+      const finalPublicId = uploadedPublicId ?? post.photoPublicId
+      const finalUrlWithPhoto = buildCloudinaryUrl(finalPublicId, editTitle, post.imageUrl)
+      const finalImageUrl = updateTitleInImageUrl(finalUrlWithPhoto, post.title ?? '', editTitle)
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fb_ai_image_url: previewUrl,
+          fb_ai_image_url: finalImageUrl,
           fb_ai_caption: editCaption,
           brand,
           ...(scheduledFor ? { scheduled_for: scheduledFor } : {}),
