@@ -234,7 +234,7 @@ export function PrimeTalkPage() {
             >
               <IconChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-semibold text-neutral-950">Prime Talk 《八点最日报》 Post Generator</h1>
+            <h1 className="text-2xl font-semibold text-neutral-950">Prime Talk 《八点最热报》 Post Generator</h1>
           </div>
           <p className="text-sm text-neutral-600">Turn Prime Talk episode scripts into ready-to-post Facebook image cards</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />

@@ -122,7 +122,7 @@ const sections: Section[] = [
     topics: [
       {
         id: "prime-talk",
-        label: "Prime Talk 《八点最日报》",
+        label: "Prime Talk 《八点最热报》",
         description:
           "Turn Prime Talk episode scripts into Simplified Chinese Facebook image cards",
         icon: IconNews,
