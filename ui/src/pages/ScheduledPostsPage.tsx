@@ -154,13 +154,10 @@ export function ScheduledPostsPage({ brand, embedded = false }: { brand: string;
       if (!force) {
         const cached = localStorage.getItem(cacheKey)
         if (cached) {
-          const { items, timestamp } = JSON.parse(cached)
-          const isSameDay = new Date(timestamp).toDateString() === new Date().toDateString()
-          if (isSameDay) {
-            setArticles(items)
-            setIsLoading(false)
-            return
-          }
+          const { items } = JSON.parse(cached)
+          setArticles(items)
+          setIsLoading(false)
+          return
         }
       }
       const items = await fetchTrendingArticles()
