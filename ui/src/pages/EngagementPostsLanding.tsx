@@ -95,21 +95,21 @@ const sections: Section[] = [
         icon: IconTrendingUp,
         color: "#EF4444",
       },
-      {
-        id: "weather-malaysia",
-        label: "Weather Malaysia",
-        description: "Generate daily weather forecast posts for all 16 states",
-        icon: IconCloudRain,
-        color: "#00E5D4",
-      },
-      {
-        id: "on-this-day",
-        label: "On This Day — Malaysia",
-        description:
-          "Historical events from Malaysia — what happened today in history",
-        icon: IconCalendar,
-        color: "#0055EE",
-      },
+      // {
+      //   id: "weather-malaysia",
+      //   label: "Weather Malaysia",
+      //   description: "Generate daily weather forecast posts for all 16 states",
+      //   icon: IconCloudRain,
+      //   color: "#00E5D4",
+      // },
+      // {
+      //   id: "on-this-day",
+      //   label: "On This Day — Malaysia",
+      //   description:
+      //     "Historical events from Malaysia — what happened today in history",
+      //   icon: IconCalendar,
+      //   color: "#0055EE",
+      // },
     ],
   },
   {
