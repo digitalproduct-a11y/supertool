@@ -2,11 +2,10 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconChevronLeft, IconRefresh, IconSearch, IconChevronRight, IconExternalLink } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
-import { callGenerateWebhook, ImageThumb, GenerateView } from '../components/GeneratePostView'
+import { callGenerateWebhook, GenerateView } from '../components/GeneratePostView'
 import type { GenerateSource } from '../components/GeneratePostView'
 import { PostCard } from '../components/PostCard'
 import type { ScheduledPost } from '../types'
-import { Spinner } from '../components/ds/Spinner'
 import { RECOMMENDED_SOURCES } from '../constants/scheduledPostSources'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import { toast } from '../hooks/useToast'
 import { IconRefresh, IconSearch, IconChevronRight, IconExternalLink } from '@tabler/icons-react'
 import { Spinner } from '../components/ds/Spinner'
 import { GuideModal } from '../components/ds/GuideModal'
-import { GenerateView, ImageThumb } from '../components/GeneratePostView'
+import { GenerateView } from '../components/GeneratePostView'
 import type { GenerateSource } from '../components/GeneratePostView'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
