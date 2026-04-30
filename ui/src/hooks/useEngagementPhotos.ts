@@ -126,19 +126,28 @@ export function useEngagementPhotos() {
       const data = (await response.json()) as any
       console.log('Response data:', data)
 
-      if (data?.success && data?.ideas && Array.isArray(data.ideas)) {
-        const limitedIdeas = data.ideas.map((idea: any) => ({
-          ...idea,
-          headline: idea.headline.slice(0, 35),
-          subtitle: idea.subtitle.slice(0, 70),
-          caption: idea.caption.slice(0, 600),
+      // Handle both "ideas" format (EPL/UCL) and "posts" format (Badminton)
+      const itemsArray = data?.ideas || data?.posts
+      if (data?.success && itemsArray && Array.isArray(itemsArray)) {
+        const limitedIdeas = itemsArray.map((item: any) => ({
+          id: item.id,
+          type: item.type || 'news',
+          headline: (item.headline || '').slice(0, 35),
+          subtitle: (item.subtitle || item.content || '').slice(0, 70),
+          caption: (item.caption || '').slice(0, 600),
+          player: item.player || '',
+          club: item.club || undefined,
+          photo_url: item.photo_url || null,
+          photo_public_id: item.photo_public_id || null,
+          status: item.status || 'draft' as const,
+          context: item.context,
         }))
         setIdeas(limitedIdeas)
 
-        // Extract unique player/club combos and fetch all photos at once
+        // Extract unique player/club combos and fetch all photos at once (for EPL/UCL)
         console.log('Ideas for bulk search:', limitedIdeas)
         const uniqueKeywords = new Set(
-          limitedIdeas.map((idea: any) => JSON.stringify({ player: idea.player, club: idea.club || '' }))
+          limitedIdeas.map((idea: any) => JSON.stringify({ player: idea.player || '', club: idea.club || '' }))
         )
         const keywords: Array<{ player: string; club: string }> = Array.from(uniqueKeywords).map(
           (str: unknown) => JSON.parse(str as string) as { player: string; club: string }

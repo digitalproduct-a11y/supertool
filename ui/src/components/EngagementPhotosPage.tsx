@@ -114,7 +114,17 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       alert('Please select a brand')
       return
     }
-    const trendingTopicsWebhookEnvVar = config.trendingTopicsWebhookEnvVar || 'VITE_ENGAGEMENT_TRENDING_TOPICS_WEBHOOK_URL'
+
+    // For topics without trending topics (e.g., badminton), generate directly
+    if (!config.trendingTopicsWebhookEnvVar) {
+      setStage('review')
+      await generate(selectedBrand, 'en', [], webhookUrl)
+      setCurrentLoadingStep(0)
+      setLoadingMessage(config.loadingQuotes[0])
+      return
+    }
+
+    const trendingTopicsWebhookEnvVar = config.trendingTopicsWebhookEnvVar
     const trendingTopicsWebhookUrl = import.meta.env[trendingTopicsWebhookEnvVar] as string | undefined
     if (!trendingTopicsWebhookUrl) {
       alert('Trending topics webhook URL not configured')
@@ -211,10 +221,10 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
                   <button
                     onClick={handleFetchTrendingTopics}
-                    disabled={!selectedBrand || isFetchingTopics}
+                    disabled={!selectedBrand || isFetchingTopics || isLoading}
                     className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
                   >
-                    {isFetchingTopics ? 'Fetching Trending News...' : 'Get Trending News'}
+                    {isFetchingTopics ? 'Fetching Trending News...' : isLoading ? 'Generating Posts...' : config.trendingTopicsWebhookEnvVar ? 'Get Trending News' : 'Generate Posts'}
                   </button>
 
                   {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}

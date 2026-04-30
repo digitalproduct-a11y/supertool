@@ -29,4 +29,14 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
     loadingQuotes: ['Checking VAR in UEFA HQ...', 'Consulting the dugout...', 'Asking the ultras...', 'Reading the match report...'],
     downloadPrefix: 'ucl-post',
   },
+  badminton: {
+    id: 'badminton',
+    label: 'Badminton',
+    webhookEnvVar: 'VITE_BADMINTON_POSTS_WEBHOOK_URL',
+    uploadPresetEnvVar: 'VITE_CLOUDINARY_BADMINTON_UPLOAD_PRESET',
+    templateImages: SHARED_TEMPLATE_IMAGES,
+    loadingSteps: ['Searching latest badminton news', 'Analyzing the rallies', 'Generating post ideas'],
+    loadingQuotes: ['Checking the shuttlecock trajectory...', 'Consulting the badminton federation...', 'Reading the tournament report...', 'Analyzing the smash technique...'],
+    downloadPrefix: 'badminton-post',
+  },
 }

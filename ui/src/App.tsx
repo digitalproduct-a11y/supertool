@@ -49,6 +49,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-photos': 'engagement-posts',
   '/engagement-photos/epl': 'engagement-photos',
+  '/engagement-photos/badminton': 'engagement-photos',
   '/trending-news': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
@@ -82,6 +83,7 @@ const toolToPath: Record<ToolId, string> = {
 const topicToPath: Record<string, string> = {
   'engagement-photos': '/engagement-photos/epl',
   'ucl': '/engagement-photos/ucl',
+  'badminton': '/engagement-photos/badminton',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -909,6 +911,11 @@ function App() {
       <Route path="/engagement-photos/ucl" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="ucl" />
+        </Layout>
+      } />
+      <Route path="/engagement-photos/badminton" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="badminton" />
         </Layout>
       } />
       <Route path="/engagement-photos/worldcup" element={
