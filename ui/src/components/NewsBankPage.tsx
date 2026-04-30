@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { IconChevronLeft } from '@tabler/icons-react'
-import { RSS_FEEDS_BY_BRAND } from '../constants/rssFeedsByBrand'
-import { ScheduledPostsPage } from './ScheduledPostsPage'
+import { ScheduledPostsPage } from '../pages/ScheduledPostsPage'
 import { LatestNewsTab } from './LatestNewsTab'
 import { slugToBrand } from './NewsBankLanding'
 
@@ -10,8 +9,7 @@ type Tab = 'latest' | 'trending'
 
 function NewsBankPage({ brand }: { brand: string }) {
   const navigate = useNavigate()
-  const hasRss = brand in RSS_FEEDS_BY_BRAND
-  const [activeTab, setActiveTab] = useState<Tab>(hasRss ? 'latest' : 'trending')
+  const [activeTab, setActiveTab] = useState<Tab>('latest')
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -32,18 +30,16 @@ function NewsBankPage({ brand }: { brand: string }) {
       {/* Tab switcher */}
       <div className="bg-white border-b border-neutral-100 px-4 md:px-8">
         <div className="flex gap-1">
-          {hasRss && (
-            <button
-              onClick={() => setActiveTab('latest')}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'latest'
-                  ? 'border-neutral-950 text-neutral-950'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-700'
-              }`}
-            >
-              Latest News
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('latest')}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'latest'
+                ? 'border-neutral-950 text-neutral-950'
+                : 'border-transparent text-neutral-400 hover:text-neutral-700'
+            }`}
+          >
+            Latest News
+          </button>
           <button
             onClick={() => setActiveTab('trending')}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
