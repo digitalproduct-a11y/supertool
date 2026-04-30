@@ -230,7 +230,7 @@ export interface CarouselImage {
   id: string
   src: string
   alt: string
-  type: 'hero' | 'pexels'
+  type: 'hero' | 'pexels' | 'article'
   photographer?: string
   overlays: unknown[]
   imageTitle?: string

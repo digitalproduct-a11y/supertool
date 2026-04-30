@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { toast } from '../hooks/useToast'
-import { IconRefresh } from '@tabler/icons-react'
+import { IconRefresh, IconSearch, IconChevronRight, IconExternalLink } from '@tabler/icons-react'
 import { Spinner } from './ds/Spinner'
 import { GuideModal } from './ds/GuideModal'
-import { GenerateView, ImageThumb } from './GeneratePostView'
+import { GenerateView } from './GeneratePostView'
 import type { GenerateSource } from './GeneratePostView'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ function formatBrandName(brand: string): string {
   ).join(' ')
 }
 
-// ─── Caching utilities ─────────────────────────────────────────────────────────
+// ─── Caching utilities ────────────────────────────────────────────────────────
 
 const TRENDING_CACHE_KEY = 'trending_spike_cache'
 const REFRESH_HOUR = 10
@@ -111,7 +111,8 @@ export function TrendingSpikePage() {
   const [selectedTrending, setSelectedTrending] = useState<TrendingItem | null>(null)
   const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([])
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
-  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
+  const [selectedBrand, setSelectedBrand] = useState<string | 'all'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleFetchTrending = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh) {
@@ -155,6 +156,34 @@ export function TrendingSpikePage() {
     handleFetchTrending()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const brandCounts = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const item of trendingItems) {
+      if (item.brand) map[item.brand] = (map[item.brand] || 0) + 1
+    }
+    return map
+  }, [trendingItems])
+
+  const allBrands = useMemo(() =>
+    Object.keys(brandCounts).sort(),
+    [brandCounts]
+  )
+
+  const filteredItems = useMemo(() => {
+    let items = trendingItems
+    if (selectedBrand !== 'all') {
+      items = items.filter(i => i.brand === selectedBrand)
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      items = items.filter(i =>
+        (i.title || '').toLowerCase().includes(q) ||
+        (i.source || '').toLowerCase().includes(q)
+      )
+    }
+    return [...items].sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
+  }, [trendingItems, selectedBrand, searchQuery])
+
   function handleGeneratePost(item: TrendingItem) {
     setSelectedTrending(item)
     setView('generate')
@@ -175,336 +204,258 @@ export function TrendingSpikePage() {
     : null
 
   return (
-    <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-28">
-      <div className="max-w-6xl mx-auto">
+    <main className="flex-1 pt-20 md:pt-10 flex flex-col min-h-0 overflow-hidden">
 
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending News</h1>
-              <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from trending articles</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => handleFetchTrending(true)}
-                disabled={isFetchingTrending}
-                className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors border border-neutral-200 hover:border-neutral-400 rounded-lg px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 disabled:opacity-50"
-                title="Refresh trending articles"
-              >
-                <IconRefresh size={16} className={isFetchingTrending ? 'animate-spin' : ''} />
-                Refresh
-              </button>
-              <GuideModal title="How to use Trending News">
-                <div className="space-y-4">
-                  <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
-                    <iframe
-                      src="https://drive.google.com/file/d/1nExBvjJeMHR0cCkyYrIl3r2LAo4zIUzA/preview"
-                      className="w-full h-full"
-                      allow="autoplay"
-                      title="Trending News to FB Photo walkthrough video"
-                    />
-                  </div>
-                  <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                    <li><strong>Select an article</strong> — Pick one article you want to create a Facebook post for.</li>
-                    <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
-                    <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
-                    <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
-                    <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
-                    <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
-                  </ol>
-                  <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
-                    <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                    <p className="text-xs text-neutral-700">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
-                  </div>
+      {/* Header */}
+      <div className="px-4 md:px-8 pb-4 shrink-0">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending News</h1>
+            <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from trending articles</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => handleFetchTrending(true)}
+              disabled={isFetchingTrending}
+              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors border border-neutral-200 hover:border-neutral-400 rounded-lg px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 disabled:opacity-50"
+              title="Refresh trending articles"
+            >
+              <IconRefresh size={16} className={isFetchingTrending ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            <GuideModal title="How to use Trending News">
+              <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                  <iframe
+                    src="https://drive.google.com/file/d/1nExBvjJeMHR0cCkyYrIl3r2LAo4zIUzA/preview"
+                    className="w-full h-full"
+                    allow="autoplay"
+                    title="Trending News to FB Photo walkthrough video"
+                  />
                 </div>
-              </GuideModal>
+                <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
+                  <li><strong>Select an article</strong> — Pick one article you want to create a Facebook post for.</li>
+                  <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
+                  <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
+                  <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
+                  <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
+                  <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
+                </ol>
+                <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
+                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
+                  <p className="text-xs text-neutral-700">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
+                </div>
+              </div>
+            </GuideModal>
+          </div>
+        </div>
+        <div
+          className="mt-4 h-[3px] rounded-full animate-stripe-grow"
+          style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
+        />
+      </div>
+
+      {/* Generate view */}
+      {view === 'generate' && generateSource && (
+        <div className="flex-1 overflow-y-auto">
+          <GenerateView source={generateSource} onBack={handleBackToList} />
+        </div>
+      )}
+
+      {/* List view */}
+      {view === 'list' && (
+        <div className="flex-1 flex min-h-0 overflow-hidden border-t border-neutral-100">
+
+          {/* Brand sidebar */}
+          <div className="w-44 shrink-0 border-r border-neutral-100 overflow-y-auto flex flex-col bg-white">
+            <div className="p-2 space-y-0.5">
+              <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-2 pt-2 pb-1">Sources</p>
+
+              <button
+                onClick={() => setSelectedBrand('all')}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  selectedBrand === 'all'
+                    ? 'bg-neutral-950 text-white'
+                    : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950'
+                }`}
+              >
+                <span>All</span>
+                <span className={`text-[10px] tabular-nums ${selectedBrand === 'all' ? 'text-neutral-300' : 'text-neutral-400'}`}>
+                  {trendingItems.length}
+                </span>
+              </button>
+
+              <div className="h-px bg-neutral-100 my-1" />
+
+              {allBrands.map(brand => {
+                const active = selectedBrand === brand
+                const count = brandCounts[brand] ?? 0
+                return (
+                  <button
+                    key={brand}
+                    onClick={() => setSelectedBrand(brand)}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      active
+                        ? 'bg-neutral-950 text-white'
+                        : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950'
+                    }`}
+                  >
+                    <span className="truncate text-left">{formatBrandName(brand)}</span>
+                    {count > 0 && (
+                      <span className={`text-[10px] tabular-nums shrink-0 ml-1 ${active ? 'text-neutral-300' : 'text-neutral-400'}`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
-          <div
-            className="mt-4 h-[3px] rounded-full animate-stripe-grow"
-            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
-          />
-        </div>
 
-        {/* Generate view */}
-        {view === 'generate' && generateSource && (
-          <GenerateView source={generateSource} onBack={handleBackToList} />
-        )}
+          {/* Article list */}
+          <div className="flex-1 overflow-y-auto">
 
-        {/* List view */}
-        {view === 'list' && (
-          <div className="space-y-6">
-
-            {/* Info banner */}
-            <div className="glass-card rounded-2xl p-4 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0 mt-0.5">
-                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-neutral-800">Refreshes daily at 10AM</p>
-                <p className="text-xs text-neutral-400 mt-0.5">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
-              </div>
-            </div>
-
-            {/* Brand filter */}
-            {trendingItems.length > 0 && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-full p-1 shadow-sm">
-                    <button
-                      onClick={() => setSelectedSources(new Set())}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition whitespace-nowrap ${
-                        selectedSources.size === 0
-                          ? 'bg-neutral-950 text-white shadow-sm'
-                          : 'text-neutral-500 hover:text-neutral-800'
-                      }`}
-                    >
-                      All
-                    </button>
-                    {Array.from(new Set(trendingItems.map(i => i.brand).filter(Boolean))).sort().map(brand => {
-                      const active = selectedSources.has(brand)
-                      return (
-                        <button
-                          key={brand}
-                          onClick={() => setSelectedSources(prev => {
-                            const next = new Set(prev)
-                            active ? next.delete(brand) : next.add(brand)
-                            return next
-                          })}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition whitespace-nowrap ${
-                            active
-                              ? 'bg-neutral-950 text-white shadow-sm'
-                              : 'text-neutral-500 hover:text-neutral-800'
-                          }`}
-                        >
-                          {formatBrandName(brand)}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Skeleton while fetching */}
+            {/* Loading skeleton */}
             {isFetchingTrending && trendingItems.length === 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="glass-card rounded-2xl overflow-hidden">
-                    <div className="px-4 py-3 border-b border-white/40">
-                      <div className="h-3 skeleton-shimmer rounded w-20" />
-                    </div>
-                    <div className="p-3 space-y-3">
-                      {[1, 2, 3, 4, 5].map(j => (
-                        <div key={j} className="flex gap-2.5">
-                          <div className="w-16 h-16 rounded-lg skeleton-shimmer shrink-0" />
-                          <div className="flex-1 space-y-1.5 py-1">
-                            <div className="h-2.5 skeleton-shimmer rounded w-full" />
-                            <div className="h-2.5 skeleton-shimmer rounded w-3/4" />
-                            <div className="h-2.5 skeleton-shimmer rounded w-1/2" />
-                          </div>
-                        </div>
-                      ))}
+              <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
+                    <div className="flex gap-3 p-4">
+                      <div className="w-36 aspect-video shrink-0 rounded-lg skeleton-shimmer" />
+                      <div className="flex-1 space-y-2 py-1">
+                        <div className="h-2.5 skeleton-shimmer rounded w-24" />
+                        <div className="h-3 skeleton-shimmer rounded w-full" />
+                        <div className="h-3 skeleton-shimmer rounded w-3/4" />
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Refreshing indicator when data already loaded */}
-            {isFetchingTrending && trendingItems.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-neutral-500">
-                <Spinner size="sm" />
-                Refreshing…
+            {trendingItems.length > 0 && (
+              <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
+
+                {/* Search bar */}
+                <div className="relative">
+                  <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search articles…"
+                    className="w-full pl-8 pr-3 py-2 text-xs border border-neutral-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent placeholder:text-neutral-400"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Toolbar */}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-neutral-400">
+                    {filteredItems.length === 0
+                      ? 'No articles found'
+                      : `${filteredItems.length} article${filteredItems.length !== 1 ? 's' : ''} · refreshes daily at 10AM`}
+                  </p>
+                  {isFetchingTrending && (
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+                      <Spinner size="sm" />
+                      Refreshing…
+                    </div>
+                  )}
+                </div>
+
+                {/* Articles */}
+                {filteredItems.length === 0 ? (
+                  <div className="text-center py-16">
+                    {searchQuery ? (
+                      <p className="text-sm text-neutral-400">No articles match "{searchQuery}".</p>
+                    ) : (
+                      <p className="text-sm text-neutral-400">No articles found for this source.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredItems.map((item, idx) => (
+                      <div
+                        key={`${item.id}-${idx}`}
+                        className="bg-white rounded-xl border border-neutral-100 overflow-hidden"
+                      >
+                        <div className="flex gap-3 p-4">
+                          {item.imageUrl && (
+                            <div className="w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden">
+                              <img
+                                src={item.imageUrl}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-neutral-400 mb-1">
+                              {formatBrandName(item.brand)}
+                              {item.publishedAt ? ` · ${item.publishedAt}` : ''}
+                            </p>
+                            <h3 className="text-sm font-semibold text-neutral-950 leading-snug line-clamp-2">
+                              {item.title || item.url}
+                            </h3>
+                          </div>
+                        </div>
+                        <div className="border-t border-neutral-100 px-4 py-2.5 flex items-center justify-between">
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition"
+                          >
+                            Read article <IconExternalLink className="w-3 h-3" />
+                          </a>
+                          <button
+                            onClick={() => handleGeneratePost(item)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-950 hover:text-neutral-600 transition"
+                          >
+                            Generate Post <IconChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Trending articles — 4-column layout */}
-            {trendingItems.length > 0 && (() => {
-              const GEMPAK_RECOMMENDED = ['rojak daily', 'astro awani', 'xuan']
-              const ROJAK_DAILY_RECOMMENDED = ['astro ulagam', 'xuan', 'gempak']
-
-              const sortByDate = (arr: TrendingItem[]) =>
-                [...arr].sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
-
-              const passesFilter = (i: TrendingItem) =>
-                selectedSources.size === 0 || selectedSources.has(i.brand)
-
-              const gempakRecommended = sortByDate(
-                trendingItems.filter(i => passesFilter(i) && GEMPAK_RECOMMENDED.includes(i.source.toLowerCase()))
-              )
-              const gempakOther = sortByDate(
-                trendingItems.filter(i => passesFilter(i) && !GEMPAK_RECOMMENDED.includes(i.source.toLowerCase()))
-              )
-              const gempakTotal = gempakRecommended.length + gempakOther.length
-
-              const rojakRecommended = sortByDate(
-                trendingItems.filter(i => passesFilter(i) && ROJAK_DAILY_RECOMMENDED.includes(i.source.toLowerCase()))
-              )
-              const rojakOther = sortByDate(
-                trendingItems.filter(i => passesFilter(i) && !ROJAK_DAILY_RECOMMENDED.includes(i.source.toLowerCase()))
-              )
-              const rojakTotal = rojakRecommended.length + rojakOther.length
-
-              const typeColumns = (['News', 'Sport', 'Entertainment'] as const).map(type => {
-                const items = sortByDate(
-                  trendingItems.filter(i => {
-                    if (i.type.toLowerCase() !== type.toLowerCase()) return false
-                    return passesFilter(i)
-                  })
-                )
-                return { type, items }
-              }).filter(c => c.items.length > 0)
-
-              const renderArticleRow = (item: TrendingItem) => (
-                <div key={item.id} className="p-3 hover:bg-neutral-50/50 transition-colors">
-                  <div className="flex gap-2.5">
-                    <div className="w-24 shrink-0">
-                      <ImageThumb url={item.imageUrl} alt={item.title || item.url} aspectRatio="video" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-1">
-                        <span className="text-neutral-800 font-medium text-xs line-clamp-2 leading-snug flex-1">
-                          {item.title || item.url}
-                        </span>
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0 text-neutral-300 hover:text-neutral-600 transition mt-0.5"
-                          title="Open article"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                      </div>
-                      <div className="flex items-center justify-between mt-1.5 gap-2">
-                        <div className="min-w-0">
-                          <span className="text-[10px] text-neutral-400 font-medium capitalize block truncate">{item.source}</span>
-                          {item.publishedAt && (
-                            <span className="text-[10px] text-neutral-300 block truncate">{item.publishedAt}</span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => handleGeneratePost(item)}
-                          className="shrink-0 px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-[10px] font-semibold transition active:scale-[0.97]"
-                        >
-                          Generate
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
-
-                  {/* Gempak brand card */}
-                  {gempakTotal > 0 && (
-                    <div className="glass-card rounded-2xl overflow-hidden">
-                      <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-neutral-700">✨ Gempak</h2>
-                        <span className="text-xs text-neutral-400">{gempakTotal}</span>
-                      </div>
-
-                      {gempakRecommended.length > 0 && (
-                        <>
-                          <div className="px-3 pt-2 pb-1">
-                            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Recommended sources</span>
-                          </div>
-                          <div className="divide-y divide-neutral-50">
-                            {gempakRecommended.map(renderArticleRow)}
-                          </div>
-                        </>
-                      )}
-
-                      {gempakOther.length > 0 && (
-                        <>
-                          <div className="px-3 pt-3 pb-1 border-t border-neutral-100 mt-1">
-                            <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide">Other sources</span>
-                          </div>
-                          <div className="divide-y divide-neutral-50">
-                            {gempakOther.map(renderArticleRow)}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Rojak Daily brand card */}
-                  {rojakTotal > 0 && (
-                    <div className="glass-card rounded-2xl overflow-hidden">
-                      <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-neutral-700">✨ Rojak Daily</h2>
-                        <span className="text-xs text-neutral-400">{rojakTotal}</span>
-                      </div>
-
-                      {rojakRecommended.length > 0 && (
-                        <>
-                          <div className="px-3 pt-2 pb-1">
-                            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Recommended sources</span>
-                          </div>
-                          <div className="divide-y divide-neutral-50">
-                            {rojakRecommended.map(renderArticleRow)}
-                          </div>
-                        </>
-                      )}
-
-                      {rojakOther.length > 0 && (
-                        <>
-                          <div className="px-3 pt-3 pb-1 border-t border-neutral-100 mt-1">
-                            <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide">Other sources</span>
-                          </div>
-                          <div className="divide-y divide-neutral-50">
-                            {rojakOther.map(renderArticleRow)}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* News / Sport / Entertainment columns */}
-                  {typeColumns.map(({ type, items }) => {
-                    const emoji = type === 'News' ? '📰' : type === 'Sport' ? '⚽' : '🎬'
-                    return (
-                      <div key={type} className="glass-card rounded-2xl overflow-hidden">
-                        <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
-                          <h2 className="text-sm font-semibold text-neutral-700">{emoji} {type}</h2>
-                          <span className="text-xs text-neutral-400">{items.length}</span>
-                        </div>
-                        <div className="divide-y divide-neutral-50">
-                          {items.map(renderArticleRow)}
-                        </div>
-                      </div>
-                    )
-                  })}
-
-                </div>
-              )
-            })()}
-
-            {/* Empty state */}
+            {/* Empty state — no items at all */}
             {trendingItems.length === 0 && !isFetchingTrending && (
-              <div className="glass-card rounded-2xl p-12 text-center">
-                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+              <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
                   <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-neutral-600">No articles yet</p>
-                <p className="text-xs text-neutral-400 mt-1">No trending articles found. Try refreshing.</p>
+                <div>
+                  <p className="text-sm font-medium text-neutral-600">No trending articles</p>
+                  <p className="text-xs text-neutral-400 mt-1">Try refreshing to load today's articles.</p>
+                </div>
+                <button
+                  onClick={() => handleFetchTrending(true)}
+                  className="px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition-colors"
+                >
+                  Refresh
+                </button>
               </div>
             )}
 
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
     </main>
   )
 }

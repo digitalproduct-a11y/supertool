@@ -11,12 +11,7 @@ type Tab = 'latest' | 'trending'
 function NewsBankPage({ brand }: { brand: string }) {
   const navigate = useNavigate()
   const hasRss = brand in RSS_FEEDS_BY_BRAND
-  const [activeTab, setActiveTab] = useState<Tab>('latest')
-
-  // Brands without RSS: skip tabs, go straight to Trending
-  if (!hasRss) {
-    return <ScheduledPostsPage brand={brand} />
-  }
+  const [activeTab, setActiveTab] = useState<Tab>(hasRss ? 'latest' : 'trending')
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -37,16 +32,18 @@ function NewsBankPage({ brand }: { brand: string }) {
       {/* Tab switcher */}
       <div className="bg-white border-b border-neutral-100 px-4 md:px-8">
         <div className="flex gap-1">
-          <button
-            onClick={() => setActiveTab('latest')}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'latest'
-                ? 'border-neutral-950 text-neutral-950'
-                : 'border-transparent text-neutral-400 hover:text-neutral-700'
-            }`}
-          >
-            Latest News
-          </button>
+          {hasRss && (
+            <button
+              onClick={() => setActiveTab('latest')}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'latest'
+                  ? 'border-neutral-950 text-neutral-950'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              Latest News
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('trending')}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
@@ -65,7 +62,7 @@ function NewsBankPage({ brand }: { brand: string }) {
         {activeTab === 'latest' ? (
           <LatestNewsTab brand={brand} />
         ) : (
-          <ScheduledPostsPage brand={brand} />
+          <ScheduledPostsPage brand={brand} embedded />
         )}
       </div>
     </div>

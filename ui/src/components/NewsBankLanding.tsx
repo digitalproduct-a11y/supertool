@@ -46,7 +46,7 @@ export function NewsBankLanding() {
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Hero */}
         <div className="mb-10">
@@ -80,11 +80,9 @@ export function NewsBankLanding() {
               >
                 <div className="flex-1 min-w-0">
                   <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
-                  {isDisabled ? (
+                  {isDisabled && (
                     <p className="text-xs text-neutral-400 mt-0.5">Templates coming soon</p>
-                  ) : hasRss ? (
-                    <p className="text-[11px] text-blue-500 mt-0.5">Latest News available</p>
-                  ) : null}
+                  )}
                 </div>
                 {!isDisabled && (
                   <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0">

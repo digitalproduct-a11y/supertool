@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
-import { IconChevronLeft } from '@tabler/icons-react'
 import { BRANDS, type BrandName } from '../constants/brands'
 import type { QuickFactResult, QuickFactItem } from '../types'
 import { toast } from '../hooks/useToast'
@@ -71,7 +69,6 @@ async function callZernioWebhook(
 }
 
 export function QuickFactPage() {
-  const navigate = useNavigate()
   const [pageState, setPageState] = useState<PageState>('idle')
   const [url, setUrl] = useState('')
   const [brand, setBrand] = useState<BrandName | ''>('')
@@ -190,15 +187,9 @@ export function QuickFactPage() {
         {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
-            >
-              <IconChevronLeft className="w-5 h-5" />
-            </button>
             <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Quick Fact Generator</h1>
           </div>
-          <p className="text-neutral-500 mt-1 text-sm ml-11">Turn any article into a key-facts photo post for Facebook</p>
+          <p className="text-neutral-500 mt-1 text-sm">Turn any article into a key-facts photo post for Facebook</p>
           <div className="mt-3 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
 
