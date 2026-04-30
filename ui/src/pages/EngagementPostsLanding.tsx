@@ -38,6 +38,7 @@ interface Topic {
   }>;
   color: string;
   comingSoon?: boolean;
+  hidden?: boolean;
 }
 
 interface Section {
@@ -95,21 +96,23 @@ const sections: Section[] = [
         icon: IconTrendingUp,
         color: "#EF4444",
       },
-      // {
-      //   id: "weather-malaysia",
-      //   label: "Weather Malaysia",
-      //   description: "Generate daily weather forecast posts for all 16 states",
-      //   icon: IconCloudRain,
-      //   color: "#00E5D4",
-      // },
-      // {
-      //   id: "on-this-day",
-      //   label: "On This Day — Malaysia",
-      //   description:
-      //     "Historical events from Malaysia — what happened today in history",
-      //   icon: IconCalendar,
-      //   color: "#0055EE",
-      // },
+      {
+        id: "weather-malaysia",
+        label: "Weather Malaysia",
+        description: "Generate daily weather forecast posts for all 16 states",
+        icon: IconCloudRain,
+        color: "#00E5D4",
+        hidden: true,
+      },
+      {
+        id: "on-this-day",
+        label: "On This Day — Malaysia",
+        description:
+          "Historical events from Malaysia — what happened today in history",
+        icon: IconCalendar,
+        color: "#0055EE",
+        hidden: true,
+      },
     ],
   },
   {
@@ -211,7 +214,7 @@ export function EngagementPostsLanding({
 
                 {/* Cards grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {section.topics.map((topic) => {
+                  {section.topics.filter(t => !t.hidden).map((topic) => {
                     const Icon = topic.icon;
 
                     if (topic.comingSoon) {
