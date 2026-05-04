@@ -6,7 +6,6 @@ import { toast } from '../hooks/useToast'
 
 interface DidYouKnowCardProps {
   idea: DidYouKnowIdea
-  brand: string
   edition: string
   brandLogoPublicId: string | null
   language: string
@@ -20,7 +19,7 @@ const editionTranslations: Record<string, Record<string, string>> = {
   'Edisi Piala Thomas/Uber': { ms: 'Edisi Piala Thomas/Uber', en: 'Thomas/Uber Cup Edition' },
 }
 
-export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
+export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
   const canvasRef = useRef<DidYouKnowCanvasHandle>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -164,6 +163,7 @@ export function DidYouKnowCard({ idea, brand, edition, brandLogoPublicId, langua
               imageUrl={uploadedImageUrl}
               brandLogoPublicId={brandLogo}
               translatedEdition={translatedEdition}
+              language={language}
             />
           </div>
         </div>
