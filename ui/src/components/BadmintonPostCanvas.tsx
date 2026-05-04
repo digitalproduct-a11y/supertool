@@ -56,7 +56,12 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
           // Background photo - crop to fill (like Cloudinary c_fill)
           if (photoUrl) {
             try {
-              const img = await FabricImage.fromURL(photoUrl, { crossOrigin: 'anonymous' })
+              console.log('Loading image from:', photoUrl)
+              const img = await FabricImage.fromURL(photoUrl, {
+                crossOrigin: 'anonymous',
+              })
+              console.log('Image loaded, dimensions:', img.width, 'x', img.height)
+
               const imgWidth = img.width || CANVAS_WIDTH
               const imgHeight = img.height || CANVAS_HEIGHT
 
@@ -70,6 +75,8 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
               img.top = CANVAS_HEIGHT / 2
               img.originX = 'center'
               img.originY = 'center'
+
+              // Apply clip after setting position
               img.clipPath = new Rect({
                 left: -CANVAS_WIDTH / 2,
                 top: -CANVAS_HEIGHT / 2,
@@ -77,7 +84,10 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
                 height: CANVAS_HEIGHT,
                 absolutePositioned: true,
               })
+
               canvas.add(img)
+              canvas.renderAll()
+              console.log('Image rendered successfully')
             } catch (err) {
               console.error('Failed to load background photo:', err)
             }
