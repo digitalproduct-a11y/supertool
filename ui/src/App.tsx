@@ -20,7 +20,7 @@ import { SpikeNewsPage } from './pages/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
 import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
-import { DidYouKnowPage } from './components/DidYouKnowPage'
+import { DidYouKnowPage } from './pages/DidYouKnowPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,

@@ -1,35 +1,40 @@
 import { useState, useRef } from 'react'
-import { IconDownload, IconChevronLeft } from '@tabler/icons-react'
+import { IconDownload, IconChevronLeft, IconClock } from '@tabler/icons-react'
 import { DidYouKnowCanvas, type DidYouKnowCanvasHandle } from './DidYouKnowCanvas'
-import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
-import { toast } from '../hooks/useToast'
+import type { DidYouKnowIdea } from '../../hooks/useDidYouKnow'
+import { toast } from '../../hooks/useToast'
+import { EDITION_TRANSLATIONS } from './constants'
 
 interface DidYouKnowCardProps {
   idea: DidYouKnowIdea
   edition: string
   brandLogoPublicId: string | null
   language: string
+  brand: string
   onBack: () => void
   onUpdateField: (field: 'headline' | 'fact' | 'caption', value: string) => void
 }
 
-const editionTranslations: Record<string, Record<string, string>> = {
-  'Edisi Piala Dunia': { ms: 'Edisi Piala Dunia', en: 'World Cup Edition' },
-  'Edisi Liga Super Malaysia': { ms: 'Edisi Liga Super Malaysia', en: 'Super League Malaysia Edition' },
-  'Edisi Piala Thomas/Uber': { ms: 'Edisi Piala Thomas/Uber', en: 'Thomas/Uber Cup Edition' },
-}
-
-export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onBack, onUpdateField }: DidYouKnowCardProps) {
+export function DidYouKnowCard({
+  idea,
+  edition,
+  brandLogoPublicId,
+  language,
+  brand,
+  onBack,
+  onUpdateField,
+}: DidYouKnowCardProps) {
   const canvasRef = useRef<DidYouKnowCanvasHandle>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isScheduling, setIsScheduling] = useState(false)
+  const [scheduleDateTime, setScheduleDateTime] = useState<string>('')
 
   const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
-  const translatedEdition = editionTranslations[edition]?.[isMalay ? 'ms' : 'en'] || edition
+  const translatedEdition = EDITION_TRANSLATIONS[edition]?.[isMalay ? 'ms' : 'en'] || edition
   const captionHeader = isMalay ? 'TAHUKAH ANDA?' : 'DID YOU KNOW?'
 
   const brandLogo = brandLogoPublicId || 'default_logo'
-
 
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -64,6 +69,63 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
 
     canvasRef.current.downloadAsPng()
     toast.success('Downloaded!')
+  }
+
+  const handleScheduleToFB = async () => {
+    if (!scheduleDateTime) {
+      toast.error('Please select a date and time')
+      return
+    }
+
+    if (!canvasRef.current) {
+      toast.error('Preview not ready')
+      return
+    }
+
+    const imageDataUrl = canvasRef.current.getDataUrl()
+    if (!imageDataUrl) {
+      toast.error('Failed to generate image')
+      return
+    }
+
+    setIsScheduling(true)
+
+    try {
+      const webhookUrl = import.meta.env.VITE_SCHEDULED_POSTS_SCHEDULE_WEBHOOK_URL as string | undefined
+      if (!webhookUrl) {
+        toast.error('Schedule webhook not configured')
+        setIsScheduling(false)
+        return
+      }
+
+      const scheduledTime = new Date(scheduleDateTime).toISOString()
+
+      const payload = {
+        brand,
+        imageUrl: imageDataUrl,
+        caption: `${captionHeader}\n\n${idea.caption}`,
+        headline: idea.headline,
+        scheduledTime,
+        edition,
+      }
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Schedule failed: ${response.status}`)
+      }
+
+      toast.success('Post scheduled successfully!')
+      setScheduleDateTime('')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to schedule post')
+    } finally {
+      setIsScheduling(false)
+    }
   }
 
   return (
@@ -143,13 +205,33 @@ export function DidYouKnowCard({ idea, edition, brandLogoPublicId, language, onB
           </div>
 
           {uploadedImageUrl && (
-            <button
-              onClick={handleDownload}
-              className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
-            >
-              <IconDownload className="w-4 h-4" />
-              Download
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={handleDownload}
+                className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+              >
+                <IconDownload className="w-4 h-4" />
+                Download
+              </button>
+
+              <div className="pt-4 border-t border-neutral-200 space-y-3">
+                <label className="block text-sm font-medium text-neutral-950">Schedule to Facebook</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleDateTime}
+                  onChange={(e) => setScheduleDateTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                />
+                <button
+                  onClick={handleScheduleToFB}
+                  disabled={!scheduleDateTime || isScheduling}
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
+                >
+                  <IconClock className="w-4 h-4" />
+                  {isScheduling ? 'Scheduling...' : 'Schedule Post'}
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
