@@ -13,8 +13,8 @@ import {
   Text,
   Textbox,
 } from 'fabric'
-import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
-import { DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG } from '../config/didYouKnowCanvasConfig'
+import type { DidYouKnowIdea } from '../../hooks/useDidYouKnow'
+import { DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG } from '../../config/didYouKnowCanvasConfig'
 
 export interface DidYouKnowCanvasHandle {
   downloadAsPng: () => void

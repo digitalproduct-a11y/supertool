@@ -3,17 +3,26 @@ import { useNavigate, useBlocker } from 'react-router-dom'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { useDidYouKnow } from '../hooks/useDidYouKnow'
 import { BRANDS } from '../constants/brands'
-import { DidYouKnowCard } from './DidYouKnowCard'
+import { DidYouKnowCard } from '../features/didyouknow'
+import { EDITIONS, LOADING_STEPS, LOADING_QUOTES } from '../features/didyouknow/constants'
 import { toast } from '../hooks/useToast'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 
 type Stage = 'input' | 'select' | 'review'
 
-const EDITIONS = [
-  'Edisi Piala Dunia',
-  'Edisi Liga Super Malaysia',
-  'Edisi Piala Thomas/Uber',
+const STEPS: { step: Stage; label: string }[] = [
+  { step: 'input', label: 'Input' },
+  { step: 'select', label: 'Select Idea' },
+  { step: 'review', label: 'Review' },
 ]
+
+let loadingQuoteIndex = 0
+
+function getNextLoadingQuote(): string {
+  const quote = LOADING_QUOTES[loadingQuoteIndex]
+  loadingQuoteIndex = (loadingQuoteIndex + 1) % LOADING_QUOTES.length
+  return quote
+}
 
 export function DidYouKnowPage() {
   const navigate = useNavigate()
@@ -23,6 +32,7 @@ export function DidYouKnowPage() {
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [selectedEdition, setSelectedEdition] = useState<string>('')
   const [context, setContext] = useState<string>('')
+  const [loadingQuote, setLoadingQuote] = useState(getNextLoadingQuote())
 
   const webhookUrl = import.meta.env.VITE_DIDYOUKNOW_WEBHOOK_URL as string | undefined
 
@@ -44,6 +54,15 @@ export function DidYouKnowPage() {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [stage])
+
+  // Update loading quote periodically
+  useEffect(() => {
+    if (!isLoading) return
+    const interval = setInterval(() => {
+      setLoadingQuote(getNextLoadingQuote())
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isLoading])
 
   const handleFetchIdeas = async () => {
     if (!selectedBrand) {
@@ -90,6 +109,8 @@ export function DidYouKnowPage() {
     setStage('input')
   }
 
+  const currentStepIndex = STEPS.findIndex((s) => s.step === stage)
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -97,7 +118,7 @@ export function DidYouKnowPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={() => navigate('/engagement-photos')}
+              onClick={() => navigate('/engagement-posts')}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />
@@ -112,10 +133,41 @@ export function DidYouKnowPage() {
         </div>
       </div>
 
+      {/* Progress Steps */}
+      {stage !== 'input' || isLoading ? (
+        <div className="max-w-4xl mx-auto px-4 md:px-8 py-6">
+          <div className="flex justify-between items-center mb-8">
+            {STEPS.map((s, idx) => (
+              <div key={s.step} className="flex items-center flex-1">
+                <div
+                  className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition ${
+                    idx <= currentStepIndex
+                      ? 'bg-neutral-900 text-white'
+                      : 'bg-neutral-200 text-neutral-500'
+                  }`}
+                >
+                  {idx + 1}
+                </div>
+                <div className={`ml-2 text-xs font-medium ${idx <= currentStepIndex ? 'text-neutral-900' : 'text-neutral-400'}`}>
+                  {s.label}
+                </div>
+                {idx < STEPS.length - 1 && (
+                  <div
+                    className={`flex-1 h-[2px] mx-3 transition ${
+                      idx < currentStepIndex ? 'bg-neutral-900' : 'bg-neutral-200'
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
         {/* Stage 1: Input */}
-        {stage === 'input' && (
+        {stage === 'input' && !isLoading && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
@@ -176,11 +228,19 @@ export function DidYouKnowPage() {
         )}
 
         {/* Stage 1: Loading */}
-        {stage === 'input' && isLoading && (
+        {isLoading && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
-            <div className="text-4xl inline-block animate-bounce">💡</div>
+            <div className="text-5xl inline-block animate-bounce">💡</div>
             <p className="text-sm font-semibold text-neutral-900">Finding Ideas</p>
-            <p className="text-xs text-neutral-500">Searching for interesting facts...</p>
+            <p className="text-xs text-neutral-500 italic min-h-5">{loadingQuote}</p>
+            <div className="flex justify-center gap-1 mt-4">
+              {LOADING_STEPS.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1 rounded-full transition-all ${idx < (currentStepIndex + 1) ? 'w-4 bg-neutral-900' : 'w-2 bg-neutral-200'}`}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -220,6 +280,7 @@ export function DidYouKnowPage() {
             edition={selectedEdition}
             brandLogoPublicId={brandLogoPublicId}
             language={language}
+            brand={selectedBrand}
             onBack={handleBackToIdeas}
             onUpdateField={handleUpdateField}
           />
