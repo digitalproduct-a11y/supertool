@@ -6,6 +6,7 @@ interface BadmintonPostCanvasProps {
   content: string
   photoUrl: string | null
   brandLogoUrl: string
+  cardId?: string
 }
 
 export interface BadmintonPostCanvasHandle {
@@ -14,9 +15,10 @@ export interface BadmintonPostCanvasHandle {
 }
 
 const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostCanvasProps>(
-  ({ headline, content, photoUrl, brandLogoUrl }, ref) => {
+  ({ headline, content, photoUrl, brandLogoUrl, cardId = 'default' }, ref) => {
     const canvasRef = useRef<StaticCanvas | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const canvasId = `badminton-canvas-${cardId}`
 
     const CANVAS_WIDTH = 1080
     const CANVAS_HEIGHT = 1350
@@ -39,7 +41,7 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
     useEffect(() => {
       if (!containerRef.current) return
 
-      const canvas = new StaticCanvas('badminton-canvas', {
+      const canvas = new StaticCanvas(canvasId, {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
         backgroundColor: '#000',
@@ -168,7 +170,7 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
     return (
       <div ref={containerRef} className="flex justify-center">
         <canvas
-          id="badminton-canvas"
+          id={canvasId}
           style={{
             border: '1px solid #e5e7eb',
             borderRadius: '8px',

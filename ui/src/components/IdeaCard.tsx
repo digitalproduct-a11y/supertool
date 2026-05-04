@@ -133,6 +133,7 @@ export default function IdeaCard({
               content={committedSubtitle}
               photoUrl={idea.photo_url}
               brandLogoUrl={brandLogoUrl}
+              cardId={idea.id}
             />
           ) : (
             <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
