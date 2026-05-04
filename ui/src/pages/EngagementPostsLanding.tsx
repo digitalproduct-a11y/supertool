@@ -104,7 +104,6 @@ const sections: Section[] = [
         description: "Generate daily weather forecast posts for all 16 states",
         icon: IconCloudRain,
         color: "#00E5D4",
-        hidden: true,
       },
       {
         id: "on-this-day",
