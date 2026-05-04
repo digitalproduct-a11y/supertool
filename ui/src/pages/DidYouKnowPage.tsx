@@ -104,10 +104,10 @@ export function DidYouKnowPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+    <main className="min-h-screen bg-white pt-20 md:pt-10 px-4 md:px-8 pb-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => navigate('/engagement-posts')}
@@ -123,11 +123,8 @@ export function DidYouKnowPage() {
             style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
           />
         </div>
-      </div>
 
-
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+        {/* Content */}
         {/* Stage 1: Input */}
         {stage === 'input' && !isLoading && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
@@ -252,6 +249,6 @@ export function DidYouKnowPage() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   )
 }
