@@ -74,6 +74,43 @@ export function DidYouKnowCard({
     toast.success('Downloaded!')
   }
 
+  const uploadCanvasToCloudinary = async (dataUrl: string): Promise<string | null> => {
+    try {
+      const uploadPreset = (import.meta.env.VITE_CLOUDINARY_DIDYOUKNOW_UPLOAD_PRESET as string | undefined)?.trim()
+      const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim()
+
+      if (!uploadPreset || !cloudName) {
+        console.error('Cloudinary config missing')
+        return null
+      }
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl)
+      const blob = await response.blob()
+
+      // Create FormData and upload
+      const formData = new FormData()
+      formData.append('file', blob)
+      formData.append('upload_preset', uploadPreset)
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: 'POST', body: formData }
+      )
+
+      if (!uploadResponse.ok) {
+        console.error('Cloudinary upload failed:', uploadResponse.status)
+        return null
+      }
+
+      const data = await uploadResponse.json()
+      return data.secure_url || null
+    } catch (err) {
+      console.error('Cloudinary upload error:', err)
+      return null
+    }
+  }
+
   const handleScheduleOnFB = async (scheduledFor: string, passcode?: string) => {
     if (!canvasRef.current) {
       toast.error('Preview not ready')
@@ -102,8 +139,15 @@ export function DidYouKnowCard({
         return { success: false }
       }
 
+      // Upload canvas to Cloudinary
+      const cloudinaryUrl = await uploadCanvasToCloudinary(imageDataUrl)
+      if (!cloudinaryUrl) {
+        toast.error('Failed to upload image')
+        return { success: false }
+      }
+
       const payload = {
-        fb_ai_image_url: imageDataUrl,
+        fb_ai_image_url: cloudinaryUrl,
         fb_ai_caption: `${captionHeader}\n\n${idea.caption}`,
         brand: brandLower,
         passcode: resolvedPasscode,
