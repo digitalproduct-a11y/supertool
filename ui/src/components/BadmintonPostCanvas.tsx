@@ -1,5 +1,5 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
-import { StaticCanvas, Image as FabricImage } from 'fabric'
+import { StaticCanvas, Image as FabricImage, Rect } from 'fabric'
 
 interface BadmintonPostCanvasProps {
   headline: string
@@ -53,14 +53,14 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
         canvas.clear()
 
         try {
-          // Background photo - fill canvas while maintaining aspect ratio (object-fit: cover)
+          // Background photo - crop to fill (like Cloudinary c_fill)
           if (photoUrl) {
             try {
               const img = await FabricImage.fromURL(photoUrl, { crossOrigin: 'anonymous' })
               const imgWidth = img.width || CANVAS_WIDTH
               const imgHeight = img.height || CANVAS_HEIGHT
 
-              // Calculate scale to cover entire canvas while maintaining aspect ratio
+              // Calculate scale to cover canvas (Math.max ensures no gaps)
               const scaleX = CANVAS_WIDTH / imgWidth
               const scaleY = CANVAS_HEIGHT / imgHeight
               const scale = Math.max(scaleX, scaleY)
@@ -70,6 +70,13 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
               img.top = CANVAS_HEIGHT / 2
               img.originX = 'center'
               img.originY = 'center'
+              img.clipPath = new Rect({
+                left: -CANVAS_WIDTH / 2,
+                top: -CANVAS_HEIGHT / 2,
+                width: CANVAS_WIDTH,
+                height: CANVAS_HEIGHT,
+                absolutePositioned: true,
+              })
               canvas.add(img)
             } catch (err) {
               console.error('Failed to load background photo:', err)
