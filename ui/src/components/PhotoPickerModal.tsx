@@ -127,6 +127,16 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* File input must always be in DOM for button to work */}
+          <input
+            ref={fileInputRef}
+            id="image-upload"
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
+            className="hidden"
+          />
+
           {/* Loading Photos */}
           {isLoadingPhotos && (
             <div className="text-center py-8">
@@ -178,6 +188,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
               )}
               <p className="text-xs font-medium text-gray-700 mb-3 uppercase">Upload Photo</p>
 
+<<<<<<< HEAD
               {/* Single file input, referenced by both the drag zone and footer button */}
               <input
                 ref={fileInputRef}
@@ -186,6 +197,8 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
                 onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
                 className="hidden"
               />
+=======
+>>>>>>> 3c8b542 (fix: move file input outside conditional so it's always in DOM)
               {!previewUrl ? (
                 <div
                   className={`border-2 border-dashed rounded-lg p-8 text-center transition cursor-pointer ${
