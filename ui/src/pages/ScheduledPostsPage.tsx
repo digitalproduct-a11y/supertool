@@ -326,16 +326,14 @@ export function ScheduledPostsPage({ brand, embedded = false }: { brand: string;
         </div>
       )}
 
-      {/* Embedded: back button for bulk/single view */}
-      {embedded && (view === 'bulk' || view === 'single') && (
+      {/* Embedded: back button for bulk view only (single view has its own back button via GenerateView) */}
+      {embedded && view === 'bulk' && (
         <div className="px-4 md:px-8 flex items-center justify-between py-3 border-b border-neutral-100 shrink-0">
           <button onClick={handleBack} className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-950 transition">
             <IconChevronLeft className="w-4 h-4" />
-            Back
+            Back to trending
           </button>
-          {view === 'bulk' && (
-            <p className="text-xs text-neutral-400">Generated Posts ({doneCount}/{totalBulk})</p>
-          )}
+          <p className="text-xs text-neutral-400">Generated Posts ({doneCount}/{totalBulk})</p>
         </div>
       )}
 
