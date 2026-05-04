@@ -1,5 +1,5 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
-import { StaticCanvas, Image as FabricImage, Rect } from 'fabric'
+import { StaticCanvas, Image as FabricImage } from 'fabric'
 
 interface BadmintonPostCanvasProps {
   headline: string
@@ -71,18 +71,11 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
               const scale = Math.max(scaleX, scaleY)
 
               img.scale(scale)
-              img.left = CANVAS_WIDTH / 2
-              img.top = CANVAS_HEIGHT / 2
-              img.originX = 'center'
-              img.originY = 'center'
-
-              // Apply clip after setting position
-              img.clipPath = new Rect({
-                left: -CANVAS_WIDTH / 2,
-                top: -CANVAS_HEIGHT / 2,
-                width: CANVAS_WIDTH,
-                height: CANVAS_HEIGHT,
-                absolutePositioned: true,
+              img.set({
+                left: 0,
+                top: 0,
+                originX: 'left',
+                originY: 'top',
               })
 
               canvas.add(img)
