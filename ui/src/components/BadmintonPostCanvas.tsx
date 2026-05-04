@@ -53,14 +53,19 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
         canvas.clear()
 
         try {
-          // Background photo
+          // Background photo - fill canvas while maintaining aspect ratio (object-fit: cover)
           if (photoUrl) {
             try {
               const img = await FabricImage.fromURL(photoUrl, { crossOrigin: 'anonymous' })
-              img.scaleToWidth(CANVAS_WIDTH)
-              if (img.height! < CANVAS_HEIGHT) {
-                img.scaleToHeight(CANVAS_HEIGHT)
-              }
+              const imgWidth = img.width || CANVAS_WIDTH
+              const imgHeight = img.height || CANVAS_HEIGHT
+
+              // Calculate scale to cover entire canvas while maintaining aspect ratio
+              const scaleX = CANVAS_WIDTH / imgWidth
+              const scaleY = CANVAS_HEIGHT / imgHeight
+              const scale = Math.max(scaleX, scaleY)
+
+              img.scale(scale)
               img.left = CANVAS_WIDTH / 2
               img.top = CANVAS_HEIGHT / 2
               img.originX = 'center'
