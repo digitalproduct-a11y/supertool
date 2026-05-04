@@ -323,6 +323,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                     cachedPhotos={photosByPlayerClub}
                     downloadPrefix={config.downloadPrefix}
                     uploadPreset={uploadPreset}
+                    topic={topic}
                   />
                 </div>
               ))}

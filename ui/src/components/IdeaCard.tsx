@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import PhotoPickerModal from './PhotoPickerModal'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
+import BadmintonPostCanvas from './BadmintonPostCanvas'
+import type { BadmintonPostCanvasHandle } from './BadmintonPostCanvas'
 
 const FORMAT_BADGES: Record<string, string> = {
   challenge: '🏆',
@@ -35,6 +37,7 @@ interface IdeaCardProps {
   cachedPhotos?: Record<string, any[]>
   downloadPrefix?: string
   uploadPreset?: string
+  topic?: string
 }
 
 export default function IdeaCard({
@@ -47,6 +50,7 @@ export default function IdeaCard({
   cachedPhotos,
   downloadPrefix = 'epl-post',
   uploadPreset,
+  topic = 'epl',
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -54,6 +58,8 @@ export default function IdeaCard({
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
+  const canvasRef = useRef<BadmintonPostCanvasHandle>(null)
+  const useFabricCanvas = topic === 'badminton'
 
   // Sync committed values when a new idea is generated (idea.id changes)
   useEffect(() => {
@@ -63,6 +69,7 @@ export default function IdeaCard({
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
+  const brandLogoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${brandLogoId}`
 
   const buildPreviewUrl = (headline: string, subtitle: string, photoPublicId: string | null) => {
     const enc = (t: string) => encodeURIComponent(encodeURIComponent(t))
@@ -118,8 +125,18 @@ export default function IdeaCard({
         </p>
 
         {/* Live Preview */}
-        <div className={`aspect-[1080/1350] rounded-xl border-2 overflow-hidden bg-gray-100 mb-4`}>
-          <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
+        <div className={`aspect-[1080/1350] rounded-xl border-2 overflow-hidden bg-gray-100 mb-4 flex items-center justify-center`}>
+          {useFabricCanvas ? (
+            <BadmintonPostCanvas
+              ref={canvasRef}
+              headline={committedHeadline}
+              content={committedSubtitle}
+              photoUrl={idea.photo_url}
+              brandLogoUrl={brandLogoUrl}
+            />
+          ) : (
+            <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
+          )}
         </div>
 
         <button
@@ -191,14 +208,18 @@ export default function IdeaCard({
             <button
               onClick={async () => {
                 try {
-                  const res = await fetch(previewUrl)
-                  const blob = await res.blob()
-                  const url = window.URL.createObjectURL(blob)
-                  const link = document.createElement('a')
-                  link.href = url
-                  link.download = `${downloadPrefix}-${idea.type}.jpg`
-                  link.click()
-                  window.URL.revokeObjectURL(url)
+                  if (useFabricCanvas && canvasRef.current) {
+                    canvasRef.current.downloadAsPng(`${downloadPrefix}-${idea.type}.png`)
+                  } else {
+                    const res = await fetch(previewUrl)
+                    const blob = await res.blob()
+                    const url = window.URL.createObjectURL(blob)
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.download = `${downloadPrefix}-${idea.type}.jpg`
+                    link.click()
+                    window.URL.revokeObjectURL(url)
+                  }
                 } catch (err) {
                   console.error('Download failed:', err)
                 }
@@ -219,7 +240,8 @@ export default function IdeaCard({
                     isPosting={isScheduling}
                     onConfirm={async (scheduledFor, passcode) => {
                       setIsScheduling(true)
-                      const result = await onScheduleOnFB(previewUrl, idea.caption, selectedBrand, scheduledFor, passcode)
+                      const imageUrl = useFabricCanvas && canvasRef.current ? canvasRef.current.getDataUrl() : previewUrl
+                      const result = await onScheduleOnFB(imageUrl, idea.caption, selectedBrand, scheduledFor, passcode)
                       setIsScheduling(false)
                       setShowScheduleModal(false)
                       setScheduleStatus(result.success ? 'done' : 'error')
