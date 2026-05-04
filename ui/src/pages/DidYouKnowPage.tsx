@@ -3,18 +3,12 @@ import { useNavigate, useBlocker } from 'react-router-dom'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { useDidYouKnow } from '../hooks/useDidYouKnow'
 import { BRANDS } from '../constants/brands'
-import { DidYouKnowCard } from '../features/didyouknow'
-import { EDITIONS, LOADING_STEPS, LOADING_QUOTES } from '../features/didyouknow/constants'
+import { DidYouKnowCard, DidYouKnowTopicSelector } from '../features/didyouknow'
+import { EDITIONS, LOADING_QUOTES } from '../features/didyouknow/constants'
 import { toast } from '../hooks/useToast'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 
 type Stage = 'input' | 'select' | 'review'
-
-const STEPS: { step: Stage; label: string }[] = [
-  { step: 'input', label: 'Input' },
-  { step: 'select', label: 'Select Idea' },
-  { step: 'review', label: 'Review' },
-]
 
 let loadingQuoteIndex = 0
 
@@ -109,8 +103,6 @@ export function DidYouKnowPage() {
     setStage('input')
   }
 
-  const currentStepIndex = STEPS.findIndex((s) => s.step === stage)
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -133,36 +125,6 @@ export function DidYouKnowPage() {
         </div>
       </div>
 
-      {/* Progress Steps */}
-      {stage !== 'input' || isLoading ? (
-        <div className="max-w-4xl mx-auto px-4 md:px-8 py-6">
-          <div className="flex justify-between items-center mb-8">
-            {STEPS.map((s, idx) => (
-              <div key={s.step} className="flex items-center flex-1">
-                <div
-                  className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition ${
-                    idx <= currentStepIndex
-                      ? 'bg-neutral-900 text-white'
-                      : 'bg-neutral-200 text-neutral-500'
-                  }`}
-                >
-                  {idx + 1}
-                </div>
-                <div className={`ml-2 text-xs font-medium ${idx <= currentStepIndex ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                  {s.label}
-                </div>
-                {idx < STEPS.length - 1 && (
-                  <div
-                    className={`flex-1 h-[2px] mx-3 transition ${
-                      idx < currentStepIndex ? 'bg-neutral-900' : 'bg-neutral-200'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
@@ -233,14 +195,6 @@ export function DidYouKnowPage() {
             <div className="text-5xl inline-block animate-bounce">💡</div>
             <p className="text-sm font-semibold text-neutral-900">Finding Ideas</p>
             <p className="text-xs text-neutral-500 italic min-h-5">{loadingQuote}</p>
-            <div className="flex justify-center gap-1 mt-4">
-              {LOADING_STEPS.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-1 rounded-full transition-all ${idx < (currentStepIndex + 1) ? 'w-4 bg-neutral-900' : 'w-2 bg-neutral-200'}`}
-                />
-              ))}
-            </div>
           </div>
         )}
 
@@ -255,21 +209,7 @@ export function DidYouKnowPage() {
               Back to input
             </button>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {ideas.map((idea) => (
-                <button
-                  key={idea.id}
-                  onClick={() => handleSelectIdea(idea)}
-                  className="text-left p-4 border border-neutral-200 rounded-xl hover:border-neutral-900 hover:shadow-lg transition bg-white group"
-                >
-                  <h3 className="font-semibold text-neutral-950 group-hover:text-neutral-900 line-clamp-2">
-                    {idea.headline}
-                  </h3>
-                  <p className="text-xs text-neutral-600 mt-2 line-clamp-2">{idea.fact}</p>
-                  <p className="text-xs text-neutral-400 mt-2 line-clamp-3">{idea.caption}</p>
-                </button>
-              ))}
-            </div>
+            <DidYouKnowTopicSelector ideas={ideas} onConfirm={handleSelectIdea} />
           </div>
         )}
 
