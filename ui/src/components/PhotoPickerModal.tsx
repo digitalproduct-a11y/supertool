@@ -77,13 +77,17 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
 
   const handleUpload = async () => {
     if (!uploadFile || !tags.trim()) return
+    if (!uploadPreset) {
+      setUploadError('Upload preset not configured')
+      return
+    }
     setIsUploading(true)
     setUploadError(null)
 
     try {
       const formData = new FormData()
       formData.append('file', uploadFile)
-      formData.append('upload_preset', uploadPreset || import.meta.env.VITE_CLOUDINARY_EPL_UPLOAD_PRESET)
+      formData.append('upload_preset', uploadPreset)
       formData.append('tags', tags)
 
       const res = await fetch(
