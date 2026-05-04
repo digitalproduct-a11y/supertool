@@ -65,18 +65,28 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
               const imgWidth = img.width || CANVAS_WIDTH
               const imgHeight = img.height || CANVAS_HEIGHT
 
-              // Calculate scale to cover canvas (Math.max ensures no gaps)
-              const scaleX = CANVAS_WIDTH / imgWidth
-              const scaleY = CANVAS_HEIGHT / imgHeight
-              const scale = Math.max(scaleX, scaleY)
+              // Calculate scale to fill canvas (crop-to-fill, not stretch)
+              // Use the scale that fills the canvas completely
+              const scaleNeeded = Math.max(CANVAS_WIDTH / imgWidth, CANVAS_HEIGHT / imgHeight)
 
-              img.scale(scale)
+              img.scale(scaleNeeded)
+
+              // Calculate the scaled image dimensions
+              const scaledWidth = imgWidth * scaleNeeded
+              const scaledHeight = imgHeight * scaleNeeded
+
+              // Center the image so it fills the canvas
+              const offsetX = (CANVAS_WIDTH - scaledWidth) / 2
+              const offsetY = (CANVAS_HEIGHT - scaledHeight) / 2
+
               img.set({
-                left: 0,
-                top: 0,
+                left: offsetX,
+                top: offsetY,
                 originX: 'left',
                 originY: 'top',
               })
+
+              console.log(`Scaled image: ${scaledWidth}x${scaledHeight}, offset: (${offsetX}, ${offsetY})`)
 
               canvas.add(img)
               canvas.renderAll()
