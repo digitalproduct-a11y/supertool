@@ -257,8 +257,10 @@ export function TrendingSpikePage() {
 
       {/* Generate view */}
       {view === 'generate' && generateSource && (
-        <div className="flex-1 overflow-y-auto">
-          <GenerateView source={generateSource} onBack={handleBackToList} />
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-10">
+          <div className="max-w-5xl mx-auto">
+            <GenerateView source={generateSource} onBack={handleBackToList} />
+          </div>
         </div>
       )}
 
