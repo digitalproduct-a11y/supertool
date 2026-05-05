@@ -158,8 +158,6 @@ const WeatherImageCard = memo(function WeatherImageCard({
 // ─── Mode Toggle ─────────────────────────────────────────────────────────────
 
 const MODE_OPTIONS: { value: PostMode; label: string }[] = [
-  { value: "grouped", label: "By Weather" },
-  { value: "individual", label: "Individual (16 Posts)" },
   { value: "single", label: "Single Post" },
 ];
 
@@ -195,7 +193,7 @@ export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
   const { posts, fontUse, brandColor, nationalSummary, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState("");
-  const [mode, setMode] = useState<PostMode>("grouped");
+  const [mode, setMode] = useState<PostMode>("single");
   const [stage, setStage] = useState<"brand-select" | "review">(
     posts.length > 0 ? "review" : "brand-select",
   );
@@ -728,16 +726,10 @@ export function WeatherMalaysiaPage() {
                       <span className="font-semibold text-neutral-800">
                         {mode === "grouped"
                           ? groupPostsByWeather(posts).length
-                          : mode === "single"
-                            ? 1
-                            : posts.length}
+                          : posts.length}
                       </span>{" "}
                       weather{" "}
-                      {mode === "grouped"
-                        ? "post(s) by weather"
-                        : mode === "single"
-                          ? "post (all states)"
-                          : "posts"}{" "}
+                      {mode === "grouped" ? "post(s) by weather" : "posts"}{" "}
                       generated for{" "}
                       <span className="font-semibold text-neutral-800">
                         {brand}
@@ -808,31 +800,6 @@ export function WeatherMalaysiaPage() {
                     {posts.map((post) => (
                       <WeatherImageCard key={post.id} post={post} />
                     ))}
-                  </div>
-                )}
-
-                {/* Single post mode — one canvas with all states */}
-                {mode === "single" && (
-                  <div className="flex flex-col items-center gap-3 max-w-sm mx-auto">
-                    <WeatherSinglePostCanvas
-                      ref={singleCanvasRef}
-                      posts={posts}
-                      brand={brand}
-                      fontUse={fontUse}
-                      brandColor={brandColor}
-                      nationalSummary={nationalSummary}
-                      onClick={() => {
-                        const url = singleCanvasRef.current?.getDataUrl();
-                        if (url) setLightboxUrl(url);
-                      }}
-                    />
-                    <button
-                      onClick={() => singleCanvasRef.current?.downloadAsPng()}
-                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition active:scale-[0.98]"
-                    >
-                      <IconDownload className="w-3.5 h-3.5" />
-                      Download Single Post
-                    </button>
                   </div>
                 )}
 
