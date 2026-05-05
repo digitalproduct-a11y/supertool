@@ -60,11 +60,16 @@ export const DidYouKnowCanvas = forwardRef<
 
       // Preload fonts
       try {
-        await Promise.all([
+        const isChinese = language === 'zh' || language.startsWith('zh')
+        const fontLoads = [
           document.fonts.load('900 28px Montserrat'),
           document.fonts.load('400 12px Montserrat'),
           document.fonts.load('600 10px "JetBrains Mono"'),
-        ])
+        ]
+        if (isChinese) {
+          fontLoads.push(document.fonts.load('400 28px "Noto Sans CJK SC"'))
+        }
+        await Promise.all(fontLoads)
       } catch {
         // Continue with fallback
       }
@@ -168,17 +173,23 @@ export const DidYouKnowCanvas = forwardRef<
       const headlineH = headlineObj.getScaledHeight()
 
       // Measure fact text
+      const isChinese = language === 'Chinese Simplified'
+      const factFontFamily = isChinese ? 'Noto Sans CJK SC' : cfg.fact.fontFamily
+      const factFontSize = cfg.fact.fontSize
+      const factLineHeight = cfg.fact.lineHeight
       const factWidth = cfg.fact.maxWidth
+
       const factObj = new Textbox(idea.fact, {
-        fontFamily: cfg.fact.fontFamily,
-        fontSize: cfg.fact.fontSize,
+        fontFamily: isChinese ? '"Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", SimSun, sans-serif' : factFontFamily,
+        fontSize: factFontSize,
         fontWeight: cfg.fact.fontWeight,
         fill: cfg.fact.fill,
-        lineHeight: cfg.fact.lineHeight,
+        lineHeight: factLineHeight,
         width: factWidth,
         originX: 'center',
         selectable: false,
         evented: false,
+        ...(isChinese && { splitByGrapheme: true }),
       })
       const factH = factObj.getScaledHeight()
 
@@ -187,7 +198,7 @@ export const DidYouKnowCanvas = forwardRef<
 
       // Add fact + accent bar (highest priority, bottom-most)
       const factX = cfg.fact.leftOffset
-      const factLeftEdge = factX - (cfg.fact.maxWidth / 2)
+      const factLeftEdge = factX - (factWidth / 2)
       const accentBarX = factLeftEdge - cfg.accentBar.gap - cfg.accentBar.width
 
       const accentBar = new Rect({
