@@ -1,12 +1,12 @@
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
-import { StaticCanvas, Image as FabricImage } from 'fabric'
+import { useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
+import { StaticCanvas } from 'fabric'
+import { renderImageOnCanvas } from '../utils/canvasRenderingUtils'
 
 interface BadmintonPostCanvasProps {
   headline: string
   content: string
   photoUrl: string | null
   brandLogoUrl: string
-  cardId?: string
 }
 
 export interface BadmintonPostCanvasHandle {
@@ -15,109 +15,79 @@ export interface BadmintonPostCanvasHandle {
 }
 
 const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostCanvasProps>(
-  ({ headline, content, photoUrl, brandLogoUrl, cardId = 'default' }, ref) => {
-    const canvasRef = useRef<StaticCanvas | null>(null)
+  ({ headline, content, photoUrl, brandLogoUrl }, ref) => {
+    const canvasElRef = useRef<HTMLCanvasElement>(null)
+    const fabricRef = useRef<StaticCanvas | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
-    const canvasId = `badminton-canvas-${cardId}`
 
     const CANVAS_WIDTH = 1080
     const CANVAS_HEIGHT = 1350
 
+    const renderCanvas = useCallback(
+      async (canvas: StaticCanvas) => {
+        if (photoUrl) {
+          await renderImageOnCanvas(canvas, photoUrl, CANVAS_WIDTH, CANVAS_HEIGHT, headline)
+        } else {
+          canvas.clear()
+          canvas.renderAll()
+        }
+      },
+      [photoUrl, headline]
+    )
+
     useImperativeHandle(ref, () => ({
       downloadAsPng: (filename: string = 'badminton-post.png') => {
-        if (!canvasRef.current) return
-        const dataUrl = canvasRef.current.toDataURL({ multiplier: 1, format: 'png' })
+        if (!fabricRef.current) return
+        const dataUrl = fabricRef.current.toDataURL({ format: 'png', multiplier: 1 })
         const link = document.createElement('a')
         link.href = dataUrl
         link.download = filename
         link.click()
       },
       getDataUrl: () => {
-        if (!canvasRef.current) return ''
-        return canvasRef.current.toDataURL({ multiplier: 1, format: 'png' })
+        if (!fabricRef.current) return ''
+        return fabricRef.current.toDataURL({ format: 'png', multiplier: 1 })
       },
     }))
 
     useEffect(() => {
-      if (!containerRef.current) return
+      if (!canvasElRef.current) return
 
-      const canvas = new StaticCanvas(canvasId, {
+      const canvas = new StaticCanvas(canvasElRef.current, {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'transparent',
       })
 
-      canvasRef.current = canvas
-
-      const renderCanvas = async () => {
-        canvas.clear()
-
-        try {
-          // Background photo - crop to fill (like Cloudinary c_fill)
-          if (photoUrl) {
-            try {
-              console.log('Loading image from:', photoUrl)
-              const img = await FabricImage.fromURL(photoUrl, {
-                crossOrigin: 'anonymous',
-              })
-              console.log('Image loaded, dimensions:', img.width, 'x', img.height)
-
-              const imgWidth = img.width || CANVAS_WIDTH
-              const imgHeight = img.height || CANVAS_HEIGHT
-
-              // Calculate scale to fill canvas (crop-to-fill, not stretch)
-              // Use the scale that fills the canvas completely
-              const scaleNeeded = Math.max(CANVAS_WIDTH / imgWidth, CANVAS_HEIGHT / imgHeight)
-
-              img.scale(scaleNeeded)
-
-              // Calculate the scaled image dimensions
-              const scaledWidth = imgWidth * scaleNeeded
-              const scaledHeight = imgHeight * scaleNeeded
-
-              // Center the image so it fills the canvas
-              const offsetX = (CANVAS_WIDTH - scaledWidth) / 2
-              const offsetY = (CANVAS_HEIGHT - scaledHeight) / 2
-
-              img.set({
-                left: offsetX,
-                top: offsetY,
-                originX: 'left',
-                originY: 'top',
-              })
-
-              console.log(`Scaled image: ${scaledWidth}x${scaledHeight}, offset: (${offsetX}, ${offsetY})`)
-
-              canvas.add(img)
-              canvas.renderAll()
-              console.log('Image rendered successfully')
-            } catch (err) {
-              console.error('Failed to load background photo:', err)
-            }
-          }
-
-          canvas.renderAll()
-        } catch (error) {
-          console.error('Error rendering canvas:', error)
-        }
-      }
-
-      renderCanvas()
+      renderCanvas(canvas).then(() => {
+        const prev = fabricRef.current
+        fabricRef.current = canvas
+        if (prev) prev.dispose()
+      })
 
       return () => {
-        canvas.dispose()
+        if (canvas) canvas.dispose()
       }
-    }, [headline, content, photoUrl, brandLogoUrl, canvasId])
+    }, [headline, content, photoUrl, brandLogoUrl, renderCanvas])
 
     return (
-      <div ref={containerRef} className="flex justify-center">
+      <div
+        ref={containerRef}
+        className="rounded-xl overflow-hidden"
+        style={{
+          aspectRatio: '1080 / 1350',
+          width: '100%',
+          height: '100%',
+        }}
+      >
         <canvas
-          id={canvasId}
+          ref={canvasElRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
           style={{
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            maxWidth: '100%',
-            height: 'auto',
+            display: 'block',
+            width: '100%',
+            height: '100%',
           }}
         />
       </div>

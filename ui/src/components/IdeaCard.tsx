@@ -7,6 +7,8 @@ import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
 import BadmintonPostCanvas from './BadmintonPostCanvas'
 import type { BadmintonPostCanvasHandle } from './BadmintonPostCanvas'
+import { StaticCanvas } from 'fabric'
+import { renderImageOnCanvas } from '../utils/canvasRenderingUtils'
 
 const FORMAT_BADGES: Record<string, string> = {
   challenge: '🏆',
@@ -59,13 +61,48 @@ export default function IdeaCard({
   const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
   const canvasRef = useRef<BadmintonPostCanvasHandle>(null)
+  const previewCanvasElRef = useRef<HTMLCanvasElement>(null)
+  const previewFabricRef = useRef<StaticCanvas | null>(null)
   const useFabricCanvas = topic === 'badminton'
+
+  const PREVIEW_WIDTH = 384
+  const PREVIEW_HEIGHT = 480
 
   // Sync committed values when a new idea is generated (idea.id changes)
   useEffect(() => {
     setCommittedHeadline(idea.headline)
     setCommittedSubtitle(idea.subtitle)
   }, [idea.id])
+
+  // Initialize and render preview canvas for badminton
+  useEffect(() => {
+    if (!useFabricCanvas || !previewCanvasElRef.current) return
+
+    const canvas = new StaticCanvas(previewCanvasElRef.current, {
+      width: PREVIEW_WIDTH,
+      height: PREVIEW_HEIGHT,
+      backgroundColor: '#f3f4f6',
+    })
+
+    const renderPreview = async () => {
+      if (idea.photo_url) {
+        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline)
+      } else {
+        canvas.clear()
+        canvas.renderAll()
+      }
+    }
+
+    renderPreview()
+
+    const prev = previewFabricRef.current
+    previewFabricRef.current = canvas
+    if (prev) prev.dispose()
+
+    return () => {
+      if (canvas) canvas.dispose()
+    }
+  })
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
@@ -92,9 +129,13 @@ export default function IdeaCard({
   const subtitleChars = idea.subtitle.length
   const captionChars = idea.caption.length
 
-  const headlineValid = headlineChars > 0 && headlineChars <= 35
-  const subtitleValid = subtitleChars > 0 && subtitleChars <= 70
-  const captionValid = captionChars > 0 && captionChars <= 600
+  const headlineLimit = topic === 'badminton' ? 80 : 35
+  const subtitleLimit = topic === 'badminton' ? 400 : 70
+  const captionLimit = topic === 'badminton' ? 400 : 600
+
+  const headlineValid = headlineChars > 0 && headlineChars <= headlineLimit
+  const subtitleValid = subtitleChars > 0 && subtitleChars <= subtitleLimit
+  const captionValid = captionChars > 0 && captionChars <= captionLimit
   const photoValid = !!idea.photo_url
 
   return (
@@ -125,20 +166,35 @@ export default function IdeaCard({
         </p>
 
         {/* Live Preview */}
-        <div className={`aspect-[1080/1350] rounded-xl border-2 overflow-hidden bg-gray-100 mb-4 flex items-center justify-center`}>
+        <div className={`w-full max-w-sm rounded-xl border-2 overflow-hidden bg-gray-100 mb-4 flex items-center justify-center`}>
           {useFabricCanvas ? (
+            <canvas
+              ref={previewCanvasElRef}
+              width={PREVIEW_WIDTH}
+              height={PREVIEW_HEIGHT}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+              }}
+            />
+          ) : (
+            <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
+          )}
+        </div>
+
+        {/* Hidden download canvas (1080x1350) */}
+        {useFabricCanvas && (
+          <div style={{ display: 'none' }}>
             <BadmintonPostCanvas
               ref={canvasRef}
               headline={committedHeadline}
               content={committedSubtitle}
               photoUrl={idea.photo_url}
               brandLogoUrl={brandLogoUrl}
-              cardId={idea.id}
             />
-          ) : (
-            <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
-          )}
-        </div>
+          </div>
+        )}
 
         <button
           onClick={() => setShowPhotoModal(true)}
@@ -154,15 +210,15 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Headline</label>
-                <span className="text-xs text-gray-500">{headlineChars}/35</span>
+                <span className="text-xs text-gray-500">{headlineChars}/{headlineLimit}</span>
               </div>
               <input
                 type="text"
                 value={idea.headline}
-                onChange={(e) => onUpdateField(idea.id, 'headline', e.target.value.slice(0, 35))}
+                onChange={(e) => onUpdateField(idea.id, 'headline', e.target.value.slice(0, headlineLimit))}
                 onBlur={() => setCommittedHeadline(idea.headline)}
                 placeholder="Enter headline..."
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
+                className={`w-full px-5 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
                   headlineValid ? 'border-gray-200' : 'border-red-300'
                 }`}
               />
@@ -173,12 +229,12 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Subtitle</label>
-                <span className="text-xs text-gray-500">{subtitleChars}/70</span>
+                <span className="text-xs text-gray-500">{subtitleChars}/{subtitleLimit}</span>
               </div>
               <input
                 type="text"
                 value={idea.subtitle}
-                onChange={(e) => onUpdateField(idea.id, 'subtitle', e.target.value.slice(0, 70))}
+                onChange={(e) => onUpdateField(idea.id, 'subtitle', e.target.value.slice(0, subtitleLimit))}
                 onBlur={() => setCommittedSubtitle(idea.subtitle)}
                 placeholder="Enter subtitle..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
@@ -192,11 +248,11 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Caption</label>
-                <span className="text-xs text-gray-500">{captionChars}/600</span>
+                <span className="text-xs text-gray-500">{captionChars}/{captionLimit}</span>
               </div>
               <textarea
                 value={idea.caption}
-                onChange={(e) => onUpdateField(idea.id, 'caption', e.target.value.slice(0, 600))}
+                onChange={(e) => onUpdateField(idea.id, 'caption', e.target.value.slice(0, captionLimit))}
                 placeholder="Enter caption..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition resize-none h-20 ${
                   captionValid ? 'border-gray-200' : 'border-red-300'

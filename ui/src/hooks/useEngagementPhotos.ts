@@ -132,8 +132,8 @@ export function useEngagementPhotos() {
         const limitedIdeas = itemsArray.map((item: any) => ({
           id: item.id,
           type: item.type || 'news',
-          headline: (item.headline || '').slice(0, 35),
-          subtitle: (item.subtitle || item.content || '').slice(0, 70),
+          headline: (item.headline || '').slice(0, 100),
+          subtitle: (item.subtitle || item.content || '').slice(0, 400),
           caption: (item.caption || '').slice(0, 600),
           player: item.player || '',
           club: item.club || undefined,
