@@ -180,6 +180,60 @@ export function getBrandHex(brand: string): string {
   return (BRAND_HEX as Record<string, string>)[brand] ?? "#000000";
 }
 
+// Source of truth: Brand Tone & Voice data table (tableId WrA94W8RTzSvEhyS),
+// `font_use` column. Mirrored here so frontends can resolve the brand font
+// without depending on each n8n workflow remembering to return it.
+//
+// Values follow the same two shapes consumed by `loadBrandFont()`:
+//   1. Cloudinary asset reference, e.g. "Fonts:LeagueSpartan-Bold.ttf" →
+//      mapped to a bundled file under `ui/public/fonts/` via CLOUDINARY_TO_LOCAL.
+//   2. Plain Google Fonts / system family name, e.g. "Montserrat", "Rubik",
+//      "Times New Roman".
+//
+// `null` = brand has no canonical display font yet; canvas falls back to its
+// configured default (Inter / template default).
+//
+// Re-pull via n8n MCP `n8n_manage_datatable` (tableId: WrA94W8RTzSvEhyS) when
+// brand fonts change. Do not edit by hand without updating the data table first.
+export const BRAND_FONT_USE: Record<BrandName, string | null> = {
+  "Astro Awani": null,
+  "Astro Arena": "Montserrat",
+  "Astro Ulagam": "fonts:leaguespartan.ttf",
+  Era: "Fonts:LeagueSpartan-Bold.ttf",
+  "Era Sabah": "Archivo Black",
+  "Era Sarawak": "Poppins",
+  Gegar: "Fonts:LeagueSpartan-Bold.ttf",
+  Gempak: "Open Sans",
+  Goxuan: "Rubik",
+  Hitz: "Rubik",
+  Hotspot: "Fonts:方正兰亭特黑简体.ttf",
+  Impiana: null,
+  Keluarga: null,
+  Lite: "Fonts:LeagueSpartan-Bold.ttf",
+  Maskulin: null,
+  "Media Hiburan": "Fonts:leaguespartan.ttf",
+  Meletop: "Fonts:LeagueSpartan-Bold.ttf",
+  Melody: null,
+  "Mingguan Wanita": "Times New Roman",
+  Mix: "Rubik",
+  MY: "Montserrat",
+  Nona: "Fonts:canvasans.ttf",
+  "Pa&Ma": "Fonts:ITCAvantGardeStdBold.ttf",
+  Raaga: "Fonts:LeagueSpartan-Bold.ttf",
+  Rasa: "Fonts:leaguespartan.ttf",
+  Remaja: null,
+  "Roda Panas": null,
+  "Rojak Daily": null,
+  Sinar: "Fonts:Anton-Regular.ttf",
+  "Stadium Astro": "Montserrat",
+  XUAN: "Fonts:SourceHanSansCN-Heavy-2.otf",
+  Zayan: "Fonts:ArchivoBlack-Regular.ttf",
+};
+
+export function getBrandFontUse(brand: string): string | null {
+  return (BRAND_FONT_USE as Record<string, string | null>)[brand] ?? null;
+}
+
 export const BRAND_LOGO_IDS: Record<BrandName, string> = {
   "Astro Awani": "astro_awani_logo",
   "Astro Arena": "astro_arena_logo",
