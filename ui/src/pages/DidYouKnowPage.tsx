@@ -3,17 +3,20 @@ import { useNavigate, useBlocker } from 'react-router-dom'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { useDidYouKnow } from '../hooks/useDidYouKnow'
 import { BRANDS } from '../constants/brands'
-import { DidYouKnowCard } from './DidYouKnowCard'
+import { DidYouKnowCard, DidYouKnowTopicSelector } from '../features/didyouknow'
+import { EDITIONS, LOADING_QUOTES } from '../features/didyouknow/constants'
 import { toast } from '../hooks/useToast'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 
 type Stage = 'input' | 'select' | 'review'
 
-const EDITIONS = [
-  'Edisi Piala Dunia',
-  'Edisi Liga Super Malaysia',
-  'Edisi Piala Thomas/Uber',
-]
+let loadingQuoteIndex = 0
+
+function getNextLoadingQuote(): string {
+  const quote = LOADING_QUOTES[loadingQuoteIndex]
+  loadingQuoteIndex = (loadingQuoteIndex + 1) % LOADING_QUOTES.length
+  return quote
+}
 
 export function DidYouKnowPage() {
   const navigate = useNavigate()
@@ -23,6 +26,7 @@ export function DidYouKnowPage() {
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [selectedEdition, setSelectedEdition] = useState<string>('')
   const [context, setContext] = useState<string>('')
+  const [loadingQuote, setLoadingQuote] = useState(getNextLoadingQuote())
 
   const webhookUrl = import.meta.env.VITE_DIDYOUKNOW_WEBHOOK_URL as string | undefined
 
@@ -44,6 +48,15 @@ export function DidYouKnowPage() {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [stage])
+
+  // Update loading quote periodically
+  useEffect(() => {
+    if (!isLoading) return
+    const interval = setInterval(() => {
+      setLoadingQuote(getNextLoadingQuote())
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isLoading])
 
   const handleFetchIdeas = async () => {
     if (!selectedBrand) {
@@ -91,13 +104,13 @@ export function DidYouKnowPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+    <main className="min-h-screen bg-white pt-20 md:pt-10 px-4 md:px-8 pb-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={() => navigate('/engagement-photos')}
+              onClick={() => navigate('/engagement-posts')}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />
@@ -110,12 +123,10 @@ export function DidYouKnowPage() {
             style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
           />
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+        {/* Content */}
         {/* Stage 1: Input */}
-        {stage === 'input' && (
+        {stage === 'input' && !isLoading && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
@@ -176,11 +187,11 @@ export function DidYouKnowPage() {
         )}
 
         {/* Stage 1: Loading */}
-        {stage === 'input' && isLoading && (
+        {isLoading && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
-            <div className="text-4xl inline-block animate-bounce">💡</div>
+            <div className="text-5xl inline-block animate-bounce">💡</div>
             <p className="text-sm font-semibold text-neutral-900">Finding Ideas</p>
-            <p className="text-xs text-neutral-500">Searching for interesting facts...</p>
+            <p className="text-xs text-neutral-500 italic min-h-5">{loadingQuote}</p>
           </div>
         )}
 
@@ -195,21 +206,7 @@ export function DidYouKnowPage() {
               Back to input
             </button>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {ideas.map((idea) => (
-                <button
-                  key={idea.id}
-                  onClick={() => handleSelectIdea(idea)}
-                  className="text-left p-4 border border-neutral-200 rounded-xl hover:border-neutral-900 hover:shadow-lg transition bg-white group"
-                >
-                  <h3 className="font-semibold text-neutral-950 group-hover:text-neutral-900 line-clamp-2">
-                    {idea.headline}
-                  </h3>
-                  <p className="text-xs text-neutral-600 mt-2 line-clamp-2">{idea.fact}</p>
-                  <p className="text-xs text-neutral-400 mt-2 line-clamp-3">{idea.caption}</p>
-                </button>
-              ))}
-            </div>
+            <DidYouKnowTopicSelector ideas={ideas} onConfirm={handleSelectIdea} />
           </div>
         )}
 
@@ -220,6 +217,7 @@ export function DidYouKnowPage() {
             edition={selectedEdition}
             brandLogoPublicId={brandLogoPublicId}
             language={language}
+            brand={selectedBrand}
             onBack={handleBackToIdeas}
             onUpdateField={handleUpdateField}
           />
@@ -251,6 +249,6 @@ export function DidYouKnowPage() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   )
 }
