@@ -166,6 +166,7 @@ export const DidYouKnowCanvas = forwardRef<
         lineHeight: cfg.headline.lineHeight,
         charSpacing: cfg.headline.charSpacing,
         width: cfg.headline.maxWidth,
+        originX: 'left',
         originY: 'top',
         selectable: false,
         evented: false,
