@@ -158,8 +158,6 @@ const WeatherImageCard = memo(function WeatherImageCard({
 // ─── Mode Toggle ─────────────────────────────────────────────────────────────
 
 const MODE_OPTIONS: { value: PostMode; label: string }[] = [
-  { value: "grouped", label: "By Weather" },
-  { value: "individual", label: "Individual (16 Posts)" },
   { value: "single", label: "Single Post" },
 ];
 
@@ -195,7 +193,7 @@ export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
   const { posts, fontUse, brandColor, nationalSummary, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState("");
-  const [mode, setMode] = useState<PostMode>("grouped");
+  const [mode, setMode] = useState<PostMode>("single");
   const [stage, setStage] = useState<"brand-select" | "review">(
     posts.length > 0 ? "review" : "brand-select",
   );
