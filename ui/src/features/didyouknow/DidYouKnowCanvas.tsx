@@ -243,6 +243,7 @@ export const DidYouKnowCanvas = forwardRef<
       headlineObj.set({
         left: cfg.headline.leftOffset,
         top: cursorY - headlineH,
+        originX: 'left',
         originY: 'top',
       })
       canvas.add(headlineObj)
