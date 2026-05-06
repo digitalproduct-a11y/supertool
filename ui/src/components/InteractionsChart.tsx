@@ -8,7 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { DashboardRow } from '../utils/dashboardUtils'
+import type { DashboardRow } from '../utils/dashboardUtils'
 
 interface InteractionsChartProps {
   data: DashboardRow[]

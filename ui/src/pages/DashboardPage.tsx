@@ -6,7 +6,7 @@ import { RevenueChart } from '../components/RevenueChart'
 import { PostsChart } from '../components/PostsChart'
 import { InteractionsChart } from '../components/InteractionsChart'
 import { filterDashboardData, aggregateByWeek, getLast30Days } from '../utils/dashboardUtils'
-import { DashboardRow } from '../utils/dashboardUtils'
+import type { DashboardRow } from '../utils/dashboardUtils'
 
 interface DashboardPageProps {
   businessUnit?: string

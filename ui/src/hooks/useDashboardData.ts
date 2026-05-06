@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { DashboardRow } from '../utils/dashboardUtils'
+import type { DashboardRow } from '../utils/dashboardUtils'
 
 interface CachedData {
   data: DashboardRow[]
