@@ -135,8 +135,8 @@ export function PostsChart({ data, prevData = [], showComparison = false }: Post
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={400}>
-        <ComposedChart data={chartData} margin={{ top: 20, bottom: 20 }} wrapperStyle={{ paddingBottom: 80 }}>
+      <ResponsiveContainer width="100%" height={400} style={{ paddingBottom: 80 }}>
+        <ComposedChart data={chartData} margin={{ top: 20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="date"

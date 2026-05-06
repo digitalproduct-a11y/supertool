@@ -97,8 +97,6 @@ export function RevenueChart({ data, prevData = [], showComparison = false }: Re
   const allSelected = active.size === SERIES.length
   const label = allSelected ? 'All types' : `${active.size} selected`
 
-  const latestWeekRange = data.length > 0 ? (data[data.length - 1] as any).weekRange : null
-
   return (
     <div className="bg-white rounded-2xl shadow p-6">
       <div className="flex items-start justify-between mb-4">
@@ -153,8 +151,8 @@ export function RevenueChart({ data, prevData = [], showComparison = false }: Re
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={400}>
-        <ComposedChart data={chartData} margin={{ top: 20, bottom: 20 }} wrapperStyle={{ paddingBottom: 80 }}>
+      <ResponsiveContainer width="100%" height={400} style={{ paddingBottom: 80 }}>
+        <ComposedChart data={chartData} margin={{ top: 20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="date"
