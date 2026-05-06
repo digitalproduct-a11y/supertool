@@ -7,6 +7,8 @@ interface BadmintonPostCanvasProps {
   content: string
   photoUrl: string | null
   brandLogoUrl: string
+  headlineOffset?: number
+  subtitleOffset?: number
 }
 
 export interface BadmintonPostCanvasHandle {
@@ -15,7 +17,7 @@ export interface BadmintonPostCanvasHandle {
 }
 
 const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostCanvasProps>(
-  ({ headline, content, photoUrl, brandLogoUrl }, ref) => {
+  ({ headline, content, photoUrl, brandLogoUrl, headlineOffset = 200, subtitleOffset = 220 }, ref) => {
     const canvasElRef = useRef<HTMLCanvasElement>(null)
     const fabricRef = useRef<StaticCanvas | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -26,13 +28,13 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
     const renderCanvas = useCallback(
       async (canvas: StaticCanvas) => {
         if (photoUrl) {
-          await renderImageOnCanvas(canvas, photoUrl, CANVAS_WIDTH, CANVAS_HEIGHT, headline, content)
+          await renderImageOnCanvas(canvas, photoUrl, CANVAS_WIDTH, CANVAS_HEIGHT, headline, content, headlineOffset, subtitleOffset)
         } else {
           canvas.clear()
           canvas.renderAll()
         }
       },
-      [photoUrl, headline, content]
+      [photoUrl, headline, content, headlineOffset, subtitleOffset]
     )
 
     useImperativeHandle(ref, () => ({

@@ -61,6 +61,9 @@ export default function IdeaCard({
   const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
   const canvasRef = useRef<BadmintonPostCanvasHandle>(null)
+
+  // Text box position — edit this value to adjust headline/subtitle group position
+  const TEXT_BOX_OFFSET = 160
   const previewCanvasElRef = useRef<HTMLCanvasElement>(null)
   const previewFabricRef = useRef<StaticCanvas | null>(null)
   const useFabricCanvas = topic === 'badminton'
@@ -74,6 +77,14 @@ export default function IdeaCard({
     setCommittedSubtitle(idea.subtitle)
   }, [idea.id])
 
+  // Listen for HMR updates from canvasRenderingUtils
+  const [renderKey, setRenderKey] = useState(0)
+  useEffect(() => {
+    const handler = () => setRenderKey(prev => prev + 1)
+    window.addEventListener('canvas-utils-updated', handler)
+    return () => window.removeEventListener('canvas-utils-updated', handler)
+  }, [])
+
   // Initialize and render preview canvas for badminton
   useEffect(() => {
     if (!useFabricCanvas || !previewCanvasElRef.current) return
@@ -86,7 +97,7 @@ export default function IdeaCard({
 
     const renderPreview = async () => {
       if (idea.photo_url) {
-        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline, idea.subtitle)
+        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline, idea.subtitle, TEXT_BOX_OFFSET, TEXT_BOX_OFFSET)
       } else {
         canvas.clear()
         canvas.renderAll()
@@ -102,7 +113,7 @@ export default function IdeaCard({
     return () => {
       if (canvas) canvas.dispose()
     }
-  }, [useFabricCanvas, previewCanvasElRef, idea])
+  }, [useFabricCanvas, previewCanvasElRef, idea, TEXT_BOX_OFFSET, renderKey])
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
@@ -192,6 +203,8 @@ export default function IdeaCard({
               content={committedSubtitle}
               photoUrl={idea.photo_url}
               brandLogoUrl={brandLogoUrl}
+              headlineOffset={TEXT_BOX_OFFSET}
+              subtitleOffset={TEXT_BOX_OFFSET}
             />
           </div>
         )}
