@@ -5,7 +5,8 @@ export async function renderImageOnCanvas(
   photoUrl: string,
   canvasWidth: number,
   canvasHeight: number,
-  headline: string = ''
+  headline: string = '',
+  subtitle: string = ''
 ) {
   canvas.clear()
 
@@ -84,6 +85,48 @@ export async function renderImageOnCanvas(
       console.log('Gradient overlay added')
     } catch (err) {
       console.error('Gradient overlay error:', err)
+    }
+
+    // Add subtitle text with word wrapping
+    if (subtitle) {
+      const subtitleBoxWidth = (985 * canvasWidth) / 1080
+      const subtitleFontSize = (28 * canvasWidth) / 1080
+      const offsetFromBottom = (280 * canvasHeight) / 1350
+
+      const words = subtitle.split(' ')
+      const lines: string[] = []
+      let currentLine = ''
+
+      const ctx = document.createElement('canvas').getContext('2d')!
+      ctx.font = `${subtitleFontSize}px Montserrat`
+
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word
+        const width = ctx.measureText(testLine).width
+
+        if (width > subtitleBoxWidth && currentLine) {
+          lines.push(currentLine)
+          currentLine = word
+        } else {
+          currentLine = testLine
+        }
+      }
+      if (currentLine) lines.push(currentLine)
+
+      const subtitleText = new Text(lines.join('\n'), {
+        left: canvasWidth / 2,
+        top: canvasHeight - offsetFromBottom,
+        fontSize: subtitleFontSize,
+        fontFamily: 'Montserrat',
+        fill: '#FFFFFF',
+        textAlign: 'center',
+        originX: 'center',
+        originY: 'bottom',
+        selectable: false,
+        evented: false,
+      })
+      canvas.add(subtitleText)
+      console.log('Subtitle added with wrapping')
     }
 
     // Add headline text with word wrapping

@@ -26,13 +26,13 @@ const BadmintonPostCanvas = forwardRef<BadmintonPostCanvasHandle, BadmintonPostC
     const renderCanvas = useCallback(
       async (canvas: StaticCanvas) => {
         if (photoUrl) {
-          await renderImageOnCanvas(canvas, photoUrl, CANVAS_WIDTH, CANVAS_HEIGHT, headline)
+          await renderImageOnCanvas(canvas, photoUrl, CANVAS_WIDTH, CANVAS_HEIGHT, headline, content)
         } else {
           canvas.clear()
           canvas.renderAll()
         }
       },
-      [photoUrl, headline]
+      [photoUrl, headline, content]
     )
 
     useImperativeHandle(ref, () => ({
