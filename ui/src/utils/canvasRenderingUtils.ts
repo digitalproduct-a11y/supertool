@@ -90,8 +90,8 @@ export async function renderImageOnCanvas(
     // Add subtitle text with word wrapping
     if (subtitle) {
       const subtitleBoxWidth = (985 * canvasWidth) / 1080
-      const subtitleFontSize = (28 * canvasWidth) / 1080
-      const offsetFromBottom = (280 * canvasHeight) / 1350
+      const subtitleFontSize = (36 * canvasWidth) / 1080
+      const offsetFromBottom = (220 * canvasHeight) / 1350
 
       const words = subtitle.split(' ')
       const lines: string[] = []
