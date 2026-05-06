@@ -32,6 +32,7 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   badminton: {
     id: 'badminton',
     label: 'Badminton',
+    trendingTopicsWebhookEnvVar: 'VITE_BADMINTON_FETCH_IDEAS_WEBHOOK_URL',
     webhookEnvVar: 'VITE_BADMINTON_POSTS_WEBHOOK_URL',
     uploadPresetEnvVar: 'VITE_CLOUDINARY_BADMINTON_UPLOAD_PRESET',
     templateImages: SHARED_TEMPLATE_IMAGES,

@@ -132,9 +132,9 @@ export function useEngagementPhotos() {
         const limitedIdeas = itemsArray.map((item: any) => ({
           id: item.id,
           type: item.type || 'news',
-          headline: (item.headline || '').slice(0, 100),
-          subtitle: (item.subtitle || item.content || '').slice(0, 400),
-          caption: (item.caption || '').slice(0, 600),
+          headline: (item.headline || '').slice(0, 50),
+          subtitle: (item.subtitle || item.content || '').slice(0, 200),
+          caption: (item.caption || '').slice(0, 550),
           player: item.player || '',
           club: item.club || undefined,
           photo_url: item.photo_url || null,

@@ -129,9 +129,9 @@ export default function IdeaCard({
   const subtitleChars = idea.subtitle.length
   const captionChars = idea.caption.length
 
-  const headlineLimit = topic === 'badminton' ? 80 : 35
-  const subtitleLimit = topic === 'badminton' ? 400 : 70
-  const captionLimit = topic === 'badminton' ? 400 : 600
+  const headlineLimit = topic === 'badminton' ? 50 : 35
+  const subtitleLimit = topic === 'badminton' ? 200 : 70
+  const captionLimit = topic === 'badminton' ? 550 : 600
 
   const headlineValid = headlineChars > 0 && headlineChars <= headlineLimit
   const subtitleValid = subtitleChars > 0 && subtitleChars <= subtitleLimit
