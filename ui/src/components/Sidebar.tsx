@@ -62,7 +62,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
   {
     section: "Analytics",
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: IconChartBar },
+      { id: 'dashboard', label: 'Dashboard (Beta)', icon: IconChartBar },
     ],
   },
   {
@@ -116,7 +116,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
 
 const TOOL_NAMES: Record<ToolId, string> = {
   home: 'KULT Digital Kit',
-  'dashboard': 'Dashboard',
+  'dashboard': 'Dashboard (Beta)',
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',
   'trending-news': 'Trending News',
