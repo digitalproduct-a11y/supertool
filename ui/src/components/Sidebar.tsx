@@ -15,10 +15,12 @@ import {
   IconBolt,
   IconBrandShopee,
   IconBulb,
+  IconChartBar,
 } from "@tabler/icons-react";
 
 type ToolId =
   | 'home'
+  | 'dashboard'
   | 'fb-post'
   | 'trending-news'
   | 'spike-news'
@@ -56,6 +58,12 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
   {
     section: null,
     items: [{ id: "home", label: "Home", icon: IconHome }],
+  },
+  {
+    section: "Analytics",
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: IconChartBar },
+    ],
   },
   {
     section: "Article to Social",
