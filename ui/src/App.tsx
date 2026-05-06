@@ -21,6 +21,7 @@ import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
 import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
+import { DashboardPage } from './pages/DashboardPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,
@@ -60,7 +61,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -82,12 +83,16 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/on-this-day-malaysia': 'on-this-day',
   '/engagement-posts/weather-malaysia': 'weather-malaysia',
   '/engagement-posts/quote': 'quote',
+  '/dashboard/:brand': 'dashboard',
 }
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
 function getActiveTool(pathname: string): ToolId {
   if (pathname.startsWith('/trending-news') || pathname.startsWith('/news-bank')) {
     return 'scheduled-posts'
+  }
+  if (pathname.startsWith('/dashboard')) {
+    return 'dashboard'
   }
   return pathToTool[pathname] ?? 'home'
 }
@@ -111,6 +116,7 @@ const toolToPath: Record<ToolId, string> = {
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
+  'dashboard': '/dashboard/ASTRO%20GEMPAK',
 }
 
 const topicToPath: Record<string, string> = {
@@ -1001,6 +1007,11 @@ function App() {
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <QuotePage />
           </Suspense>
+        </Layout>
+      } />
+      <Route path="/dashboard/:brand" element={
+        <Layout {...layoutProps}>
+          <DashboardPage />
         </Layout>
       } />
     </Routes>
