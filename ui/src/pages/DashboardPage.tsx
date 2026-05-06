@@ -152,10 +152,12 @@ export function DashboardPage() {
           )}
 
           {filteredData.length > 0 && (
-            <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
               <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
-              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
+              <div className="lg:col-span-2">
+                <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
+              </div>
             </div>
           )}
         </div>
