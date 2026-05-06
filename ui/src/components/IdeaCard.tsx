@@ -218,7 +218,7 @@ export default function IdeaCard({
                 onChange={(e) => onUpdateField(idea.id, 'headline', e.target.value.slice(0, headlineLimit))}
                 onBlur={() => setCommittedHeadline(idea.headline)}
                 placeholder="Enter headline..."
-                className={`w-full px-5 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
                   headlineValid ? 'border-gray-200' : 'border-red-300'
                 }`}
               />
