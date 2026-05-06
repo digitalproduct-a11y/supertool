@@ -160,7 +160,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false }: Re
             height={60}
             tick={{ fontSize: 11, angle: -45, textAnchor: 'end' }}
           />
-          <YAxis />
+          <YAxis tick={{ fontSize: 11 }} />
           <Tooltip
             content={({ active: a, payload, label }) => {
               if (!a || !payload?.length) return null
@@ -195,7 +195,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false }: Re
               )
             }}
           />
-          <Legend verticalAlign="top" height={36} />
+          <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
           {SERIES.map(s => (
             <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
           ))}

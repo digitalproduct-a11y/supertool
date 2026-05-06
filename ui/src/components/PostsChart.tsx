@@ -145,6 +145,7 @@ export function PostsChart({ data, prevData = [], showComparison = false }: Post
             tick={{ fontSize: 11, angle: -45, textAnchor: 'end' }}
           />
           <YAxis
+            tick={{ fontSize: 11 }}
             tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K` : String(v)}
           />
           <Tooltip
@@ -181,7 +182,7 @@ export function PostsChart({ data, prevData = [], showComparison = false }: Post
               )
             }}
           />
-          <Legend verticalAlign="top" height={36} />
+          <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
           {SERIES.map(s => (
             <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
           ))}
