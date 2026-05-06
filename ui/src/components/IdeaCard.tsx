@@ -86,7 +86,7 @@ export default function IdeaCard({
 
     const renderPreview = async () => {
       if (idea.photo_url) {
-        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline)
+        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline, idea.subtitle)
       } else {
         canvas.clear()
         canvas.renderAll()
@@ -102,7 +102,7 @@ export default function IdeaCard({
     return () => {
       if (canvas) canvas.dispose()
     }
-  })
+  }, [useFabricCanvas, previewCanvasElRef, idea])
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
