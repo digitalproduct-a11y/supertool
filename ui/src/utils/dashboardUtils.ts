@@ -23,7 +23,9 @@ export interface DashboardRow {
 }
 
 export interface WeeklyAggregated extends Omit<DashboardRow, 'date' | 'day'> {
-  date: string // First date of week
+  date: string
+  daysInfo?: string   // e.g. "3/7 days" — set when period is incomplete
+  weekRange?: string  // e.g. "2 Feb – 8 Feb" — set for weekly aggregation only
 }
 
 // Filter data by brand, date range, and business unit
@@ -43,23 +45,90 @@ export function filterDashboardData(
   })
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function daysInMonth(yyyyMM: string): number {
+  const [y, m] = yyyyMM.split('-')
+  return new Date(Number(y), Number(m), 0).getDate()
+}
+
+function monthDisplayLabel(yyyyMM: string): string {
+  const [y, m] = yyyyMM.split('-')
+  return `${MONTHS[Number(m) - 1]} ${y}`
+}
+
+// Aggregate daily data by month
+export function aggregateByMonth(data: DashboardRow[]): WeeklyAggregated[] {
+  const grouped = new Map<string, DashboardRow[]>()
+
+  data.forEach(row => {
+    const key = row.date.slice(0, 7) // "YYYY-MM"
+    if (!grouped.has(key)) grouped.set(key, [])
+    grouped.get(key)!.push(row)
+  })
+
+  const entries = Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b))
+
+  return entries.map(([month, rows]) => {
+    const totalDays = daysInMonth(month)
+    const isPartial = rows.length < totalDays
+    return {
+      ...rows[0],
+      date: monthDisplayLabel(month),
+      week: month,
+      daysInfo: isPartial ? `${rows.length}/${totalDays} days` : undefined,
+      total_posts: rows.reduce((s, r) => s + r.total_posts, 0),
+      photo_posts: rows.reduce((s, r) => s + r.photo_posts, 0),
+      video_posts: rows.reduce((s, r) => s + r.video_posts, 0),
+      text_link_posts: rows.reduce((s, r) => s + r.text_link_posts, 0),
+      total_interactions: rows.reduce((s, r) => s + r.total_interactions, 0),
+      reactions: rows.reduce((s, r) => s + r.reactions, 0),
+      comments: rows.reduce((s, r) => s + r.comments, 0),
+      shares: rows.reduce((s, r) => s + r.shares, 0),
+      total_revenue: rows.reduce((s, r) => s + r.total_revenue, 0),
+      bonus_revenue: rows.reduce((s, r) => s + r.bonus_revenue, 0),
+      photo_revenue: rows.reduce((s, r) => s + r.photo_revenue, 0),
+      video_revenue: rows.reduce((s, r) => s + r.video_revenue, 0),
+      story_revenue: rows.reduce((s, r) => s + r.story_revenue, 0),
+      text_link_revenue: rows.reduce((s, r) => s + r.text_link_revenue, 0),
+    }
+  })
+}
+
 // Aggregate daily data by week
 export function aggregateByWeek(data: DashboardRow[]): WeeklyAggregated[] {
   const grouped = new Map<string, DashboardRow[]>()
 
   data.forEach(row => {
-    const key = row.week
+    const key = `${row.month}|${row.week}`
     if (!grouped.has(key)) grouped.set(key, [])
     grouped.get(key)!.push(row)
   })
 
-  const result: WeeklyAggregated[] = []
-  grouped.forEach((rows, week) => {
-    const firstRow = rows[0]
-    const aggregated: WeeklyAggregated = {
-      ...firstRow,
-      week: week,
-      date: rows[0].date,
+  const entries = Array.from(grouped.entries()).sort(([, a], [, b]) => {
+    const aMin = a.reduce((m, r) => r.date < m ? r.date : m, a[0].date)
+    const bMin = b.reduce((m, r) => r.date < m ? r.date : m, b[0].date)
+    return aMin.localeCompare(bMin)
+  })
+
+  return entries.map(([, rows]) => {
+    const row0 = rows[0]
+    const isPartial = rows.length < 7
+    const dates = rows.map(r => r.date).sort()
+    const fmtDay = (d: string) => {
+      const [, m, day] = d.split('-')
+      return `${Number(day)} ${MONTHS[Number(m) - 1]}`
+    }
+    const weekRange = `${fmtDay(dates[0])} – ${fmtDay(dates[dates.length - 1])}`
+    const monthLabel = /^\d{4}-\d{2}$/.test(row0.month)
+      ? monthDisplayLabel(row0.month)
+      : row0.month.split(' ')[0]
+    return {
+      ...row0,
+      week: row0.week,
+      date: `${monthLabel} ${row0.week}`,
+      daysInfo: isPartial ? `${rows.length}/7 days` : undefined,
+      weekRange,
       total_posts: rows.reduce((sum, r) => sum + r.total_posts, 0),
       photo_posts: rows.reduce((sum, r) => sum + r.photo_posts, 0),
       video_posts: rows.reduce((sum, r) => sum + r.video_posts, 0),
@@ -75,10 +144,7 @@ export function aggregateByWeek(data: DashboardRow[]): WeeklyAggregated[] {
       story_revenue: rows.reduce((sum, r) => sum + r.story_revenue, 0),
       text_link_revenue: rows.reduce((sum, r) => sum + r.text_link_revenue, 0),
     }
-    result.push(aggregated)
   })
-
-  return result
 }
 
 // Get last 30 days from today
@@ -92,4 +158,17 @@ export function getLast30Days(): [Date, Date] {
 // Format date for display
 export function formatDateShort(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+// Format a "YYYY-MM-DD" or "YYYY-MM" string to DD/MM/YYYY or MM/YYYY
+export function formatDateLabel(value: string): string {
+  if (/^\d{4}-\d{2}$/.test(value)) {
+    const [y, m] = value.split('-')
+    return `${m}/${y}`
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-')
+    return `${d}/${m}/${y}`
+  }
+  return value
 }

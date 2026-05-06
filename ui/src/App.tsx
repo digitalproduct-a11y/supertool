@@ -83,7 +83,7 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/on-this-day-malaysia': 'on-this-day',
   '/engagement-posts/weather-malaysia': 'weather-malaysia',
   '/engagement-posts/quote': 'quote',
-  '/dashboard/:brand': 'dashboard',
+  '/dashboard': 'dashboard',
 }
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
@@ -116,7 +116,7 @@ const toolToPath: Record<ToolId, string> = {
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
-  'dashboard': '/dashboard/ASTRO%20GEMPAK',
+  'dashboard': '/dashboard',
 }
 
 const topicToPath: Record<string, string> = {
@@ -1009,7 +1009,7 @@ function App() {
           </Suspense>
         </Layout>
       } />
-      <Route path="/dashboard/:brand" element={
+      <Route path="/dashboard" element={
         <Layout {...layoutProps}>
           <DashboardPage />
         </Layout>
