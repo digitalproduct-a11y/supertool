@@ -105,7 +105,8 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
 
   // Calculate Y-axis domain to include target line
   const targetValue = showTargets && targetData ? targetData.revenueTarget : 0
-  const maxValue = Math.max(total > 0 ? total : 0, targetValue)
+  const maxBarValue = Math.max(...chartData.map(d => d.bar_total), 0)
+  const maxValue = Math.max(maxBarValue, targetValue)
   const yAxisDomain = [0, Math.ceil(maxValue * 1.05)]
 
   return (
