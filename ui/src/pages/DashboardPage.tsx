@@ -94,47 +94,53 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Brand chips */}
-        {loading && brands.length === 0 ? (
-          <div className="flex gap-2 flex-wrap mb-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-8 w-24 rounded-full bg-neutral-200 animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="flex gap-2 flex-wrap mb-6">
-            {brands.map(({ brand }) => (
-              <button
-                key={brand}
-                onClick={() => setSelectedBrand(brand)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  selectedBrand === brand
-                    ? 'bg-neutral-950 text-white shadow'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-                }`}
-              >
-                {brand}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Filters */}
-        {selectedBrand && (
-          <DashboardHeader
-            brand={selectedBrand}
-            businessUnit={selectedBrandInfo?.bu || ''}
-            startDate={startDate}
-            endDate={endDate}
-            onDateRangeChange={(start, end) => {
-              setStartDate(start)
-              setEndDate(end)
-            }}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showComparison={showComparison}
-            onToggleComparison={() => setShowComparison(v => !v)}
-          />
+        {selectedBrand ? (
+          <>
+            <DashboardHeader
+              brand={selectedBrand}
+              businessUnit={selectedBrandInfo?.bu || ''}
+              brands={brands}
+              onBrandChange={setSelectedBrand}
+              startDate={startDate}
+              endDate={endDate}
+              onDateRangeChange={(start, end) => {
+                setStartDate(start)
+                setEndDate(end)
+              }}
+            />
+
+            {/* View mode and comparison toggle */}
+            <div className="mt-4 flex gap-4 items-center">
+              <div className="flex gap-1 border border-neutral-200 rounded-lg p-1">
+                {(['daily', 'weekly', 'monthly'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`px-3 py-1 rounded text-sm font-medium transition capitalize ${
+                      viewMode === mode ? 'bg-neutral-950 text-white' : 'text-neutral-700 hover:bg-neutral-100'
+                    }`}
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showComparison}
+                  onChange={() => setShowComparison(v => !v)}
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
+                />
+                <span className="text-sm text-neutral-600 whitespace-nowrap">vs Previous Period</span>
+              </label>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-neutral-500">Loading brands...</p>
+          </div>
         )}
 
         {/* Charts */}

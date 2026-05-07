@@ -136,7 +136,9 @@ export function RevenueChart({ data, prevData = [], showComparison = false }: Re
             )}
             </div>
           </div>
-          <p className="text-xs text-neutral-600 font-medium mt-0.5">Latest week (Revenue data refreshed every Tuesday for previous week)</p>
+          <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+            <p className="text-xs font-medium text-amber-900">Latest week (Revenue data refreshed every Tuesday for previous week)</p>
+          </div>
         </div>
         <div className="text-right">
           <p className="text-xs text-neutral-400 uppercase tracking-wide">Total</p>
