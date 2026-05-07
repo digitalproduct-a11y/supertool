@@ -112,7 +112,6 @@ const sections: Section[] = [
           "Historical events from Malaysia — what happened today in history",
         icon: IconCalendar,
         color: "#0055EE",
-        hidden: true,
       },
     ],
   },

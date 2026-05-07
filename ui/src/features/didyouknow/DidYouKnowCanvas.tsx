@@ -166,6 +166,7 @@ export const DidYouKnowCanvas = forwardRef<
         lineHeight: cfg.headline.lineHeight,
         charSpacing: cfg.headline.charSpacing,
         width: cfg.headline.maxWidth,
+        originX: 'left',
         originY: 'top',
         selectable: false,
         evented: false,
@@ -242,6 +243,7 @@ export const DidYouKnowCanvas = forwardRef<
       headlineObj.set({
         left: cfg.headline.leftOffset,
         top: cursorY - headlineH,
+        originX: 'left',
         originY: 'top',
       })
       canvas.add(headlineObj)
