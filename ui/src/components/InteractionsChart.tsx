@@ -112,41 +112,53 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
                 <IconAdjustmentsHorizontal className="w-4 h-4" />
               </button>
             {open && (
-              <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 min-w-[140px]">
+              <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 min-w-[160px]">
                 <button
                   onClick={() => setActive(new Set(SERIES.map(s => s.key)))}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-neutral-50 transition text-neutral-700 font-medium"
+                  disabled={active.size === SERIES.length}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-neutral-50 disabled:hover:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Select All
+                  <span
+                    className="w-3 h-3 rounded-sm flex-shrink-0 flex items-center justify-center border"
+                    style={active.size === SERIES.length ? { backgroundColor: '#525252', borderColor: '#525252' } : { borderColor: '#d4d4d4' }}
+                  >
+                    {active.size === SERIES.length && (
+                      <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 8 8">
+                        <path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="text-neutral-700 font-medium">Select All</span>
                 </button>
                 <div className="border-t border-neutral-100" />
                 {SERIES.map(s => (
                   <button
                     key={s.key}
                     onClick={() => toggle(s.key)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-neutral-50 transition"
+                    className="w-full flex items-center justify-between gap-2.5 px-3 py-2 text-xs hover:bg-neutral-50 transition group"
                   >
-                    <span
-                      className="w-3 h-3 rounded-sm flex-shrink-0 flex items-center justify-center border"
-                      style={active.has(s.key) ? { backgroundColor: s.color, borderColor: s.color } : { borderColor: '#d4d4d4' }}
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="w-3 h-3 rounded-sm flex-shrink-0 flex items-center justify-center border"
+                        style={active.has(s.key) ? { backgroundColor: s.color, borderColor: s.color } : { borderColor: '#d4d4d4' }}
+                      >
+                        {active.has(s.key) && (
+                          <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 8 8">
+                            <path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="text-neutral-700">{s.label}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActive(new Set([s.key]))
+                      }}
+                      className="px-2 py-0.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 rounded text-xs opacity-0 group-hover:opacity-100 transition whitespace-nowrap"
                     >
-                      {active.has(s.key) && (
-                        <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 8 8">
-                          <path d="M1 4l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </span>
-                    <span className="text-neutral-700">{s.label}</span>
-                  </button>
-                ))}
-                <div className="border-t border-neutral-100" />
-                {SERIES.map(s => (
-                  <button
-                    key={`only-${s.key}`}
-                    onClick={() => setActive(new Set([s.key]))}
-                    className="w-full px-3 py-2 text-xs hover:bg-neutral-50 transition text-neutral-600 text-left"
-                  >
-                    Only {s.label}
+                      Only
+                    </button>
                   </button>
                 ))}
               </div>
