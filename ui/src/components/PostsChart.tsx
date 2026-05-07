@@ -195,7 +195,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
               stroke="#ef4444"
               strokeDasharray="5 5"
               strokeWidth={2}
-              label={{ value: targetData.targetLabel, position: 'right', fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
+              label={{ value: `${targetData.targetLabel}: ${Math.round(targetData.postsTarget)} posts`, position: 'right', fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
             />
           )}
           {SERIES.map(s => (
