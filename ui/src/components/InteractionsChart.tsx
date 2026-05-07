@@ -24,6 +24,8 @@ interface InteractionsChartProps {
   viewMode?: 'daily' | 'weekly' | 'monthly'
   startDate?: Date
   endDate?: Date
+  onDateSelect?: (date: Date) => void
+  selectedDate?: Date | null
 }
 
 const SERIES = [
@@ -32,10 +34,11 @@ const SERIES = [
   { key: 'shares', label: 'Shares', color: '#0055EE' },
 ]
 
-export function InteractionsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate }: InteractionsChartProps) {
+export function InteractionsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate, onDateSelect, selectedDate }: InteractionsChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const metricsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -73,9 +76,22 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
     _anchor: 0.001,
   }))
 
-  const total = data.reduce((sum, row) => sum + row.total_interactions, 0)
-  const prevTotal = prevData.reduce((sum, row) => sum + row.total_interactions, 0)
+  const totals = {
+    reactions: data.reduce((sum, row) => sum + (active.has('reactions') ? row.reactions : 0), 0),
+    comments: data.reduce((sum, row) => sum + (active.has('comments') ? row.comments : 0), 0),
+    shares: data.reduce((sum, row) => sum + (active.has('shares') ? row.shares : 0), 0),
+  }
+  const total = Object.values(totals).reduce((sum, v) => sum + v, 0)
+
+  const prevTotals: typeof totals = {
+    reactions: prevData.reduce((sum, row) => sum + (active.has('reactions') ? row.reactions : 0), 0),
+    comments: prevData.reduce((sum, row) => sum + (active.has('comments') ? row.comments : 0), 0),
+    shares: prevData.reduce((sum, row) => sum + (active.has('shares') ? row.shares : 0), 0),
+  }
+  const prevTotal = Object.values(prevTotals).reduce((sum, v) => sum + v, 0)
   const delta = showComparison && prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : null
+
+  const getDelta = (current: number, prev: number) => showComparison && prev > 0 ? ((current - prev) / prev) * 100 : null
 
   const allSelected = active.size === SERIES.length
   const label = allSelected ? 'All types' : `${active.size} selected`
@@ -83,8 +99,8 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
 
   return (
     <div className="bg-white rounded-2xl shadow p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div>
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-neutral-950">Interactions</h2>
             <div ref={ref} className="relative">
@@ -121,16 +137,54 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide">Total</p>
-          <p className="text-lg font-semibold text-neutral-950">{total.toLocaleString()}</p>
-          {showComparison && (
-            delta !== null
-              ? <p className={`text-xs font-medium mt-0.5 ${delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
-                  {delta > 0 ? '↑' : delta < 0 ? '↓' : '='} {Math.abs(delta).toFixed(1)}% vs prev
-                </p>
-              : <p className="text-xs text-neutral-400 mt-0.5">— vs prev</p>
-          )}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 justify-center">
+            <button
+              onClick={() => {
+                const container = metricsRef.current
+                if (container) container.scrollBy({ left: -200, behavior: 'smooth' })
+              }}
+              className="text-neutral-400 hover:text-neutral-600 flex-shrink-0"
+            >
+              ←
+            </button>
+            <div ref={metricsRef} className="flex gap-8 overflow-x-auto px-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="text-center flex-shrink-0">
+                <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Total</p>
+                <p className="text-lg font-semibold text-neutral-950">{total.toLocaleString()}</p>
+                {showComparison && (
+                  delta !== null
+                    ? <p className={`text-xs font-medium ${delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
+                        {delta > 0 ? '↑' : delta < 0 ? '↓' : '='} {Math.abs(delta).toFixed(1)}%
+                      </p>
+                    : <p className="text-xs text-neutral-400">—</p>
+                )}
+              </div>
+              {SERIES.map(s => {
+                const catDelta = getDelta(totals[s.key as keyof typeof totals], prevTotals[s.key as keyof typeof prevTotals])
+                return (
+                  <div key={s.key} className={`text-center flex-shrink-0 ${active.has(s.key) ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">{s.label}</p>
+                    <p className="text-lg font-semibold">{totals[s.key as keyof typeof totals].toLocaleString()}</p>
+                    {showComparison && catDelta !== null && (
+                      <p className={`text-xs font-medium ${catDelta > 0 ? 'text-green-600' : catDelta < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
+                        {catDelta > 0 ? '↑' : catDelta < 0 ? '↓' : '='} {Math.abs(catDelta).toFixed(1)}%
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <button
+              onClick={() => {
+                const container = metricsRef.current
+                if (container) container.scrollBy({ left: 200, behavior: 'smooth' })
+              }}
+              className="text-neutral-400 hover:text-neutral-600 flex-shrink-0"
+            >
+              →
+            </button>
+          </div>
         </div>
       </div>
 
@@ -183,7 +237,12 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
           />
           <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
           {SERIES.map(s => (
-            <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
+            <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} onClick={(e: any) => {
+              if (onDateSelect && e.date) {
+                const dateObj = new Date(e.date)
+                onDateSelect(dateObj)
+              }
+            }} />
           ))}
           <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList

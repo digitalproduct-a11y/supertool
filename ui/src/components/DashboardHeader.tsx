@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 
 interface DashboardHeaderProps {
   brand: string
@@ -36,11 +36,100 @@ const endOfMonth = (offset = 0) => {
   return d
 }
 
+const MIN_DATA_DATE = new Date(2026, 0, 16, 0, 0, 0, 0)
+
+const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+
+interface CalendarMonthProps {
+  date: Date
+  onSelect: (date: Date) => void
+  isStart: boolean
+  minDate?: Date
+  maxDate?: Date
+}
+
+function CalendarMonth({ date, onSelect, isStart, minDate, maxDate }: CalendarMonthProps) {
+  const [displayMonth, setDisplayMonth] = useState(new Date(date.getFullYear(), date.getMonth(), 1))
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const daysInMonth = getDaysInMonth(displayMonth)
+  const firstDay = getFirstDayOfMonth(displayMonth)
+  const days: (number | null)[] = Array(firstDay).fill(null)
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i)
+  }
+
+  const handleDayClick = (day: number) => {
+    const newDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day, 0, 0, 0, 0)
+    onSelect(newDate)
+    if (!isStart) setDisplayMonth(new Date(newDate.getFullYear(), newDate.getMonth(), 1))
+  }
+
+  const monthName = displayMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  return (
+    <div className="w-64">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setDisplayMonth(new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1))}
+          className="text-neutral-500 hover:text-neutral-700"
+        >
+          ←
+        </button>
+        <p className="text-sm font-medium text-neutral-700">{monthName}</p>
+        <button
+          onClick={() => setDisplayMonth(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 1))}
+          className="text-neutral-500 hover:text-neutral-700"
+        >
+          →
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+          <p key={d} className="text-xs text-neutral-400 text-center py-1 font-medium">{d}</p>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-0.5">
+        {days.map((day, i) => {
+          if (day === null) return <div key={`empty-${i}`} />
+          const cellDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day, 0, 0, 0, 0)
+          const isFuture = cellDate > today
+          const isDisabled = isFuture || (minDate && cellDate < minDate) || (maxDate && cellDate > maxDate)
+          const isSelected = date.toDateString() === cellDate.toDateString()
+
+          return (
+            <button
+              key={day}
+              onClick={() => !isDisabled && handleDayClick(day)}
+              disabled={isDisabled}
+              className={`w-7 h-7 text-xs text-center rounded transition ${
+                isSelected
+                  ? 'bg-neutral-950 text-white font-medium'
+                  : isDisabled
+                  ? 'text-neutral-300 cursor-not-allowed'
+                  : 'text-neutral-700 hover:bg-neutral-100'
+              }`}
+            >
+              {day}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const PRESETS = [
-  { label: '7D', start: () => daysAgo(8), end: () => daysAgo(2) },
-  { label: '14D', start: () => daysAgo(15), end: () => daysAgo(2) },
-  { label: '30D', start: () => daysAgo(31), end: () => daysAgo(2) },
-  { label: 'This month', start: () => startOfMonth(0), end: () => daysAgo(2) },
+  { label: '7D', start: () => daysAgo(8), end: () => daysAgo(1) },
+  { label: '14D', start: () => daysAgo(15), end: () => daysAgo(1) },
+  { label: '30D', start: () => daysAgo(31), end: () => daysAgo(1) },
+  { label: 'Last 3M', start: () => daysAgo(91), end: () => daysAgo(1) },
+  { label: 'This month', start: () => startOfMonth(0), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
   { label: 'Last month', start: () => startOfMonth(-1), end: () => endOfMonth(-1) },
 ]
 
@@ -53,16 +142,13 @@ export function DashboardHeader({
   endDate,
   onDateRangeChange,
 }: DashboardHeaderProps) {
-  const startInputRef = useRef<HTMLInputElement>(null)
-  const endInputRef = useRef<HTMLInputElement>(null)
-  const [, forceUpdate] = useState(0)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [tempStart, setTempStart] = useState(startDate)
+  const [tempEnd, setTempEnd] = useState(endDate)
+  const pickerRef = useRef<HTMLDivElement>(null)
 
   const appliedStart = toInput(startDate)
   const appliedEnd = toInput(endDate)
-
-  const startInputVal = startInputRef.current?.value ?? appliedStart
-  const endInputVal = endInputRef.current?.value ?? appliedEnd
-  const isDirty = startInputVal !== appliedStart || endInputVal !== appliedEnd
 
   const activePreset = PRESETS.findIndex(p =>
     toInput(p.start()) === appliedStart && toInput(p.end()) === appliedEnd
@@ -71,16 +157,28 @@ export function DashboardHeader({
   const applyPreset = (p: typeof PRESETS[number]) => {
     const start = p.start()
     const end = p.end()
-    if (startInputRef.current) startInputRef.current.value = toInput(start)
-    if (endInputRef.current) endInputRef.current.value = toInput(end)
     onDateRangeChange(start, end)
+    setPickerOpen(false)
   }
 
   const handleApply = () => {
-    const start = new Date(startInputRef.current?.value ?? appliedStart)
-    const end = new Date(endInputRef.current?.value ?? appliedEnd)
-    if (start < end) onDateRangeChange(start, end)
+    if (tempStart < tempEnd) {
+      onDateRangeChange(tempStart, tempEnd)
+      setPickerOpen(false)
+    }
   }
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false)
+      }
+    }
+    if (pickerOpen) {
+      document.addEventListener('mousedown', handler)
+      return () => document.removeEventListener('mousedown', handler)
+    }
+  }, [pickerOpen])
 
   return (
     <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2">
@@ -117,31 +215,42 @@ export function DashboardHeader({
           <span className="text-neutral-300 text-sm">|</span>
 
           {/* Custom date range */}
-          <div className="flex gap-2 items-center">
-            <input
-              ref={startInputRef}
-              type="date"
-              defaultValue={appliedStart}
-              min="2026-01-16"
-              onChange={() => forceUpdate(n => n + 1)}
-              className="px-2 py-1 border border-neutral-200 rounded text-sm"
-            />
-            <span className="text-neutral-400 text-xs">to</span>
-            <input
-              ref={endInputRef}
-              type="date"
-              defaultValue={appliedEnd}
-              min="2026-01-16"
-              onChange={() => forceUpdate(n => n + 1)}
-              className="px-2 py-1 border border-neutral-200 rounded text-sm"
-            />
+          <div className="flex gap-2 items-center relative" ref={pickerRef}>
             <button
-              onClick={handleApply}
-              disabled={!isDirty}
-              className="px-3 py-1 bg-neutral-950 text-white rounded text-sm font-medium hover:bg-neutral-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => setPickerOpen(v => !v)}
+              className="px-3 py-1 border border-neutral-200 rounded text-sm hover:bg-neutral-50 transition"
             >
-              Apply
+              {appliedStart} to {appliedEnd}
             </button>
+
+            {pickerOpen && (
+              <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4" style={{ right: 0, width: '550px', paddingRight: '24px' }}>
+                <div className="grid grid-cols-2 gap-6 mb-4">
+                  <div>
+                    <p className="text-xs font-medium text-neutral-600 mb-3">Start Date</p>
+                    <CalendarMonth date={tempStart} onSelect={setTempStart} isStart maxDate={tempEnd} minDate={MIN_DATA_DATE} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-neutral-600 mb-3">End Date</p>
+                    <CalendarMonth date={tempEnd} onSelect={setTempEnd} isStart={false} minDate={tempStart} />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setPickerOpen(false)}
+                    className="px-3 py-1 text-sm text-neutral-600 hover:bg-neutral-100 rounded transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleApply}
+                    className="px-3 py-1 bg-neutral-950 text-white rounded text-sm font-medium hover:bg-neutral-800 transition"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
