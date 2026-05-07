@@ -19,6 +19,7 @@ export function DashboardPage() {
   })
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily')
   const [showComparison, setShowComparison] = useState(true)
+  const [showTargets, setShowTargets] = useState(true)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -75,17 +76,30 @@ export function DashboardPage() {
     const dailyRevenueTarget = annualRevenue / 365
     const dailyPostsTarget = avgPostsPerDay
 
-    // Calculate target based on date range and view mode
-    const daysInRange = Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000) + 1
+    // Calculate target based on view mode
+    let revenueTarget = dailyRevenueTarget
+    let postsTarget = dailyPostsTarget
+    let targetLabel = 'DAILY TARGET'
+
+    if (viewMode === 'weekly') {
+      revenueTarget = dailyRevenueTarget * 7
+      postsTarget = dailyPostsTarget * 7
+      targetLabel = 'WEEKLY TARGET'
+    } else if (viewMode === 'monthly') {
+      revenueTarget = dailyRevenueTarget * 30
+      postsTarget = dailyPostsTarget * 30
+      targetLabel = 'MONTHLY TARGET'
+    }
 
     return {
       dailyRevenue: dailyRevenueTarget,
       dailyPosts: dailyPostsTarget,
-      periodRevenue: dailyRevenueTarget * daysInRange,
-      periodPosts: dailyPostsTarget * daysInRange,
+      revenueTarget,
+      postsTarget,
+      targetLabel,
       interactions: null, // TBD - user will add this later
     }
-  }, [selectedBrand, targets, startDate, endDate])
+  }, [selectedBrand, targets, viewMode])
 
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
@@ -159,6 +173,16 @@ export function DashboardPage() {
                 />
                 <span className="text-sm text-neutral-600 whitespace-nowrap">vs Previous Period</span>
               </label>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showTargets}
+                  onChange={() => setShowTargets(v => !v)}
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
+                />
+                <span className="text-sm text-neutral-600 whitespace-nowrap">Show targets</span>
+              </label>
             </div>
           </>
         ) : (
@@ -183,9 +207,9 @@ export function DashboardPage() {
 
           {filteredData.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} viewMode={viewMode} startDate={startDate} endDate={endDate} />
-              <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} viewMode={viewMode} startDate={startDate} endDate={endDate} />
-              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
             </div>
           )}
         </div>
