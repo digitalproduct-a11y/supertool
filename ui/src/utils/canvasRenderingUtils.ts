@@ -125,8 +125,8 @@ export async function renderImageOnCanvas(
 
     // Add headline and subtitle as a grouped unit
     const headlineBoxWidth = (900 * canvasWidth) / 1080
-    const headlineFontSize = (52 * canvasWidth) / 1080
-    const subtitleFontSize = (32 * canvasWidth) / 1080
+    const headlineFontSize = (58 * canvasWidth) / 1080
+    const subtitleFontSize = (34 * canvasWidth) / 1080
     const gap = (20 * canvasHeight) / 1350 // gap between headline and subtitle
 
     // Wrap headline text
