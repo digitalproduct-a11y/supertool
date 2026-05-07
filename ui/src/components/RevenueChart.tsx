@@ -39,21 +39,6 @@ const SERIES = [
   { key: 'bonus_revenue', label: 'Bonus', color: '#9333EA' },
 ]
 
-const TargetLabel = ({ x, y, value }: any) => {
-  const text = value
-  const textWidth = text.length * 6
-  const boxWidth = textWidth + 12
-  const boxHeight = 24
-  return (
-    <g>
-      <rect x={x} y={y - boxHeight / 2} width={boxWidth} height={boxHeight} fill="#dc2626" rx="4" />
-      <text x={x + 6} y={y + 4} fill="white" fontSize={12} fontWeight="bold">
-        {text}
-      </text>
-    </g>
-  )
-}
-
 export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate }: RevenueChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
@@ -228,7 +213,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
               stroke="#ef4444"
               strokeDasharray="5 5"
               strokeWidth={2}
-              label={<TargetLabel value={`${targetData.targetLabel}: $${targetData.revenueTarget.toFixed(2)} USD`} />}
+              label={{ value: `${targetData.targetLabel}: $${targetData.revenueTarget.toFixed(2)} USD`, position: 'insideBottomLeft', offset: 5, fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
             />
           )}
           {SERIES.map(s => (
