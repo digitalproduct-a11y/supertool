@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { IconRefresh } from '@tabler/icons-react'
-import { useDashboardData } from '../hooks/useDashboardData'
+import { useDashboardData, type TargetRow } from '../hooks/useDashboardData'
 import { DashboardHeader } from '../components/DashboardHeader'
 import { RevenueChart } from '../components/RevenueChart'
 import { PostsChart } from '../components/PostsChart'
@@ -9,7 +9,7 @@ import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils
 import type { DashboardRow } from '../utils/dashboardUtils'
 
 export function DashboardPage() {
-  const { data, loading, lastUpdated, refetch } = useDashboardData()
+  const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 9); d.setHours(0,0,0,0); return d
@@ -62,6 +62,30 @@ export function DashboardPage() {
     if (viewMode === 'monthly') return aggregateByMonth(filtered) as DashboardRow[]
     return filtered
   }, [showComparison, data, selectedBrand, startDate, endDate, viewMode, selectedBrandInfo])
+
+  const targetData = useMemo(() => {
+    if (!selectedBrand) return null
+    const brandTarget = targets.find(t => t.Brand === selectedBrand)
+    if (!brandTarget) return null
+
+    const annualRevenue = brandTarget['Annual Revenue Target (USD)']
+    const avgPostsPerDay = brandTarget['Avg Posts Per Day']
+
+    // Calculate daily target
+    const dailyRevenueTarget = annualRevenue / 365
+    const dailyPostsTarget = avgPostsPerDay
+
+    // Calculate target based on date range and view mode
+    const daysInRange = Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000) + 1
+
+    return {
+      dailyRevenue: dailyRevenueTarget,
+      dailyPosts: dailyPostsTarget,
+      periodRevenue: dailyRevenueTarget * daysInRange,
+      periodPosts: dailyPostsTarget * daysInRange,
+      interactions: null, // TBD - user will add this later
+    }
+  }, [selectedBrand, targets, startDate, endDate])
 
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
@@ -159,11 +183,9 @@ export function DashboardPage() {
 
           {filteredData.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
-              <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
-              <div className="lg:col-span-2">
-                <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
-              </div>
+              <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} viewMode={viewMode} startDate={startDate} endDate={endDate} />
             </div>
           )}
         </div>

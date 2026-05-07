@@ -18,6 +18,10 @@ interface RevenueChartProps {
   data: DashboardRow[]
   prevData?: DashboardRow[]
   showComparison?: boolean
+  targetData?: { dailyRevenue: number; periodRevenue: number; interactions: null } | null
+  viewMode?: 'daily' | 'weekly' | 'monthly'
+  startDate?: Date
+  endDate?: Date
 }
 
 const toNum = (v: unknown): number => {
@@ -33,7 +37,7 @@ const SERIES = [
   { key: 'bonus_revenue', label: 'Bonus', color: '#9333EA' },
 ]
 
-export function RevenueChart({ data, prevData = [], showComparison = false }: RevenueChartProps) {
+export function RevenueChart({ data, prevData = [], showComparison = false, targetData, viewMode = 'daily', startDate, endDate }: RevenueChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -135,9 +139,6 @@ export function RevenueChart({ data, prevData = [], showComparison = false }: Re
               </div>
             )}
             </div>
-          </div>
-          <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-            <p className="text-xs font-medium text-amber-900">Latest week (Revenue data refreshed every Tuesday for previous week)</p>
           </div>
         </div>
         <div className="text-right">
