@@ -102,10 +102,12 @@ export async function renderImageOnCanvas(
 
         const logoSize = (150 * canvasWidth) / 1080
         const padding = (20 * canvasWidth) / 1080
+        const maxDimension = Math.max(logo.width || 1, logo.height || 1)
+        const scale = logoSize / maxDimension
 
         logo.set({
-          scaleX: logoSize / (logo.width || 1),
-          scaleY: logoSize / (logo.height || 1),
+          scaleX: scale,
+          scaleY: scale,
           left: canvasWidth - logoSize - padding,
           top: padding,
           originX: 'left',
