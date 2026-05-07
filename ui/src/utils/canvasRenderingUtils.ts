@@ -8,7 +8,8 @@ export async function renderImageOnCanvas(
   headline: string = '',
   subtitle: string = '',
   headlineOffset: number = 200,
-  subtitleOffset: number = 220
+  subtitleOffset: number = 220,
+  brandLogoUrl: string = ''
 ) {
   canvas.clear()
 
@@ -90,6 +91,34 @@ export async function renderImageOnCanvas(
       console.log('Gradient overlay added')
     } catch (err) {
       console.error('Gradient overlay error:', err)
+    }
+
+    // Add brand logo at top right
+    if (brandLogoUrl) {
+      try {
+        const logo = await FabricImage.fromURL(brandLogoUrl, {
+          crossOrigin: 'anonymous',
+        })
+
+        const logoSize = (150 * canvasWidth) / 1080
+        const padding = (20 * canvasWidth) / 1080
+
+        logo.set({
+          scaleX: logoSize / (logo.width || 1),
+          scaleY: logoSize / (logo.height || 1),
+          left: canvasWidth - logoSize - padding,
+          top: padding,
+          originX: 'left',
+          originY: 'top',
+          selectable: false,
+          evented: false,
+        })
+
+        canvas.add(logo)
+        console.log('Brand logo added at top right')
+      } catch (err) {
+        console.error('Brand logo error:', err)
+      }
     }
 
     // Add headline and subtitle as a grouped unit

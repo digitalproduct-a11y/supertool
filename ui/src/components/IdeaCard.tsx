@@ -97,7 +97,7 @@ export default function IdeaCard({
 
     const renderPreview = async () => {
       if (idea.photo_url) {
-        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline, idea.subtitle, TEXT_BOX_OFFSET, TEXT_BOX_OFFSET)
+        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline, idea.subtitle, TEXT_BOX_OFFSET, TEXT_BOX_OFFSET, brandLogoUrl)
       } else {
         canvas.clear()
         canvas.renderAll()
