@@ -3,13 +3,11 @@ import { useRef, useState } from 'react'
 interface DashboardHeaderProps {
   brand: string
   businessUnit: string
+  brands: { brand: string; bu: string }[]
+  onBrandChange: (brand: string) => void
   startDate: Date
   endDate: Date
   onDateRangeChange: (start: Date, end: Date) => void
-  viewMode: 'daily' | 'weekly' | 'monthly'
-  onViewModeChange: (mode: 'daily' | 'weekly' | 'monthly') => void
-  showComparison: boolean
-  onToggleComparison: () => void
 }
 
 const toInput = (d: Date) => d.toISOString().split('T')[0]
@@ -49,13 +47,11 @@ const PRESETS = [
 export function DashboardHeader({
   brand,
   businessUnit,
+  brands,
+  onBrandChange,
   startDate,
   endDate,
   onDateRangeChange,
-  viewMode,
-  onViewModeChange,
-  showComparison,
-  onToggleComparison,
 }: DashboardHeaderProps) {
   const startInputRef = useRef<HTMLInputElement>(null)
   const endInputRef = useRef<HTMLInputElement>(null)
@@ -89,13 +85,16 @@ export function DashboardHeader({
   return (
     <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2">
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        {/* Brand */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-neutral-950">{brand}</span>
-          {businessUnit && (
-            <span className="text-xs text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">{businessUnit}</span>
-          )}
-        </div>
+        {/* Brand dropdown */}
+        <select
+          value={brand}
+          onChange={(e) => onBrandChange(e.target.value)}
+          className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition"
+        >
+          {brands.map(({ brand: b }) => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
 
         <div className="flex flex-wrap gap-3 items-center">
           {/* Preset chips */}
@@ -144,34 +143,11 @@ export function DashboardHeader({
               Apply
             </button>
           </div>
-
-          {/* View mode */}
-          <div className="flex gap-1 border border-neutral-200 rounded-lg p-1">
-            {(['daily', 'weekly', 'monthly'] as const).map(mode => (
-              <button
-                key={mode}
-                onClick={() => onViewModeChange(mode)}
-                className={`px-3 py-1 rounded text-sm font-medium transition capitalize ${
-                  viewMode === mode ? 'bg-neutral-950 text-white' : 'text-neutral-700 hover:bg-neutral-100'
-                }`}
-              >
-                {mode.charAt(0).toUpperCase() + mode.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showComparison}
-              onChange={onToggleComparison}
-              className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
-            />
-            <span className="text-sm text-neutral-600 whitespace-nowrap">vs Previous Period</span>
-          </label>
         </div>
       </div>
-      <p className="text-xs text-neutral-400 mt-3">Data available from 16 Jan 2026 onwards.</p>
+      <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <p className="text-xs font-medium text-amber-900">Data available from 16 Jan 2026 onwards.</p>
+      </div>
     </div>
   )
 }
