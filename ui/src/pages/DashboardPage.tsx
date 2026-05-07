@@ -5,6 +5,7 @@ import { DashboardHeader } from '../components/DashboardHeader'
 import { RevenueChart } from '../components/RevenueChart'
 import { PostsChart } from '../components/PostsChart'
 import { InteractionsChart } from '../components/InteractionsChart'
+import { TopPostsChart } from '../components/TopPostsChart'
 import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils/dashboardUtils'
 import type { DashboardRow } from '../utils/dashboardUtils'
 
@@ -12,14 +13,15 @@ export function DashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date(); d.setDate(d.getDate() - 9); d.setHours(0,0,0,0); return d
+    const d = new Date(); d.setDate(d.getDate() - 8); d.setHours(0,0,0,0); return d
   })
   const [endDate, setEndDate] = useState<Date>(() => {
-    const d = new Date(); d.setDate(d.getDate() - 2); d.setHours(23,59,59,999); return d
+    const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(23,59,59,999); return d
   })
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily')
   const [showComparison, setShowComparison] = useState(true)
   const [showTargets, setShowTargets] = useState(true)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -42,6 +44,11 @@ export function DashboardPage() {
   }, [brands, selectedBrand])
 
   const selectedBrandInfo = brands.find(b => b.brand === selectedBrand)
+  const brandProfileId = useMemo(() => {
+    if (!selectedBrand || data.length === 0) return 0
+    const row = data.find(d => d.brand === selectedBrand)
+    return row?.profile_id || 0
+  }, [data, selectedBrand])
 
   const filteredData = useMemo(() => {
     if (!selectedBrand) return []
@@ -209,7 +216,8 @@ export function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
               <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
-              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
+              <TopPostsChart brand={selectedBrand || ''} profileId={brandProfileId} />
             </div>
           )}
         </div>

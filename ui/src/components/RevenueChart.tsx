@@ -43,6 +43,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const metricsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -89,16 +90,26 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
     }
   })
 
-  const total = chartData.reduce(
-    (sum, row) => sum + row.photo_revenue + row.video_revenue + row.story_revenue + row.text_link_revenue + row.bonus_revenue,
-    0
-  )
+  const totals = {
+    photo_revenue: chartData.reduce((sum, row) => sum + (active.has('photo_revenue') ? row.photo_revenue : 0), 0),
+    video_revenue: chartData.reduce((sum, row) => sum + (active.has('video_revenue') ? row.video_revenue : 0), 0),
+    story_revenue: chartData.reduce((sum, row) => sum + (active.has('story_revenue') ? row.story_revenue : 0), 0),
+    text_link_revenue: chartData.reduce((sum, row) => sum + (active.has('text_link_revenue') ? row.text_link_revenue : 0), 0),
+    bonus_revenue: chartData.reduce((sum, row) => sum + (active.has('bonus_revenue') ? row.bonus_revenue : 0), 0),
+  }
+  const total = Object.values(totals).reduce((sum, v) => sum + v, 0)
 
-  const prevTotal = prevData.reduce(
-    (sum, row) => sum + toNum(row.photo_revenue) + toNum(row.video_revenue) + toNum(row.story_revenue) + toNum(row.text_link_revenue) + toNum(row.bonus_revenue),
-    0
-  )
+  const prevTotals = {
+    photo_revenue: prevData.reduce((sum, row) => sum + (active.has('photo_revenue') ? toNum(row.photo_revenue) : 0), 0),
+    video_revenue: prevData.reduce((sum, row) => sum + (active.has('video_revenue') ? toNum(row.video_revenue) : 0), 0),
+    story_revenue: prevData.reduce((sum, row) => sum + (active.has('story_revenue') ? toNum(row.story_revenue) : 0), 0),
+    text_link_revenue: prevData.reduce((sum, row) => sum + (active.has('text_link_revenue') ? toNum(row.text_link_revenue) : 0), 0),
+    bonus_revenue: prevData.reduce((sum, row) => sum + (active.has('bonus_revenue') ? toNum(row.bonus_revenue) : 0), 0),
+  }
+  const prevTotal = Object.values(prevTotals).reduce((sum, v) => sum + v, 0)
   const delta = showComparison && prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : null
+
+  const getDelta = (current: number, prev: number) => showComparison && prev > 0 ? ((current - prev) / prev) * 100 : null
 
   const allSelected = active.size === SERIES.length
   const label = allSelected ? 'All types' : `${active.size} selected`
@@ -111,8 +122,8 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
 
   return (
     <div className="bg-white rounded-2xl shadow p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div>
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-neutral-950">REVENUE (USD)</h2>
             <div ref={ref} className="relative">
@@ -149,16 +160,54 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide">Total</p>
-          <p className="text-lg font-semibold text-neutral-950">${total.toFixed(2)}</p>
-          {showComparison && (
-            delta !== null
-              ? <p className={`text-xs font-medium mt-0.5 ${delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
-                  {delta > 0 ? '↑' : delta < 0 ? '↓' : '='} {Math.abs(delta).toFixed(1)}% vs prev
-                </p>
-              : <p className="text-xs text-neutral-400 mt-0.5">— vs prev</p>
-          )}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 justify-center">
+            <button
+              onClick={() => {
+                const container = metricsRef.current
+                if (container) container.scrollBy({ left: -200, behavior: 'smooth' })
+              }}
+              className="text-neutral-400 hover:text-neutral-600 flex-shrink-0"
+            >
+              ←
+            </button>
+            <div ref={metricsRef} className="flex gap-8 overflow-x-auto px-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="text-center flex-shrink-0">
+                <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Total</p>
+                <p className="text-lg font-semibold text-neutral-950">${total.toFixed(2)}</p>
+                {showComparison && (
+                  delta !== null
+                    ? <p className={`text-xs font-medium ${delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
+                        {delta > 0 ? '↑' : delta < 0 ? '↓' : '='} {Math.abs(delta).toFixed(1)}%
+                      </p>
+                    : <p className="text-xs text-neutral-400">—</p>
+                )}
+              </div>
+              {SERIES.map(s => {
+                const catDelta = getDelta(totals[s.key as keyof typeof totals], prevTotals[s.key as keyof typeof prevTotals])
+                return (
+                  <div key={s.key} className={`text-center flex-shrink-0 ${active.has(s.key) ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">{s.label}</p>
+                    <p className="text-lg font-semibold">${totals[s.key as keyof typeof totals].toFixed(2)}</p>
+                    {showComparison && catDelta !== null && (
+                      <p className={`text-xs font-medium ${catDelta > 0 ? 'text-green-600' : catDelta < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
+                        {catDelta > 0 ? '↑' : catDelta < 0 ? '↓' : '='} {Math.abs(catDelta).toFixed(1)}%
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <button
+              onClick={() => {
+                const container = metricsRef.current
+                if (container) container.scrollBy({ left: 200, behavior: 'smooth' })
+              }}
+              className="text-neutral-400 hover:text-neutral-600 flex-shrink-0"
+            >
+              →
+            </button>
+          </div>
         </div>
       </div>
 
