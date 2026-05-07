@@ -18,6 +18,10 @@ interface PostsChartProps {
   data: DashboardRow[]
   prevData?: DashboardRow[]
   showComparison?: boolean
+  targetData?: { dailyPosts: number; periodPosts: number; interactions: null } | null
+  viewMode?: 'daily' | 'weekly' | 'monthly'
+  startDate?: Date
+  endDate?: Date
 }
 
 const SERIES = [
@@ -26,7 +30,7 @@ const SERIES = [
   { key: 'text_link_posts', label: 'Text Link', color: '#0055EE' },
 ]
 
-export function PostsChart({ data, prevData = [], showComparison = false }: PostsChartProps) {
+export function PostsChart({ data, prevData = [], showComparison = false, targetData, viewMode = 'daily', startDate, endDate }: PostsChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -74,12 +78,6 @@ export function PostsChart({ data, prevData = [], showComparison = false }: Post
   const allSelected = active.size === SERIES.length
   const label = allSelected ? 'All types' : `${active.size} selected`
 
-  const latestDateStr = (() => {
-    const today = new Date()
-    const twoYago = new Date(today)
-    twoYago.setDate(twoYago.getDate() - 2)
-    return twoYago.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  })()
 
   return (
     <div className="bg-white rounded-2xl shadow p-6">
@@ -119,9 +117,6 @@ export function PostsChart({ data, prevData = [], showComparison = false }: Post
               </div>
             )}
             </div>
-          </div>
-          <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-            <p className="text-xs font-medium text-amber-900">Latest data: {latestDateStr}</p>
           </div>
         </div>
         <div className="text-right">

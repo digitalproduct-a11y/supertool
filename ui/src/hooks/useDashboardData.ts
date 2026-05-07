@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { DashboardRow } from '../utils/dashboardUtils'
 
+export interface TargetRow {
+  Brand: string
+  'Annual Revenue Target (USD)': number
+  'Avg Posts Per Day': number
+}
+
 interface CachedData {
   data: DashboardRow[]
+  targets: TargetRow[]
   lastUpdated: string
 }
 
@@ -22,6 +29,21 @@ export function useDashboardData() {
     } catch {
       console.log('Cache corrupted, clearing')
       localStorage.removeItem(STORAGE_KEY)
+    }
+    return []
+  })
+  const [targets, setTargets] = useState<TargetRow[]>(() => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachedData
+        if (Array.isArray(parsed.targets)) {
+          console.log('Loaded targets from cache:', parsed.targets.length, 'brands')
+          return parsed.targets
+        }
+      }
+    } catch {
+      return []
     }
     return []
   })
@@ -45,7 +67,7 @@ export function useDashboardData() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
       let result = await response.json() as unknown
-      console.log('Webhook response parsed:', typeof result, 'keys:', Object.keys(result as any))
+      console.log('Webhook response parsed:', typeof result)
 
       // If result is a string (stringified JSON), parse it
       if (typeof result === 'string') {
@@ -53,40 +75,46 @@ export function useDashboardData() {
         result = JSON.parse(result)
       }
 
-      // Unwrap n8n response formats:
-      // - raw array: DashboardRow[]
-      // - wrapped object: { data: DashboardRow[], lastUpdated: string }
-      // - n8n items array: [{ data: DashboardRow[], lastUpdated: string }]
+      // New format: [{ targets: [{json: {data: [...]}}], data: [{json: {data: [...]}}], ... }]
       let dataArray: DashboardRow[]
-      let unwrapped = result
+      let targetsArray: TargetRow[]
 
-      // n8n items array: [{ data: [...], lastUpdated: ... }]
-      if (Array.isArray(unwrapped) && unwrapped.length === 1 && unwrapped[0] != null && 'data' in (unwrapped[0] as object)) {
-        unwrapped = unwrapped[0]
-      }
+      if (Array.isArray(result) && result.length > 0 && result[0] != null) {
+        const responseItem = result[0] as any
 
-      if (Array.isArray(unwrapped)) {
-        dataArray = unwrapped as DashboardRow[]
-      } else if (typeof unwrapped === 'object' && unwrapped !== null && 'data' in unwrapped) {
-        const inner = (unwrapped as { data: unknown }).data
-        if (Array.isArray(inner)) {
-          dataArray = inner as DashboardRow[]
+        // Extract targets from response[0].targets[0].json.data
+        if (responseItem.targets && Array.isArray(responseItem.targets) && responseItem.targets[0]?.json?.data) {
+          targetsArray = responseItem.targets[0].json.data as TargetRow[]
+          console.log('Extracted targets:', targetsArray.length, 'brands')
         } else {
-          throw new Error(`Expected data to be array but got ${typeof inner}`)
+          targetsArray = []
+        }
+
+        // Extract and flatten data from response[0].data[...].json.data
+        if (responseItem.data && Array.isArray(responseItem.data)) {
+          dataArray = responseItem.data.flatMap((item: any) => {
+            if (item?.json?.data && Array.isArray(item.json.data)) {
+              return item.json.data
+            }
+            return []
+          }) as DashboardRow[]
+          console.log('Extracted engagement data:', dataArray.length, 'rows')
+        } else {
+          throw new Error('Response missing data array')
         }
       } else {
-        throw new Error(`Unrecognised response format: ${JSON.stringify(unwrapped).slice(0, 100)}`)
+        throw new Error(`Unrecognised response format: ${JSON.stringify(result).slice(0, 100)}`)
       }
 
-      console.log('Using data with', dataArray.length, 'rows')
-
       setData(dataArray)
+      setTargets(targetsArray)
       const updated = new Date()
       setLastUpdated(updated)
 
       // Cache in localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         data: dataArray,
+        targets: targetsArray,
         lastUpdated: updated.toISOString(),
       }))
     } catch (err) {
@@ -105,6 +133,7 @@ export function useDashboardData() {
 
   return {
     data,
+    targets,
     loading,
     error,
     lastUpdated,
