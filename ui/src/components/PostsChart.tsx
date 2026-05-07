@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts'
 import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
 import type { DashboardRow } from '../utils/dashboardUtils'
@@ -19,6 +20,7 @@ interface PostsChartProps {
   prevData?: DashboardRow[]
   showComparison?: boolean
   targetData?: { dailyPosts: number; periodPosts: number; interactions: null } | null
+  showTargets?: boolean
   viewMode?: 'daily' | 'weekly' | 'monthly'
   startDate?: Date
   endDate?: Date
@@ -30,7 +32,7 @@ const SERIES = [
   { key: 'text_link_posts', label: 'Text Link', color: '#0055EE' },
 ]
 
-export function PostsChart({ data, prevData = [], showComparison = false, targetData, viewMode = 'daily', startDate, endDate }: PostsChartProps) {
+export function PostsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate }: PostsChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -77,6 +79,11 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
 
   const allSelected = active.size === SERIES.length
   const label = allSelected ? 'All types' : `${active.size} selected`
+
+  // Calculate Y-axis domain to include target line
+  const targetValue = showTargets && targetData ? targetData.postsTarget : 0
+  const maxValue = Math.max(total > 0 ? total : 0, targetValue)
+  const yAxisDomain = [0, Math.ceil(maxValue * 1.1)]
 
 
   return (
@@ -144,6 +151,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
           <YAxis
             tick={{ fontSize: 11 }}
             tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K` : String(v)}
+            domain={yAxisDomain}
           />
           <Tooltip
             content={({ active: a, payload, label }) => {
@@ -180,6 +188,15 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
             }}
           />
           <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
+          {showTargets && targetData && (
+            <ReferenceLine
+              y={targetData.postsTarget}
+              stroke="#ef4444"
+              strokeDasharray="5 5"
+              strokeWidth={2}
+              label={{ value: targetData.targetLabel, position: 'right', fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
+            />
+          )}
           {SERIES.map(s => (
             <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
           ))}
