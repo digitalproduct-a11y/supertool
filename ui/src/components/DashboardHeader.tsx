@@ -163,7 +163,11 @@ export function DashboardHeader({
 
   const handleApply = () => {
     if (tempStart < tempEnd) {
-      onDateRangeChange(tempStart, tempEnd)
+      const start = new Date(tempStart)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(tempEnd)
+      end.setHours(23, 59, 59, 999)
+      onDateRangeChange(start, end)
       setPickerOpen(false)
     }
   }
