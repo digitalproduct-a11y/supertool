@@ -2,14 +2,8 @@ import { useState } from 'react'
 import type { TrendingTopic } from '../hooks/useEngagementPhotos'
 
 const POST_TYPES = [
-  { id: 'challenge', label: 'Challenge' },
+  { id: 'quick_news', label: 'Quick News' },
   { id: 'debate', label: 'Debate' },
-  { id: 'prediction', label: 'Prediction' },
-  { id: 'rate_it', label: 'Rate It' },
-  { id: 'this_or_that', label: 'This or That' },
-  { id: 'stat_drop', label: 'Stat Drop' },
-  { id: 'agree_or_disagree', label: 'Agree or Disagree' },
-  { id: 'quote', label: 'Quote' },
 ]
 
 interface TopicSelection {
