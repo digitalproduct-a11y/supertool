@@ -213,7 +213,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
               stroke="#ef4444"
               strokeDasharray="5 5"
               strokeWidth={2}
-              label={{ value: `${targetData.targetLabel}: $${targetData.revenueTarget.toFixed(2)} USD`, position: 'right', fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
+              label={{ value: `${targetData.targetLabel}: $${targetData.revenueTarget.toFixed(2)} USD`, position: 'insideBottomLeft', offset: 5, fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
             />
           )}
           {SERIES.map(s => (
