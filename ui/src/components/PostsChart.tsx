@@ -32,6 +32,21 @@ const SERIES = [
   { key: 'text_link_posts', label: 'Text Link', color: '#0055EE' },
 ]
 
+const TargetLabel = ({ x, y, value }: any) => {
+  const text = value
+  const textWidth = text.length * 6
+  const boxWidth = textWidth + 12
+  const boxHeight = 24
+  return (
+    <g>
+      <rect x={x} y={y - boxHeight / 2} width={boxWidth} height={boxHeight} fill="#dc2626" rx="4" />
+      <text x={x + 6} y={y + 4} fill="white" fontSize={12} fontWeight="bold">
+        {text}
+      </text>
+    </g>
+  )
+}
+
 export function PostsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate }: PostsChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
@@ -195,7 +210,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
               stroke="#ef4444"
               strokeDasharray="5 5"
               strokeWidth={2}
-              label={{ value: `${targetData.targetLabel}: ${Math.round(targetData.postsTarget)} posts`, position: 'insideBottomLeft', offset: 5, fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
+              label={<TargetLabel value={`${targetData.targetLabel}: ${Math.round(targetData.postsTarget)} posts`} />}
             />
           )}
           {SERIES.map(s => (
