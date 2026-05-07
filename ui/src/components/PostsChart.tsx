@@ -29,7 +29,7 @@ interface PostsChartProps {
 const SERIES = [
   { key: 'photo_posts', label: 'Photo', color: '#FF3FBF' },
   { key: 'video_posts', label: 'Video', color: '#00E5D4' },
-  { key: 'text_link_posts', label: 'Text Link', color: '#0055EE' },
+  { key: 'text_link_posts', label: 'Text Link', color: '#F05A35' },
 ]
 
 export function PostsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate }: PostsChartProps) {
