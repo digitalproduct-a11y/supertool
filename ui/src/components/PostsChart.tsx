@@ -117,6 +117,13 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
               </button>
             {open && (
               <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 min-w-[140px]">
+                <button
+                  onClick={() => setActive(new Set(SERIES.map(s => s.key)))}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-neutral-50 transition text-neutral-700 font-medium"
+                >
+                  Select All
+                </button>
+                <div className="border-t border-neutral-100" />
                 {SERIES.map(s => (
                   <button
                     key={s.key}
@@ -134,6 +141,16 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
                       )}
                     </span>
                     <span className="text-neutral-700">{s.label}</span>
+                  </button>
+                ))}
+                <div className="border-t border-neutral-100" />
+                {SERIES.map(s => (
+                  <button
+                    key={`only-${s.key}`}
+                    onClick={() => setActive(new Set([s.key]))}
+                    className="w-full px-3 py-2 text-xs hover:bg-neutral-50 transition text-neutral-600 text-left"
+                  >
+                    Only {s.label}
                   </button>
                 ))}
               </div>
