@@ -61,9 +61,9 @@ export function useEngagementPhotos() {
     }
   }
 
-  const bulkSearchPhotos = async (keywords: Array<{ player: string; club: string }>) => {
+  const bulkSearchPhotos = async (keywords: Array<{ player: string; club: string }>, webhookUrlOverride?: string) => {
     try {
-      const webhookUrl = import.meta.env.VITE_CLOUDINARY_SEARCH_WEBHOOK_URL
+      const webhookUrl = webhookUrlOverride || import.meta.env.VITE_CLOUDINARY_SEARCH_WEBHOOK_URL
       if (!webhookUrl) {
         throw new Error('Photo search webhook URL not configured')
       }
@@ -148,8 +148,8 @@ export function useEngagementPhotos() {
 
         // Fetch photos based on topic type
         if (topic === 'badminton') {
-          // For badminton, search by 'Badminton' tag only
-          await bulkSearchPhotos([{ player: 'Badminton', club: '' }])
+          // For badminton, use dedicated webhook that searches by 'Badminton' tag
+          await bulkSearchPhotos([{ player: 'Badminton', club: '' }], import.meta.env.VITE_BADMINTON_PHOTOS_WEBHOOK_URL)
         } else {
           // For EPL/UCL, extract unique player/club combos
           console.log('Ideas for bulk search:', limitedIdeas)
