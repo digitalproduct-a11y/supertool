@@ -19,10 +19,9 @@ export function DashboardPage() {
     const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(23,59,59,999); return d
   })
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily')
-  const [compareMode, setCompareMode] = useState<'none' | 'previous-period' | 'previous-month'>('none')
+  const [showComparison, setShowComparison] = useState(false)
   const [showTargets, setShowTargets] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [compareDropdownOpen, setCompareDropdownOpen] = useState(false)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -44,19 +43,6 @@ export function DashboardPage() {
     }
   }, [brands, selectedBrand])
 
-  // Close compare dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (!target.closest('[data-compare-dropdown]')) {
-        setCompareDropdownOpen(false)
-      }
-    }
-    if (compareDropdownOpen) {
-      document.addEventListener('mousedown', handler)
-      return () => document.removeEventListener('mousedown', handler)
-    }
-  }, [compareDropdownOpen])
 
   const selectedBrandInfo = brands.find(b => b.brand === selectedBrand)
   const brandProfileId = useMemo(() => {
@@ -75,43 +61,16 @@ export function DashboardPage() {
   }, [data, selectedBrand, startDate, endDate, viewMode, selectedBrandInfo])
 
   const prevFilteredData = useMemo(() => {
-    if (compareMode === 'none' || !selectedBrand) return []
-
-    let prevStart: Date
-    let prevEnd: Date
-
-    if (compareMode === 'previous-period') {
-      const duration = endDate.getTime() - startDate.getTime() + 86400000
-      prevEnd = new Date(startDate.getTime() - 86400000)
-      prevStart = new Date(startDate.getTime() - duration)
-    } else {
-      // previous-month
-      prevStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, startDate.getDate(), 0, 0, 0, 0)
-      prevEnd = new Date(endDate.getFullYear(), endDate.getMonth() - 1, endDate.getDate(), 23, 59, 59, 999)
-    }
-
+    if (!showComparison || !selectedBrand) return []
+    const duration = endDate.getTime() - startDate.getTime() + 86400000
+    const prevEnd = new Date(startDate.getTime() - 86400000)
+    const prevStart = new Date(startDate.getTime() - duration)
     const bu = selectedBrandInfo?.bu || ''
     const filtered = filterDashboardData(data, selectedBrand, prevStart, prevEnd, bu)
     if (viewMode === 'weekly') return aggregateByWeek(filtered) as DashboardRow[]
     if (viewMode === 'monthly') return aggregateByMonth(filtered) as DashboardRow[]
     return filtered
-  }, [compareMode, data, selectedBrand, startDate, endDate, viewMode, selectedBrandInfo])
-
-  const getComparisonDateRange = () => {
-    if (compareMode === 'none') return null
-    const toInput = (d: Date) => d.toISOString().split('T')[0]
-
-    if (compareMode === 'previous-period') {
-      const duration = endDate.getTime() - startDate.getTime() + 86400000
-      const prevEnd = new Date(startDate.getTime() - 86400000)
-      const prevStart = new Date(startDate.getTime() - duration)
-      return `${toInput(prevStart)} to ${toInput(prevEnd)}`
-    } else {
-      const prevStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, startDate.getDate(), 0, 0, 0, 0)
-      const prevEnd = new Date(endDate.getFullYear(), endDate.getMonth() - 1, endDate.getDate(), 23, 59, 59, 999)
-      return `${toInput(prevStart)} to ${toInput(prevEnd)}`
-    }
-  }
+  }, [showComparison, data, selectedBrand, startDate, endDate, viewMode, selectedBrandInfo])
 
   const targetData = useMemo(() => {
     if (!selectedBrand) return null
@@ -213,66 +172,15 @@ export function DashboardPage() {
                 ))}
               </div>
 
-              <div className="relative" data-compare-dropdown>
-                <button
-                  onClick={() => setCompareDropdownOpen(!compareDropdownOpen)}
-                  disabled={viewMode !== 'daily'}
-                  className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  Compare
-                  <svg className={`w-3 h-3 transition ${compareDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                {compareDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-[280px]">
-                    <button
-                      onClick={() => {
-                        setCompareMode('none')
-                        setCompareDropdownOpen(false)
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${compareMode === 'none' ? 'bg-neutral-100' : ''}`}
-                    >
-                      <span className="font-medium text-neutral-700">None</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCompareMode('previous-period')
-                        setCompareDropdownOpen(false)
-                      }}
-                      className={`w-full flex flex-col px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${compareMode === 'previous-period' ? 'bg-neutral-100' : ''}`}
-                    >
-                      <span className="font-medium text-neutral-700">Previous Period</span>
-                      <span className="text-neutral-500 text-xs">
-                        {(() => {
-                          const duration = endDate.getTime() - startDate.getTime() + 86400000
-                          const prevEnd = new Date(startDate.getTime() - 86400000)
-                          const prevStart = new Date(startDate.getTime() - duration)
-                          const toInput = (d: Date) => d.toISOString().split('T')[0]
-                          return `${toInput(prevStart)} to ${toInput(prevEnd)}`
-                        })()}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCompareMode('previous-month')
-                        setCompareDropdownOpen(false)
-                      }}
-                      className={`w-full flex flex-col px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${compareMode === 'previous-month' ? 'bg-neutral-100' : ''}`}
-                    >
-                      <span className="font-medium text-neutral-700">Previous Month</span>
-                      <span className="text-neutral-500 text-xs">
-                        {(() => {
-                          const prevStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, startDate.getDate(), 0, 0, 0, 0)
-                          const prevEnd = new Date(endDate.getFullYear(), endDate.getMonth() - 1, endDate.getDate(), 23, 59, 59, 999)
-                          const toInput = (d: Date) => d.toISOString().split('T')[0]
-                          return `${toInput(prevStart)} to ${toInput(prevEnd)}`
-                        })()}
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showComparison}
+                  onChange={() => setShowComparison(v => !v)}
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
+                />
+                <span className="text-sm text-neutral-600 whitespace-nowrap">vs Previous Period</span>
+              </label>
 
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
@@ -307,9 +215,9 @@ export function DashboardPage() {
 
           {filteredData.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={compareMode !== 'none'} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
-              <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={compareMode !== 'none'} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
-              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={compareMode !== 'none'} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
+              <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
               <TopPostsChart brand={selectedBrand || ''} profileId={brandProfileId} />
             </div>
           )}

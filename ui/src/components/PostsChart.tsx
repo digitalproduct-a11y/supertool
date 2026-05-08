@@ -38,7 +38,6 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
-  const compareCols = showComparison ? SERIES.map(s => `${s.key}_compare`) : []
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -65,29 +64,16 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
     )
   }
 
-  const chartData = data.map((row, idx) => {
-    const base = {
-      date: row.date,
-      daysInfo: (row as any).daysInfo as string | undefined,
-      weekRange: (row as any).weekRange as string | undefined,
-      photo_posts: row.photo_posts,
-      video_posts: row.video_posts,
-      text_link_posts: row.text_link_posts,
-      bar_total: row.total_posts,
-      _anchor: 0.001,
-    }
-
-    if (showComparison && prevData[idx]) {
-      const prevRow = prevData[idx]
-      return {
-        ...base,
-        photo_posts_compare: prevRow.photo_posts,
-        video_posts_compare: prevRow.video_posts,
-        text_link_posts_compare: prevRow.text_link_posts,
-      }
-    }
-    return base
-  })
+  const chartData = data.map((row) => ({
+    date: row.date,
+    daysInfo: (row as any).daysInfo as string | undefined,
+    weekRange: (row as any).weekRange as string | undefined,
+    photo_posts: row.photo_posts,
+    video_posts: row.video_posts,
+    text_link_posts: row.text_link_posts,
+    bar_total: row.total_posts,
+    _anchor: 0.001,
+  }))
 
   const totals = {
     photo_posts: data.reduce((sum, row) => sum + (active.has('photo_posts') ? row.photo_posts : 0), 0),
@@ -254,10 +240,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
             content={({ active: a, payload, label }) => {
               if (!a || !payload?.length) return null
               const items = payload.filter(p => p.dataKey !== '_anchor' && p.dataKey !== 'bar_total')
-              const currentItems = items.filter(p => !p.dataKey?.toString().includes('_compare'))
-              const compareItems = items.filter(p => p.dataKey?.toString().includes('_compare'))
-              const currentTotal = currentItems.reduce((s, p) => s + (Number(p.value) || 0), 0)
-              const compareTotal = compareItems.reduce((s, p) => s + (Number(p.value) || 0), 0)
+              const tooltipTotal = items.reduce((s, p) => s + (Number(p.value) || 0), 0)
               return (
                 <div className="bg-white border border-neutral-200 rounded-lg shadow p-3 text-xs">
                   <p className="font-semibold text-neutral-700 mb-1">{formatDateLabel(String(label))}</p>
@@ -273,23 +256,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
                       {payload[0].payload.daysInfo}
                     </p>
                   )}
-                  {compareItems.length > 0 && (
-                    <>
-                      <p className="text-neutral-600 font-medium mb-1">Compare</p>
-                      {compareItems.map(p => (
-                        <div key={p.dataKey as string} className="flex justify-between gap-4">
-                          <span style={{ color: p.color }}>{p.name.replace(' (Compare)', '')}</span>
-                          <span className="text-neutral-700">{Number(p.value)}</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between gap-4 mt-1 pt-1 border-b border-neutral-200 font-semibold text-neutral-900 mb-2">
-                        <span>Total</span>
-                        <span>{compareTotal}</span>
-                      </div>
-                    </>
-                  )}
-                  <p className="text-neutral-600 font-medium mb-1">Current</p>
-                  {currentItems.map(p => (
+                  {items.map(p => (
                     <div key={p.dataKey as string} className="flex justify-between gap-4">
                       <span style={{ color: p.color }}>{p.name}</span>
                       <span className="text-neutral-700">{Number(p.value)}</span>
@@ -297,7 +264,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
                   ))}
                   <div className="flex justify-between gap-4 mt-1 pt-1 border-t border-neutral-200 font-semibold text-neutral-900">
                     <span>Total</span>
-                    <span>{currentTotal}</span>
+                    <span>{tooltipTotal}</span>
                   </div>
                 </div>
               )
@@ -313,13 +280,10 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
               label={{ value: `${targetData.targetLabel}: ${Math.round(targetData.postsTarget)} posts`, position: 'insideBottomLeft', offset: 5, fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
             />
           )}
-          {showComparison && SERIES.map(s => (
-            <Bar key={`${s.key}_compare`} dataKey={`${s.key}_compare`} stackId="a" fill={s.color} name={`${s.label} (Compare)`} hide={!active.has(s.key)} fillOpacity={0.5} legendType="none" />
-          ))}
           {SERIES.map(s => (
-            <Bar key={s.key} dataKey={s.key} stackId="b" fill={s.color} name={s.label} hide={!active.has(s.key)} />
+            <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
           ))}
-          <Bar dataKey="_anchor" stackId="b" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
+          <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList
               dataKey="bar_total"
               content={(props: any) => {
