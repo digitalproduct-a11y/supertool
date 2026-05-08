@@ -22,6 +22,7 @@ export function DashboardPage() {
   const [compareMode, setCompareMode] = useState<'none' | 'previous-period' | 'previous-month'>('none')
   const [showTargets, setShowTargets] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [compareDropdownOpen, setCompareDropdownOpen] = useState(false)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -42,6 +43,20 @@ export function DashboardPage() {
       setSelectedBrand(brands[0].brand)
     }
   }, [brands, selectedBrand])
+
+  // Close compare dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('[data-compare-dropdown]')) {
+        setCompareDropdownOpen(false)
+      }
+    }
+    if (compareDropdownOpen) {
+      document.addEventListener('mousedown', handler)
+      return () => document.removeEventListener('mousedown', handler)
+    }
+  }, [compareDropdownOpen])
 
   const selectedBrandInfo = brands.find(b => b.brand === selectedBrand)
   const brandProfileId = useMemo(() => {
@@ -198,16 +213,63 @@ export function DashboardPage() {
                 ))}
               </div>
 
-              <select
-                value={compareMode}
-                onChange={(e) => setCompareMode(e.target.value as 'none' | 'previous-period' | 'previous-month')}
-                disabled={viewMode !== 'daily'}
-                className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="none">Compare</option>
-                <option value="previous-period">Previous Period ({getComparisonDateRange() && compareMode === 'previous-period' ? getComparisonDateRange() : '...'})</option>
-                <option value="previous-month">Previous Month ({getComparisonDateRange() && compareMode === 'previous-month' ? getComparisonDateRange() : '...'})</option>
-              </select>
+              <div className="relative" data-compare-dropdown>
+                <button
+                  onClick={() => setCompareDropdownOpen(!compareDropdownOpen)}
+                  disabled={viewMode !== 'daily'}
+                  className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Compare
+                </button>
+                {compareDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-[280px]">
+                    <button
+                      onClick={() => {
+                        setCompareMode('none')
+                        setCompareDropdownOpen(false)
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${compareMode === 'none' ? 'bg-neutral-100' : ''}`}
+                    >
+                      <span className="font-medium text-neutral-700">None</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCompareMode('previous-period')
+                        setCompareDropdownOpen(false)
+                      }}
+                      className={`w-full flex flex-col px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${compareMode === 'previous-period' ? 'bg-neutral-100' : ''}`}
+                    >
+                      <span className="font-medium text-neutral-700">Previous Period</span>
+                      <span className="text-neutral-500 text-xs">
+                        {(() => {
+                          const duration = endDate.getTime() - startDate.getTime() + 86400000
+                          const prevEnd = new Date(startDate.getTime() - 86400000)
+                          const prevStart = new Date(startDate.getTime() - duration)
+                          const toInput = (d: Date) => d.toISOString().split('T')[0]
+                          return `${toInput(prevStart)} to ${toInput(prevEnd)}`
+                        })()}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCompareMode('previous-month')
+                        setCompareDropdownOpen(false)
+                      }}
+                      className={`w-full flex flex-col px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${compareMode === 'previous-month' ? 'bg-neutral-100' : ''}`}
+                    >
+                      <span className="font-medium text-neutral-700">Previous Month</span>
+                      <span className="text-neutral-500 text-xs">
+                        {(() => {
+                          const prevStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, startDate.getDate(), 0, 0, 0, 0)
+                          const prevEnd = new Date(endDate.getFullYear(), endDate.getMonth() - 1, endDate.getDate(), 23, 59, 59, 999)
+                          const toInput = (d: Date) => d.toISOString().split('T')[0]
+                          return `${toInput(prevStart)} to ${toInput(prevEnd)}`
+                        })()}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input

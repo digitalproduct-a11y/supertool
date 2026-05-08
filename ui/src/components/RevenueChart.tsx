@@ -256,7 +256,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
       </div>
 
       <ResponsiveContainer width="100%" height={400} style={{ paddingBottom: 80 }}>
-        <ComposedChart data={chartData} margin={{ top: 20, bottom: 20 }}>
+        <ComposedChart data={chartData} margin={{ top: 20, bottom: 60, left: 0, right: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="date"
@@ -269,7 +269,10 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
             content={({ active: a, payload, label }) => {
               if (!a || !payload?.length) return null
               const items = payload.filter(p => p.dataKey !== '_anchor' && p.dataKey !== 'bar_total')
-              const tooltipTotal = items.reduce((s, p) => s + (Number(p.value) || 0), 0)
+              const currentItems = items.filter(p => !p.dataKey?.toString().includes('_compare'))
+              const compareItems = items.filter(p => p.dataKey?.toString().includes('_compare'))
+              const currentTotal = currentItems.reduce((s, p) => s + (Number(p.value) || 0), 0)
+              const compareTotal = compareItems.reduce((s, p) => s + (Number(p.value) || 0), 0)
               return (
                 <div className="bg-white border border-neutral-200 rounded-lg shadow p-3 text-xs">
                   <p className="font-semibold text-neutral-700 mb-1">{formatDateLabel(String(label))}</p>
@@ -285,7 +288,23 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
                       {payload[0].payload.daysInfo}
                     </p>
                   )}
-                  {items.map(p => (
+                  {compareItems.length > 0 && (
+                    <>
+                      <p className="text-neutral-600 font-medium mb-1">Compare</p>
+                      {compareItems.map(p => (
+                        <div key={p.dataKey as string} className="flex justify-between gap-4">
+                          <span style={{ color: p.color }}>{p.name.replace(' (Compare)', '')}</span>
+                          <span className="text-neutral-700">${(Number(p.value)).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between gap-4 mt-1 pt-1 border-b border-neutral-200 font-semibold text-neutral-900 mb-2">
+                        <span>Total</span>
+                        <span>${compareTotal.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
+                  <p className="text-neutral-600 font-medium mb-1">Current</p>
+                  {currentItems.map(p => (
                     <div key={p.dataKey as string} className="flex justify-between gap-4">
                       <span style={{ color: p.color }}>{p.name}</span>
                       <span className="text-neutral-700">${(Number(p.value)).toFixed(2)}</span>
@@ -293,7 +312,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
                   ))}
                   <div className="flex justify-between gap-4 mt-1 pt-1 border-t border-neutral-200 font-semibold text-neutral-900">
                     <span>Total</span>
-                    <span>${tooltipTotal.toFixed(2)}</span>
+                    <span>${currentTotal.toFixed(2)}</span>
                   </div>
                 </div>
               )
@@ -309,11 +328,11 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
               label={{ value: `${targetData.targetLabel}: $${targetData.revenueTarget.toFixed(2)} USD`, position: 'insideBottomLeft', offset: 5, fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }}
             />
           )}
+          {showComparison && SERIES.map(s => (
+            <Bar key={`${s.key}_compare`} dataKey={`${s.key}_compare`} stackId="a" fill={s.color} name={`${s.label} (Compare)`} hide={!active.has(s.key)} fillOpacity={0.5} legendType="none" />
+          ))}
           {SERIES.map(s => (
             <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
-          ))}
-          {showComparison && SERIES.map(s => (
-            <Bar key={`${s.key}_compare`} dataKey={`${s.key}_compare`} stackId="b" fill={s.color} name={`${s.label} (Compare)`} hide={!active.has(s.key)} fillOpacity={0.5} />
           ))}
           <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList
