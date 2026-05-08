@@ -112,16 +112,6 @@ export function TrendingSpikePage() {
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-
-  const toggleId = useCallback((id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }, [])
-
   const handleFetchTrending = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh) {
       const cached = getCachedTrendingData()
@@ -391,17 +381,14 @@ export function TrendingSpikePage() {
                 ) : (
                   <div className="space-y-3">
                     {filteredItems.map((item, idx) => {
-                      const selected = selectedIds.has(item.id)
                       return (
                       <div
                         key={`${item.id}-${idx}`}
                         onClick={() => handleGeneratePost(item)}
-                        className={`rounded-xl border overflow-hidden transition-all cursor-pointer ${
-                          selected ? 'border-neutral-400 bg-neutral-50' : 'bg-white border-neutral-100 hover:border-neutral-200 hover:shadow-sm'
-                        }`}
+                        className="rounded-xl border overflow-hidden transition-all cursor-pointer bg-white border-neutral-100 hover:border-neutral-200 hover:shadow-sm"
                       >
                         <div className="flex gap-3 p-4">
-                          {/* Thumbnail with checkbox overlay */}
+                          {/* Thumbnail */}
                           <div className="w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden relative">
                             {item.imageUrl && (
                               <img
@@ -411,19 +398,6 @@ export function TrendingSpikePage() {
                                 onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
                               />
                             )}
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); toggleId(item.id) }}
-                              className={`absolute top-1.5 left-1.5 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all shadow-sm ${
-                                selected ? 'bg-neutral-950 border-neutral-950' : 'bg-white/90 border-neutral-300 hover:border-neutral-500'
-                              }`}
-                            >
-                              {selected && (
-                                <svg className="w-2.5 h-2.5" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 12 12">
-                                  <path d="M2 6l3 3 5-5" />
-                                </svg>
-                              )}
-                            </button>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] text-neutral-400 mb-1">

@@ -7,7 +7,6 @@ import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCr
 import { COMPETITOR_BRANDS } from '../constants/rssFeedsByBrand'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import ImageUploadModal from './ImageUploadModal'
-import { encodeImage } from './GeneratePostView'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
