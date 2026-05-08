@@ -143,9 +143,11 @@ export function DashboardHeader({
   onDateRangeChange,
 }: DashboardHeaderProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [brandDropdownOpen, setBrandDropdownOpen] = useState(false)
   const [tempStart, setTempStart] = useState(startDate)
   const [tempEnd, setTempEnd] = useState(endDate)
   const pickerRef = useRef<HTMLDivElement>(null)
+  const brandRef = useRef<HTMLDivElement>(null)
 
   const appliedStart = toInput(startDate)
   const appliedEnd = toInput(endDate)
@@ -177,26 +179,47 @@ export function DashboardHeader({
       if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         setPickerOpen(false)
       }
+      if (brandRef.current && !brandRef.current.contains(e.target as Node)) {
+        setBrandDropdownOpen(false)
+      }
     }
-    if (pickerOpen) {
+    if (pickerOpen || brandDropdownOpen) {
       document.addEventListener('mousedown', handler)
       return () => document.removeEventListener('mousedown', handler)
     }
-  }, [pickerOpen])
+  }, [pickerOpen, brandDropdownOpen])
 
   return (
     <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2">
       <div className="flex flex-wrap gap-3 items-center justify-between">
         {/* Brand dropdown */}
-        <select
-          value={brand}
-          onChange={(e) => onBrandChange(e.target.value)}
-          className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition"
-        >
-          {brands.map(({ brand: b }) => (
-            <option key={b} value={b}>{b}</option>
-          ))}
-        </select>
+        <div className="relative" ref={brandRef}>
+          <button
+            onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}
+            className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition flex items-center gap-2"
+          >
+            {brand}
+            <svg className={`w-3 h-3 transition ${brandDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {brandDropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-[180px]">
+              {brands.map(({ brand: b }) => (
+                <button
+                  key={b}
+                  onClick={() => {
+                    onBrandChange(b)
+                    setBrandDropdownOpen(false)
+                  }}
+                  className={`w-full px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${brand === b ? 'bg-neutral-100' : ''}`}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-3 items-center">
           {/* Preset chips */}
