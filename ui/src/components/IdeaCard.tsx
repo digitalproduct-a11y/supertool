@@ -162,19 +162,6 @@ export default function IdeaCard({
         </div>
 
         {/* Context, Player & Club Reference */}
-        <p className="text-xs text-gray-500 mb-4">
-          {idea.context && (
-            <>
-              Context: <span className="font-medium text-gray-700">{idea.context}</span>{' | '}
-            </>
-          )}
-          Reference player: <span className="font-medium text-gray-700">{idea.player}</span>
-          {idea.club && (
-            <>
-              {' | '}Club: <span className="font-medium text-gray-700">{idea.club}</span>
-            </>
-          )}
-        </p>
 
         {/* Live Preview */}
         <div className={`w-full max-w-sm rounded-xl border-2 overflow-hidden bg-gray-100 mb-4 flex items-center justify-center`}>
@@ -278,15 +265,16 @@ export default function IdeaCard({
             <button
               onClick={async () => {
                 try {
+                  const fileBase = idea.headline.trim().replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_') || `${downloadPrefix}-${idea.type}`
                   if (useFabricCanvas && canvasRef.current) {
-                    canvasRef.current.downloadAsPng(`${downloadPrefix}-${idea.type}.png`)
+                    canvasRef.current.downloadAsPng(`${fileBase}.png`)
                   } else {
                     const res = await fetch(previewUrl)
                     const blob = await res.blob()
                     const url = window.URL.createObjectURL(blob)
                     const link = document.createElement('a')
                     link.href = url
-                    link.download = `${downloadPrefix}-${idea.type}.jpg`
+                    link.download = `${fileBase}.jpg`
                     link.click()
                     window.URL.revokeObjectURL(url)
                   }

@@ -40,7 +40,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
       // For badminton, fetch from backend API (which calls Cloudinary securely)
       setIsLoadingPhotos(true)
       try {
-        const response = await fetch('/api/cloudinary/badminton-images')
+        const response = await fetch('http://localhost:3000/api/cloudinary/badminton-images')
 
         if (!response.ok) {
           console.warn('Failed to fetch badminton images from API, falling back to cached photos')
@@ -113,7 +113,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
   }
 
   const handleUpload = async () => {
-    if (!uploadFile || !tags.trim()) return
+    if (!uploadFile) return
     setIsUploading(true)
     setUploadError(null)
 
@@ -259,20 +259,6 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
                 </div>
               )}
 
-              {/* Tags Input */}
-              {uploadFile && (
-                <div className="pt-6 border-t border-gray-200 mt-4">
-                  <label className="block text-xs font-medium text-gray-700 mb-2 uppercase">Tags</label>
-                  <input
-                    type="text"
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                    placeholder="e.g., Mohamed Salah, Liverpool"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Separate multiple tags with commas</p>
-                </div>
-              )}
             </div>
           )}
 
@@ -309,7 +295,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
                 handleUpload()
               }
             }}
-            disabled={!selectedPhotoId && (!uploadFile || isUploading || !tags.trim())}
+            disabled={!selectedPhotoId && (!uploadFile || isUploading)}
             className="flex-1 px-4 py-2 bg-neutral-950 hover:bg-neutral-800 disabled:bg-gray-300 disabled:text-gray-400 text-white rounded-lg text-xs font-medium transition active:scale-[0.98] flex items-center justify-center gap-2"
           >
             {isUploading ? (
