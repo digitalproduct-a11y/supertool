@@ -220,8 +220,8 @@ export function DashboardPage() {
                   className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   Compare
-                  <svg className={`w-4 h-4 transition ${compareDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  <svg className={`w-3 h-3 transition ${compareDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
                 {compareDropdownOpen && (
