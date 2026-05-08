@@ -94,7 +94,8 @@ export function useEngagementPhotos() {
     brand: string,
     language: string,
     selectedTopics: Array<TrendingTopic & { post_type: string }>,
-    webhookUrl?: string
+    webhookUrl?: string,
+    topic?: string
   ) => {
     setIsLoading(true)
     setError(null)
@@ -145,17 +146,22 @@ export function useEngagementPhotos() {
         }))
         setIdeas(limitedIdeas)
 
-        // Extract unique player/club combos and fetch all photos at once (for EPL/UCL)
-        console.log('Ideas for bulk search:', limitedIdeas)
-        const uniqueKeywords = new Set(
-          limitedIdeas.map((idea: any) => JSON.stringify({ player: idea.player || '', club: idea.club || '' }))
-        )
-        const keywords: Array<{ player: string; club: string }> = Array.from(uniqueKeywords).map(
-          (str: unknown) => JSON.parse(str as string) as { player: string; club: string }
-        )
-        console.log('Keywords for bulk search:', keywords)
-
-        await bulkSearchPhotos(keywords)
+        // Fetch photos based on topic type
+        if (topic === 'badminton') {
+          // For badminton, search by 'Badminton' tag only
+          await bulkSearchPhotos([{ player: 'Badminton', club: '' }])
+        } else {
+          // For EPL/UCL, extract unique player/club combos
+          console.log('Ideas for bulk search:', limitedIdeas)
+          const uniqueKeywords = new Set(
+            limitedIdeas.map((idea: any) => JSON.stringify({ player: idea.player || '', club: idea.club || '' }))
+          )
+          const keywords: Array<{ player: string; club: string }> = Array.from(uniqueKeywords).map(
+            (str: unknown) => JSON.parse(str as string) as { player: string; club: string }
+          )
+          console.log('Keywords for bulk search:', keywords)
+          await bulkSearchPhotos(keywords)
+        }
       } else {
         console.error('Invalid response structure:', data)
         throw new Error(`Invalid response: ${JSON.stringify(data).slice(0, 100)}`)

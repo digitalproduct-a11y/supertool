@@ -118,7 +118,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     // For topics without trending topics (e.g., badminton), generate directly
     if (!config.trendingTopicsWebhookEnvVar) {
       setStage('review')
-      await generate(selectedBrand, 'en', [], webhookUrl)
+      await generate(selectedBrand, 'en', [], webhookUrl, topic)
       setCurrentLoadingStep(0)
       setLoadingMessage(config.loadingQuotes[0])
       return
@@ -141,7 +141,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       post_type: selections.find((s) => s.topicId === topic.id)?.postType || '',
     }))
     setStage('review')
-    await generate(selectedBrand, 'en', topicsWithTypes, webhookUrl)
+    await generate(selectedBrand, 'en', topicsWithTypes, webhookUrl, topic)
     setCurrentLoadingStep(0)
     setLoadingMessage(config.loadingQuotes[0])
   }

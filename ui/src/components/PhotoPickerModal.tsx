@@ -13,7 +13,6 @@ interface PhotoPickerModalProps {
 export default function PhotoPickerModal({ playerName, club, onSelect, onClose, cachedPhotos, uploadPreset, topic }: PhotoPickerModalProps) {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [photos, setPhotos] = useState<any[]>([])
-  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -22,54 +21,15 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
   const [showUploadSection, setShowUploadSection] = useState(false)
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null)
 
-  // Fetch all images from Cloudinary badminton folder
+  // Load photos from cache based on topic
   useEffect(() => {
-    const fetchCloudinaryPhotos = async () => {
-      if (topic !== 'badminton') {
-        // For non-badminton topics, use cached photos
-        if (!cachedPhotos) {
-          setPhotos([])
-          return
-        }
-        const cacheKey = playerName + (club || '')
-        const cachedPhotoList = cachedPhotos[cacheKey] || []
-        setPhotos(cachedPhotoList)
-        return
-      }
-
-      // For badminton, fetch from backend API (which calls Cloudinary securely)
-      setIsLoadingPhotos(true)
-      try {
-        const response = await fetch('http://localhost:3000/api/cloudinary/badminton-images')
-
-        if (!response.ok) {
-          console.warn('Failed to fetch badminton images from API, falling back to cached photos')
-          const cacheKey = playerName + (club || '')
-          const cachedPhotoList = cachedPhotos?.[cacheKey] || []
-          setPhotos(cachedPhotoList)
-          setIsLoadingPhotos(false)
-          return
-        }
-
-        const data = await response.json()
-        const cloudinaryPhotos = (data.resources || []).map((resource: any) => ({
-          public_id: resource.public_id,
-          secure_url: resource.secure_url,
-          url: resource.secure_url
-        }))
-        setPhotos(cloudinaryPhotos)
-      } catch (err) {
-        console.warn('Error fetching badminton images:', err)
-        // Fallback to cached photos
-        const cacheKey = playerName + (club || '')
-        const cachedPhotoList = cachedPhotos?.[cacheKey] || []
-        setPhotos(cachedPhotoList)
-      } finally {
-        setIsLoadingPhotos(false)
-      }
+    if (!cachedPhotos) {
+      setPhotos([])
+      return
     }
-
-    fetchCloudinaryPhotos()
+    // For badminton, use 'Badminton' as the generic cache key; for others, use playerName + club
+    const cacheKey = topic === 'badminton' ? 'Badminton' : playerName + (club || '')
+    setPhotos(cachedPhotos[cacheKey] || [])
   }, [topic, playerName, club, cachedPhotos])
 
   const handleFileSelect = (file: File | null) => {
@@ -78,8 +38,8 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
     if (file) {
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
-      // Pre-fill tags with player name and club
-      const defaultTags = club ? `${playerName}, ${club}` : playerName
+      // Pre-fill tags based on topic
+      const defaultTags = topic === 'badminton' ? 'Badminton' : (club ? `${playerName}, ${club}` : playerName)
       setTags(defaultTags)
       setShowUploadSection(true)
     } else {
@@ -160,15 +120,8 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Loading Photos */}
-          {isLoadingPhotos && (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-600">Loading photos...</p>
-            </div>
-          )}
-
           {/* Photos Grid */}
-          {!isLoadingPhotos && photos.length > 0 && !previewUrl && !showUploadSection && (
+          {photos.length > 0 && !previewUrl && !showUploadSection && (
             <div>
               <p className="text-xs font-medium text-gray-700 mb-3 uppercase">Your Photos</p>
               <div className="grid grid-cols-2 gap-3 mb-6">
@@ -197,7 +150,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
           )}
 
           {/* Upload Section */}
-          {!isLoadingPhotos && (photos.length === 0 || showUploadSection) && (
+          {(photos.length === 0 || showUploadSection) && (
             <div>
               {photos.length === 0 && !previewUrl && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
