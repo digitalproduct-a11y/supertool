@@ -207,7 +207,9 @@ export function TopPostsChart({ brand, profileId }: TopPostsChartProps) {
       const startStr = toInput(queryStartDate)
       const endStr = toInput(queryEndDate)
 
-      const response = await fetch(`https://astroproduct.app.n8n.cloud/webhook/analyze-trending-posts?startDate=${startStr}&endDate=${endStr}&profileId=${profileId}`, {
+      const webhookUrl = import.meta.env.VITE_ANALYZE_POSTS_WEBHOOK_URL as string | undefined
+      if (!webhookUrl) throw new Error('Webhook URL not configured')
+      const response = await fetch(`${webhookUrl}?startDate=${startStr}&endDate=${endStr}&profileId=${profileId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
