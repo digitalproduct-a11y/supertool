@@ -6,6 +6,8 @@ import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl, updateFactInImageUrl } from '../utils/cloudinary'
 import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { applyFocalCrop } from '../features/photo/cropUtils'
+import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 
 type PageState = 'idle' | 'loading' | 'result' | 'error'
 
@@ -88,6 +90,9 @@ export function QuickFactPage() {
   const [copied, setCopied] = useState(false)
   const [scheduleState, setScheduleState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showCropPicker, setShowCropPicker] = useState(false)
+  const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [cropLoading, setCropLoading] = useState(false)
 
   // Derive preview URL from committed values
   let previewImageUrl = result?.imageUrl ?? ''
@@ -120,6 +125,7 @@ export function QuickFactPage() {
       setKeyPhrase(res.keyPhrase)
       setCommittedKeyPhrase(res.keyPhrase)
       setCaption(res.caption)
+      setAdjustedImageUrl(null)
       setPageState('result')
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
@@ -127,11 +133,26 @@ export function QuickFactPage() {
     }
   }
 
+  async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
+    if (!result?.cloudinary_url) return
+    setCropLoading(true)
+    try {
+      const newUrl = await applyFocalCrop(previewImageUrl, result.cloudinary_url, cropRegion)
+      setAdjustedImageUrl(newUrl)
+      setShowCropPicker(false)
+      toast.success('Crop adjusted!')
+    } catch {
+      toast.error('Failed to adjust crop')
+    } finally {
+      setCropLoading(false)
+    }
+  }
+
   async function handleSchedule(scheduledFor: string, passcode: string) {
     if (!result) return
     setScheduleState('posting')
     const finalPasscode = passcode || getCredentials(result.brand.toLowerCase())?.passcode || ''
-    const response = await callZernioWebhook(previewImageUrl, caption, result.brand, scheduledFor, finalPasscode)
+    const response = await callZernioWebhook(adjustedImageUrl ?? previewImageUrl, caption, result.brand, scheduledFor, finalPasscode)
     if (response.status === 'AUTH_ERROR') {
       setShowScheduleModal(true)
       setScheduleState('idle')
@@ -148,7 +169,7 @@ export function QuickFactPage() {
 
   async function handleDownload() {
     try {
-      const res = await fetch(previewImageUrl)
+      const res = await fetch(adjustedImageUrl ?? previewImageUrl)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -156,7 +177,7 @@ export function QuickFactPage() {
       a.click()
       URL.revokeObjectURL(a.href)
     } catch {
-      window.open(previewImageUrl, '_blank')
+      window.open(adjustedImageUrl ?? previewImageUrl, '_blank')
     }
   }
 
@@ -279,6 +300,15 @@ export function QuickFactPage() {
               />,
               document.body
             )}
+            {showCropPicker && result.cloudinary_url && createPortal(
+              <FabricCropPicker
+                sourceImageUrl={result.cloudinary_url}
+                aspectRatio={1080 / 1350}
+                onDone={handleCropDone}
+                onCancel={() => setShowCropPicker(false)}
+              />,
+              document.body
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
 
@@ -286,12 +316,25 @@ export function QuickFactPage() {
               <div className="lg:self-start lg:sticky lg:top-6">
                 <div className="bg-neutral-50 rounded-2xl overflow-hidden border border-gray-200 aspect-[4/5] w-full shadow-[0_2px_24px_rgba(0,0,0,0.07)]">
                   <img
-                    src={previewImageUrl}
+                    src={adjustedImageUrl ?? previewImageUrl}
                     alt="Quick fact post preview"
                     className="w-full h-full object-cover"
                     onError={e => { (e.target as HTMLImageElement).src = '' }}
                   />
                 </div>
+
+                {result.cloudinary_url && (
+                  <button
+                    onClick={() => setShowCropPicker(true)}
+                    disabled={cropLoading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 mt-3"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {cropLoading ? 'Adjusting...' : 'Adjust Image'}
+                  </button>
+                )}
 
                 {/* Caption */}
                 <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4 mt-3">

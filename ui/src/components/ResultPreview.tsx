@@ -6,8 +6,10 @@ import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
+import { applyFocalCrop } from '../features/photo/cropUtils'
 import ImageUploadModal from './ImageUploadModal'
 import { ScheduleModal } from './ScheduleModal'
+import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 
 interface ResultPreviewProps {
@@ -33,6 +35,9 @@ export function ResultPreview({
   const [aiImageRemoved, setAiImageRemoved] = useState(false)
   const [replacementAiPhoto, setReplacementAiPhoto] = useState<File | null>(null)
   const [replacementPreviewUrl, setReplacementPreviewUrl] = useState<string | null>(null)
+  const [showCropPicker, setShowCropPicker] = useState(false)
+  const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [cropLoading, setCropLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
 
@@ -58,7 +63,9 @@ export function ResultPreview({
     setAiImageRemoved(false)
     setReplacementAiPhoto(null)
     setReplacementPreviewUrl(null)
+    setAdjustedImageUrl(null)
   }, [result.imageUrl])
+
 
   // Derived preview URL: compose from base image + title
   const baseImageUrl = uploadedPublicId
@@ -68,7 +75,7 @@ export function ResultPreview({
   const previewImageUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', committedTitle)
 
   async function handleDownload() {
-    const urlToDownload = previewImageUrl || result.imageUrl
+    const urlToDownload = adjustedImageUrl || previewImageUrl || result.imageUrl
     try {
       const res = await fetch(urlToDownload)
       const blob = await res.blob()
@@ -113,6 +120,25 @@ export function ResultPreview({
     setReplacementPreviewUrl(null)
   }
 
+  async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
+    if (!result.cloudinary_url) {
+      toast.error('No cloudinary_url available')
+      return
+    }
+    setCropLoading(true)
+    try {
+      const builtUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', committedTitle)
+      const newUrl = await applyFocalCrop(builtUrl, result.cloudinary_url, cropRegion)
+      setAdjustedImageUrl(newUrl)
+      setShowCropPicker(false)
+      toast.success('Crop adjusted!')
+    } catch {
+      toast.error('Failed to adjust crop')
+    } finally {
+      setCropLoading(false)
+    }
+  }
+
   async function handlePostDraftClick(scheduleFor?: string, passcode?: string) {
     if (!onPostDraft) return
     const brand = result.brand.toLowerCase()
@@ -124,7 +150,9 @@ export function ResultPreview({
         ? buildCloudinaryUrl(uploadedPublicId, result.title || '', result.imageUrl)
         : result.imageUrl
       const latestImageUrl = updateTitleInImageUrl(latestBaseUrl, result.title || '', title)
-      const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : latestImageUrl
+      // Use adjusted crop if available, otherwise use latest computed URL
+      const finalImageUrl = adjustedImageUrl || latestImageUrl
+      const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : finalImageUrl
       const allExtras = replacementAiPhoto ? [replacementAiPhoto, ...extraPhotos] : extraPhotos
       const base64Extras = allExtras.length > 0
         ? await Promise.all(allExtras.map(file => new Promise<string>((res, rej) => {
@@ -167,6 +195,15 @@ export function ResultPreview({
         />,
         document.body
       )}
+      {showCropPicker && result.cloudinary_url && createPortal(
+        <FabricCropPicker
+          sourceImageUrl={result.cloudinary_url}
+          aspectRatio={1080 / 1350}
+          onDone={handleCropDone}
+          onCancel={() => setShowCropPicker(false)}
+        />,
+        document.body
+      )}
     <div className="space-y-4">
       {showImageUploadModal && (
         <ImageUploadModal
@@ -197,7 +234,7 @@ export function ResultPreview({
         ) : (
           <>
             <img
-              src={replacementPreviewUrl || previewImageUrl}
+              src={adjustedImageUrl || replacementPreviewUrl || previewImageUrl}
               alt="Generated Facebook image"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -211,6 +248,22 @@ export function ResultPreview({
       {/* Hidden file inputs for photo upload */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplaceAiImage} />
+
+      {/* Adjust Crop button (if source image available) */}
+      {result.cloudinary_url && (
+        <div>
+          <button
+            onClick={() => setShowCropPicker(true)}
+            disabled={cropLoading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {cropLoading ? 'Adjusting...' : 'Adjust Image'}
+          </button>
+        </div>
+      )}
 
       {/* Custom image upload + Download */}
       <div className="flex gap-3">

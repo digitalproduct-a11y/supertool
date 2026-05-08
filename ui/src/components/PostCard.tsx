@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { IconUpload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
@@ -8,6 +9,8 @@ import ImageUploadModal from './ImageUploadModal'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import type { ScheduledPost, SchedulePostPayload } from '../types'
+import { applyFocalCrop } from '../features/photo/cropUtils'
+import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
 
@@ -47,6 +50,9 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
   const [isPosting, setIsPosting] = useState(false)
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
+  const [showCropPicker, setShowCropPicker] = useState(false)
+  const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [cropLoading, setCropLoading] = useState(false)
 
   // Cloudinary preview URL — only updates when user commits title (on blur)
   const previewPublicId = uploadedPublicId ?? post.photoPublicId
@@ -63,9 +69,24 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
   }
 
 
+  async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
+    if (!post.cloudinary_url) return
+    setCropLoading(true)
+    try {
+      const newUrl = await applyFocalCrop(previewUrl, post.cloudinary_url, cropRegion)
+      setAdjustedImageUrl(newUrl)
+      setShowCropPicker(false)
+      toast.success('Crop adjusted!')
+    } catch {
+      toast.error('Failed to adjust crop')
+    } finally {
+      setCropLoading(false)
+    }
+  }
+
   async function handleDownload() {
     try {
-      const res = await fetch(previewUrl)
+      const res = await fetch(adjustedImageUrl ?? previewUrl)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -90,7 +111,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
     try {
       const finalPublicId = uploadedPublicId ?? post.photoPublicId
       const finalUrlWithPhoto = buildCloudinaryUrl(finalPublicId, editTitle, post.imageUrl)
-      const finalImageUrl = updateTitleInImageUrl(finalUrlWithPhoto, post.title ?? '', editTitle)
+      const finalImageUrl = adjustedImageUrl ?? updateTitleInImageUrl(finalUrlWithPhoto, post.title ?? '', editTitle)
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,12 +170,22 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
         />
       )}
 
+      {showCropPicker && post.cloudinary_url && createPortal(
+        <FabricCropPicker
+          sourceImageUrl={post.cloudinary_url}
+          aspectRatio={1080 / 1350}
+          onDone={handleCropDone}
+          onCancel={() => setShowCropPicker(false)}
+        />,
+        document.body
+      )}
+
       <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
 
         {/* Image preview */}
         <div className="relative w-full" style={{ aspectRatio: '4/5' }}>
           <img
-            src={previewUrl}
+            src={adjustedImageUrl ?? previewUrl}
             alt={post.title}
             className="w-full h-full object-cover"
           />
@@ -186,6 +217,20 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
               Upload custom image
             </button>
           </div>
+
+          {/* Adjust crop — only when cloudinary_url is available */}
+          {post.cloudinary_url && (
+            <button
+              onClick={() => setShowCropPicker(true)}
+              disabled={cropLoading}
+              className="w-full py-2 rounded-lg text-sm font-medium border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {cropLoading ? 'Adjusting...' : 'Adjust Image'}
+            </button>
+          )}
 
           {/* Edit mode: headline */}
           <div>
