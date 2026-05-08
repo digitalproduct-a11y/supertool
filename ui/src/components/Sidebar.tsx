@@ -60,12 +60,6 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [{ id: "home", label: "Home", icon: IconHome }],
   },
   {
-    section: "Analytics",
-    items: [
-      { id: 'dashboard', label: 'Dashboard (Beta)', icon: IconChartBar },
-    ],
-  },
-  {
     section: "Article to Social",
     items: [
       { id: 'fb-post', label: 'Photo post', icon: IconPhoto },
@@ -109,6 +103,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
   {
     section: "Others",
     items: [
+      { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
       { id: 'post-queue', label: 'Scheduled queue', icon: IconCalendarClock },
     ],
   },
@@ -116,7 +111,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
 
 const TOOL_NAMES: Record<ToolId, string> = {
   home: 'KULT Digital Kit',
-  'dashboard': 'Dashboard (Beta)',
+  'dashboard': 'Meta Dashboard',
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',
   'trending-news': 'Trending News',
