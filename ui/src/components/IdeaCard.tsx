@@ -365,6 +365,7 @@ export default function IdeaCard({
           onClose={() => setShowPhotoModal(false)}
           cachedPhotos={cachedPhotos}
           uploadPreset={uploadPreset}
+          topic={topic}
         />
       )}
     </>

@@ -7,12 +7,13 @@ interface PhotoPickerModalProps {
   onClose: () => void
   cachedPhotos?: Record<string, any[]>
   uploadPreset?: string
+  topic?: string
 }
 
-export default function PhotoPickerModal({ playerName, club, onSelect, onClose, cachedPhotos, uploadPreset }: PhotoPickerModalProps) {
+export default function PhotoPickerModal({ playerName, club, onSelect, onClose, cachedPhotos, uploadPreset, topic }: PhotoPickerModalProps) {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [photos, setPhotos] = useState<any[]>([])
-  const [isLoadingPhotos] = useState(false)
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -21,18 +22,55 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
   const [showUploadSection, setShowUploadSection] = useState(false)
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null)
 
-  // Load photos from pre-cached bulk search results
+  // Fetch all images from Cloudinary badminton folder
   useEffect(() => {
-    if (!cachedPhotos) {
-      setPhotos([])
-      return
+    const fetchCloudinaryPhotos = async () => {
+      if (topic !== 'badminton') {
+        // For non-badminton topics, use cached photos
+        if (!cachedPhotos) {
+          setPhotos([])
+          return
+        }
+        const cacheKey = playerName + (club || '')
+        const cachedPhotoList = cachedPhotos[cacheKey] || []
+        setPhotos(cachedPhotoList)
+        return
+      }
+
+      // For badminton, fetch from backend API (which calls Cloudinary securely)
+      setIsLoadingPhotos(true)
+      try {
+        const response = await fetch('/api/cloudinary/badminton-images')
+
+        if (!response.ok) {
+          console.warn('Failed to fetch badminton images from API, falling back to cached photos')
+          const cacheKey = playerName + (club || '')
+          const cachedPhotoList = cachedPhotos?.[cacheKey] || []
+          setPhotos(cachedPhotoList)
+          setIsLoadingPhotos(false)
+          return
+        }
+
+        const data = await response.json()
+        const cloudinaryPhotos = (data.resources || []).map((resource: any) => ({
+          public_id: resource.public_id,
+          secure_url: resource.secure_url,
+          url: resource.secure_url
+        }))
+        setPhotos(cloudinaryPhotos)
+      } catch (err) {
+        console.warn('Error fetching badminton images:', err)
+        // Fallback to cached photos
+        const cacheKey = playerName + (club || '')
+        const cachedPhotoList = cachedPhotos?.[cacheKey] || []
+        setPhotos(cachedPhotoList)
+      } finally {
+        setIsLoadingPhotos(false)
+      }
     }
 
-    // Generate cache key from player name and club (matches the key used in bulk search)
-    const cacheKey = playerName + (club || '')
-    const photos = cachedPhotos[cacheKey] || []
-    setPhotos(photos)
-  }, [playerName, club, cachedPhotos])
+    fetchCloudinaryPhotos()
+  }, [topic, playerName, club, cachedPhotos])
 
   const handleFileSelect = (file: File | null) => {
     setUploadFile(file)
