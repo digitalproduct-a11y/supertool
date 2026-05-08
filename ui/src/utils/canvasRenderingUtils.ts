@@ -185,7 +185,7 @@ export async function renderImageOnCanvas(
         top: groupTop,
         fontSize: headlineFontSize,
         fontFamily: 'Montserrat',
-        fontWeight: 700,
+        fontWeight: 800,
         fill: '#FFFFFF',
         textAlign: 'center',
         originX: 'center',
