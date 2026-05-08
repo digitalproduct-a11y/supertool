@@ -38,6 +38,8 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
+  const compareCols = showComparison ? SERIES.map(s => `${s.key}_compare`) : []
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
@@ -63,16 +65,29 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
     )
   }
 
-  const chartData = data.map((row) => ({
-    date: row.date,
-    daysInfo: (row as any).daysInfo as string | undefined,
-    weekRange: (row as any).weekRange as string | undefined,
-    photo_posts: row.photo_posts,
-    video_posts: row.video_posts,
-    text_link_posts: row.text_link_posts,
-    bar_total: row.total_posts,
-    _anchor: 0.001,
-  }))
+  const chartData = data.map((row, idx) => {
+    const base = {
+      date: row.date,
+      daysInfo: (row as any).daysInfo as string | undefined,
+      weekRange: (row as any).weekRange as string | undefined,
+      photo_posts: row.photo_posts,
+      video_posts: row.video_posts,
+      text_link_posts: row.text_link_posts,
+      bar_total: row.total_posts,
+      _anchor: 0.001,
+    }
+
+    if (showComparison && prevData[idx]) {
+      const prevRow = prevData[idx]
+      return {
+        ...base,
+        photo_posts_compare: prevRow.photo_posts,
+        video_posts_compare: prevRow.video_posts,
+        text_link_posts_compare: prevRow.text_link_posts,
+      }
+    }
+    return base
+  })
 
   const totals = {
     photo_posts: data.reduce((sum, row) => sum + (active.has('photo_posts') ? row.photo_posts : 0), 0),
@@ -281,6 +296,9 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
           )}
           {SERIES.map(s => (
             <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
+          ))}
+          {showComparison && SERIES.map(s => (
+            <Bar key={`${s.key}_compare`} dataKey={`${s.key}_compare`} stackId="b" fill={s.color} name={`${s.label} (Compare)`} hide={!active.has(s.key)} fillOpacity={0.5} />
           ))}
           <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList
