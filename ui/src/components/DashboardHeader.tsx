@@ -36,7 +36,7 @@ const endOfMonth = (offset = 0) => {
   return d
 }
 
-const MIN_DATA_DATE = new Date(2026, 0, 16, 0, 0, 0, 0)
+const MIN_DATA_DATE = new Date(2026, 0, 2, 0, 0, 0, 0)
 
 const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
 const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay()
@@ -282,7 +282,7 @@ export function DashboardHeader({
       </div>
       <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
         <ul className="text-xs text-amber-900 space-y-1 list-disc list-inside">
-          <li><span className="font-medium">Data available from 16 Jan 2026 onwards</span></li>
+          <li><span className="font-medium">Data available from 2 Jan 2026 onwards</span></li>
           <li>Revenue data refreshed every Tuesday for previous week</li>
           <li>Posts & Interactions data available at T-2 10am daily</li>
         </ul>

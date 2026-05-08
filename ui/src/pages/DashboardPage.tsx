@@ -5,6 +5,7 @@ import { DashboardHeader } from '../components/DashboardHeader'
 import { RevenueChart } from '../components/RevenueChart'
 import { PostsChart } from '../components/PostsChart'
 import { InteractionsChart } from '../components/InteractionsChart'
+import { RPPChart } from '../components/RPPChart'
 import { TopPostsChart } from '../components/TopPostsChart'
 import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils/dashboardUtils'
 import type { DashboardRow } from '../utils/dashboardUtils'
@@ -214,12 +215,17 @@ export function DashboardPage() {
           )}
 
           {filteredData.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
-              <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
-              <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
-              <TopPostsChart brand={selectedBrand || ''} profileId={brandProfileId} />
-            </div>
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+                <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+                <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
+                <RPPChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
+              </div>
+              <div className="mt-8">
+                <TopPostsChart brand={selectedBrand || ''} profileId={brandProfileId} />
+              </div>
+            </>
           )}
         </div>
 
