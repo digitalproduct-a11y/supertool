@@ -40,6 +40,8 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
+  const compareCols = showComparison ? SERIES.map(s => `${s.key}_compare`) : []
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
@@ -65,16 +67,29 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
     )
   }
 
-  const chartData = data.map((row) => ({
-    date: row.date,
-    daysInfo: (row as any).daysInfo as string | undefined,
-    weekRange: (row as any).weekRange as string | undefined,
-    reactions: row.reactions,
-    comments: row.comments,
-    shares: row.shares,
-    bar_total: row.total_interactions,
-    _anchor: 0.001,
-  }))
+  const chartData = data.map((row, idx) => {
+    const base = {
+      date: row.date,
+      daysInfo: (row as any).daysInfo as string | undefined,
+      weekRange: (row as any).weekRange as string | undefined,
+      reactions: row.reactions,
+      comments: row.comments,
+      shares: row.shares,
+      bar_total: row.total_interactions,
+      _anchor: 0.001,
+    }
+
+    if (showComparison && prevData[idx]) {
+      const prevRow = prevData[idx]
+      return {
+        ...base,
+        reactions_compare: prevRow.reactions,
+        comments_compare: prevRow.comments,
+        shares_compare: prevRow.shares,
+      }
+    }
+    return base
+  })
 
   const totals = {
     reactions: data.reduce((sum, row) => sum + (active.has('reactions') ? row.reactions : 0), 0),
@@ -272,6 +287,9 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
                 onDateSelect(dateObj)
               }
             }} />
+          ))}
+          {showComparison && SERIES.map(s => (
+            <Bar key={`${s.key}_compare`} dataKey={`${s.key}_compare`} stackId="b" fill={s.color} name={`${s.label} (Compare)`} hide={!active.has(s.key)} fillOpacity={0.5} />
           ))}
           <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList

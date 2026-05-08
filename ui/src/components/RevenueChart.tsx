@@ -45,6 +45,8 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
+  const compareCols = showComparison ? SERIES.map(s => `${s.key}_compare`) : []
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
@@ -70,13 +72,13 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
     )
   }
 
-  const chartData = data.map((row) => {
+  const chartData = data.map((row, idx) => {
     const photo = toNum(row.photo_revenue)
     const video = toNum(row.video_revenue)
     const story = toNum(row.story_revenue)
     const text_link = toNum(row.text_link_revenue)
     const bonus = toNum(row.bonus_revenue)
-    return {
+    const base = {
       date: row.date,
       daysInfo: (row as any).daysInfo as string | undefined,
       weekRange: (row as any).weekRange as string | undefined,
@@ -88,6 +90,19 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
       bar_total: parseFloat((photo + video + story + text_link + bonus).toFixed(2)),
       _anchor: 0.001,
     }
+
+    if (showComparison && prevData[idx]) {
+      const prevRow = prevData[idx]
+      return {
+        ...base,
+        photo_revenue_compare: toNum(prevRow.photo_revenue),
+        video_revenue_compare: toNum(prevRow.video_revenue),
+        story_revenue_compare: toNum(prevRow.story_revenue),
+        text_link_revenue_compare: toNum(prevRow.text_link_revenue),
+        bonus_revenue_compare: toNum(prevRow.bonus_revenue),
+      }
+    }
+    return base
   })
 
   const totals = {
@@ -296,6 +311,9 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
           )}
           {SERIES.map(s => (
             <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
+          ))}
+          {showComparison && SERIES.map(s => (
+            <Bar key={`${s.key}_compare`} dataKey={`${s.key}_compare`} stackId="b" fill={s.color} name={`${s.label} (Compare)`} hide={!active.has(s.key)} fillOpacity={0.5} />
           ))}
           <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList
