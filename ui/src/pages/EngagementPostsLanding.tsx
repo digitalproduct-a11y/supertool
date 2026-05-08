@@ -26,7 +26,8 @@ type ActiveTopicId =
   | "weather-malaysia"
   | "quote"
   | "didyouknow"
-  | "food-places";
+  | "food-places"
+  | "gempak-entertainment";
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void;
@@ -145,6 +146,21 @@ const sections: Section[] = [
         description: "European football highlights and player comparisons",
         icon: IconTrophy,
         color: "#0055EE",
+      },
+    ],
+  },
+  {
+    label: "Entertainment",
+    description:
+      "Celebrity, lifestyle, and showbiz posts for Gempak's entertainment brands.",
+    topics: [
+      {
+        id: "gempak-entertainment",
+        label: "Entertainment",
+        description:
+          "Generate showbiz and celebrity posts curated from Malaysian entertainment news",
+        icon: IconMusicStar,
+        color: "#FF3FBF",
       },
     ],
   },

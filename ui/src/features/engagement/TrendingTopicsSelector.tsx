@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { TrendingTopic } from '../../hooks/useEngagementPhotos'
 
-const POST_TYPES = [
+// EPL/UCL default. Override per-topic via TOPIC_CONFIGS[].postTypes.
+// IDs must match what the topic's Generate Posts workflow expects.
+const DEFAULT_POST_TYPES = [
   { id: 'challenge', label: 'Challenge' },
   { id: 'debate', label: 'Debate' },
   { id: 'prediction', label: 'Prediction' },
@@ -21,9 +23,11 @@ interface TrendingTopicsSelectorProps {
   topics: TrendingTopic[]
   isLoading: boolean
   onGenerate: (selections: TopicSelection[]) => void
+  postTypes?: Array<{ id: string; label: string }>
 }
 
-export default function TrendingTopicsSelector({ topics, isLoading, onGenerate }: TrendingTopicsSelectorProps) {
+export default function TrendingTopicsSelector({ topics, isLoading, onGenerate, postTypes }: TrendingTopicsSelectorProps) {
+  const POST_TYPES = postTypes ?? DEFAULT_POST_TYPES
   const [selections, setSelections] = useState<Record<string, TopicSelection>>({})
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
 
