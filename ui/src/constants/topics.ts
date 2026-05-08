@@ -38,6 +38,7 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
     templateImages: SHARED_TEMPLATE_IMAGES,
     loadingSteps: ['Searching latest badminton news', 'Analyzing the rallies', 'Generating post ideas'],
     loadingQuotes: ['Checking the shuttlecock trajectory...', 'Consulting the badminton federation...', 'Reading the tournament report...', 'Analyzing the smash technique...'],
+    loadingIcon: '🏸',
     downloadPrefix: 'badminton-post',
   },
 }

@@ -86,6 +86,7 @@ export interface TopicConfig {
   templateImages: [string, string, string]
   loadingSteps: [string, string, string]
   loadingQuotes: string[]
+  loadingIcon?: string
   downloadPrefix: string
 }
 

@@ -181,7 +181,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {stage === 'brand-select' && isFetchingTopics && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
-            <div className="text-4xl inline-block animate-bounce">⚽</div>
+            <div className="text-4xl inline-block animate-bounce">{config.loadingIcon || '⚽'}</div>
             <p className="text-sm font-semibold text-neutral-900">Fetching Trending News</p>
             <p className="text-xs text-neutral-500">Scanning RSS feeds and curating stories...</p>
           </div>
@@ -268,7 +268,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
         {stage === 'review' && isLoading && (
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
-                <div className="text-4xl inline-block animate-bounce">⚽</div>
+                <div className="text-4xl inline-block animate-bounce">{config.loadingIcon || '⚽'}</div>
                 <div className="flex justify-center gap-2">
                   {config.loadingSteps.map((_, idx) => (
                     <div
