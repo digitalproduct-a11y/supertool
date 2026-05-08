@@ -19,7 +19,7 @@ export function DashboardPage() {
     const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(23,59,59,999); return d
   })
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily')
-  const [showComparison, setShowComparison] = useState(false)
+  const [showComparison, setShowComparison] = useState(true)
   const [showTargets, setShowTargets] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
