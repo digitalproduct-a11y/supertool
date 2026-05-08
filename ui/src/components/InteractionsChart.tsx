@@ -9,7 +9,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
 } from 'recharts'
 import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
 import type { DashboardRow } from '../utils/dashboardUtils'
@@ -19,7 +18,7 @@ interface InteractionsChartProps {
   data: DashboardRow[]
   prevData?: DashboardRow[]
   showComparison?: boolean
-  targetData?: { dailyPosts: number; periodPosts: number; interactions: null } | null
+  targetData?: { dailyRevenue: number; dailyPosts: number; revenueTarget: number; postsTarget: number; targetLabel: string; interactions: null } | null
   showTargets?: boolean
   viewMode?: 'daily' | 'weekly' | 'monthly'
   startDate?: Date
@@ -34,7 +33,7 @@ const SERIES = [
   { key: 'shares', label: 'Shares', color: '#0055EE' },
 ]
 
-export function InteractionsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate, onDateSelect, selectedDate }: InteractionsChartProps) {
+export function InteractionsChart({ data, prevData = [], showComparison = false, onDateSelect }: InteractionsChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)

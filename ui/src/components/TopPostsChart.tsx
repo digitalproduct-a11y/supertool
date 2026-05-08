@@ -1,6 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { IconTrendingUp } from '@tabler/icons-react'
 
+declare global {
+  interface Window {
+    FB?: {
+      XFBML: {
+        parse: () => void
+      }
+    }
+  }
+}
+
 interface Post {
   post_type: string
   customer_profile_id: string
@@ -38,8 +48,8 @@ interface CalendarMonthProps {
   date: Date
   onSelect: (date: Date) => void
   isStart: boolean
-  minDate?: Date
-  maxDate?: Date
+  minDate?: Date | null
+  maxDate?: Date | null
 }
 
 function CalendarMonth({ date, onSelect, isStart, minDate, maxDate }: CalendarMonthProps) {
@@ -92,7 +102,7 @@ function CalendarMonth({ date, onSelect, isStart, minDate, maxDate }: CalendarMo
           if (day === null) return <div key={`empty-${i}`} />
           const cellDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day, 0, 0, 0, 0)
           const isFuture = cellDate > today
-          const isDisabled = isFuture || (minDate && cellDate < minDate) || (maxDate && cellDate > maxDate)
+          const isDisabled = isFuture || (minDate != null && cellDate < minDate) || (maxDate != null && cellDate > maxDate)
           const isSelected = date.toDateString() === cellDate.toDateString()
 
           return (
@@ -154,7 +164,7 @@ export function TopPostsChart({ brand, profileId }: TopPostsChartProps) {
       // Initialize Facebook SDK
       if (window.FB) {
         setTimeout(() => {
-          window.FB.XFBML.parse()
+          window.FB?.XFBML.parse()
         }, 100)
       } else {
         const script = document.createElement('script')
@@ -164,7 +174,7 @@ export function TopPostsChart({ brand, profileId }: TopPostsChartProps) {
         script.onload = () => {
           if (window.FB) {
             setTimeout(() => {
-              window.FB.XFBML.parse()
+              window.FB?.XFBML.parse()
             }, 100)
           }
         }
@@ -232,7 +242,7 @@ export function TopPostsChart({ brand, profileId }: TopPostsChartProps) {
     : 'Select dates'
 
   const areDatesSameAsFetched =
-    lastFetchedStart && lastFetchedEnd &&
+    lastFetchedStart != null && lastFetchedEnd != null &&
     toInput(queryStartDate || new Date()) === toInput(lastFetchedStart) &&
     toInput(queryEndDate || new Date()) === toInput(lastFetchedEnd)
 

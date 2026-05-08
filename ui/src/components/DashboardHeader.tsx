@@ -135,7 +135,6 @@ const PRESETS = [
 
 export function DashboardHeader({
   brand,
-  businessUnit,
   brands,
   onBrandChange,
   startDate,

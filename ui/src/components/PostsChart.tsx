@@ -19,7 +19,7 @@ interface PostsChartProps {
   data: DashboardRow[]
   prevData?: DashboardRow[]
   showComparison?: boolean
-  targetData?: { dailyPosts: number; periodPosts: number; interactions: null } | null
+  targetData?: { dailyPosts: number; postsTarget: number; targetLabel: string; interactions: null } | null
   showTargets?: boolean
   viewMode?: 'daily' | 'weekly' | 'monthly'
   startDate?: Date
@@ -32,7 +32,7 @@ const SERIES = [
   { key: 'text_link_posts', label: 'Text Link', color: '#F05A35' },
 ]
 
-export function PostsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate }: PostsChartProps) {
+export function PostsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true }: PostsChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)

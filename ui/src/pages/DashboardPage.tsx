@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { IconRefresh } from '@tabler/icons-react'
-import { useDashboardData, type TargetRow } from '../hooks/useDashboardData'
+import { useDashboardData } from '../hooks/useDashboardData'
 import { DashboardHeader } from '../components/DashboardHeader'
 import { RevenueChart } from '../components/RevenueChart'
 import { PostsChart } from '../components/PostsChart'

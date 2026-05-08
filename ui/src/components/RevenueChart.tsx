@@ -19,7 +19,7 @@ interface RevenueChartProps {
   data: DashboardRow[]
   prevData?: DashboardRow[]
   showComparison?: boolean
-  targetData?: { dailyRevenue: number; periodRevenue: number; interactions: null } | null
+  targetData?: { dailyRevenue: number; revenueTarget: number; targetLabel: string; interactions: null } | null
   showTargets?: boolean
   viewMode?: 'daily' | 'weekly' | 'monthly'
   startDate?: Date
@@ -39,7 +39,7 @@ const SERIES = [
   { key: 'bonus_revenue', label: 'Bonus', color: '#9333EA' },
 ]
 
-export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, viewMode = 'daily', startDate, endDate }: RevenueChartProps) {
+export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true }: RevenueChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
