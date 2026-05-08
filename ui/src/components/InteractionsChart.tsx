@@ -308,7 +308,7 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
             }} />
           ))}
           {SERIES.map(s => (
-            <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} onClick={(e: any) => {
+            <Bar key={s.key} dataKey={s.key} stackId="b" fill={s.color} name={s.label} hide={!active.has(s.key)} onClick={(e: any) => {
               if (onDateSelect && e.date) {
                 const dateObj = new Date(e.date)
                 onDateSelect(dateObj)

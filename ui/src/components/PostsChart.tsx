@@ -317,7 +317,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
             <Bar key={`${s.key}_compare`} dataKey={`${s.key}_compare`} stackId="a" fill={s.color} name={`${s.label} (Compare)`} hide={!active.has(s.key)} fillOpacity={0.5} legendType="none" />
           ))}
           {SERIES.map(s => (
-            <Bar key={s.key} dataKey={s.key} stackId="a" fill={s.color} name={s.label} hide={!active.has(s.key)} />
+            <Bar key={s.key} dataKey={s.key} stackId="b" fill={s.color} name={s.label} hide={!active.has(s.key)} />
           ))}
           <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList
