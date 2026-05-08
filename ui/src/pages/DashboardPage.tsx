@@ -217,9 +217,12 @@ export function DashboardPage() {
                 <button
                   onClick={() => setCompareDropdownOpen(!compareDropdownOpen)}
                   disabled={viewMode !== 'daily'}
-                  className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   Compare
+                  <svg className={`w-4 h-4 transition ${compareDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
                 </button>
                 {compareDropdownOpen && (
                   <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-[280px]">

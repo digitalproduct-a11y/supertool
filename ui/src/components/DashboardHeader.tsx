@@ -125,10 +125,10 @@ function CalendarMonth({ date, onSelect, isStart, minDate, maxDate }: CalendarMo
 }
 
 const PRESETS = [
-  { label: '7D', start: () => daysAgo(8), end: () => daysAgo(1) },
-  { label: '14D', start: () => daysAgo(15), end: () => daysAgo(1) },
-  { label: '30D', start: () => daysAgo(31), end: () => daysAgo(1) },
-  { label: 'Last 3M', start: () => daysAgo(91), end: () => daysAgo(1) },
+  { label: '7D', start: () => daysAgo(8), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
+  { label: '14D', start: () => daysAgo(15), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
+  { label: '30D', start: () => daysAgo(31), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'Last 3M', start: () => daysAgo(91), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
   { label: 'This month', start: () => startOfMonth(0), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
   { label: 'Last month', start: () => startOfMonth(-1), end: () => endOfMonth(-1) },
 ]
