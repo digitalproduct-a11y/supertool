@@ -334,7 +334,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
           {SERIES.map(s => (
             <Bar key={s.key} dataKey={s.key} stackId="b" fill={s.color} name={s.label} hide={!active.has(s.key)} />
           ))}
-          <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
+          <Bar dataKey="_anchor" stackId="b" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList
               dataKey="bar_total"
               content={(props: any) => {

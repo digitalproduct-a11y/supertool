@@ -315,7 +315,7 @@ export function InteractionsChart({ data, prevData = [], showComparison = false,
               }
             }} />
           ))}
-          <Bar dataKey="_anchor" stackId="a" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
+          <Bar dataKey="_anchor" stackId="b" fill="transparent" stroke="none" legendType="none" isAnimationActive={false}>
             <LabelList
               dataKey="bar_total"
               content={(props: any) => {
