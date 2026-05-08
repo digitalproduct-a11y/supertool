@@ -162,7 +162,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
             </button>
             <h1 className="text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
           </div>
-          <p className="text-sm text-neutral-600">Create engaging sports posts featuring {config.label} players</p>
+          <p className="text-sm text-neutral-600">{config.pageSubtitle ?? `Create engaging sports posts featuring ${config.label} players`}</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
       </div>
@@ -171,9 +171,9 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {stage === 'brand-select' && isFetchingTopics && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
-            <div className="text-4xl inline-block animate-bounce">⚽</div>
-            <p className="text-sm font-semibold text-neutral-900">Fetching Trending News</p>
-            <p className="text-xs text-neutral-500">Scanning RSS feeds and curating stories...</p>
+            <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? '⚽'}</div>
+            <p className="text-sm font-semibold text-neutral-900">{config.fetchingTitle ?? 'Fetching Trending News'}</p>
+            <p className="text-xs text-neutral-500">{config.fetchingSubtext ?? 'Scanning RSS feeds and curating stories...'}</p>
           </div>
         )}
 
@@ -214,7 +214,9 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                     disabled={!selectedBrand || isFetchingTopics}
                     className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
                   >
-                    {isFetchingTopics ? 'Fetching Trending News...' : 'Get Trending News'}
+                    {isFetchingTopics
+                      ? (config.fetchButtonBusy ?? 'Fetching Trending News...')
+                      : (config.fetchButtonIdle ?? 'Get Trending News')}
                   </button>
 
                   {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
@@ -251,6 +253,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                 topics={topics}
                 isLoading={isLoading}
                 onGenerate={handleGenerateFromTopics}
+                postTypes={config.postTypes}
               />
             </div>
           </div>
@@ -258,7 +261,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
         {stage === 'review' && isLoading && (
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
-                <div className="text-4xl inline-block animate-bounce">⚽</div>
+                <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? '⚽'}</div>
                 <div className="flex justify-center gap-2">
                   {config.loadingSteps.map((_, idx) => (
                     <div
@@ -313,6 +316,8 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                     cachedPhotos={photosByPlayerClub}
                     downloadPrefix={config.downloadPrefix}
                     uploadPreset={uploadPreset}
+                    useFabricCanvas={config.useFabricCanvas}
+                    playerLabel={config.personLabel}
                   />
                 </div>
               ))}

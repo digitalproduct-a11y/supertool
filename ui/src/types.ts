@@ -87,6 +87,22 @@ export interface TopicConfig {
   loadingSteps: [string, string, string]
   loadingQuotes: string[]
   downloadPrefix: string
+  // When true, IdeaCard renders the preview client-side via fabric.js instead of
+  // building a Cloudinary transformation URL. Cloudinary upload happens lazily
+  // at schedule-time only.
+  useFabricCanvas?: boolean
+  // Optional per-topic copy overrides. Defaults match EPL/UCL (sports voice).
+  pageSubtitle?: string         // Hero subtitle under the page title
+  loadingEmoji?: string         // Emoji shown on loading panels (default ⚽)
+  fetchingTitle?: string        // e.g. "Fetching Trending News" / "Fetching Entertainment News"
+  fetchingSubtext?: string      // small grey line under fetchingTitle
+  fetchButtonIdle?: string      // Brand-stage CTA, idle state
+  fetchButtonBusy?: string      // Brand-stage CTA, in-flight state
+  personLabel?: string          // IdeaCard label, e.g. "Reference player" or "Reference celebrity"
+  // Post-type options shown in TrendingTopicsSelector. IDs MUST match what the
+  // downstream Generate Posts workflow expects — sending an unknown id makes
+  // the LLM emit `type: "skip"` and the user gets no cards back.
+  postTypes?: Array<{ id: string; label: string }>
 }
 
 // Engagement Photos tool types
