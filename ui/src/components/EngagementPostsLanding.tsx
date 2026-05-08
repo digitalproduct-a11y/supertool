@@ -56,6 +56,13 @@ const sections: Section[] = [
         icon: IconFlame,
         color: '#F05A35',
       },
+      {
+        id: 'motogp',
+        label: 'MotoGP',
+        description: 'Create engaging MotoGP posts featuring race results and championship news',
+        icon: IconTrophy,
+        color: '#E8001D',
+      },
     ],
   },
   {

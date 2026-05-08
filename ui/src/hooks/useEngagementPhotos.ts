@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { EngagementIdea } from '../types'
+import { TOPIC_CONFIGS } from '../constants/topics'
 
 export interface TrendingTopic {
   id: string
@@ -146,10 +147,11 @@ export function useEngagementPhotos() {
         }))
         setIdeas(limitedIdeas)
 
-        // Fetch photos based on topic type
-        if (topic === 'badminton') {
-          // For badminton, use dedicated webhook that searches by 'Badminton' tag
-          await bulkSearchPhotos([{ player: 'Badminton', club: '' }], import.meta.env.VITE_BADMINTON_PHOTOS_WEBHOOK_URL)
+        // Fetch photos based on topic config
+        const topicConfig = topic ? TOPIC_CONFIGS[topic] : null
+        if (topicConfig?.photosWebhookEnvVar && topicConfig?.photosCacheKey) {
+          const photosWebhookUrl = import.meta.env[topicConfig.photosWebhookEnvVar] as string | undefined
+          await bulkSearchPhotos([{ player: topicConfig.photosCacheKey, club: '' }], photosWebhookUrl)
         } else {
           // For EPL/UCL, extract unique player/club combos
           console.log('Ideas for bulk search:', limitedIdeas)

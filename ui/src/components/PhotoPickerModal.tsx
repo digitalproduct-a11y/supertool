@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { TOPIC_CONFIGS } from '../constants/topics'
 
 interface PhotoPickerModalProps {
   playerName: string
@@ -27,8 +28,8 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
       setPhotos([])
       return
     }
-    // For badminton, use 'Badminton' as the generic cache key; for others, use playerName + club
-    const cacheKey = topic === 'badminton' ? 'Badminton' : playerName + (club || '')
+    const topicConfig = topic ? TOPIC_CONFIGS[topic] : null
+    const cacheKey = topicConfig?.photosCacheKey || (playerName + (club || ''))
     setPhotos(cachedPhotos[cacheKey] || [])
   }, [topic, playerName, club, cachedPhotos])
 
@@ -38,8 +39,9 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
     if (file) {
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
-      // Pre-fill tags based on topic
-      const defaultTags = topic === 'badminton' ? 'Badminton' : (club ? `${playerName}, ${club}` : playerName)
+      // Pre-fill tags based on topic config
+      const topicConfig = topic ? TOPIC_CONFIGS[topic] : null
+      const defaultTags = topicConfig?.photosCacheKey || (club ? `${playerName}, ${club}` : playerName)
       setTags(defaultTags)
       setShowUploadSection(true)
     } else {

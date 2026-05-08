@@ -88,6 +88,15 @@ export interface TopicConfig {
   loadingQuotes: string[]
   loadingIcon?: string
   downloadPrefix: string
+  // Canvas-based rendering (Fabric) instead of Cloudinary URL
+  useCanvas?: boolean
+  // Dedicated photos webhook + fixed cache/upload tag (e.g. 'Badminton', 'MotoGP')
+  photosWebhookEnvVar?: string
+  photosCacheKey?: string
+  // Text field limits
+  headlineLimit?: number
+  subtitleLimit?: number
+  captionLimit?: number
 }
 
 // Engagement Photos tool types

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
+import { TOPIC_CONFIGS } from '../constants/topics'
 import PhotoPickerModal from './PhotoPickerModal'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
@@ -68,7 +69,8 @@ export default function IdeaCard({
   const TEXT_BOX_OFFSET = 160
   const previewCanvasElRef = useRef<HTMLCanvasElement>(null)
   const previewFabricRef = useRef<StaticCanvas | null>(null)
-  const useFabricCanvas = topic === 'badminton'
+  const topicConfig = TOPIC_CONFIGS[topic] || null
+  const useFabricCanvas = topicConfig?.useCanvas ?? false
 
   const PREVIEW_WIDTH = 1080
   const PREVIEW_HEIGHT = 1350
@@ -148,9 +150,9 @@ export default function IdeaCard({
   const subtitleChars = idea.subtitle.length
   const captionChars = idea.caption.length
 
-  const headlineLimit = topic === 'badminton' ? 50 : 35
-  const subtitleLimit = topic === 'badminton' ? 200 : 70
-  const captionLimit = topic === 'badminton' ? 550 : 600
+  const headlineLimit = topicConfig?.headlineLimit ?? 35
+  const subtitleLimit = topicConfig?.subtitleLimit ?? 70
+  const captionLimit = topicConfig?.captionLimit ?? 600
 
   const headlineValid = headlineChars > 0 && headlineChars <= headlineLimit
   const subtitleValid = subtitleChars > 0 && subtitleChars <= subtitleLimit
