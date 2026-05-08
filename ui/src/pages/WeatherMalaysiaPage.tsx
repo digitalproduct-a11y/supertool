@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useWeatherMalaysia } from "../hooks/useWeatherMalaysia";
 import { WeatherCanvas, type WeatherCanvasHandle } from "../features/weather/WeatherCanvas";
+import { WeatherSinglePostCanvas, type WeatherSinglePostCanvasHandle } from "../features/weather/WeatherSinglePostCanvas";
 import { ScheduleModal } from "../components/ScheduleModal";
 import { Spinner } from "../components/ds/Spinner";
 import { getCredentials } from "../utils/fbCredentials";
@@ -21,7 +22,7 @@ import {
   type WeatherBackgroundsConfig,
 } from "../config/weatherCanvasConfig";
 
-type PostMode = "grouped" | "individual";
+type PostMode = "grouped" | "individual" | "single";
 
 interface WeatherGroup {
   label: string;
@@ -157,8 +158,7 @@ const WeatherImageCard = memo(function WeatherImageCard({
 // ─── Mode Toggle ─────────────────────────────────────────────────────────────
 
 const MODE_OPTIONS: { value: PostMode; label: string }[] = [
-  { value: "grouped", label: "By Weather" },
-  { value: "individual", label: "Individual (16 Posts)" },
+  { value: "single", label: "Single Post" },
 ];
 
 function ModeToggle({
@@ -191,15 +191,20 @@ function ModeToggle({
 
 export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
-  const { posts, fontUse, isLoading, error, generate } = useWeatherMalaysia();
+  const { posts, fontUse: rawFontUse, brandColor, nationalSummary, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState("");
-  const [mode, setMode] = useState<PostMode>("grouped");
+  // Brands that should render the weather post in the canvas-default Inter
+  // face rather than their usual brand font.
+  const WEATHER_INTER_BRANDS = new Set(["Sinar", "Era"]);
+  const fontUse = WEATHER_INTER_BRANDS.has(brand) ? null : rawFontUse;
+  const [mode, setMode] = useState<PostMode>("single");
   const [stage, setStage] = useState<"brand-select" | "review">(
     posts.length > 0 ? "review" : "brand-select",
   );
 
   const [sharedCaption, setSharedCaption] = useState("");
   const groupedCanvasRefs = useRef<Map<string, WeatherCanvasHandle>>(new Map());
+  const singleCanvasRef = useRef<WeatherSinglePostCanvasHandle>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const closeLightbox = useCallback(() => setLightboxUrl(null), []);
@@ -306,6 +311,21 @@ export function WeatherMalaysiaPage() {
           }),
         );
         imageUrls = uploads;
+      } else if (mode === "single") {
+        const dataUrl = singleCanvasRef.current?.getDataUrl() ?? null;
+        if (!dataUrl) {
+          toast.error("Image isn't ready yet.");
+          setIsScheduling(false);
+          return;
+        }
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File(
+          [blob],
+          `weather-${brand.toLowerCase()}-single-${Date.now()}.png`,
+          { type: "image/png" },
+        );
+        const publicId = await uploadToCloudinary(file);
+        imageUrls = [`https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`];
       } else {
         imageUrls = posts.map((p) => p.imageUrl);
       }
@@ -392,8 +412,197 @@ export function WeatherMalaysiaPage() {
           />
         </div>
 
+        {/* Single-post mode — two-column layout (form left, preview right) */}
+        {mode === "single" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
+            {/* Left column — form (always visible) */}
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-5">
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1.5">
+                  Select brand
+                </label>
+                <select
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white"
+                >
+                  <option value="">Choose a brand…</option>
+                  {BRANDS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1.5">
+                  Post type
+                </label>
+                <ModeToggle mode={mode} onChange={setMode} />
+              </div>
+
+              <button
+                onClick={handleGenerate}
+                disabled={!brand || isLoading}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-neutral-950 hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
+              >
+                {isLoading ? "Generating…" : "Generate Weather Post"}
+              </button>
+
+              {/* Caption + schedule (after generation) */}
+              {!isLoading && !error && posts.length > 0 && (
+                <div className="pt-4 border-t border-neutral-100 space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1.5">
+                      Caption for post
+                    </label>
+                    <textarea
+                      value={sharedCaption}
+                      onChange={(e) => setSharedCaption(e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleCopyCaption}
+                      className="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg border border-neutral-200 hover:bg-neutral-50 transition active:scale-[0.98]"
+                    >
+                      Copy caption
+                    </button>
+                    <button
+                      onClick={() => setShowScheduleModal(true)}
+                      disabled={isScheduling || scheduleStatus === "done"}
+                      className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
+                    >
+                      {isScheduling
+                        ? "Scheduling…"
+                        : scheduleStatus === "done"
+                          ? "Scheduled!"
+                          : "Schedule on FB"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right column — idle / generating / preview / error */}
+            <div>
+              {!isLoading && !error && posts.length === 0 && (
+                <div className="glass-card rounded-2xl p-12 min-h-[420px] flex flex-col items-center justify-center text-center">
+                  <IconCloudRain className="w-12 h-12 text-neutral-200 mb-3" />
+                  <p className="text-sm font-medium text-neutral-500">
+                    Generated weather post will appear here
+                  </p>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Pick a brand on the left and hit Generate.
+                  </p>
+                </div>
+              )}
+
+              {isLoading && (
+                <div className="glass-card rounded-2xl p-12 flex flex-col items-center gap-6 text-center">
+                  <Spinner size="lg" />
+                  <div className="space-y-3">
+                    <div className="flex flex-col items-start gap-2 text-left">
+                      {LOADING_STEPS.map((step, i) => (
+                        <div
+                          key={step}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          {i < stepIndex ? (
+                            <svg
+                              className="w-4 h-4 text-green-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2.5}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          ) : i === stepIndex ? (
+                            <div className="w-4 h-4 border-2 border-neutral-400 border-t-neutral-900 rounded-full animate-spin" />
+                          ) : (
+                            <div className="w-4 h-4 rounded-full border-2 border-neutral-200" />
+                          )}
+                          <span
+                            className={
+                              i <= stepIndex
+                                ? "text-neutral-800 font-medium"
+                                : "text-neutral-400"
+                            }
+                          >
+                            {step}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p
+                      key={quoteIndex}
+                      className="text-xs text-neutral-400 italic animate-fade-slide-up"
+                    >
+                      {LOADING_QUOTES[quoteIndex]}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!isLoading && error && (
+                <div className="glass-card rounded-2xl p-8 text-center space-y-4">
+                  <p className="text-sm text-red-600 font-medium">{error}</p>
+                  <button
+                    onClick={handleGenerate}
+                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+
+              {!isLoading && !error && posts.length > 0 && (
+                <div className="flex flex-col items-center gap-3">
+                  <WeatherSinglePostCanvas
+                    ref={singleCanvasRef}
+                    posts={posts}
+                    brand={brand}
+                    fontUse={fontUse}
+                    brandColor={brandColor}
+                    nationalSummary={nationalSummary}
+                    onClick={() => {
+                      const url = singleCanvasRef.current?.getDataUrl();
+                      if (url) setLightboxUrl(url);
+                    }}
+                  />
+                  <button
+                    onClick={() => singleCanvasRef.current?.downloadAsPng()}
+                    className="flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition active:scale-[0.98]"
+                  >
+                    <IconDownload className="w-3.5 h-3.5" />
+                    Download Single Post
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {showScheduleModal && (
+              <ScheduleModal
+                brand={brand}
+                hasCredentials={!!getCredentials(brand.toLowerCase())}
+                isPosting={isScheduling}
+                onConfirm={handleScheduleAll}
+                onClose={() => setShowScheduleModal(false)}
+              />
+            )}
+          </div>
+        )}
+
         {/* Brand Select Stage */}
-        {stage === "brand-select" && (
+        {mode !== "single" && stage === "brand-select" && (
           <div className="max-w-md">
             <div className="glass-card rounded-2xl p-6 space-y-5">
               <div>
@@ -434,7 +643,7 @@ export function WeatherMalaysiaPage() {
         )}
 
         {/* Review Stage */}
-        {stage === "review" && (
+        {mode !== "single" && stage === "review" && (
           <>
             {/* Loading */}
             {isLoading && (
@@ -524,9 +733,7 @@ export function WeatherMalaysiaPage() {
                           : posts.length}
                       </span>{" "}
                       weather{" "}
-                      {mode === "grouped"
-                        ? "post(s) by weather"
-                        : "posts"}{" "}
+                      {mode === "grouped" ? "post(s) by weather" : "posts"}{" "}
                       generated for{" "}
                       <span className="font-semibold text-neutral-800">
                         {brand}

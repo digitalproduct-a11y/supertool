@@ -1,4 +1,8 @@
 import { useState, useCallback, useRef } from "react";
+import type { NationalSummary } from "../features/weather/weatherDataAdapter";
+import { getBrandFontUse } from "../constants/brands";
+
+export type { NationalSummary } from "../features/weather/weatherDataAdapter";
 
 export interface WeatherPost {
   id: string;
@@ -9,10 +13,18 @@ export interface WeatherPost {
   morning_forecast: string;
   afternoon_forecast: string;
   night_forecast: string;
+  // n8n is responsible for trimming this to the V2b short form. Until the
+  // workflow is updated, the canvas falls back to client-side trimming.
   summary_forecast: string;
   summary_when: string;
   min_temp: number;
   max_temp: number;
+  // Pre-computed average ((min+max)/2) emitted by n8n. Frontend falls back to
+  // client-side derivation when absent.
+  avg_temp?: number;
+  // Optional — emitted by the n8n trimming Code node. Frontend reads this
+  // directly when present, otherwise derives via resolveCondition().
+  icon_key?: "sun" | "rain" | "thunder" | "haze";
   translated_summary_forecast?: string;
   translated_summary_when?: string;
   imageUrl: string;
@@ -24,6 +36,11 @@ interface WeatherResponse {
   posts: WeatherPost[];
   // Brand display font name from the Brand Tone & Voice data table.
   font_use?: string;
+  // Brand hex color from the Brand Tone & Voice data table (e.g. "#FF3FBF").
+  brand_color?: string;
+  // Optional national summary surfaced by the n8n workflow for the Single Post
+  // hero block. Absent during initial rollout — adapter has a derived fallback.
+  national_summary?: NationalSummary;
 }
 
 interface WeatherError {
@@ -48,6 +65,8 @@ let cachedResult: {
   key: string;
   posts: WeatherPost[];
   fontUse: string | null;
+  brandColor: string | null;
+  nationalSummary: NationalSummary | null;
 } | null = null;
 
 function getTodayMYT(): { date: string; day: string } {
@@ -67,11 +86,17 @@ export function useWeatherMalaysia() {
   const [fontUse, setFontUse] = useState<string | null>(
     cachedResult?.fontUse ?? null,
   );
+  const [brandColor, setBrandColor] = useState<string | null>(
+    cachedResult?.brandColor ?? null,
+  );
+  const [nationalSummary, setNationalSummary] = useState<NationalSummary | null>(
+    cachedResult?.nationalSummary ?? null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const generate = useCallback(async (brand: string, mode: "grouped" | "individual" = "grouped"): Promise<WeatherPost[]> => {
+  const generate = useCallback(async (brand: string, mode: "grouped" | "individual" | "single" = "grouped"): Promise<WeatherPost[]> => {
     const webhookUrl = import.meta.env.VITE_WEATHER_WEBHOOK_URL as
       | string
       | undefined;
@@ -86,6 +111,8 @@ export function useWeatherMalaysia() {
     if (cachedResult?.key === cacheKey) {
       setPosts(cachedResult.posts);
       setFontUse(cachedResult.fontUse);
+      setBrandColor(cachedResult.brandColor);
+      setNationalSummary(cachedResult.nationalSummary);
       return cachedResult.posts;
     }
 
@@ -135,14 +162,23 @@ export function useWeatherMalaysia() {
             p.caption ||
             `${p.state}: ${p.summary_forecast} (${p.summary_when}). Suhu ${p.min_temp}°C–${p.max_temp}°C.`,
         }));
-        const resolvedFontUse = data.font_use || null;
+        // Prefer the value returned by n8n; fall back to the local
+        // BRAND_FONT_USE map so canvases still get the correct brand font
+        // when a workflow forgets to include it.
+        const resolvedFontUse = data.font_use || getBrandFontUse(brand);
+        const resolvedBrandColor = data.brand_color || null;
+        const resolvedNational = data.national_summary ?? null;
         cachedResult = {
           key: cacheKey,
           posts: postsWithCaptions,
           fontUse: resolvedFontUse,
+          brandColor: resolvedBrandColor,
+          nationalSummary: resolvedNational,
         };
         setPosts(postsWithCaptions);
         setFontUse(resolvedFontUse);
+        setBrandColor(resolvedBrandColor);
+        setNationalSummary(resolvedNational);
         return postsWithCaptions;
       } else {
         setError(data.message || "Failed to generate weather posts.");
@@ -163,5 +199,14 @@ export function useWeatherMalaysia() {
     }
   }, []);
 
-  return { posts, setPosts, fontUse, isLoading, error, generate };
+  return {
+    posts,
+    setPosts,
+    fontUse,
+    brandColor,
+    nationalSummary,
+    isLoading,
+    error,
+    generate,
+  };
 }
