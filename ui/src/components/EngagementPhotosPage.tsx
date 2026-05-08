@@ -162,7 +162,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => navigate('/engagement-photos')}
@@ -170,7 +170,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
             >
               <IconChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
           </div>
           <p className="text-sm text-neutral-600">Create engaging sports posts featuring {config.label} players</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
@@ -310,7 +310,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
             {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-            <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {ideas.map((idea, idx) => (
                 <div key={idea.id} className="border rounded-2xl p-4 bg-white border-gray-200">
                   <IdeaCard

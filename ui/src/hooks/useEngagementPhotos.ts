@@ -132,6 +132,7 @@ export function useEngagementPhotos() {
         const limitedIdeas = itemsArray.map((item: any) => ({
           id: item.id,
           type: item.type || 'news',
+          post_type: item.post_type,
           headline: (item.headline || '').slice(0, 50),
           subtitle: (item.subtitle || item.content || '').slice(0, 200),
           caption: (item.caption || '').slice(0, 550),

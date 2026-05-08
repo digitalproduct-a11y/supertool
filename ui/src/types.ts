@@ -127,6 +127,7 @@ export interface Brand {
 export interface EngagementIdea {
   id: string
   type: PostFormat
+  post_type?: string
   headline: string
   subtitle: string
   caption: string

@@ -16,6 +16,7 @@ const FORMAT_BADGES: Record<string, string> = {
   nostalgia: '🕐',
   quiz: '🧠',
   hot_take: '🔥',
+  quick_news: '📰',
 }
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -24,6 +25,7 @@ const FORMAT_LABELS: Record<string, string> = {
   nostalgia: 'Nostalgia',
   quiz: 'Quiz',
   hot_take: 'Hot Take',
+  quick_news: 'Quick News',
 }
 
 const getBadge = (type: string): string => FORMAT_BADGES[type] || '✨'
@@ -68,8 +70,8 @@ export default function IdeaCard({
   const previewFabricRef = useRef<StaticCanvas | null>(null)
   const useFabricCanvas = topic === 'badminton'
 
-  const PREVIEW_WIDTH = 384
-  const PREVIEW_HEIGHT = 480
+  const PREVIEW_WIDTH = 1080
+  const PREVIEW_HEIGHT = 1350
 
   // Sync committed values when a new idea is generated (idea.id changes)
   useEffect(() => {
@@ -94,6 +96,12 @@ export default function IdeaCard({
       height: PREVIEW_HEIGHT,
       backgroundColor: '#f3f4f6',
     })
+
+    // Override fabric's inline width/height styles so canvas scales with container
+    if (previewCanvasElRef.current) {
+      previewCanvasElRef.current.style.width = '100%'
+      previewCanvasElRef.current.style.height = '100%'
+    }
 
     const renderPreview = async () => {
       if (idea.photo_url) {
@@ -156,15 +164,15 @@ export default function IdeaCard({
         <div className="flex items-center justify-between mb-2 pb-3 border-b border-gray-200">
           <span className="text-sm font-semibold text-neutral-950">Idea {index + 1}</span>
           <div className="flex items-center gap-2">
-            <span className="text-lg">{getBadge(idea.type)}</span>
-            <span className="text-xs font-semibold text-gray-600 uppercase">{getLabel(idea.type)}</span>
+            <span className="text-lg">{getBadge(idea.post_type || idea.type)}</span>
+            <span className="text-xs font-semibold text-gray-600 uppercase">{getLabel(idea.post_type || idea.type)}</span>
           </div>
         </div>
 
         {/* Context, Player & Club Reference */}
 
         {/* Live Preview */}
-        <div className={`w-full max-w-sm rounded-xl border-2 overflow-hidden bg-gray-100 mb-4 flex items-center justify-center`}>
+        <div className={`w-full max-w-sm aspect-[4/5] rounded-xl border-2 overflow-hidden bg-gray-100 mb-4 flex items-center justify-center`}>
           {useFabricCanvas ? (
             <canvas
               ref={previewCanvasElRef}
