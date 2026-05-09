@@ -400,7 +400,8 @@ function FbPostPage() {
   const [titleMode, setTitleMode] = useState<TitleMode>('original')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
 
-  const { run, isRunning } = useWorkflow()
+  const stagingWebhookUrl = (import.meta.env.VITE_GENERATE_WEBHOOK_URL_STAGING as string | undefined)?.trim()
+  const { run, isRunning } = useWorkflow(stagingWebhookUrl)
 
   useEffect(() => {
     if (state === 'result' && window.innerWidth < 768) {

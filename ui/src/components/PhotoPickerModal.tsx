@@ -67,9 +67,7 @@ export default function PhotoPickerModal({ playerName, club, onSelect, onClose, 
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
-    console.log('Drop detected:', e.dataTransfer.files)
     const file = e.dataTransfer.files?.[0]
-    console.log('File:', file)
     if (file) {
       handleFileSelect(file)
     }

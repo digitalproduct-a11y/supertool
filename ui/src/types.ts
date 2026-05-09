@@ -11,6 +11,7 @@ export interface WorkflowRequest {
   caption_title_mode: CaptionTitleMode
   operation?: WorkflowOperation
   custom_image?: string
+  is_competitor?: boolean
   // For partial regenerations — pass through existing values
   imageUrl?: string
   caption?: string
@@ -28,6 +29,8 @@ export interface WorkflowResult {
   originalTitle: string
   brand: string
   category?: string
+  cloudinary_url?: string
+  cloudinary_public_id?: string
 }
 
 export interface WorkflowError {
@@ -281,6 +284,7 @@ export interface ScheduledPost {
   scheduled_time: string | null   // ISO 8601 or null
   scheduled_to: string | null     // 'facebook' or null
   error_message: string | null
+  cloudinary_url?: string         // raw background photo URL (no overlays)
 }
 
 export interface FetchScheduledPostsResponse {
@@ -396,6 +400,7 @@ export interface QuickFactResult {
   keyPhrase: string
   caption: string
   brand: string
+  cloudinary_url?: string
 }
 
 export interface QuickFactError {

@@ -8,6 +8,8 @@ import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
+import ImageUploadModal from '../components/ImageUploadModal'
+import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 
 type PageState = 'idle' | 'loading' | 'result' | 'error'
 
@@ -93,9 +95,15 @@ export function QuickFactPage() {
   const [showCropPicker, setShowCropPicker] = useState(false)
   const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
   const [cropLoading, setCropLoading] = useState(false)
+  const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
 
   // Derive preview URL from committed values
-  let previewImageUrl = result?.imageUrl ?? ''
+  let baseImageUrl = result?.imageUrl ?? ''
+  if (uploadedPublicId && result) {
+    baseImageUrl = buildCloudinaryUrl(uploadedPublicId, result.title, result.imageUrl)
+  }
+  let previewImageUrl = baseImageUrl
   if (result) {
     previewImageUrl = updateTitleInImageUrl(previewImageUrl, result.title, committedTitle)
     for (let i = 0; i < committedFacts.length; i++) {
@@ -126,6 +134,7 @@ export function QuickFactPage() {
       setCommittedKeyPhrase(res.keyPhrase)
       setCaption(res.caption)
       setAdjustedImageUrl(null)
+      setUploadedPublicId(null)
       setPageState('result')
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
@@ -134,10 +143,9 @@ export function QuickFactPage() {
   }
 
   async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
-    if (!result?.cloudinary_url) return
     setCropLoading(true)
     try {
-      const newUrl = await applyFocalCrop(previewImageUrl, result.cloudinary_url, cropRegion)
+      const newUrl = await applyFocalCrop(previewImageUrl, result?.cloudinary_url ?? '', cropRegion)
       setAdjustedImageUrl(newUrl)
       setShowCropPicker(false)
       toast.success('Crop adjusted!')
@@ -263,11 +271,7 @@ export function QuickFactPage() {
 
         {/* Skeleton loader — two-column */}
         {pageState === 'loading' && (
-          <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start animate-pulse">
-            <div>
-              <div className="aspect-[4/5] rounded-2xl bg-gray-200 w-full" />
-              <div className="h-10 bg-gray-200 rounded-xl mt-3" />
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start animate-pulse">
             <div className="space-y-5 pt-1">
               <div className="h-4 bg-gray-200 rounded w-16" />
               <div className="h-10 bg-gray-200 rounded-xl w-full" />
@@ -281,8 +285,18 @@ export function QuickFactPage() {
                 ))}
               </div>
               <div className="h-4 bg-gray-200 rounded w-24 mt-2" />
+              <div className="h-10 bg-gray-200 rounded-xl w-full" />
+              <div className="h-4 bg-gray-200 rounded w-16 mt-2" />
               <div className="h-28 bg-gray-200 rounded-xl" />
               <div className="h-12 bg-gray-200 rounded-xl" />
+            </div>
+            <div>
+              <div className="aspect-[4/5] rounded-2xl bg-gray-200 w-full" />
+              <div className="h-10 bg-gray-200 rounded-xl mt-3" />
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="h-10 bg-gray-200 rounded-xl" />
+                <div className="h-10 bg-gray-200 rounded-xl" />
+              </div>
             </div>
           </div>
         )}
@@ -300,109 +314,30 @@ export function QuickFactPage() {
               />,
               document.body
             )}
-            {showCropPicker && result.cloudinary_url && createPortal(
+            {showCropPicker && createPortal(
               <FabricCropPicker
-                sourceImageUrl={result.cloudinary_url}
+                sourceImageUrl={result.cloudinary_url || previewImageUrl}
                 aspectRatio={1080 / 1350}
                 onDone={handleCropDone}
                 onCancel={() => setShowCropPicker(false)}
               />,
               document.body
             )}
+            {showImageUploadModal && createPortal(
+              <ImageUploadModal
+                onSelect={({ publicId }) => {
+                  setUploadedPublicId(publicId)
+                  setAdjustedImageUrl(null)
+                  setShowImageUploadModal(false)
+                }}
+                onClose={() => setShowImageUploadModal(false)}
+              />,
+              document.body
+            )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-              {/* Left: image preview + caption + actions */}
-              <div className="lg:self-start lg:sticky lg:top-6">
-                <div className="bg-neutral-50 rounded-2xl overflow-hidden border border-gray-200 aspect-[4/5] w-full shadow-[0_2px_24px_rgba(0,0,0,0.07)]">
-                  <img
-                    src={adjustedImageUrl ?? previewImageUrl}
-                    alt="Quick fact post preview"
-                    className="w-full h-full object-cover"
-                    onError={e => { (e.target as HTMLImageElement).src = '' }}
-                  />
-                </div>
-
-                {result.cloudinary_url && (
-                  <button
-                    onClick={() => setShowCropPicker(true)}
-                    disabled={cropLoading}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 mt-3"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    {cropLoading ? 'Adjusting...' : 'Adjust Image'}
-                  </button>
-                )}
-
-                {/* Caption */}
-                <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-4 mt-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Caption</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{caption.length}/600</span>
-                      <button onClick={handleCopy} title="Copy caption" className="text-neutral-400 hover:text-neutral-700 transition">
-                        {copied
-                          ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                          : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                        }
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    value={caption}
-                    onChange={e => setCaption(e.target.value.slice(0, 600))}
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed transition"
-                  />
-                </div>
-
-                {/* Action buttons */}
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center justify-center gap-2 py-2.5 px-4 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 rounded-xl text-sm font-medium transition"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download Image
-                  </button>
-                  <button
-                    onClick={() => setShowScheduleModal(true)}
-                    disabled={scheduleState === 'posting'}
-                    className="flex items-center justify-center gap-2 py-2.5 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition"
-                  >
-                    {scheduleState === 'posting' ? (
-                      <>
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                        Scheduling…
-                      </>
-                    ) : 'Schedule on FB'}
-                  </button>
-                </div>
-
-                {/* Post-schedule feedback */}
-                {scheduleState === 'done' && (
-                  <div className="mt-3">
-                    <button
-                      onClick={handleReset}
-                      className="text-sm text-neutral-500 hover:text-neutral-900 transition"
-                    >
-                      ← Generate another
-                    </button>
-                  </div>
-                )}
-                {scheduleState === 'error' && (
-                  <p className="text-xs text-red-500 mt-2">✗ Failed to schedule. Try again.</p>
-                )}
-              </div>
-
-              {/* Right: editable fields */}
+              {/* Left: editable fields + caption + schedule */}
               <div className="space-y-5">
 
                 {/* Title */}
@@ -454,11 +389,9 @@ export function QuickFactPage() {
                   </div>
                 </div>
 
-                {/* Key phrase (bottom bar) */}
+                {/* Bottom bar (key phrase) */}
                 <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Bottom Bar</p>
-                  </div>
+                  <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-2">Bottom Bar</p>
                   <input
                     type="text"
                     value={keyPhrase}
@@ -469,7 +402,103 @@ export function QuickFactPage() {
                   />
                 </div>
 
+                {/* Caption */}
+                <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">Caption</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">{caption.length}/600</span>
+                      <button onClick={handleCopy} title="Copy caption" className="text-neutral-400 hover:text-neutral-700 transition">
+                        {copied
+                          ? <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    value={caption}
+                    onChange={e => setCaption(e.target.value.slice(0, 600))}
+                    rows={7}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent font-sans leading-relaxed transition"
+                  />
+                </div>
 
+                {/* Schedule on FB */}
+                <div>
+                  <button
+                    onClick={() => setShowScheduleModal(true)}
+                    disabled={scheduleState === 'posting'}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition"
+                  >
+                    {scheduleState === 'posting' ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Scheduling…
+                      </>
+                    ) : 'Schedule on FB'}
+                  </button>
+                  {scheduleState === 'done' && (
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-green-600">✓ Scheduled on Facebook!</p>
+                      <button onClick={handleReset} className="text-sm text-neutral-500 hover:text-neutral-900 transition">
+                        ← Generate another
+                      </button>
+                    </div>
+                  )}
+                  {scheduleState === 'error' && (
+                    <p className="text-xs text-red-500 mt-1">✗ Failed to schedule. Try again.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: image preview + image actions */}
+              <div className="lg:sticky lg:top-6 space-y-3">
+                <div className="bg-neutral-50 rounded-2xl overflow-hidden border border-gray-200 aspect-[4/5] w-full shadow-[0_2px_24px_rgba(0,0,0,0.07)]">
+                  <img
+                    src={adjustedImageUrl ?? previewImageUrl}
+                    alt="Quick fact post preview"
+                    className="w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLImageElement).src = '' }}
+                  />
+                </div>
+
+                {/* Adjust Image — full width */}
+                <button
+                  onClick={() => setShowCropPicker(true)}
+                  disabled={cropLoading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {cropLoading ? 'Adjusting...' : 'Adjust Image'}
+                </button>
+
+                {/* Upload Custom Image + Download — side by side */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setShowImageUploadModal(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload Custom Image
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Image
+                  </button>
+                </div>
               </div>
             </div>
           </>

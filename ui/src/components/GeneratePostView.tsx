@@ -153,6 +153,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [showCropPicker, setShowCropPicker] = useState(false)
   const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [adjustedAtTitle, setAdjustedAtTitle] = useState<string>('')
   const [cropLoading, setCropLoading] = useState(false)
 
   const handleGenerate = useCallback(async () => {
@@ -189,6 +190,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
   useEffect(() => {
     setUploadedPublicId(null)
     setAdjustedImageUrl(null)
+    setAdjustedAtTitle('')
   }, [result?.imageUrl])
 
   const baseImageUrl = uploadedPublicId
@@ -199,12 +201,17 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
     ? updateTitleInImageUrl(baseImageUrl, result?.title || '', committedLocalTitle)
     : undefined
 
+  const displayImageUrl = adjustedImageUrl
+    ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || (result?.title ?? ''), committedLocalTitle)
+    : previewImageUrl
+
   async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
     if (!result?.cloudinary_url) return
     setCropLoading(true)
     try {
       const newUrl = await applyFocalCrop(previewImageUrl ?? result.imageUrl, result.cloudinary_url, cropRegion)
       setAdjustedImageUrl(newUrl)
+      setAdjustedAtTitle(committedLocalTitle)
       setShowCropPicker(false)
       toast.success('Crop adjusted!')
     } catch {
@@ -216,7 +223,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
 
   async function handleDownload() {
     if (!result?.imageUrl) return
-    const urlToDownload = adjustedImageUrl ?? previewImageUrl ?? result.imageUrl
+    const urlToDownload = displayImageUrl ?? result.imageUrl
     try {
       const res = await fetch(urlToDownload)
       const blob = await res.blob()
@@ -240,7 +247,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
       const latestBaseUrl = uploadedPublicId
         ? buildCloudinaryUrl(uploadedPublicId, localTitle || result.title || '', result.imageUrl || '')
         : result.imageUrl
-      const latestImageUrl = adjustedImageUrl ?? updateTitleInImageUrl(latestBaseUrl, result.title || '', localTitle)
+      const latestImageUrl = displayImageUrl ?? updateTitleInImageUrl(latestBaseUrl, result.title || '', localTitle)
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -423,7 +430,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
               )}
 
               <div className="relative bg-neutral-50 aspect-[4/5] rounded-xl overflow-hidden border border-gray-200 w-full">
-                <img src={adjustedImageUrl ?? previewImageUrl ?? result.imageUrl} alt={result.title} className="w-full h-full object-cover" />
+                <img src={displayImageUrl ?? result.imageUrl} alt={result.title} className="w-full h-full object-cover" />
               </div>
 
               {result.cloudinary_url && (

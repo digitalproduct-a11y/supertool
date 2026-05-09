@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { IconRefresh, IconExternalLink, IconChevronLeft, IconSearch } from '@tabler/icons-react'
+import { IconRefresh, IconExternalLink, IconChevronLeft, IconChevronRight, IconSearch } from '@tabler/icons-react'
 import { BRAND_GROUPS, COMPETITOR_BRANDS } from '../constants/rssFeedsByBrand'
 import { PostCard } from './PostCard'
 import type { ScheduledPost } from '../types'
@@ -113,7 +113,6 @@ async function fetchCompetitorFeeds(): Promise<BrandFeedData[]> {
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json() as BrandFeedData[] | { error?: string }
-  console.log('Competitor webhook response:', data, 'Type:', typeof data, 'IsArray:', Array.isArray(data), 'Length:', Array.isArray(data) ? data.length : 'N/A')
   if (!Array.isArray(data)) throw new Error((data as { error?: string }).error ?? 'Unexpected response format')
   return data
 }
@@ -294,38 +293,6 @@ export function LatestNewsTab({ brand }: { brand: string }) {
     })
   }, [])
 
-  const handleBulkGenerate = useCallback(() => {
-    const selected = filteredArticles.filter(a => selectedUrls.has(a.url))
-    const initial: BulkResult[] = selected.map(article => ({ article, status: 'generating' }))
-    setBulkResults(initial)
-    bulkTriggeredRef.current = false
-    setView('bulk')
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUrls])
-
-  // Fire bulk generations after entering bulk view
-  useEffect(() => {
-    if (view !== 'bulk' || bulkResults.length === 0 || bulkTriggeredRef.current) return
-    bulkTriggeredRef.current = true
-
-    bulkResults.forEach((r, idx) => {
-      const titleMode = r.article.sourceBrand.toLowerCase() !== brand.toLowerCase() ? 'ai' : 'original'
-      const isCompetitor = COMPETITOR_BRANDS.includes(r.article.sourceBrand)
-      generatePost(r.article.url, brand, titleMode, undefined, isCompetitor)
-        .then(data => {
-          setBulkResults(prev => prev.map((p, i) =>
-            i === idx ? { ...p, status: 'done', imageUrl: data.imageUrl, caption: data.caption, title: data.title, cloudinary_url: data.cloudinary_url } : p
-          ))
-        })
-        .catch(err => {
-          const msg = err instanceof Error ? err.message : 'Generation failed.'
-          setBulkResults(prev => prev.map((p, i) =>
-            i === idx ? { ...p, status: 'error', errorMessage: msg } : p
-          ))
-        })
-    })
-  }, [view, bulkResults.length]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const countsByBrand = useMemo(() => {
     const map: Record<string, number> = {}
     const brands = (Array.isArray(allBrands) ? allBrands : []) || []
@@ -404,6 +371,38 @@ export function LatestNewsTab({ brand }: { brand: string }) {
       a?.description?.toLowerCase?.().includes(q)
     )
   }, [competitorBrands, competitorSelectedBrand, searchQuery])
+
+  const handleBulkGenerate = useCallback(() => {
+    const articles = (activeSection === 'competitors' ? competitorFilteredArticles : filteredArticles) || []
+    const selected = articles.filter(a => selectedUrls.has(a.url))
+    const initial: BulkResult[] = selected.map(article => ({ article, status: 'generating' }))
+    setBulkResults(initial)
+    bulkTriggeredRef.current = false
+    setView('bulk')
+  }, [selectedUrls, activeSection, competitorFilteredArticles, filteredArticles])
+
+  // Fire bulk generations after entering bulk view
+  useEffect(() => {
+    if (view !== 'bulk' || bulkResults.length === 0 || bulkTriggeredRef.current) return
+    bulkTriggeredRef.current = true
+
+    bulkResults.forEach((r, idx) => {
+      const titleMode = r.article.sourceBrand.toLowerCase() !== brand.toLowerCase() ? 'ai' : 'original'
+      const isCompetitor = COMPETITOR_BRANDS.includes(r.article.sourceBrand)
+      generatePost(r.article.url, brand, titleMode, undefined, isCompetitor)
+        .then(data => {
+          setBulkResults(prev => prev.map((p, i) =>
+            i === idx ? { ...p, status: 'done', imageUrl: data.imageUrl, caption: data.caption, title: data.title, cloudinary_url: data.cloudinary_url } : p
+          ))
+        })
+        .catch(err => {
+          const msg = err instanceof Error ? err.message : 'Generation failed.'
+          setBulkResults(prev => prev.map((p, i) =>
+            i === idx ? { ...p, status: 'error', errorMessage: msg } : p
+          ))
+        })
+    })
+  }, [view, bulkResults.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const articlesToShow = (activeSection === 'competitors' ? competitorFilteredArticles : filteredArticles) || []
 
@@ -487,15 +486,15 @@ export function LatestNewsTab({ brand }: { brand: string }) {
               <div className="h-px bg-neutral-100 my-1" />
               <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-2 pt-1.5 pb-1">{group.label}</p>
               <button
-                onClick={() => setSelectedBrand('all')}
+                onClick={() => { setSelectedBrand('all'); setActiveSection('astro') }}
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  selectedBrand === 'all'
+                  selectedBrand === 'all' && activeSection === 'astro'
                     ? 'bg-neutral-950 text-white'
                     : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950'
                 }`}
               >
                 <span>All</span>
-                <span className={`text-[10px] tabular-nums ${selectedBrand === 'all' ? 'text-neutral-300' : 'text-neutral-400'}`}>
+                <span className={`text-[10px] tabular-nums ${selectedBrand === 'all' && activeSection === 'astro' ? 'text-neutral-300' : 'text-neutral-400'}`}>
                   {totalCount}
                 </span>
               </button>
@@ -674,7 +673,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                 return (
                   <div
                     key={`${article.url}-${idx}`}
-                    onClick={() => { setSingleTarget(article); setView('single') }}
+                    onClick={() => toggleUrl(article.url)}
                     className={`rounded-xl border overflow-hidden transition-all cursor-pointer ${
                       selected ? 'border-neutral-400 bg-neutral-50' : 'bg-white border-neutral-100 hover:border-neutral-200 hover:shadow-sm'
                     }`}
@@ -717,7 +716,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                         )}
                       </div>
                     </div>
-                    <div className="border-t border-neutral-100 px-4 py-2.5">
+                    <div className="border-t border-neutral-100 px-4 py-2.5 flex items-center justify-between">
                       <a
                         href={article.url}
                         target="_blank"
@@ -727,6 +726,12 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                       >
                         Read article <IconExternalLink className="w-3 h-3" />
                       </a>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSingleTarget(article); setView('single') }}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-950 hover:text-neutral-600 transition"
+                      >
+                        Generate Post <IconChevronRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 )

@@ -176,79 +176,74 @@ export function ImageCropAdjuster({
 
         <div
           ref={containerRef}
-          className="relative bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center"
+          className="bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center"
           style={{ minHeight: 300 }}
         >
-          <img
-            ref={imgRef}
-            src={imageUrl}
-            alt="Source for cropping"
-            crossOrigin="anonymous"
-            onLoad={onImgLoad}
-            className="block max-w-full max-h-[70vh] select-none"
-            draggable={false}
-          />
-          {region && naturalSize && (
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                left: 0,
-                top: 0,
-                width: naturalSize.w * displayScale,
-                height: naturalSize.h * displayScale,
-              }}
-            >
-              {/* Dimming mask outside the crop region */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  boxShadow: `0 0 0 9999px rgba(0,0,0,0.45)`,
-                  clipPath: `polygon(
-                    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
-                    ${(region.x / naturalSize.w) * 100}% ${(region.y / naturalSize.h) * 100}%,
-                    ${(region.x / naturalSize.w) * 100}% ${((region.y + region.height) / naturalSize.h) * 100}%,
-                    ${((region.x + region.width) / naturalSize.w) * 100}% ${((region.y + region.height) / naturalSize.h) * 100}%,
-                    ${((region.x + region.width) / naturalSize.w) * 100}% ${(region.y / naturalSize.h) * 100}%,
-                    ${(region.x / naturalSize.w) * 100}% ${(region.y / naturalSize.h) * 100}%
-                  )`,
-                }}
-              />
-              {/* Crop rect — interactive */}
-              <div
-                className="absolute border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.5)] cursor-move pointer-events-auto"
-                style={{
-                  left: region.x * displayScale,
-                  top: region.y * displayScale,
-                  width: region.width * displayScale,
-                  height: region.height * displayScale,
-                }}
-                onPointerDown={onPointerDownMove}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-              >
-                {(["nw", "ne", "sw", "se"] as const).map((corner) => (
-                  <div
-                    key={corner}
-                    className="absolute bg-white border border-neutral-800 rounded-sm pointer-events-auto"
-                    style={{
-                      width: HANDLE_PX,
-                      height: HANDLE_PX,
-                      left: corner.endsWith("w") ? -HANDLE_PX / 2 : "auto",
-                      right: corner.endsWith("e") ? -HANDLE_PX / 2 : "auto",
-                      top: corner.startsWith("n") ? -HANDLE_PX / 2 : "auto",
-                      bottom: corner.startsWith("s") ? -HANDLE_PX / 2 : "auto",
-                      cursor: `${corner}-resize`,
-                    }}
-                    onPointerDown={onPointerDownResize(corner)}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                    onPointerCancel={onPointerUp}
-                  />
-                ))}
+          {/* Inner wrapper sized to the displayed image so the overlay aligns with it */}
+          <div className="relative" style={{ display: 'inline-block' }}>
+            <img
+              ref={imgRef}
+              src={imageUrl}
+              alt="Source for cropping"
+              crossOrigin="anonymous"
+              onLoad={onImgLoad}
+              className="block max-w-full max-h-[70vh] select-none"
+              draggable={false}
+            />
+            {region && naturalSize && (
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Dimming mask outside the crop region */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    boxShadow: `0 0 0 9999px rgba(0,0,0,0.45)`,
+                    clipPath: `polygon(
+                      0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+                      ${(region.x / naturalSize.w) * 100}% ${(region.y / naturalSize.h) * 100}%,
+                      ${(region.x / naturalSize.w) * 100}% ${((region.y + region.height) / naturalSize.h) * 100}%,
+                      ${((region.x + region.width) / naturalSize.w) * 100}% ${((region.y + region.height) / naturalSize.h) * 100}%,
+                      ${((region.x + region.width) / naturalSize.w) * 100}% ${(region.y / naturalSize.h) * 100}%,
+                      ${(region.x / naturalSize.w) * 100}% ${(region.y / naturalSize.h) * 100}%
+                    )`,
+                  }}
+                />
+                {/* Crop rect — interactive */}
+                <div
+                  className="absolute border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.5)] cursor-move pointer-events-auto"
+                  style={{
+                    left: region.x * displayScale,
+                    top: region.y * displayScale,
+                    width: region.width * displayScale,
+                    height: region.height * displayScale,
+                  }}
+                  onPointerDown={onPointerDownMove}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={onPointerUp}
+                  onPointerCancel={onPointerUp}
+                >
+                  {(["nw", "ne", "sw", "se"] as const).map((corner) => (
+                    <div
+                      key={corner}
+                      className="absolute bg-white border border-neutral-800 rounded-sm pointer-events-auto"
+                      style={{
+                        width: HANDLE_PX,
+                        height: HANDLE_PX,
+                        left: corner.endsWith("w") ? -HANDLE_PX / 2 : "auto",
+                        right: corner.endsWith("e") ? -HANDLE_PX / 2 : "auto",
+                        top: corner.startsWith("n") ? -HANDLE_PX / 2 : "auto",
+                        bottom: corner.startsWith("s") ? -HANDLE_PX / 2 : "auto",
+                        cursor: `${corner}-resize`,
+                      }}
+                      onPointerDown={onPointerDownResize(corner)}
+                      onPointerMove={onPointerMove}
+                      onPointerUp={onPointerUp}
+                      onPointerCancel={onPointerUp}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-2">

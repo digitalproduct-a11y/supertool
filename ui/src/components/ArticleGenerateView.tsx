@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { IconChevronLeft, IconExternalLink, IconCopy, IconCheck, IconDownload, IconUpload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
@@ -6,10 +6,22 @@ import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { COMPETITOR_BRANDS } from '../constants/rssFeedsByBrand'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
-import ImageUploadModal from './ImageUploadModal'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
+
+async function uploadToCloudinary(file: File): Promise<string> {
+  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim()
+  const uploadPreset = (import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined)?.trim()
+  if (!cloudName || !uploadPreset) throw new Error('Cloudinary configuration missing')
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', uploadPreset)
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: formData })
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+  const data = await res.json() as { public_id: string }
+  return data.public_id
+}
 
 type GenerateState = 'idle' | 'generating' | 'done' | 'error'
 type ScheduleState = 'idle' | 'posting' | 'done' | 'error'
@@ -134,7 +146,8 @@ export function ArticleGenerateView({
   const [committedTitle, setCommittedTitle] = useState('')
 
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
-  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
+  const [uploadLoading, setUploadLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [caption, setCaption] = useState('')
   const [copied, setCopied] = useState(false)
@@ -144,9 +157,10 @@ export function ArticleGenerateView({
 
   const [showCropPicker, setShowCropPicker] = useState(false)
   const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [adjustedAtTitle, setAdjustedAtTitle] = useState<string>('')
   const [cropLoading, setCropLoading] = useState(false)
 
-  useEffect(() => { setUploadedPublicId(null); setAdjustedImageUrl(null) }, [generated?.imageUrl])
+  useEffect(() => { setUploadedPublicId(null); setAdjustedImageUrl(null); setAdjustedAtTitle('') }, [generated?.imageUrl])
 
   const baseImageUrl = uploadedPublicId
     ? buildCloudinaryUrl(uploadedPublicId, committedTitle || generated?.title || '', generated?.imageUrl || '')
@@ -156,14 +170,24 @@ export function ArticleGenerateView({
     ? updateTitleInImageUrl(baseImageUrl, generated?.title ?? '', committedTitle)
     : null
 
+  const displayImageUrl = adjustedImageUrl
+    ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || (generated?.title ?? ''), committedTitle)
+    : previewImageUrl
+
+  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? 'dymmqtqyg'
+  const cropSourceUrl = uploadedPublicId
+    ? `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
+    : generated?.cloudinary_url || previewImageUrl || null
+
   const handleGenerate = async () => {
     setGenerateState('generating')
     try {
       const result = await generatePost(article.url, brand, titleMode, undefined, isCompetitor)
-      setGenerated(result)
+      const titleToUse = result.title || article.title
+      setGenerated({ ...result, title: titleToUse })
       setCaption(result.caption)
-      setEditableTitle(result.title)
-      setCommittedTitle(result.title)
+      setEditableTitle(titleToUse)
+      setCommittedTitle(titleToUse)
       setGenerateState('done')
     } catch (err) {
       setGenerateState('error')
@@ -185,11 +209,12 @@ export function ArticleGenerateView({
   }
 
   const handleCropDone = async (cropRegion: { x: number; y: number; width: number; height: number }) => {
-    if (!generated?.cloudinary_url) return
+    if (!previewImageUrl) return
     setCropLoading(true)
     try {
-      const newUrl = await applyFocalCrop(previewImageUrl ?? generated.imageUrl, generated.cloudinary_url, cropRegion)
+      const newUrl = await applyFocalCrop(previewImageUrl, generated?.cloudinary_url ?? '', cropRegion)
       setAdjustedImageUrl(newUrl)
+      setAdjustedAtTitle(committedTitle)
       setShowCropPicker(false)
       toast.success('Crop adjusted!')
     } catch {
@@ -199,20 +224,55 @@ export function ArticleGenerateView({
     }
   }
 
-  const handleDownload = () => {
-    if (!previewImageUrl) return
-    const a = document.createElement('a')
-    a.href = adjustedImageUrl ?? previewImageUrl
-    a.download = `${brand.toLowerCase().replace(/\s+/g, '-')}-post.jpg`
-    a.target = '_blank'
-    a.click()
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadLoading(true)
+    try {
+      const publicId = await uploadToCloudinary(file)
+      setUploadedPublicId(publicId)
+      setAdjustedImageUrl(null)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadLoading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleDownload = async () => {
+    const url = displayImageUrl
+    if (!url) return
+    const filename = `${brand.toLowerCase().replace(/\s+/g, '-')}-post.jpg`
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+    }
   }
 
   const handleSchedule = async (scheduledFor: string, passcode: string) => {
     if (!generated || !previewImageUrl) return
     setScheduleState('posting')
     const finalPasscode = passcode || getCredentials(brand.toLowerCase())?.passcode || ''
-    const response = await callScheduleWebhook(adjustedImageUrl ?? previewImageUrl, caption, brand, scheduledFor, finalPasscode)
+    // Re-derive the URL from editableTitle (latest typed value, even if user hasn't blurred)
+    const latestBaseUrl = uploadedPublicId
+      ? buildCloudinaryUrl(uploadedPublicId, generated.title || '', generated.imageUrl || '')
+      : generated.imageUrl || ''
+    const latestImageUrl = adjustedImageUrl
+      ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || generated.title || '', editableTitle)
+      : updateTitleInImageUrl(latestBaseUrl, generated.title || '', editableTitle)
+    const response = await callScheduleWebhook(latestImageUrl || displayImageUrl || previewImageUrl, caption, brand, scheduledFor, finalPasscode)
     if (response.status === 'AUTH_ERROR') {
       setShowScheduleModal(true)
       setScheduleState('idle')
@@ -251,9 +311,6 @@ export function ArticleGenerateView({
               <div className="bg-neutral-50 border border-neutral-100 rounded-xl p-3.5">
                 <p className="text-[11px] text-neutral-400 mb-1">
                   {article.sourceBrand} · {relativeTime(article.publishedAt)}
-                  {isBrandMismatch && (
-                    <span className="ml-1.5 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">AI title</span>
-                  )}
                 </p>
                 <p className="text-sm font-semibold text-neutral-950 leading-snug line-clamp-3">{article.title}</p>
                 <a
@@ -364,7 +421,7 @@ export function ArticleGenerateView({
           <div className="glass-card rounded-2xl p-6 space-y-4">
             {previewImageUrl ? (
               <div className="rounded-xl overflow-hidden bg-neutral-100">
-                <img src={adjustedImageUrl ?? previewImageUrl} alt="Generated post" className="w-full h-auto block" />
+                <img src={displayImageUrl ?? undefined} alt="Generated post" className="w-full h-auto block" />
               </div>
             ) : (
               <div className="rounded-xl bg-neutral-100 aspect-square flex flex-col items-center justify-center gap-2">
@@ -377,8 +434,8 @@ export function ArticleGenerateView({
 
             {generateState === 'done' && (
               <>
-                {/* Adjust Image — full width, only when cloudinary_url present */}
-                {generated?.cloudinary_url && (
+                {/* Adjust Image — full width, only when image is available */}
+                {previewImageUrl && (
                   <button
                     onClick={() => setShowCropPicker(true)}
                     disabled={cropLoading}
@@ -393,15 +450,14 @@ export function ArticleGenerateView({
 
                 {/* Upload Custom Image | Download — side by side */}
                 <div className="flex gap-3">
-                  {!isCompetitor && (
-                    <button
-                      onClick={() => setShowImageUploadModal(true)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors"
-                    >
-                      <IconUpload className="w-4 h-4" />
-                      Upload Custom Image
-                    </button>
-                  )}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadLoading}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <IconUpload className="w-4 h-4" />
+                    {uploadLoading ? 'Uploading…' : 'Upload Custom Image'}
+                  </button>
                   <button
                     onClick={handleDownload}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-medium transition-colors"
@@ -426,19 +482,16 @@ export function ArticleGenerateView({
         />,
         document.body
       )}
-      {showImageUploadModal && createPortal(
-        <ImageUploadModal
-          onSelect={({ publicId }) => {
-            setUploadedPublicId(publicId)
-            setShowImageUploadModal(false)
-          }}
-          onClose={() => setShowImageUploadModal(false)}
-        />,
-        document.body
-      )}
-      {showCropPicker && generated?.cloudinary_url && createPortal(
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+      {showCropPicker && cropSourceUrl && previewImageUrl && createPortal(
         <FabricCropPicker
-          sourceImageUrl={generated.cloudinary_url}
+          sourceImageUrl={cropSourceUrl}
           aspectRatio={1080 / 1350}
           onDone={handleCropDone}
           onCancel={() => setShowCropPicker(false)}

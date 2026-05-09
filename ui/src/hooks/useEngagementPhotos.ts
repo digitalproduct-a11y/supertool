@@ -124,7 +124,6 @@ export function useEngagementPhotos() {
       }
 
       const data = (await response.json()) as any
-      console.log('Response data:', data)
 
       if (data?.success && data?.ideas && Array.isArray(data.ideas)) {
         const limitedIdeas = data.ideas.map((idea: any) => ({
@@ -136,14 +135,12 @@ export function useEngagementPhotos() {
         setIdeas(limitedIdeas)
 
         // Extract unique player/club combos and fetch all photos at once
-        console.log('Ideas for bulk search:', limitedIdeas)
         const uniqueKeywords = new Set(
           limitedIdeas.map((idea: any) => JSON.stringify({ player: idea.player, club: idea.club || '' }))
         )
         const keywords: Array<{ player: string; club: string }> = Array.from(uniqueKeywords).map(
           (str: unknown) => JSON.parse(str as string) as { player: string; club: string }
         )
-        console.log('Keywords for bulk search:', keywords)
 
         await bulkSearchPhotos(keywords)
       } else {
