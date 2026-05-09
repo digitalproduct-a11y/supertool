@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import PhotoPickerModal from './PhotoPickerModal'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
+import GempakEntertainmentCanvas, { type GempakEntertainmentCanvasHandle } from '../features/engagement/GempakEntertainmentCanvas'
+import { uploadToCloudinary } from '../utils/cloudinary'
+import { toast } from '../hooks/useToast'
 
 const FORMAT_BADGES: Record<string, string> = {
   challenge: '🏆',
@@ -41,6 +44,10 @@ interface IdeaCardProps {
   logoSize?: number
   showTypeOnImage?: boolean
   subtitleY?: number
+  // When true, the preview is rendered client-side via fabric.js
+  // (GempakEntertainmentCanvas) and the Cloudinary URL is built lazily at
+  // schedule-time. Default false → existing EPL Cloudinary URL preview path.
+  useFabricCanvas?: boolean
 }
 
 export default function IdeaCard({
@@ -59,6 +66,7 @@ export default function IdeaCard({
   logoSize = 150,
   showTypeOnImage = false,
   subtitleY = 1100,
+  useFabricCanvas = false,
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -66,6 +74,7 @@ export default function IdeaCard({
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
+  const canvasRef = useRef<GempakEntertainmentCanvasHandle>(null)
 
   // Sync committed values when a new idea is generated (idea.id changes)
   useEffect(() => {
@@ -136,7 +145,18 @@ export default function IdeaCard({
 
         {/* Live Preview */}
         <div className={`aspect-[1080/1350] rounded-xl border-2 overflow-hidden bg-gray-100 mb-4`}>
-          <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
+          {useFabricCanvas ? (
+            <GempakEntertainmentCanvas
+              ref={canvasRef}
+              headline={idea.headline}
+              subtitle={idea.subtitle}
+              brand={selectedBrand}
+              photoPublicId={idea.photo_public_id}
+              typeLabel={showTypeOnImage ? idea.type : undefined}
+            />
+          ) : (
+            <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
+          )}
         </div>
 
         <button
@@ -208,6 +228,10 @@ export default function IdeaCard({
             <button
               onClick={async () => {
                 try {
+                  if (useFabricCanvas) {
+                    canvasRef.current?.downloadAsPng(`${downloadPrefix}-${idea.type}.png`)
+                    return
+                  }
                   const res = await fetch(previewUrl)
                   const blob = await res.blob()
                   const url = window.URL.createObjectURL(blob)
@@ -236,11 +260,33 @@ export default function IdeaCard({
                     isPosting={isScheduling}
                     onConfirm={async (scheduledFor, passcode) => {
                       setIsScheduling(true)
-                      const latestUrl = buildPreviewUrl(idea.headline, idea.subtitle, idea.photo_public_id)
-                      const result = await onScheduleOnFB(latestUrl, idea.caption, selectedBrand, scheduledFor, passcode)
-                      setIsScheduling(false)
-                      setShowScheduleModal(false)
-                      setScheduleStatus(result.success ? 'done' : 'error')
+                      try {
+                        let urlForFb: string
+                        if (useFabricCanvas) {
+                          // Render fabric canvas → PNG → upload to Cloudinary
+                          // → use returned public URL for FB scheduling. Upload
+                          // happens lazily here so un-scheduled ideas never
+                          // touch Cloudinary.
+                          const dataUrl = canvasRef.current?.getDataUrl()
+                          if (!dataUrl) throw new Error('Canvas not ready')
+                          const blob = await (await fetch(dataUrl)).blob()
+                          const file = new File([blob], `${downloadPrefix}-${idea.type}.png`, { type: 'image/png' })
+                          const publicId = await uploadToCloudinary(file)
+                          const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
+                          urlForFb = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
+                        } else {
+                          urlForFb = buildPreviewUrl(idea.headline, idea.subtitle, idea.photo_public_id)
+                        }
+                        const result = await onScheduleOnFB(urlForFb, idea.caption, selectedBrand, scheduledFor, passcode)
+                        setScheduleStatus(result.success ? 'done' : 'error')
+                      } catch (err) {
+                        console.error('Schedule failed:', err)
+                        toast.error('Image upload failed. Please try again.')
+                        setScheduleStatus('error')
+                      } finally {
+                        setIsScheduling(false)
+                        setShowScheduleModal(false)
+                      }
                     }}
                     onClose={() => setShowScheduleModal(false)}
                   />

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
@@ -10,6 +11,8 @@ import ImageUploadModal from './ImageUploadModal'
 import { IconUpload } from '@tabler/icons-react'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { applyFocalCrop } from '../features/photo/cropUtils'
+import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 
 // ─── API helper ───────────────────────────────────────────────────────────────
 
@@ -44,6 +47,7 @@ interface GeneratedPost {
   brand: string
   category?: string
   subtitle?: string
+  cloudinary_url?: string
 }
 
 export interface GenerateSource {
@@ -147,6 +151,10 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showCropPicker, setShowCropPicker] = useState(false)
+  const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [adjustedAtTitle, setAdjustedAtTitle] = useState<string>('')
+  const [cropLoading, setCropLoading] = useState(false)
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
@@ -163,7 +171,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
         custom_image: customImageBase64,
       })
       if (data.success) {
-        setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand, category: data.category })
+        setResult({ imageUrl: data.imageUrl, caption: data.caption, title: data.title, originalTitle: data.originalTitle, brand: data.brand, category: data.category, cloudinary_url: data.cloudinary_url })
         setCaption(data.caption ?? '')
         setLocalTitle(data.title ?? '')
         setCommittedLocalTitle(data.title ?? '')
@@ -181,6 +189,8 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
 
   useEffect(() => {
     setUploadedPublicId(null)
+    setAdjustedImageUrl(null)
+    setAdjustedAtTitle('')
   }, [result?.imageUrl])
 
   const baseImageUrl = uploadedPublicId
@@ -191,9 +201,29 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
     ? updateTitleInImageUrl(baseImageUrl, result?.title || '', committedLocalTitle)
     : undefined
 
+  const displayImageUrl = adjustedImageUrl
+    ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || (result?.title ?? ''), committedLocalTitle)
+    : previewImageUrl
+
+  async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
+    if (!result?.cloudinary_url) return
+    setCropLoading(true)
+    try {
+      const newUrl = await applyFocalCrop(previewImageUrl ?? result.imageUrl, result.cloudinary_url, cropRegion)
+      setAdjustedImageUrl(newUrl)
+      setAdjustedAtTitle(committedLocalTitle)
+      setShowCropPicker(false)
+      toast.success('Crop adjusted!')
+    } catch {
+      toast.error('Failed to adjust crop')
+    } finally {
+      setCropLoading(false)
+    }
+  }
+
   async function handleDownload() {
     if (!result?.imageUrl) return
-    const urlToDownload = previewImageUrl ?? result.imageUrl
+    const urlToDownload = displayImageUrl ?? result.imageUrl
     try {
       const res = await fetch(urlToDownload)
       const blob = await res.blob()
@@ -217,7 +247,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
       const latestBaseUrl = uploadedPublicId
         ? buildCloudinaryUrl(uploadedPublicId, localTitle || result.title || '', result.imageUrl || '')
         : result.imageUrl
-      const latestImageUrl = updateTitleInImageUrl(latestBaseUrl, result.title || '', localTitle)
+      const latestImageUrl = displayImageUrl ?? updateTitleInImageUrl(latestBaseUrl, result.title || '', localTitle)
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -267,6 +297,15 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
           onConfirm={(sf, passcode) => void handlePostDraftClick(sf, passcode ?? getCredentials(result?.brand?.toLowerCase() ?? '')?.passcode ?? '')}
           onClose={() => setShowScheduleModal(false)}
         />
+      )}
+      {showCropPicker && result?.cloudinary_url && createPortal(
+        <FabricCropPicker
+          sourceImageUrl={result.cloudinary_url}
+          aspectRatio={1080 / 1350}
+          onDone={handleCropDone}
+          onCancel={() => setShowCropPicker(false)}
+        />,
+        document.body
       )}
       {/* Back nav */}
       <button onClick={onBack} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition">
@@ -391,8 +430,21 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
               )}
 
               <div className="relative bg-neutral-50 aspect-[4/5] rounded-xl overflow-hidden border border-gray-200 w-full">
-                <img src={previewImageUrl ?? result.imageUrl} alt={result.title} className="w-full h-full object-cover" />
+                <img src={displayImageUrl ?? result.imageUrl} alt={result.title} className="w-full h-full object-cover" />
               </div>
+
+              {result.cloudinary_url && (
+                <button
+                  onClick={() => setShowCropPicker(true)}
+                  disabled={cropLoading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {cropLoading ? 'Adjusting...' : 'Adjust Image'}
+                </button>
+              )}
 
               <div className="flex gap-3">
                 <button

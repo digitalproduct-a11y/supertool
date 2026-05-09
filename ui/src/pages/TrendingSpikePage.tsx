@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { toast } from '../hooks/useToast'
-import { IconRefresh, IconSearch, IconChevronRight, IconExternalLink } from '@tabler/icons-react'
+import { IconRefresh, IconSearch, IconExternalLink } from '@tabler/icons-react'
 import { Spinner } from '../components/ds/Spinner'
 import { GuideModal } from '../components/ds/GuideModal'
-import { GenerateView } from '../components/GeneratePostView'
-import type { GenerateSource } from '../components/GeneratePostView'
+import { ArticleGenerateView } from '../components/ArticleGenerateView'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,7 +112,6 @@ export function TrendingSpikePage() {
   const [isFetchingTrending, setIsFetchingTrending] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
-
   const handleFetchTrending = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh) {
       const cached = getCachedTrendingData()
@@ -194,15 +192,6 @@ export function TrendingSpikePage() {
     setSelectedTrending(null)
   }
 
-  const generateSource: GenerateSource | null = selectedTrending
-    ? {
-        articleUrl: selectedTrending.url,
-        brand: selectedTrending.brand,
-        articleTitle: selectedTrending.title,
-        backLabel: 'Back to trending',
-      }
-    : null
-
   return (
     <main className="flex-1 pt-20 md:pt-10 flex flex-col min-h-0 overflow-hidden">
 
@@ -256,12 +245,19 @@ export function TrendingSpikePage() {
       </div>
 
       {/* Generate view */}
-      {view === 'generate' && generateSource && (
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-10">
-          <div className="max-w-5xl mx-auto">
-            <GenerateView source={generateSource} onBack={handleBackToList} />
-          </div>
-        </div>
+      {view === 'generate' && selectedTrending && (
+        <ArticleGenerateView
+          article={{
+            url: selectedTrending.url,
+            title: selectedTrending.title ?? '',
+            sourceBrand: selectedTrending.brand,
+            publishedAt: selectedTrending.publishedAt ?? '',
+          }}
+          brand={selectedTrending.brand}
+          autoGenerate={true}
+          backLabel="Back to trending"
+          onBack={handleBackToList}
+        />
       )}
 
       {/* List view */}
@@ -384,22 +380,25 @@ export function TrendingSpikePage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {filteredItems.map((item, idx) => (
+                    {filteredItems.map((item, idx) => {
+                      return (
                       <div
                         key={`${item.id}-${idx}`}
-                        className="bg-white rounded-xl border border-neutral-100 overflow-hidden"
+                        onClick={() => handleGeneratePost(item)}
+                        className="rounded-xl border overflow-hidden transition-all cursor-pointer bg-white border-neutral-100 hover:border-neutral-200 hover:shadow-sm"
                       >
                         <div className="flex gap-3 p-4">
-                          {item.imageUrl && (
-                            <div className="w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden">
+                          {/* Thumbnail */}
+                          <div className="w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden relative">
+                            {item.imageUrl && (
                               <img
                                 src={item.imageUrl}
                                 alt=""
                                 className="w-full h-full object-cover"
                                 onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
                               />
-                            </div>
-                          )}
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] text-neutral-400 mb-1">
                               {formatBrandName(item.brand)}
@@ -410,24 +409,20 @@ export function TrendingSpikePage() {
                             </h3>
                           </div>
                         </div>
-                        <div className="border-t border-neutral-100 px-4 py-2.5 flex items-center justify-between">
+                        <div className="border-t border-neutral-100 px-4 py-2.5">
                           <a
                             href={item.url}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
                             className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition"
                           >
                             Read article <IconExternalLink className="w-3 h-3" />
                           </a>
-                          <button
-                            onClick={() => handleGeneratePost(item)}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-950 hover:text-neutral-600 transition"
-                          >
-                            Generate Post <IconChevronRight className="w-3.5 h-3.5" />
-                          </button>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

@@ -19,11 +19,19 @@ export const RSS_FEEDS_BY_BRAND: Record<string, string[]> = {
 
 export const BRAND_GROUPS: { label: string; brands: string[] }[] = [
   {
-    label: 'MBNS',
-    brands: ['Gempak', 'XUAN', 'Hotspot', 'Astro Ulagam', 'Stadium Astro', 'Astro Arena', 'Astro Awani'],
+    label: 'Astro',
+    brands: [
+      'Astro Arena', 'Astro Awani', 'Astro Ulagam',
+      'Gempak', 'Hotspot', 'Impiana', 'Majalah Pama',
+      'Media Hiburan', 'Mingguan Wanita', 'Nona', 'Remaja',
+      'Rasa', 'Stadium Astro', 'XUAN',
+    ],
   },
-  {
-    label: 'NISB',
-    brands: ['Impiana', 'Media Hiburan', 'Majalah Pama', 'Mingguan Wanita', 'Rasa', 'Remaja', 'Nona'],
-  },
+]
+
+export const COMPETITOR_BRANDS = [
+  'ELLE', 'ELLE TW', 'ETtoday 即時新聞', 'ETtoday 網搜頻道',
+  'FMT', 'Harian Metro', 'Kosmo', 'LobakMerah', 'MalayMail',
+  'mStar', 'OhMedia', 'Oriental Daily', 'SAYS.com', 'SoccerNews',
+  'Sportbible', 'WeirdKaya', 'WOB', 'Murai',
 ]

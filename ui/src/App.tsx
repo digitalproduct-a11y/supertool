@@ -21,6 +21,7 @@ import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
 import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
+import { DashboardPage } from './pages/DashboardPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,
@@ -34,6 +35,11 @@ const WeatherMalaysiaPage = lazy(() =>
 const QuotePage = lazy(() =>
   import('./pages/QuotePage').then((m) => ({
     default: m.QuotePage,
+  })),
+)
+const FoodPlacesPage = lazy(() =>
+  import('./pages/FoodPlacesPage').then((m) => ({
+    default: m.FoodPlacesPage,
   })),
 )
 import { InputForm } from './features/article/InputForm'
@@ -60,7 +66,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -72,6 +78,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
+  '/engagement-posts/gempak-entertainment': 'engagement-photos',
   '/trending-news': 'scheduled-posts',
   '/news-bank': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
@@ -82,12 +89,16 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/on-this-day-malaysia': 'on-this-day',
   '/engagement-posts/weather-malaysia': 'weather-malaysia',
   '/engagement-posts/quote': 'quote',
+  '/dashboard': 'dashboard',
 }
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
 function getActiveTool(pathname: string): ToolId {
   if (pathname.startsWith('/trending-news') || pathname.startsWith('/news-bank')) {
     return 'scheduled-posts'
+  }
+  if (pathname.startsWith('/dashboard')) {
+    return 'dashboard'
   }
   return pathToTool[pathname] ?? 'home'
 }
@@ -111,6 +122,7 @@ const toolToPath: Record<ToolId, string> = {
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
+  'dashboard': '/dashboard',
 }
 
 const topicToPath: Record<string, string> = {
@@ -124,7 +136,9 @@ const topicToPath: Record<string, string> = {
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
-  'didyouknow': '/engagement-photos/didyouknow',
+  'didyouknow': '/engagement-posts/didyouknow',
+  'food-places': '/engagement-posts/food-places',
+  'gempak-entertainment': '/engagement-posts/gempak-entertainment',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -400,7 +414,8 @@ function FbPostPage() {
   const [titleMode, setTitleMode] = useState<TitleMode>('original')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>('original')
 
-  const { run, isRunning } = useWorkflow()
+  const stagingWebhookUrl = (import.meta.env.VITE_GENERATE_WEBHOOK_URL_STAGING as string | undefined)?.trim()
+  const { run, isRunning } = useWorkflow(stagingWebhookUrl)
 
   useEffect(() => {
     if (state === 'result' && window.innerWidth < 768) {
@@ -916,6 +931,11 @@ function App() {
           <EngagementPhotosPage topic="ucl" />
         </Layout>
       } />
+      <Route path="/engagement-posts/gempak-entertainment" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="gempak-entertainment" />
+        </Layout>
+      } />
       <Route path="/engagement-posts/worldcup" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="worldcup" />
@@ -977,7 +997,7 @@ function App() {
           <PrimeTalkPage />
         </Layout>
       } />
-      <Route path="/engagement-photos/didyouknow" element={
+      <Route path="/engagement-posts/didyouknow" element={
         <Layout {...layoutProps}>
           <DidYouKnowPage />
         </Layout>
@@ -1001,6 +1021,18 @@ function App() {
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <QuotePage />
           </Suspense>
+        </Layout>
+      } />
+      <Route path="/engagement-posts/food-places" element={
+        <Layout {...layoutProps}>
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <FoodPlacesPage />
+          </Suspense>
+        </Layout>
+      } />
+      <Route path="/dashboard" element={
+        <Layout {...layoutProps}>
+          <DashboardPage />
         </Layout>
       } />
     </Routes>

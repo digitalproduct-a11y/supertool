@@ -158,8 +158,6 @@ const WeatherImageCard = memo(function WeatherImageCard({
 // ─── Mode Toggle ─────────────────────────────────────────────────────────────
 
 const MODE_OPTIONS: { value: PostMode; label: string }[] = [
-  { value: "grouped", label: "By Weather" },
-  { value: "individual", label: "Individual (16 Posts)" },
   { value: "single", label: "Single Post" },
 ];
 
@@ -193,9 +191,13 @@ function ModeToggle({
 
 export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
-  const { posts, fontUse, brandColor, nationalSummary, isLoading, error, generate } = useWeatherMalaysia();
+  const { posts, fontUse: rawFontUse, brandColor, nationalSummary, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState("");
-  const [mode, setMode] = useState<PostMode>("grouped");
+  // Brands that should render the weather post in the canvas-default Inter
+  // face rather than their usual brand font.
+  const WEATHER_INTER_BRANDS = new Set(["Sinar", "Era"]);
+  const fontUse = WEATHER_INTER_BRANDS.has(brand) ? null : rawFontUse;
+  const [mode, setMode] = useState<PostMode>("single");
   const [stage, setStage] = useState<"brand-select" | "review">(
     posts.length > 0 ? "review" : "brand-select",
   );

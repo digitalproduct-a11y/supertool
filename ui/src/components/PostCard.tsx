@@ -1,13 +1,27 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { IconUpload } from '@tabler/icons-react'
+import { IconUpload, IconDownload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
-import ImageUploadModal from './ImageUploadModal'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import type { ScheduledPost, SchedulePostPayload } from '../types'
+import { FabricCropPicker } from '../features/photo/FabricCropPicker'
+
+async function uploadToCloudinary(file: File): Promise<string> {
+  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim()
+  const uploadPreset = (import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined)?.trim()
+  if (!cloudName || !uploadPreset) throw new Error('Cloudinary configuration missing')
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', uploadPreset)
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: formData })
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+  const data = await res.json() as { public_id: string }
+  return data.public_id
+}
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
 
@@ -43,34 +57,72 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
   const [committedTitle, setCommittedTitle] = useState(post.title)
   const [editCaption, setEditCaption] = useState(post.caption)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
+  const [uploadLoading, setUploadLoading] = useState(false)
   const [isPosting, setIsPosting] = useState(false)
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
+  const [showCropPicker, setShowCropPicker] = useState(false)
+  const [appliedCropRegion, setAppliedCropRegion] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [cropLoading, setCropLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? 'dymmqtqyg'
 
   // Cloudinary preview URL — only updates when user commits title (on blur)
   const previewPublicId = uploadedPublicId ?? post.photoPublicId
-  // Step 1: handle photo swap; also tries fonts-pattern title replacement
   const urlWithPhoto = buildCloudinaryUrl(previewPublicId, committedTitle, post.imageUrl)
-  // Step 2: robust title replacement (handles all brand URL formats incl. Chinese chars)
   const previewUrl = updateTitleInImageUrl(urlWithPhoto, post.title ?? '', committedTitle)
+
+  // Apply crop region to the current previewUrl so title changes are always reflected
+  const displayUrl = appliedCropRegion
+    ? previewUrl.replace(
+        /c_fill,g_[^,/]+,w_(\d+),h_(\d+)/,
+        `c_crop,x_${Math.round(appliedCropRegion.x)},y_${Math.round(appliedCropRegion.y)},w_${Math.round(appliedCropRegion.width)},h_${Math.round(appliedCropRegion.height)}/c_fill,g_center,w_$1,h_$2`
+      )
+    : previewUrl
+
+  // Crop source: use uploaded image (raw, no overlays) when available, else original
+  const cropSourceUrl = uploadedPublicId
+    ? `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
+    : post.cloudinary_url ?? null
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  function handleImageSelected(photo: { url: string; publicId: string }) {
-    setUploadedPublicId(photo.publicId)
-    toast.success('Image uploaded!')
+  async function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadLoading(true)
+    try {
+      const publicId = await uploadToCloudinary(file)
+      setUploadedPublicId(publicId)
+      setAppliedCropRegion(null)
+      toast.success('Image uploaded!')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadLoading(false)
+      e.target.value = ''
+    }
   }
 
+  function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
+    if (!cropSourceUrl) return
+    setCropLoading(true)
+    setAppliedCropRegion(cropRegion)
+    setShowCropPicker(false)
+    setCropLoading(false)
+    toast.success('Crop adjusted!')
+  }
 
   async function handleDownload() {
     try {
-      const res = await fetch(previewUrl)
+      const res = await fetch(displayUrl)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `astro-ulagam-${post.date}-${Date.now()}.jpg`
+      a.download = `${post.brand.toLowerCase().replace(/\s+/g, '-')}-${post.date}-${Date.now()}.jpg`
       a.click()
+      URL.revokeObjectURL(a.href)
     } catch {
       toast.error('Download failed.')
     }
@@ -90,7 +142,13 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
     try {
       const finalPublicId = uploadedPublicId ?? post.photoPublicId
       const finalUrlWithPhoto = buildCloudinaryUrl(finalPublicId, editTitle, post.imageUrl)
-      const finalImageUrl = updateTitleInImageUrl(finalUrlWithPhoto, post.title ?? '', editTitle)
+      const latestUrl = updateTitleInImageUrl(finalUrlWithPhoto, post.title ?? '', editTitle)
+      const finalImageUrl = appliedCropRegion
+        ? latestUrl.replace(
+            /c_fill,g_[^,/]+,w_(\d+),h_(\d+)/,
+            `c_crop,x_${Math.round(appliedCropRegion.x)},y_${Math.round(appliedCropRegion.y)},w_${Math.round(appliedCropRegion.width)},h_${Math.round(appliedCropRegion.height)}/c_fill,g_center,w_$1,h_$2`
+          )
+        : latestUrl
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -142,19 +200,30 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
         />
       )}
 
-      {showImageUploadModal && (
-        <ImageUploadModal
-          onSelect={handleImageSelected}
-          onClose={() => setShowImageUploadModal(false)}
-        />
+      {showCropPicker && cropSourceUrl && createPortal(
+        <FabricCropPicker
+          sourceImageUrl={cropSourceUrl}
+          aspectRatio={1080 / 1350}
+          onDone={handleCropDone}
+          onCancel={() => setShowCropPicker(false)}
+        />,
+        document.body
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
 
       <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
 
         {/* Image preview */}
         <div className="relative w-full" style={{ aspectRatio: '4/5' }}>
           <img
-            src={previewUrl}
+            src={displayUrl}
             alt={post.title}
             className="w-full h-full object-cover"
           />
@@ -176,21 +245,43 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
           {/* Status */}
           <StatusBadge post={post} />
 
-          {/* Edit mode: upload */}
-          <div>
+          {/* Row 1: Adjust Image */}
+          {cropSourceUrl && (
             <button
-              onClick={() => setShowImageUploadModal(true)}
-              className="w-full py-2 rounded-lg text-sm font-medium border border-dashed border-neutral-300 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-2"
+              onClick={() => setShowCropPicker(true)}
+              disabled={cropLoading}
+              className="w-full py-2 rounded-lg text-sm font-medium border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <IconUpload className="w-4 h-4" />
-              Upload custom image
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {cropLoading ? 'Adjusting...' : 'Adjust Image'}
+            </button>
+          )}
+
+          {/* Row 2: Upload Custom Image | Download Image */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadLoading}
+              className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <IconUpload className="w-3.5 h-3.5" />
+              {uploadLoading ? 'Uploading…' : 'Upload Image'}
+            </button>
+            <button
+              onClick={handleDownload}
+              className="flex-1 py-2 rounded-lg text-sm font-medium bg-neutral-950 text-white hover:bg-neutral-800 transition flex items-center justify-center gap-1.5"
+            >
+              <IconDownload className="w-3.5 h-3.5" />
+              Download
             </button>
           </div>
 
-          {/* Edit mode: headline */}
+          {/* Image Title */}
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">
-              Headline{' '}
+              Image Title{' '}
               <span className={`${editTitle.trim().split(/\s+/).filter(Boolean).length > 15 ? 'text-red-500' : 'text-neutral-400'}`}>
                 ({editTitle.trim().split(/\s+/).filter(Boolean).length} words)
               </span>
@@ -201,11 +292,11 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
               onChange={e => setEditTitle(e.target.value)}
               onBlur={() => setCommittedTitle(editTitle)}
               className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
-              placeholder="Post headline"
+              placeholder="Post image title"
             />
           </div>
 
-          {/* Edit mode: caption */}
+          {/* Caption */}
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">
               Caption{' '}
@@ -222,31 +313,23 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
             />
           </div>
 
-          {/* Action buttons */}
+          {/* Schedule on FB */}
           <div className="flex flex-col gap-2 mt-auto">
-            <div className="flex gap-2">
-              <button
-                onClick={handleDownload}
-                className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 hover:bg-neutral-50 transition"
-              >
-                Download image
-              </button>
-              <button
-                onClick={handleScheduleClick}
-                disabled={isPosting}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold transition bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50"
-              >
-                {isPosting ? (
-                  <span className="flex items-center justify-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                    </svg>
-                    Scheduling…
-                  </span>
-                ) : 'Schedule on FB'}
-              </button>
-            </div>
+            <button
+              onClick={handleScheduleClick}
+              disabled={isPosting}
+              className="w-full py-2 rounded-lg text-sm font-semibold transition bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50"
+            >
+              {isPosting ? (
+                <span className="flex items-center justify-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Scheduling…
+                </span>
+              ) : 'Schedule on FB'}
+            </button>
             {scheduleStatus === 'done' && (
               <div className="text-center space-y-1">
                 <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>

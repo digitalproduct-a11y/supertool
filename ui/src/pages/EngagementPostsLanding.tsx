@@ -11,6 +11,7 @@ import {
   IconCloudRain,
   IconBlockquote,
   IconBulb,
+  IconSoup,
 } from "@tabler/icons-react";
 import type React from "react";
 
@@ -24,7 +25,9 @@ type ActiveTopicId =
   | "on-this-day"
   | "weather-malaysia"
   | "quote"
-  | "didyouknow";
+  | "didyouknow"
+  | "food-places"
+  | "gempak-entertainment";
 
 interface EngagementPostsLandingProps {
   onSelectTopic: (id: ActiveTopicId) => void;
@@ -50,28 +53,6 @@ interface Section {
 }
 
 const sections: Section[] = [
-  {
-    label: "Sports",
-    description:
-      "Create engaging posts across different sports leagues and tournaments.",
-    topics: [
-      {
-        id: "engagement-photos",
-        label: "English Premier League",
-        description:
-          "Create engaging football posts featuring Premier League players and debates",
-        icon: IconFlame,
-        color: "#FF3FBF",
-      },
-      {
-        id: "ucl",
-        label: "Champions League",
-        description: "European football highlights and player comparisons",
-        icon: IconTrophy,
-        color: "#0055EE",
-      },
-    ],
-  },
   {
     label: "Daily Briefings",
     description:
@@ -112,7 +93,6 @@ const sections: Section[] = [
           "Historical events from Malaysia — what happened today in history",
         icon: IconCalendar,
         color: "#0055EE",
-        hidden: true,
       },
     ],
   },
@@ -144,6 +124,57 @@ const sections: Section[] = [
           "Generate fun facts and interesting moments with context-based search",
         icon: IconBulb,
         color: "#F05A35",
+      },
+    ],
+  },
+  {
+    label: "Sports",
+    description:
+      "Create engaging posts across different sports leagues and tournaments.",
+    topics: [
+      {
+        id: "engagement-photos",
+        label: "English Premier League",
+        description:
+          "Create engaging football posts featuring Premier League players and debates",
+        icon: IconFlame,
+        color: "#FF3FBF",
+      },
+      {
+        id: "ucl",
+        label: "Champions League",
+        description: "European football highlights and player comparisons",
+        icon: IconTrophy,
+        color: "#0055EE",
+      },
+    ],
+  },
+  {
+    label: "Entertainment",
+    description:
+      "Celebrity, lifestyle, and showbiz posts for Gempak's entertainment brands.",
+    topics: [
+      {
+        id: "gempak-entertainment",
+        label: "Entertainment",
+        description:
+          "Generate showbiz and celebrity posts curated from Malaysian entertainment news",
+        icon: IconMusicStar,
+        color: "#FF3FBF",
+      },
+    ],
+  },
+  {
+    label: "Food & Travel",
+    description: "Local discovery posts — places to eat, drink, and explore.",
+    topics: [
+      {
+        id: "food-places",
+        label: "Food Places Search",
+        description:
+          "Generate top food spot carousels for any dish + location in your brand's voice",
+        icon: IconSoup,
+        color: "#FF3FBF",
       },
     ],
   },
@@ -223,74 +254,78 @@ export function EngagementPostsLanding({
 
                 {/* Cards grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {section.topics.filter(t => !t.hidden).map((topic) => {
-                    const Icon = topic.icon;
+                  {section.topics
+                    .filter((t) => !t.hidden)
+                    .map((topic) => {
+                      const Icon = topic.icon;
 
-                    if (topic.comingSoon) {
+                      if (topic.comingSoon) {
+                        return (
+                          <div
+                            key={topic.label}
+                            className="glass-card rounded-xl overflow-hidden cursor-default opacity-60"
+                          >
+                            <div className="px-5 pt-5 pb-2 flex items-center justify-between">
+                              <Icon
+                                className="w-8 h-8 opacity-25"
+                                style={{ color: topic.color }}
+                              />
+                              <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-100/80 rounded px-2 py-0.5">
+                                Soon
+                              </span>
+                            </div>
+                            <div className="p-5">
+                              <h2 className="font-display text-base font-semibold text-neutral-400">
+                                {topic.label}
+                              </h2>
+                              <p className="text-xs text-neutral-300 mt-1">
+                                {topic.description}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
-                        <div
+                        <button
                           key={topic.label}
-                          className="glass-card rounded-xl overflow-hidden cursor-default opacity-60"
+                          onClick={() =>
+                            onSelectTopic(topic.id as ActiveTopicId)
+                          }
+                          className="glass-card rounded-xl overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] transition-all duration-200 text-left group"
                         >
                           <div className="px-5 pt-5 pb-2 flex items-center justify-between">
                             <Icon
-                              className="w-8 h-8 opacity-25"
+                              className="w-9 h-9"
                               style={{ color: topic.color }}
                             />
-                            <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-100/80 rounded px-2 py-0.5">
-                              Soon
+                            <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 12h14M12 5l7 7-7 7"
+                                />
+                              </svg>
                             </span>
                           </div>
                           <div className="p-5">
-                            <h2 className="font-display text-base font-semibold text-neutral-400">
+                            <h2 className="font-display text-base font-semibold text-neutral-950">
                               {topic.label}
                             </h2>
-                            <p className="text-xs text-neutral-300 mt-1">
+                            <p className="text-xs text-neutral-500 mt-1">
                               {topic.description}
                             </p>
                           </div>
-                        </div>
+                        </button>
                       );
-                    }
-
-                    return (
-                      <button
-                        key={topic.label}
-                        onClick={() => onSelectTopic(topic.id as ActiveTopicId)}
-                        className="glass-card rounded-xl overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] transition-all duration-200 text-left group"
-                      >
-                        <div className="px-5 pt-5 pb-2 flex items-center justify-between">
-                          <Icon
-                            className="w-9 h-9"
-                            style={{ color: topic.color }}
-                          />
-                          <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors">
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 12h14M12 5l7 7-7 7"
-                              />
-                            </svg>
-                          </span>
-                        </div>
-                        <div className="p-5">
-                          <h2 className="font-display text-base font-semibold text-neutral-950">
-                            {topic.label}
-                          </h2>
-                          <p className="text-xs text-neutral-500 mt-1">
-                            {topic.description}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
+                    })}
                 </div>
               </div>
             );

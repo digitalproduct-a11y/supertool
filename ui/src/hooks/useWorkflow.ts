@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { WorkflowResponse, WorkflowRequest } from "../types";
 
 interface UseWorkflowReturn {
@@ -8,8 +8,17 @@ interface UseWorkflowReturn {
 
 export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
   const [isRunning, setIsRunning] = useState(false);
+  const isRunningRef = useRef(false);
 
   async function run(request: WorkflowRequest): Promise<WorkflowResponse> {
+    if (isRunningRef.current) {
+      return {
+        success: false,
+        error: "execution_error",
+        message: "Already running.",
+      };
+    }
+
     const webhookUrl =
       webhookUrlOverride || import.meta.env.VITE_GENERATE_WEBHOOK_URL;
     if (!webhookUrl) {
@@ -20,6 +29,7 @@ export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
       };
     }
 
+    isRunningRef.current = true;
     setIsRunning(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120_000); // 2 min timeout
@@ -54,6 +64,7 @@ export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
       };
     } finally {
       clearTimeout(timeout);
+      isRunningRef.current = false;
       setIsRunning(false);
     }
   }
