@@ -212,7 +212,7 @@ export function ArticleGenerateView({
     if (!previewImageUrl) return
     setCropLoading(true)
     try {
-      const newUrl = await applyFocalCrop(previewImageUrl, generated?.cloudinary_url ?? '', cropRegion)
+      const newUrl = await applyFocalCrop(previewImageUrl, cropRegion)
       setAdjustedImageUrl(newUrl)
       setAdjustedAtTitle(committedTitle)
       setShowCropPicker(false)

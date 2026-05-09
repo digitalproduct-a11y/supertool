@@ -145,7 +145,7 @@ export function QuickFactPage() {
   async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
     setCropLoading(true)
     try {
-      const newUrl = await applyFocalCrop(previewImageUrl, result?.cloudinary_url ?? '', cropRegion)
+      const newUrl = await applyFocalCrop(previewImageUrl, cropRegion)
       setAdjustedImageUrl(newUrl)
       setShowCropPicker(false)
       toast.success('Crop adjusted!')

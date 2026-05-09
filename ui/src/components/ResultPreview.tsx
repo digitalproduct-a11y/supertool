@@ -128,7 +128,7 @@ export function ResultPreview({
     setCropLoading(true)
     try {
       const builtUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', committedTitle)
-      const newUrl = await applyFocalCrop(builtUrl, result.cloudinary_url, cropRegion)
+      const newUrl = await applyFocalCrop(builtUrl, cropRegion)
       setAdjustedImageUrl(newUrl)
       setShowCropPicker(false)
       toast.success('Crop adjusted!')

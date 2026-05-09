@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { ImageCropAdjuster, type CropRegion } from '../quote/ImageCropAdjuster'
 
 interface FabricCropPickerProps {
@@ -14,18 +13,6 @@ export function FabricCropPicker({
   onDone,
   onCancel,
 }: FabricCropPickerProps) {
-  const [imageNaturalSize, setImageNaturalSize] = useState<{ w: number; h: number } | null>(null)
-
-  // Load image to get natural dimensions
-  useEffect(() => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      setImageNaturalSize({ w: img.naturalWidth, h: img.naturalHeight })
-    }
-    img.src = sourceImageUrl
-  }, [sourceImageUrl])
-
   const handleCropSave = (region: CropRegion) => {
     onDone(region)
   }
@@ -37,10 +24,8 @@ export function FabricCropPicker({
       initialRegion={null}
       onSave={handleCropSave}
       onReset={() => {
-        // When reset, use center of image as focal point
-        const focalX = 0.5
-        const focalY = 0.5
-        onDone(focalX, focalY)
+        // When reset, pass a centered crop region
+        onDone({ x: 0, y: 0, width: 0, height: 0 })
       }}
       onCancel={onCancel}
     />

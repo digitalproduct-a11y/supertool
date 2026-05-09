@@ -4,7 +4,6 @@
  */
 export async function applyFocalCrop(
   finalImageUrl: string,
-  cloudinarySourceUrl: string,
   cropRegion: { x: number; y: number; width: number; height: number },
 ): Promise<string> {
   // Use Cloudinary's c_crop to extract the exact rectangular region
