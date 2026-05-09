@@ -123,7 +123,11 @@ export function useEngagementPhotos() {
         throw new Error(`HTTP ${response.status}`)
       }
 
-      const data = (await response.json()) as any
+      let data = (await response.json()) as any
+      // Some webhooks wrap the response in an array (e.g. n8n Respond node).
+      if (Array.isArray(data) && data.length > 0) {
+        data = data[0]
+      }
 
       if (data?.success && data?.ideas && Array.isArray(data.ideas)) {
         const limitedIdeas = data.ideas.map((idea: any) => ({

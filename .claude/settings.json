@@ -47,11 +47,17 @@
       "mcp__claude_ai_n8n__create_workflow_from_code",
       "mcp__claude_ai_n8n__get_workflow_details",
       "mcp__claude_ai_n8n__archive_workflow",
-      "mcp__claude_ai_n8n__search_workflows"
+      "mcp__claude_ai_n8n__search_workflows",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(rm -f /Users/ylyiyany/Documents/fb-project/.mcp.json /Users/ylyiyany/Documents/fb-project/.claude/settings.json)",
+      "Bash(rm -f /Users/ylyiyany/Documents/n8n-builder/.mcp.json)"
     ],
     "additionalDirectories": [
       "/Users/ylyiyany/Documents/fb-project",
-      "/Users/ylyiyany/.claude"
+      "/Users/ylyiyany/.claude",
+      "/tmp",
+      "/private/tmp"
     ]
   }
 }

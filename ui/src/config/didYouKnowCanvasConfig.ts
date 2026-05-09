@@ -115,7 +115,7 @@ export const DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG: DidYouKnowCanvasConfig = {
     charSpacing: -43,
     maxWidth: 1000,
     marginBottom: 20,
-    leftOffset: 540,
+    leftOffset: 40,
     shadow: {
       color: 'rgba(0,0,0,0.5)',
       blur: 4,

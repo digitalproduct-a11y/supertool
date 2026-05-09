@@ -1,7 +1,11 @@
 {
   "permissions": {
-    "allow": ["WebFetch(domain:github.com)"]
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "mcp__n8n-mcp__n8n_manage_credentials"
+    ]
   },
+  "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [
     "n8n-mcp",
     "cloudinary-asset-mgmt",
@@ -11,6 +15,5 @@
     "vercel",
     "tavily-mcp",
     "templated"
-  ],
-  "enableAllProjectMcpServers": false
+  ]
 }

@@ -1,37 +1,44 @@
 import { useEffect, useState, useRef } from 'react'
 import { CAROUSEL_PROGRESS_STEPS } from '../../types'
 
-interface CarouselProgressStepsProps {
-  isComplete: boolean
+export interface ProgressStep {
+  label: string
+  subtitle?: string
+  duration: number
 }
 
-export function CarouselProgressSteps({ isComplete }: CarouselProgressStepsProps) {
+interface CarouselProgressStepsProps {
+  isComplete: boolean
+  steps?: readonly ProgressStep[]
+}
+
+export function CarouselProgressSteps({ isComplete, steps = CAROUSEL_PROGRESS_STEPS }: CarouselProgressStepsProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (isComplete) {
-      setCurrentStep(CAROUSEL_PROGRESS_STEPS.length)
+      setCurrentStep(steps.length)
       return
     }
 
     function advance(step: number) {
-      if (step >= CAROUSEL_PROGRESS_STEPS.length - 1) return
+      if (step >= steps.length - 1) return
       timerRef.current = setTimeout(() => {
         setCurrentStep(step + 1)
         advance(step + 1)
-      }, CAROUSEL_PROGRESS_STEPS[step].duration)
+      }, steps[step].duration)
     }
 
     advance(0)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [isComplete])
+  }, [isComplete, steps])
 
   return (
     <div className="space-y-3 py-2">
-      {CAROUSEL_PROGRESS_STEPS.map((step, i) => {
+      {steps.map((step, i) => {
         const isDone = i < currentStep || isComplete
         const isActive = i === currentStep && !isComplete
 
@@ -68,7 +75,7 @@ export function CarouselProgressSteps({ isComplete }: CarouselProgressStepsProps
                 {step.label}
                 {isActive && <span className="ml-1 animate-pulse-strong">…</span>}
               </span>
-              {isActive && 'subtitle' in step && (
+              {isActive && step.subtitle && (
                 <p className="text-xs text-gray-400 mt-0.5 animate-slide-down">{step.subtitle}</p>
               )}
             </div>
