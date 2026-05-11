@@ -354,11 +354,13 @@ export function LatestNewsTab({ brand }: { brand: string }) {
       ? brands
       : brands.filter(b => b?.brand === competitorSelectedBrand)
 
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000
     const merged = source
       .flatMap(b => {
         if (!b || !Array.isArray(b.articles)) return []
         return b.articles.map(a => ({ ...a, sourceBrand: b.brand }))
       })
+      .filter(a => new Date(a?.publishedAt || 0).getTime() >= cutoff)
       .sort((a, b) => {
         const timeA = new Date(a?.publishedAt || 0).getTime()
         const timeB = new Date(b?.publishedAt || 0).getTime()
