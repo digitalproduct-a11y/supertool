@@ -476,10 +476,10 @@ function makeTabloidDefaults(): TabloidConfig {
       punchMarginBottom: 0,
       subtitle: {
         fontFamily: "Barlow",
-        fontSize: 22,
+        fontSize: 30,
         fontWeight: 500,
         fill: "rgba(255,255,255,0.85)",
-        lineHeight: 1.4,
+        lineHeight: 1.35,
         letterSpacing: 0.04,
         textAlign: "center",
         uppercase: true,
@@ -489,7 +489,7 @@ function makeTabloidDefaults(): TabloidConfig {
       subtitleOffsetY: 8,
       author: {
         fontFamily: "Barlow",
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 600,
         fill: "rgba(255,255,255,0.7)",
         letterSpacing: 0.08,
