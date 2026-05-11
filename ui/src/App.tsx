@@ -37,11 +37,6 @@ const QuotePage = lazy(() =>
     default: m.QuotePage,
   })),
 )
-const FoodPlacesPage = lazy(() =>
-  import('./pages/FoodPlacesPage').then((m) => ({
-    default: m.FoodPlacesPage,
-  })),
-)
 import { InputForm } from './features/article/InputForm'
 import { PreviewPanel } from './features/article/PreviewPanel'
 import { CarouselPreviewPanel } from './features/carousel/CarouselPreviewPanel'

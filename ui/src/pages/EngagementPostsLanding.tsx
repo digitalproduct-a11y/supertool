@@ -11,7 +11,6 @@ import {
   IconCloudRain,
   IconBlockquote,
   IconBulb,
-  IconSoup,
 } from "@tabler/icons-react";
 import type React from "react";
 
