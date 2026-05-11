@@ -4,10 +4,9 @@ import { Link } from 'react-router-dom'
 import { IconUpload } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl } from '../utils/cloudinary'
+import { updateTitleInImageUrl, uploadToCloudinary } from '../utils/cloudinary'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { applyFocalCrop } from '../features/photo/cropUtils'
-import ImageUploadModal from './ImageUploadModal'
 import { ScheduleModal } from './ScheduleModal'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
@@ -27,7 +26,7 @@ export function ResultPreview({
   const [committedTitle, setCommittedTitle] = useState(result.title ?? '')
   const [caption, setCaption] = useState(result.caption ?? '')
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
-  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
+  const [customUploadLoading, setCustomUploadLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [draftState, setDraftState] = useState<'idle' | 'posting' | 'done' | 'error'>('idle')
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -37,9 +36,11 @@ export function ResultPreview({
   const [replacementPreviewUrl, setReplacementPreviewUrl] = useState<string | null>(null)
   const [showCropPicker, setShowCropPicker] = useState(false)
   const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [adjustedAtTitle, setAdjustedAtTitle] = useState<string>('')
   const [cropLoading, setCropLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
+  const customUploadInputRef = useRef<HTMLInputElement>(null)
 
   // Reset custom upload when a new image is generated
   useEffect(() => {
@@ -64,6 +65,7 @@ export function ResultPreview({
     setReplacementAiPhoto(null)
     setReplacementPreviewUrl(null)
     setAdjustedImageUrl(null)
+    setAdjustedAtTitle('')
   }, [result.imageUrl])
 
 
@@ -74,8 +76,17 @@ export function ResultPreview({
 
   const previewImageUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', committedTitle)
 
+  const displayImageUrl = adjustedImageUrl
+    ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || result.title || '', committedTitle)
+    : previewImageUrl
+
+  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? 'dymmqtqyg'
+  const cropSourceUrl = uploadedPublicId
+    ? `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
+    : result.cloudinary_url || null
+
   async function handleDownload() {
-    const urlToDownload = adjustedImageUrl || previewImageUrl || result.imageUrl
+    const urlToDownload = replacementPreviewUrl || displayImageUrl || result.imageUrl
     try {
       const res = await fetch(urlToDownload)
       const blob = await res.blob()
@@ -121,8 +132,8 @@ export function ResultPreview({
   }
 
   async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
-    if (!result.cloudinary_url) {
-      toast.error('No cloudinary_url available')
+    if (!previewImageUrl) {
+      toast.error('No image available')
       return
     }
     setCropLoading(true)
@@ -130,6 +141,7 @@ export function ResultPreview({
       const builtUrl = updateTitleInImageUrl(baseImageUrl, result.title || '', committedTitle)
       const newUrl = await applyFocalCrop(builtUrl, cropRegion)
       setAdjustedImageUrl(newUrl)
+      setAdjustedAtTitle(committedTitle)
       setShowCropPicker(false)
       toast.success('Crop adjusted!')
     } catch {
@@ -149,9 +161,10 @@ export function ResultPreview({
       const latestBaseUrl = uploadedPublicId
         ? buildCloudinaryUrl(uploadedPublicId, result.title || '', result.imageUrl)
         : result.imageUrl
-      const latestImageUrl = updateTitleInImageUrl(latestBaseUrl, result.title || '', title)
-      // Use adjusted crop if available, otherwise use latest computed URL
-      const finalImageUrl = adjustedImageUrl || latestImageUrl
+      const latestImageUrl = adjustedImageUrl
+        ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || result.title || '', title)
+        : updateTitleInImageUrl(latestBaseUrl, result.title || '', title)
+      const finalImageUrl = latestImageUrl
       const effectiveAiImageUrl = (aiImageRemoved || replacementAiPhoto) ? '' : finalImageUrl
       const allExtras = replacementAiPhoto ? [replacementAiPhoto, ...extraPhotos] : extraPhotos
       const base64Extras = allExtras.length > 0
@@ -195,9 +208,9 @@ export function ResultPreview({
         />,
         document.body
       )}
-      {showCropPicker && result.cloudinary_url && createPortal(
+      {showCropPicker && cropSourceUrl && createPortal(
         <FabricCropPicker
-          sourceImageUrl={result.cloudinary_url}
+          sourceImageUrl={cropSourceUrl}
           aspectRatio={1080 / 1350}
           onDone={handleCropDone}
           onCancel={() => setShowCropPicker(false)}
@@ -205,17 +218,6 @@ export function ResultPreview({
         document.body
       )}
     <div className="space-y-4">
-      {showImageUploadModal && (
-        <ImageUploadModal
-          onSelect={({ publicId }) => {
-            setUploadedPublicId(publicId)
-            setShowImageUploadModal(false)
-            toast.success('Image uploaded!')
-          }}
-          onClose={() => setShowImageUploadModal(false)}
-        />
-      )}
-
       {/* Image with download overlay */}
       <div className="relative bg-neutral-50 rounded-xl overflow-hidden border border-gray-200 aspect-[4/5] w-full">
         {aiImageRemoved && !replacementPreviewUrl ? (
@@ -234,7 +236,7 @@ export function ResultPreview({
         ) : (
           <>
             <img
-              src={adjustedImageUrl || replacementPreviewUrl || previewImageUrl}
+              src={replacementPreviewUrl || displayImageUrl}
               alt="Generated Facebook image"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -248,9 +250,25 @@ export function ResultPreview({
       {/* Hidden file inputs for photo upload */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={handleReplaceAiImage} />
+      <input ref={customUploadInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setCustomUploadLoading(true)
+        try {
+          const publicId = await uploadToCloudinary(file)
+          setUploadedPublicId(publicId)
+          setAdjustedImageUrl(null)
+          setAdjustedAtTitle('')
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Upload failed')
+        } finally {
+          setCustomUploadLoading(false)
+          e.target.value = ''
+        }
+      }} />
 
       {/* Adjust Crop button (if source image available) */}
-      {result.cloudinary_url && (
+      {cropSourceUrl && (
         <div>
           <button
             onClick={() => setShowCropPicker(true)}
@@ -268,11 +286,12 @@ export function ResultPreview({
       {/* Custom image upload + Download */}
       <div className="flex gap-3">
         <button
-          onClick={() => setShowImageUploadModal(true)}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors"
+          onClick={() => customUploadInputRef.current?.click()}
+          disabled={customUploadLoading}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
           <IconUpload size={16} />
-          Upload Custom Image
+          {customUploadLoading ? 'Uploading…' : 'Upload Custom Image'}
         </button>
         <button
           onClick={handleDownload}
