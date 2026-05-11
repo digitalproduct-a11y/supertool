@@ -77,13 +77,18 @@ function writeCompetitorCache(data: BrandFeedData[]): void {
   } catch { /* quota — skip */ }
 }
 
-function relativeTime(isoStr: string): string {
-  const diff = Date.now() - new Date(isoStr).getTime()
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins} min ago`
-  const hrs = Math.floor(mins / 60)
-  return hrs === 1 ? '1 hour ago' : `${hrs} hours ago`
+function formatMYT(isoStr: string): string {
+  const date = new Date(isoStr)
+  if (isNaN(date.getTime())) return '—'
+  return date.toLocaleString('en-MY', {
+    timeZone: 'Asia/Kuala_Lumpur',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
 }
 
 async function fetchAllRssFeeds(): Promise<BrandFeedData[]> {
@@ -708,7 +713,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-neutral-400 mb-1">
-                          {article.sourceBrand} · {relativeTime(article.publishedAt)}
+                          {article.sourceBrand} · {formatMYT(article.publishedAt)}
                         </p>
                         <h3 className="text-sm font-semibold text-neutral-950 leading-snug line-clamp-2 mb-1">
                           {article.title}
