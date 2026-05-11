@@ -20,7 +20,7 @@ export async function renderImageOnCanvas(
 
   try {
     // Ensure Montserrat fonts are loaded before rendering
-    await document.fonts.load('900 52px Montserrat')
+    await document.fonts.load('800 52px Montserrat')
     await document.fonts.load('300 24px Montserrat')
     console.log('Loading image from:', photoUrl)
     const img = await FabricImage.fromURL(photoUrl, {
@@ -185,7 +185,7 @@ export async function renderImageOnCanvas(
         top: groupTop,
         fontSize: headlineFontSize,
         fontFamily: 'Montserrat',
-        fontWeight: 800,
+        fontWeight: 900,
         fill: '#FFFFFF',
         textAlign: 'center',
         originX: 'center',
