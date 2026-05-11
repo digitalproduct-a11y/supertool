@@ -78,7 +78,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
-  '/engagement-posts/gempak-entertainment': 'engagement-photos',
+  // '/engagement-posts/gempak-entertainment': 'engagement-photos',
   '/engagement-posts/badminton': 'engagement-photos',
   '/engagement-posts/motogp': 'engagement-photos',
   '/trending-news': 'scheduled-posts',
@@ -139,8 +139,8 @@ const topicToPath: Record<string, string> = {
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
   'didyouknow': '/engagement-posts/didyouknow',
-  'food-places': '/engagement-posts/food-places',
-  'gempak-entertainment': '/engagement-posts/gempak-entertainment',
+  // 'food-places': '/engagement-posts/food-places',
+  // 'gempak-entertainment': '/engagement-posts/gempak-entertainment',
   'badminton': '/engagement-posts/badminton',
   'motogp': '/engagement-posts/motogp',
 }
@@ -935,11 +935,11 @@ function App() {
           <EngagementPhotosPage topic="ucl" />
         </Layout>
       } />
-      <Route path="/engagement-posts/gempak-entertainment" element={
+      {/* <Route path="/engagement-posts/gempak-entertainment" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="gempak-entertainment" />
         </Layout>
-      } />
+      } /> */}
       <Route path="/engagement-posts/badminton" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="badminton" />
@@ -1037,13 +1037,13 @@ function App() {
           </Suspense>
         </Layout>
       } />
-      <Route path="/engagement-posts/food-places" element={
+      {/* <Route path="/engagement-posts/food-places" element={
         <Layout {...layoutProps}>
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <FoodPlacesPage />
           </Suspense>
         </Layout>
-      } />
+      } /> */}
       <Route path="/dashboard" element={
         <Layout {...layoutProps}>
           <DashboardPage />

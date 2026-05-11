@@ -212,11 +212,6 @@ export function DashboardPage() {
 
         {/* Charts */}
         <div className="mt-6">
-          {loading && data.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-neutral-500">Loading data...</p>
-            </div>
-          )}
 
           {!loading && selectedBrand && filteredData.length === 0 && (
             <div className="text-center py-12">

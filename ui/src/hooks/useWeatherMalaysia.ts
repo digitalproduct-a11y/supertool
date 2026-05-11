@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { NationalSummary } from "../features/weather/weatherDataAdapter";
-import { getBrandFontUse } from "../constants/brands";
+import { getBrandFontUse, getBrandLanguage } from "../constants/brands";
+import { getDayName } from "../utils/dayNames";
 
 export type { NationalSummary } from "../features/weather/weatherDataAdapter";
 
@@ -50,16 +51,6 @@ interface WeatherError {
 
 type WeatherResult = WeatherResponse | WeatherError;
 
-const MALAY_DAYS = [
-  "Ahad",
-  "Isnin",
-  "Selasa",
-  "Rabu",
-  "Khamis",
-  "Jumaat",
-  "Sabtu",
-] as const;
-
 // Module-level cache keyed on brand+date
 let cachedResult: {
   key: string;
@@ -69,13 +60,13 @@ let cachedResult: {
   nationalSummary: NationalSummary | null;
 } | null = null;
 
-function getTodayMYT(): { date: string; day: string } {
+function getTodayMYT(brand: string): { date: string; day: string } {
   const now = new Date();
   const myt = new Date(
     now.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }),
   );
   const date = myt.toLocaleDateString("en-CA"); // YYYY-MM-DD
-  const day = MALAY_DAYS[myt.getDay()];
+  const day = getDayName(myt.getDay(), getBrandLanguage(brand));
   return { date, day };
 }
 
@@ -105,7 +96,7 @@ export function useWeatherMalaysia() {
       return [];
     }
 
-    const { date, day } = getTodayMYT();
+    const { date, day } = getTodayMYT(brand);
     const cacheKey = `${brand}:${date}:${mode}`;
 
     if (cachedResult?.key === cacheKey) {
@@ -155,13 +146,24 @@ export function useWeatherMalaysia() {
       if (controller.signal.aborted) return [];
 
       if (data.success) {
-        // Ensure every post has a caption — fallback to generic if empty
-        const postsWithCaptions = data.posts.map((p) => ({
-          ...p,
-          caption:
-            p.caption ||
-            `${p.state}: ${p.summary_forecast} (${p.summary_when}). Suhu ${p.min_temp}°C–${p.max_temp}°C.`,
-        }));
+        // Ensure every post has a caption — fallback to generic if empty.
+        // Also override `day` with the brand-language label since n8n always
+        // emits the Malay day name regardless of what we send.
+        const brandLang = getBrandLanguage(brand);
+        const postsWithCaptions = data.posts.map((p) => {
+          const [yr, mo, dy] = (p.date || "").split("-").map(Number);
+          const localDay =
+            yr && mo && dy
+              ? getDayName(new Date(yr, mo - 1, dy).getDay(), brandLang)
+              : p.day;
+          return {
+            ...p,
+            day: localDay,
+            caption:
+              p.caption ||
+              `${p.state}: ${p.summary_forecast} (${p.summary_when}). Suhu ${p.min_temp}°C–${p.max_temp}°C.`,
+          };
+        });
         // Prefer the value returned by n8n; fall back to the local
         // BRAND_FONT_USE map so canvases still get the correct brand font
         // when a workflow forgets to include it.

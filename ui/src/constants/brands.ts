@@ -234,6 +234,50 @@ export function getBrandFontUse(brand: string): string | null {
   return (BRAND_FONT_USE as Record<string, string | null>)[brand] ?? null;
 }
 
+// Source of truth: Brand Tone & Voice data table (tableId WrA94W8RTzSvEhyS),
+// `language` column. Re-pull via n8n MCP `n8n_manage_datatable` when brands
+// change. "BM" = Malay, "EN" = English, "ZH" = Chinese Simplified.
+export type BrandLanguage = "BM" | "EN" | "ZH";
+
+export const BRAND_LANGUAGE: Record<BrandName, BrandLanguage> = {
+  "Astro Awani": "BM",
+  "Astro Arena": "BM",
+  "Astro Ulagam": "EN",
+  Era: "BM",
+  "Era Sabah": "BM",
+  "Era Sarawak": "BM",
+  Gegar: "BM",
+  Gempak: "BM",
+  Goxuan: "ZH",
+  Hitz: "EN",
+  Hotspot: "ZH",
+  Impiana: "BM",
+  Keluarga: "BM",
+  Lite: "EN",
+  Maskulin: "BM",
+  "Media Hiburan": "BM",
+  Meletop: "BM",
+  Melody: "ZH",
+  "Mingguan Wanita": "BM",
+  Mix: "EN",
+  MY: "ZH",
+  Nona: "BM",
+  "Pa&Ma": "BM",
+  Raaga: "EN",
+  Rasa: "BM",
+  Remaja: "BM",
+  "Roda Panas": "BM",
+  "Rojak Daily": "EN",
+  Sinar: "BM",
+  "Stadium Astro": "EN",
+  XUAN: "ZH",
+  Zayan: "BM",
+};
+
+export function getBrandLanguage(brand: string): BrandLanguage {
+  return (BRAND_LANGUAGE as Record<string, BrandLanguage>)[brand] ?? "BM";
+}
+
 export const BRAND_LOGO_IDS: Record<BrandName, string> = {
   "Astro Awani": "astro_awani_logo",
   "Astro Arena": "astro_arena_logo",

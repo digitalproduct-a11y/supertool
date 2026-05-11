@@ -149,35 +149,35 @@ const sections: Section[] = [
       },
     ],
   },
-  {
-    label: "Entertainment",
-    description:
-      "Celebrity, lifestyle, and showbiz posts for Gempak's entertainment brands.",
-    topics: [
-      {
-        id: "gempak-entertainment",
-        label: "Entertainment",
-        description:
-          "Generate showbiz and celebrity posts curated from Malaysian entertainment news",
-        icon: IconMusicStar,
-        color: "#FF3FBF",
-      },
-    ],
-  },
-  {
-    label: "Food & Travel",
-    description: "Local discovery posts — places to eat, drink, and explore.",
-    topics: [
-      {
-        id: "food-places",
-        label: "Food Places Search",
-        description:
-          "Generate top food spot carousels for any dish + location in your brand's voice",
-        icon: IconSoup,
-        color: "#FF3FBF",
-      },
-    ],
-  },
+  // {
+  //   label: "Entertainment",
+  //   description:
+  //     "Celebrity, lifestyle, and showbiz posts for Gempak's entertainment brands.",
+  //   topics: [
+  //     {
+  //       id: "gempak-entertainment",
+  //       label: "Entertainment",
+  //       description:
+  //         "Generate showbiz and celebrity posts curated from Malaysian entertainment news",
+  //       icon: IconMusicStar,
+  //       color: "#FF3FBF",
+  //     },
+  //   ],
+  // },
+  // {
+  //   label: "Food & Travel",
+  //   description: "Local discovery posts — places to eat, drink, and explore.",
+  //   topics: [
+  //     {
+  //       id: "food-places",
+  //       label: "Food Places Search",
+  //       description:
+  //         "Generate top food spot carousels for any dish + location in your brand's voice",
+  //       icon: IconSoup,
+  //       color: "#FF3FBF",
+  //     },
+  //   ],
+  // },
   {
     label: "Coming Soon",
     description: "More exciting features coming soon.",

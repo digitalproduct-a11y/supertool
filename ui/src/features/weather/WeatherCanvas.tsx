@@ -66,12 +66,14 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
         // Resolve the brand display font once per render. Empty string when
         // no font_use is configured — the title layer's default applies.
         const brandFamily = await loadBrandFont(fontUse);
-        const titleStyle: TextLayerStyle = brandFamily
-          ? {
-              ...config.stateBlock.locationName,
-              fontFamily: brandFamily,
-            }
-          : config.stateBlock.locationName;
+        const withBrand = (s: TextLayerStyle): TextLayerStyle =>
+          brandFamily ? { ...s, fontFamily: brandFamily } : s;
+        const titleStyle = withBrand(config.stateBlock.locationName);
+        const headerTitleStyle = withBrand(config.title.style);
+        const headerDateStyle = withBrand(config.dateHeader.style);
+        const forecastStyle = withBrand(config.stateBlock.forecast);
+        const forecastWhenStyle = withBrand(config.stateBlock.forecastWhen);
+        const temperatureStyle = withBrand(config.stateBlock.temperature);
         const { width, height } = config.canvas;
 
         // Load background image
@@ -98,7 +100,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
 
         // Title
         if (config.title.enabled) {
-          const titleText = makeText(config.title.text, config.title.style, {
+          const titleText = makeText(config.title.text, headerTitleStyle, {
             left: config.title.x,
             top: config.title.y,
           });
@@ -116,7 +118,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
           if (config.dateHeader.enabled) parts.push(formattedDate);
           const combined = parts.join(" · ");
 
-          const combinedText = makeText(combined, config.dateHeader.style, {
+          const combinedText = makeText(combined, headerDateStyle, {
             left: config.dateHeader.x,
             top: config.dateHeader.y,
           });
@@ -221,7 +223,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
             if (forecastValue) {
               const forecastPart = makeText(
                 whenValue ? `${forecastValue} · ` : forecastValue,
-                scaled(config.stateBlock.forecast, scaledForecastSize),
+                scaled(forecastStyle, scaledForecastSize),
                 { left: cursorX, top: forecastTop },
               );
               canvas.add(forecastPart);
@@ -229,7 +231,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
             }
             if (whenValue) {
               canvas.add(
-                makeText(whenValue, scaled(config.stateBlock.forecastWhen, scaledForecastSize), {
+                makeText(whenValue, scaled(forecastWhenStyle, scaledForecastSize), {
                   left: cursorX,
                   top: forecastTop,
                 }),
@@ -239,7 +241,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
             // Right side: temperature
             const tempText = makeText(
               `${post.min_temp}°C – ${post.max_temp}°C`,
-              scaled(config.stateBlock.temperature, scaledTempSize),
+              scaled(temperatureStyle, scaledTempSize),
               { left: innerRight, top: innerTop + (scaledRowHeight - scaledPad * 2 - scaledTempSize) / 2 },
             );
             tempText.set({ originX: "right" });
@@ -288,7 +290,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
             textY += config.stateBlock.locationName.fontSize + 4;
 
             canvas.add(
-              makeText(post.translated_summary_forecast || post.summary_forecast, config.stateBlock.forecast, {
+              makeText(post.translated_summary_forecast || post.summary_forecast, forecastStyle, {
                 left: x + pad,
                 top: textY,
               }),
@@ -298,7 +300,7 @@ export const WeatherCanvas = forwardRef<WeatherCanvasHandle, WeatherCanvasProps>
             canvas.add(
               makeText(
                 `${post.min_temp}°C – ${post.max_temp}°C`,
-                config.stateBlock.temperature,
+                temperatureStyle,
                 { left: x + pad, top: textY },
               ),
             );
