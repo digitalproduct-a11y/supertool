@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { EngagementIdea } from '../types'
+import { TOPIC_CONFIGS } from '../constants/topics'
 
 export interface TrendingTopic {
   id: string
@@ -61,9 +62,9 @@ export function useEngagementPhotos() {
     }
   }
 
-  const bulkSearchPhotos = async (keywords: Array<{ player: string; club: string }>) => {
+  const bulkSearchPhotos = async (keywords: Array<{ player: string; club: string }>, webhookUrlOverride?: string) => {
     try {
-      const webhookUrl = import.meta.env.VITE_CLOUDINARY_SEARCH_WEBHOOK_URL
+      const webhookUrl = webhookUrlOverride || import.meta.env.VITE_CLOUDINARY_SEARCH_WEBHOOK_URL
       if (!webhookUrl) {
         throw new Error('Photo search webhook URL not configured')
       }
@@ -94,7 +95,8 @@ export function useEngagementPhotos() {
     brand: string,
     language: string,
     selectedTopics: Array<TrendingTopic & { post_type: string }>,
-    webhookUrl?: string
+    webhookUrl?: string,
+    topic?: string
   ) => {
     setIsLoading(true)
     setError(null)
@@ -129,24 +131,41 @@ export function useEngagementPhotos() {
         data = data[0]
       }
 
-      if (data?.success && data?.ideas && Array.isArray(data.ideas)) {
-        const limitedIdeas = data.ideas.map((idea: any) => ({
-          ...idea,
-          headline: idea.headline.slice(0, 35),
-          subtitle: idea.subtitle.slice(0, 70),
-          caption: idea.caption.slice(0, 600),
+      // Handle both "ideas" format (EPL/UCL) and "posts" format (Badminton/MotoGP)
+      const itemsArray = data?.ideas || data?.posts
+      if (data?.success && itemsArray && Array.isArray(itemsArray)) {
+        const limitedIdeas = itemsArray.map((item: any) => ({
+          id: item.id,
+          type: item.type || 'news',
+          post_type: item.post_type,
+          headline: (item.headline || '').slice(0, 50),
+          subtitle: (item.subtitle || item.content || '').slice(0, 200),
+          caption: (item.caption || '').slice(0, 550),
+          player: item.player || '',
+          club: item.club || undefined,
+          photo_url: item.photo_url || null,
+          photo_public_id: item.photo_public_id || null,
+          status: item.status || 'draft' as const,
+          context: item.context,
         }))
         setIdeas(limitedIdeas)
 
-        // Extract unique player/club combos and fetch all photos at once
-        const uniqueKeywords = new Set(
-          limitedIdeas.map((idea: any) => JSON.stringify({ player: idea.player, club: idea.club || '' }))
-        )
-        const keywords: Array<{ player: string; club: string }> = Array.from(uniqueKeywords).map(
-          (str: unknown) => JSON.parse(str as string) as { player: string; club: string }
-        )
-
-        await bulkSearchPhotos(keywords)
+        // Fetch photos based on topic config
+        const topicConfig = topic ? TOPIC_CONFIGS[topic] : null
+        if (topicConfig?.photosWebhookEnvVar && topicConfig?.photosCacheKey) {
+          // For badminton/motogp: fetch from topic-specific photos webhook
+          const photosWebhookUrl = import.meta.env[topicConfig.photosWebhookEnvVar] as string | undefined
+          await bulkSearchPhotos([{ player: topicConfig.photosCacheKey, club: '' }], photosWebhookUrl)
+        } else {
+          // For EPL/UCL: extract unique player/club combos and fetch all photos at once
+          const uniqueKeywords = new Set(
+            limitedIdeas.map((idea: any) => JSON.stringify({ player: idea.player || '', club: idea.club || '' }))
+          )
+          const keywords: Array<{ player: string; club: string }> = Array.from(uniqueKeywords).map(
+            (str: unknown) => JSON.parse(str as string) as { player: string; club: string }
+          )
+          await bulkSearchPhotos(keywords)
+        }
       } else {
         console.error('Invalid response structure:', data)
         throw new Error(`Invalid response: ${JSON.stringify(data).slice(0, 100)}`)

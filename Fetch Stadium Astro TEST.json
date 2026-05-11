@@ -1,0 +1,96 @@
+{
+  "name": "Fetch Stadium Astro TEST",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "f8c3e4a1-2b5d-4c8e-9f1a-7d2c5e6f8a3b",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [50, 50]
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = [\n  {\n    title: \"InsyaAllah, mereka boleh jumpa kami setahun dua kali -- Toh Ee Wei\",\n    link: \"https://www.stadiumastro.com/badminton/inshallah-mereka-boleh-jumpa\",\n    published_date: new Date().toISOString(),\n    source: \"Stadium Astro\",\n    article: \"Pasangan badminton ganda putra Malaysia, Chen Tang Jie dan Toh Ee Wei, berharap dapat berjumpa dengan pasangan terbaik dunia sekurang-kurangnya dua kali dalam setahun untuk meningkatkan pengalaman dan kemampuan mereka. Toh Ee Wei menjelaskan bahwa pertemuan dengan pasangan top akan memberikan mereka gambaran yang lebih jelas tentang permainan berkualitas tinggi dan apa yang diperlukan untuk bersaing di peringkat tertinggi. Chen Tang Jie menambahkan bahwa mereka sedang fokus pada pembinaan jangka panjang dan tidak tergesa-gesa untuk mencapai hasil yang luar biasa. Latihan intensif dan partisipasi dalam turnamen besar adalah bagian dari strategi mereka untuk terus berkembang. Toh Ee Wei juga menyoroti pentingnya dukungan dari Persekutuan Badminton Malaysia (BAM) dalam memberikan peluang untuk berkompetisi melawan pasangan-pasangan terkuat dunia. Mereka yakin bahwa dengan dedikasi dan kerja keras, mereka dapat menjadi salah satu pasangan ganda putra terbaik di Asia. Chen Tang Jie dan Toh Ee Wei telah menunjukkan potensi besar dalam beberapa turnamen regional dan mereka terus berusaha untuk meningkatkan peringkat dunia mereka. InsyaAllah, dengan pertemuan dan pembelajaran dari pasangan terbaik dunia, mereka dapat mencapai target untuk bersaing di level internasional yang lebih tinggi. Pelatih mereka juga mengakui kemajuan yang telah dicapai oleh pasangan ini dan berkomitmen untuk memberikan program latihan yang sesuai dengan target mereka.\",\n    date_added: new Date().toISOString(),\n    full_content: \"Pasangan badminton ganda putra Malaysia, Chen Tang Jie dan Toh Ee Wei, berharap dapat berjumpa dengan pasangan terbaik dunia sekurang-kurangnya dua kali dalam setahun untuk meningkatkan pengalaman dan kemampuan mereka. Toh Ee Wei menjelaskan bahwa pertemuan dengan pasangan top akan memberikan mereka gambaran yang lebih jelas tentang permainan berkualitas tinggi dan apa yang diperlukan untuk bersaing di peringkat tertinggi. Chen Tang Jie menambahkan bahwa mereka sedang fokus pada pembinaan jangka panjang dan tidak tergesa-gesa untuk mencapai hasil yang luar biasa. Latihan intensif dan partisipasi dalam turnamen besar adalah bagian dari strategi mereka untuk terus berkembang. Toh Ee Wei juga menyoroti pentingnya dukungan dari Persekutuan Badminton Malaysia (BAM) dalam memberikan peluang untuk berkompetisi melawan pasangan-pasangan terkuat dunia. Mereka yakin bahwa dengan dedikasi dan kerja keras, mereka dapat menjadi salah satu pasangan ganda putra terbaik di Asia. Chen Tang Jie dan Toh Ee Wei telah menunjukkan potensi besar dalam beberapa turnamen regional dan mereka terus berusaha untuk meningkatkan peringkat dunia mereka. InsyaAllah, dengan pertemuan dan pembelajaran dari pasangan terbaik dunia, mereka dapat mencapai target untuk bersaing di level internasional yang lebih tinggi. Pelatih mereka juga mengakui kemajuan yang telah dicapai oleh pasangan ini dan berkomitmen untuk memberikan program latihan yang sesuai dengan target mereka. Masa depan badminton ganda putra Malaysia memang memerlukan pemain-pemain seperti Chen Tang Jie dan Toh Ee Wei yang memiliki semangat dan dedikasi tinggi untuk terus berkembang dan bersaing di level dunia.\"\n  },\n  {\n    title: \"Sekarang pemain perseorangan dalam kelompok 20 terbaik dunia satu pun tiada\",\n    link: \"https://www.stadiumastro.com/badminton/pemain-perseorangan-kelompok-20\",\n    published_date: new Date(Date.now() - 86400000).toISOString(),\n    source: \"Stadium Astro\",\n    article: \"Badminton Malaysia sedang menghadapi krisis yang serius dengan tidak adanya pemain tunggal laki-laki yang berada dalam kelompok 20 pemain terbaik dunia saat ini. Situasi ini menunjukkan penurunan yang signifikan dalam standar kompetisi badminton tunggal putra Malaysia. Dahulu kala, Malaysia memiliki beberapa pemain tunggal putra yang berada di peringkat teratas dunia dan sering menjadi peserta favorit dalam turnamen-turnamen besar. Namun, dalam dekade terakhir ini, degradasi dalam performa pemain tunggal putra telah menjadi perhatian utama para pengambil keputusan di Persekutuan Badminton Malaysia. Faktor-faktor seperti perubahan teknik permainan modern, kurangnya motivasi pemain muda untuk fokus pada cabang tunggal, dan kompetisi ketat dari negara-negara lain seperti Indonesia, Thailand, dan China telah memberikan dampak yang besar. Pelatih dan pengurus badminton Malaysia telah mengidentifikasi beberapa area yang perlu ditingkatkan untuk mengembalikan Malaysia ke posisi yang lebih kuat dalam kategori tunggal putra. Program pengembangan bakat muda perlu ditingkatkan dengan fasilitas latihan yang lebih baik dan pelatih-pelatih berkualitas internasional. Selain itu, motivasi dan insentif untuk pemain-pemain muda juga perlu ditingkatkan agar mereka lebih bersemangat untuk mengejar prestasi tertinggi. Persekutuan Badminton Malaysia telah mengumumkan rencana untuk melakukan reformasi dalam sistem pembinaan badminton tunggal putra untuk memastikan bahwa generasi pemain berikutnya dapat bersaing dengan standar internasional. Investasi lebih besar dalam fasilitas pelatihan, program pembinaan, dan dukungan finansial untuk pemain-pemain potensial akan dilakukan dalam beberapa tahun mendatang. Diharapkan bahwa dengan upaya-upaya ini, Malaysia dapat mengembalikan kejayaan badminton tunggal putranya dan kembali memiliki pemain-pemain yang berada di dalam kelompok 20 terbaik dunia.\",\n    date_added: new Date().toISOString(),\n    full_content: \"Badminton Malaysia sedang menghadapi krisis yang serius dengan tidak adanya pemain tunggal laki-laki yang berada dalam kelompok 20 pemain terbaik dunia saat ini. Situasi ini menunjukkan penurunan yang signifikan dalam standar kompetisi badminton tunggal putra Malaysia. Dahulu kala, Malaysia memiliki beberapa pemain tunggal putra yang berada di peringkat teratas dunia dan sering menjadi peserta favorit dalam turnamen-turnamen besar. Namun, dalam dekade terakhir ini, degradasi dalam performa pemain tunggal putra telah menjadi perhatian utama para pengambil keputusan di Persekutuan Badminton Malaysia. Faktor-faktor seperti perubahan teknik permainan modern, kurangnya motivasi pemain muda untuk fokus pada cabang tunggal, dan kompetisi ketat dari negara-negara lain seperti Indonesia, Thailand, dan China telah memberikan dampak yang besar. Pelatih dan pengurus badminton Malaysia telah mengidentifikasi beberapa area yang perlu ditingkatkan untuk mengembalikan Malaysia ke posisi yang lebih kuat dalam kategori tunggal putra. Program pengembangan bakat muda perlu ditingkatkan dengan fasilitas latihan yang lebih baik dan pelatih-pelatih berkualitas internasional. Selain itu, motivasi dan insentif untuk pemain-pemain muda juga perlu ditingkatkan agar mereka lebih bersemangat untuk mengejar prestasi tertinggi. Persekutuan Badminton Malaysia telah mengumumkan rencana untuk melakukan reformasi dalam sistem pembinaan badminton tunggal putra untuk memastikan bahwa generasi pemain berikutnya dapat bersaing dengan standar internasional. Investasi lebih besar dalam fasilitas pelatihan, program pembinaan, dan dukungan finansial untuk pemain-pemain potensial akan dilakukan dalam beberapa tahun mendatang. Diharapkan bahwa dengan upaya-upaya ini, Malaysia dapat mengembalikan kejayaan badminton tunggal putranya dan kembali memiliki pemain-pemain yang berada di dalam kelompok 20 terbaik dunia. Komunitas badminton Malaysia terus berdoa dan berharap agar situasi ini dapat berubah menjadi lebih baik dalam waktu dekat.\"\n  }\n];\n\nreturn articles;"
+      },
+      "id": "a7b2c9d4-e5f1-4a3b-8c2d-9e5f6a7b8c1d",
+      "name": "Dummy Articles",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [250, 50]
+    },
+    {
+      "parameters": {
+        "operation": "filter",
+        "filters": {
+          "conditions": [
+            {
+              "condition": "objectContains",
+              "value1": "={{ $json.article.toLowerCase() }}",
+              "value2": "badminton"
+            }
+          ]
+        }
+      },
+      "id": "b8c3d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e",
+      "name": "Filter Badminton Articles",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [450, 50]
+    },
+    {
+      "parameters": {
+        "maxItems": 20
+      },
+      "id": "c9d4e6f7-8a9b-0c1d-2e3f-4a5b6c7d8e9f",
+      "name": "Limit",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [650, 50]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Dummy Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dummy Articles": {
+      "main": [
+        [
+          {
+            "node": "Filter Badminton Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Badminton Articles": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d8a88145-aefd-4e5a-b8b0-e9e73a2cfa8e",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

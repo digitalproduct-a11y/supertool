@@ -79,6 +79,8 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
   '/engagement-posts/gempak-entertainment': 'engagement-photos',
+  '/engagement-posts/badminton': 'engagement-photos',
+  '/engagement-posts/motogp': 'engagement-photos',
   '/trending-news': 'scheduled-posts',
   '/news-bank': 'scheduled-posts',
   '/shopee-top-products': 'shopee-top-products',
@@ -139,6 +141,8 @@ const topicToPath: Record<string, string> = {
   'didyouknow': '/engagement-posts/didyouknow',
   'food-places': '/engagement-posts/food-places',
   'gempak-entertainment': '/engagement-posts/gempak-entertainment',
+  'badminton': '/engagement-posts/badminton',
+  'motogp': '/engagement-posts/motogp',
 }
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
@@ -934,6 +938,16 @@ function App() {
       <Route path="/engagement-posts/gempak-entertainment" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="gempak-entertainment" />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/badminton" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="badminton" />
+        </Layout>
+      } />
+      <Route path="/engagement-posts/motogp" element={
+        <Layout {...layoutProps}>
+          <EngagementPhotosPage topic="motogp" />
         </Layout>
       } />
       <Route path="/engagement-posts/worldcup" element={

@@ -89,11 +89,21 @@ export interface TopicConfig {
   templateImages: [string, string, string]
   loadingSteps: [string, string, string]
   loadingQuotes: string[]
+  loadingIcon?: string
   downloadPrefix: string
   // When true, IdeaCard renders the preview client-side via fabric.js instead of
   // building a Cloudinary transformation URL. Cloudinary upload happens lazily
   // at schedule-time only.
   useFabricCanvas?: boolean
+  // Canvas-based rendering (Fabric) instead of Cloudinary URL (motogp/badminton topics)
+  useCanvas?: boolean
+  // Dedicated photos webhook + fixed cache/upload tag (e.g. 'Badminton', 'MotoGP')
+  photosWebhookEnvVar?: string
+  photosCacheKey?: string
+  // Text field limits
+  headlineLimit?: number
+  subtitleLimit?: number
+  captionLimit?: number
   // Optional per-topic copy overrides. Defaults match EPL/UCL (sports voice).
   pageSubtitle?: string         // Hero subtitle under the page title
   loadingEmoji?: string         // Emoji shown on loading panels (default ⚽)
@@ -145,6 +155,7 @@ export interface Brand {
 export interface EngagementIdea {
   id: string
   type: PostFormat
+  post_type?: string
   headline: string
   subtitle: string
   caption: string

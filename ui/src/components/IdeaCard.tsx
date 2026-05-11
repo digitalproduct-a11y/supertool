@@ -2,12 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
+import { TOPIC_CONFIGS } from '../constants/topics'
 import PhotoPickerModal from './PhotoPickerModal'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
 import GempakEntertainmentCanvas, { type GempakEntertainmentCanvasHandle } from '../features/engagement/GempakEntertainmentCanvas'
 import { uploadToCloudinary } from '../utils/cloudinary'
 import { toast } from '../hooks/useToast'
+import BadmintonPostCanvas from './BadmintonPostCanvas'
+import type { BadmintonPostCanvasHandle } from './BadmintonPostCanvas'
+import { StaticCanvas } from 'fabric'
+import { renderImageOnCanvas } from '../utils/canvasRenderingUtils'
 
 const FORMAT_BADGES: Record<string, string> = {
   challenge: '🏆',
@@ -15,6 +20,7 @@ const FORMAT_BADGES: Record<string, string> = {
   nostalgia: '🕐',
   quiz: '🧠',
   hot_take: '🔥',
+  quick_news: '📰',
 }
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -23,6 +29,7 @@ const FORMAT_LABELS: Record<string, string> = {
   nostalgia: 'Nostalgia',
   quiz: 'Quiz',
   hot_take: 'Hot Take',
+  quick_news: 'Quick News',
 }
 
 const getBadge = (type: string): string => FORMAT_BADGES[type] || '✨'
@@ -48,6 +55,7 @@ interface IdeaCardProps {
   // (GempakEntertainmentCanvas) and the Cloudinary URL is built lazily at
   // schedule-time. Default false → existing EPL Cloudinary URL preview path.
   useFabricCanvas?: boolean
+  topic?: string
 }
 
 export default function IdeaCard({
@@ -67,6 +75,7 @@ export default function IdeaCard({
   showTypeOnImage = false,
   subtitleY = 1100,
   useFabricCanvas = false,
+  topic = 'epl',
 }: IdeaCardProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -74,7 +83,20 @@ export default function IdeaCard({
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
-  const canvasRef = useRef<GempakEntertainmentCanvasHandle>(null)
+  const gempakCanvasRef = useRef<GempakEntertainmentCanvasHandle>(null)
+  const canvasRef = useRef<BadmintonPostCanvasHandle>(null)
+
+  // Text box position — edit this value to adjust headline/subtitle group position
+  const TEXT_BOX_OFFSET = 160
+  const previewCanvasElRef = useRef<HTMLCanvasElement>(null)
+  const previewFabricRef = useRef<StaticCanvas | null>(null)
+  const topicConfig = TOPIC_CONFIGS[topic] || null
+  // useCanvas = motogp/badminton style canvas (BadmintonPostCanvas)
+  // useFabricCanvas = gempak-entertainment style canvas (GempakEntertainmentCanvas)
+  const useCanvasTopic = topicConfig?.useCanvas ?? false
+
+  const PREVIEW_WIDTH = 1080
+  const PREVIEW_HEIGHT = 1350
 
   // Sync committed values when a new idea is generated (idea.id changes)
   useEffect(() => {
@@ -82,8 +104,53 @@ export default function IdeaCard({
     setCommittedSubtitle(idea.subtitle)
   }, [idea.id])
 
+  // Listen for HMR updates from canvasRenderingUtils
+  const [renderKey, setRenderKey] = useState(0)
+  useEffect(() => {
+    const handler = () => setRenderKey(prev => prev + 1)
+    window.addEventListener('canvas-utils-updated', handler)
+    return () => window.removeEventListener('canvas-utils-updated', handler)
+  }, [])
+
+  // Initialize and render preview canvas for badminton/motogp topics
+  useEffect(() => {
+    if (!useCanvasTopic || !previewCanvasElRef.current) return
+
+    const canvas = new StaticCanvas(previewCanvasElRef.current, {
+      width: PREVIEW_WIDTH,
+      height: PREVIEW_HEIGHT,
+      backgroundColor: '#f3f4f6',
+    })
+
+    // Override fabric's inline width/height styles so canvas scales with container
+    if (previewCanvasElRef.current) {
+      previewCanvasElRef.current.style.width = '100%'
+      previewCanvasElRef.current.style.height = '100%'
+    }
+
+    const renderPreview = async () => {
+      if (idea.photo_url) {
+        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline, idea.subtitle, TEXT_BOX_OFFSET, TEXT_BOX_OFFSET, brandLogoUrl)
+      } else {
+        canvas.clear()
+        canvas.renderAll()
+      }
+    }
+
+    renderPreview()
+
+    const prev = previewFabricRef.current
+    previewFabricRef.current = canvas
+    if (prev) prev.dispose()
+
+    return () => {
+      if (canvas) canvas.dispose()
+    }
+  }, [useCanvasTopic, previewCanvasElRef, idea, TEXT_BOX_OFFSET, renderKey])
+
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
+  const brandLogoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${brandLogoId}`
 
   const buildPreviewUrl = (headline: string, subtitle: string, photoPublicId: string | null) => {
     const enc = (t: string) => encodeURIComponent(encodeURIComponent(t))
@@ -111,9 +178,13 @@ export default function IdeaCard({
   const subtitleChars = idea.subtitle.length
   const captionChars = idea.caption.length
 
-  const headlineValid = headlineChars > 0 && headlineChars <= 35
-  const subtitleValid = subtitleChars > 0 && subtitleChars <= 70
-  const captionValid = captionChars > 0 && captionChars <= 600
+  const headlineLimit = topicConfig?.headlineLimit ?? 35
+  const subtitleLimit = topicConfig?.subtitleLimit ?? 70
+  const captionLimit = topicConfig?.captionLimit ?? 600
+
+  const headlineValid = headlineChars > 0 && headlineChars <= headlineLimit
+  const subtitleValid = subtitleChars > 0 && subtitleChars <= subtitleLimit
+  const captionValid = captionChars > 0 && captionChars <= captionLimit
   const photoValid = !!idea.photo_url
 
   return (
@@ -123,8 +194,8 @@ export default function IdeaCard({
         <div className="flex items-center justify-between mb-2 pb-3 border-b border-gray-200">
           <span className="text-sm font-semibold text-neutral-950">Idea {index + 1}</span>
           <div className="flex items-center gap-2">
-            <span className="text-lg">{getBadge(idea.type)}</span>
-            <span className="text-xs font-semibold text-gray-600 uppercase">{getLabel(idea.type)}</span>
+            <span className="text-lg">{getBadge(idea.post_type || idea.type)}</span>
+            <span className="text-xs font-semibold text-gray-600 uppercase">{getLabel(idea.post_type || idea.type)}</span>
           </div>
         </div>
 
@@ -147,17 +218,43 @@ export default function IdeaCard({
         <div className={`aspect-[1080/1350] rounded-xl border-2 overflow-hidden bg-gray-100 mb-4`}>
           {useFabricCanvas ? (
             <GempakEntertainmentCanvas
-              ref={canvasRef}
+              ref={gempakCanvasRef}
               headline={idea.headline}
               subtitle={idea.subtitle}
               brand={selectedBrand}
               photoPublicId={idea.photo_public_id}
               typeLabel={showTypeOnImage ? idea.type : undefined}
             />
+          ) : useCanvasTopic ? (
+            <canvas
+              ref={previewCanvasElRef}
+              width={PREVIEW_WIDTH}
+              height={PREVIEW_HEIGHT}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+              }}
+            />
           ) : (
             <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
           )}
         </div>
+
+        {/* Hidden download canvas (1080x1350) for badminton/motogp */}
+        {useCanvasTopic && (
+          <div style={{ display: 'none' }}>
+            <BadmintonPostCanvas
+              ref={canvasRef}
+              headline={committedHeadline}
+              content={committedSubtitle}
+              photoUrl={idea.photo_url}
+              brandLogoUrl={brandLogoUrl}
+              headlineOffset={TEXT_BOX_OFFSET}
+              subtitleOffset={TEXT_BOX_OFFSET}
+            />
+          </div>
+        )}
 
         <button
           onClick={() => setShowPhotoModal(true)}
@@ -173,12 +270,12 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Headline</label>
-                <span className="text-xs text-gray-500">{headlineChars}/35</span>
+                <span className="text-xs text-gray-500">{headlineChars}/{headlineLimit}</span>
               </div>
               <input
                 type="text"
                 value={idea.headline}
-                onChange={(e) => onUpdateField(idea.id, 'headline', e.target.value.slice(0, 35))}
+                onChange={(e) => onUpdateField(idea.id, 'headline', e.target.value.slice(0, headlineLimit))}
                 onBlur={() => setCommittedHeadline(idea.headline)}
                 placeholder="Enter headline..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
@@ -192,12 +289,12 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Subtitle</label>
-                <span className="text-xs text-gray-500">{subtitleChars}/70</span>
+                <span className="text-xs text-gray-500">{subtitleChars}/{subtitleLimit}</span>
               </div>
               <input
                 type="text"
                 value={idea.subtitle}
-                onChange={(e) => onUpdateField(idea.id, 'subtitle', e.target.value.slice(0, 70))}
+                onChange={(e) => onUpdateField(idea.id, 'subtitle', e.target.value.slice(0, subtitleLimit))}
                 onBlur={() => setCommittedSubtitle(idea.subtitle)}
                 placeholder="Enter subtitle..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition ${
@@ -211,11 +308,11 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Caption</label>
-                <span className="text-xs text-gray-500">{captionChars}/600</span>
+                <span className="text-xs text-gray-500">{captionChars}/{captionLimit}</span>
               </div>
               <textarea
                 value={idea.caption}
-                onChange={(e) => onUpdateField(idea.id, 'caption', e.target.value.slice(0, 600))}
+                onChange={(e) => onUpdateField(idea.id, 'caption', e.target.value.slice(0, captionLimit))}
                 placeholder="Enter caption..."
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition resize-none h-20 ${
                   captionValid ? 'border-gray-200' : 'border-red-300'
@@ -228,18 +325,23 @@ export default function IdeaCard({
             <button
               onClick={async () => {
                 try {
+                  const fileBase = idea.headline.trim().replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_') || `${downloadPrefix}-${idea.type}`
                   if (useFabricCanvas) {
-                    canvasRef.current?.downloadAsPng(`${downloadPrefix}-${idea.type}.png`)
+                    gempakCanvasRef.current?.downloadAsPng(`${fileBase}.png`)
                     return
                   }
-                  const res = await fetch(previewUrl)
-                  const blob = await res.blob()
-                  const url = window.URL.createObjectURL(blob)
-                  const link = document.createElement('a')
-                  link.href = url
-                  link.download = `${downloadPrefix}-${idea.type}.jpg`
-                  link.click()
-                  window.URL.revokeObjectURL(url)
+                  if (useCanvasTopic && canvasRef.current) {
+                    canvasRef.current.downloadAsPng(`${fileBase}.png`)
+                  } else {
+                    const res = await fetch(previewUrl)
+                    const blob = await res.blob()
+                    const url = window.URL.createObjectURL(blob)
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.download = `${fileBase}.jpg`
+                    link.click()
+                    window.URL.revokeObjectURL(url)
+                  }
                 } catch (err) {
                   console.error('Download failed:', err)
                 }
@@ -267,13 +369,15 @@ export default function IdeaCard({
                           // → use returned public URL for FB scheduling. Upload
                           // happens lazily here so un-scheduled ideas never
                           // touch Cloudinary.
-                          const dataUrl = canvasRef.current?.getDataUrl()
+                          const dataUrl = gempakCanvasRef.current?.getDataUrl()
                           if (!dataUrl) throw new Error('Canvas not ready')
                           const blob = await (await fetch(dataUrl)).blob()
                           const file = new File([blob], `${downloadPrefix}-${idea.type}.png`, { type: 'image/png' })
                           const publicId = await uploadToCloudinary(file)
                           const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
                           urlForFb = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
+                        } else if (useCanvasTopic && canvasRef.current) {
+                          urlForFb = canvasRef.current.getDataUrl()
                         } else {
                           urlForFb = buildPreviewUrl(idea.headline, idea.subtitle, idea.photo_public_id)
                         }
@@ -337,6 +441,7 @@ export default function IdeaCard({
           onClose={() => setShowPhotoModal(false)}
           cachedPhotos={cachedPhotos}
           uploadPreset={uploadPreset}
+          topic={topic}
         />
       )}
     </>

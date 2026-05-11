@@ -114,7 +114,17 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       alert('Please select a brand')
       return
     }
-    const trendingTopicsWebhookEnvVar = config.trendingTopicsWebhookEnvVar || 'VITE_ENGAGEMENT_TRENDING_TOPICS_WEBHOOK_URL'
+
+    // For topics without trending topics (e.g., badminton, motogp), generate directly
+    if (!config.trendingTopicsWebhookEnvVar) {
+      setStage('review')
+      await generate(selectedBrand, 'en', [], webhookUrl, topic)
+      setCurrentLoadingStep(0)
+      setLoadingMessage(config.loadingQuotes[0])
+      return
+    }
+
+    const trendingTopicsWebhookEnvVar = config.trendingTopicsWebhookEnvVar
     const trendingTopicsWebhookUrl = import.meta.env[trendingTopicsWebhookEnvVar] as string | undefined
     if (!trendingTopicsWebhookUrl) {
       alert('Trending topics webhook URL not configured')
@@ -131,7 +141,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       post_type: selections.find((s) => s.topicId === topic.id)?.postType || '',
     }))
     setStage('review')
-    await generate(selectedBrand, 'en', topicsWithTypes, webhookUrl)
+    await generate(selectedBrand, 'en', topicsWithTypes, webhookUrl, topic)
     setCurrentLoadingStep(0)
     setLoadingMessage(config.loadingQuotes[0])
   }
@@ -152,7 +162,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => navigate('/engagement-posts')}
@@ -160,7 +170,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
             >
               <IconChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
           </div>
           <p className="text-sm text-neutral-600">{config.pageSubtitle ?? `Create engaging sports posts featuring ${config.label} players`}</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
@@ -171,7 +181,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {stage === 'brand-select' && isFetchingTopics && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
-            <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? '⚽'}</div>
+            <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? config.loadingIcon ?? '⚽'}</div>
             <p className="text-sm font-semibold text-neutral-900">{config.fetchingTitle ?? 'Fetching Trending News'}</p>
             <p className="text-xs text-neutral-500">{config.fetchingSubtext ?? 'Scanning RSS feeds and curating stories...'}</p>
           </div>
@@ -211,12 +221,14 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
                   <button
                     onClick={handleFetchTrendingTopics}
-                    disabled={!selectedBrand || isFetchingTopics}
+                    disabled={!selectedBrand || isFetchingTopics || isLoading}
                     className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
                   >
                     {isFetchingTopics
                       ? (config.fetchButtonBusy ?? 'Fetching Trending News...')
-                      : (config.fetchButtonIdle ?? 'Get Trending News')}
+                      : isLoading
+                        ? 'Generating Posts...'
+                        : (config.fetchButtonIdle ?? (config.trendingTopicsWebhookEnvVar ? 'Get Trending News' : 'Generate Posts'))}
                   </button>
 
                   {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
@@ -261,7 +273,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
         {stage === 'review' && isLoading && (
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
-                <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? '⚽'}</div>
+                <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? config.loadingIcon ?? '⚽'}</div>
                 <div className="flex justify-center gap-2">
                   {config.loadingSteps.map((_, idx) => (
                     <div
@@ -303,7 +315,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
             {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-            <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {ideas.map((idea, idx) => (
                 <div key={idea.id} className="border rounded-2xl p-4 bg-white border-gray-200">
                   <IdeaCard
@@ -318,6 +330,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                     uploadPreset={uploadPreset}
                     useFabricCanvas={config.useFabricCanvas}
                     playerLabel={config.personLabel}
+                    topic={topic}
                   />
                 </div>
               ))}
