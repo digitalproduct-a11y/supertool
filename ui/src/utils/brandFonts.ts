@@ -50,6 +50,16 @@ const CLOUDINARY_TO_LOCAL: Record<string, LocalFont> = {
     weight: 400,
     src: "/fonts/CanvaSans-VF.ttf",
   },
+  "Fonts:OpenSans-Regular.ttf": {
+    family: "Open Sans",
+    weight: 400,
+    src: "/fonts/OpenSans-Regular.ttf",
+  },
+  "Fonts:OpenSans-Bold.ttf": {
+    family: "Open Sans",
+    weight: 700,
+    src: "/fonts/OpenSans-Bold.ttf",
+  },
   "Fonts:SourceHanSansCN-Heavy-2.otf": {
     family: "Source Han Sans CN",
     weight: 900,
