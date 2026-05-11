@@ -4,7 +4,7 @@ import { IconChevronLeft } from '@tabler/icons-react'
 import { useDidYouKnow } from '../hooks/useDidYouKnow'
 import { BRANDS } from '../constants/brands'
 import { DidYouKnowCard, DidYouKnowTopicSelector } from '../features/didyouknow'
-import { EDITIONS, LOADING_QUOTES } from '../features/didyouknow/constants'
+import { LOADING_QUOTES } from '../features/didyouknow/constants'
 import { toast } from '../hooks/useToast'
 import type { DidYouKnowIdea } from '../hooks/useDidYouKnow'
 
@@ -146,18 +146,13 @@ export function DidYouKnowPage() {
 
             <div>
               <label className="block text-sm font-medium text-neutral-950 mb-2">Edition</label>
-              <select
+              <input
+                type="text"
                 value={selectedEdition}
                 onChange={(e) => setSelectedEdition(e.target.value)}
-                className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-              >
-                <option value="">Select an edition...</option>
-                {EDITIONS.map((edition) => (
-                  <option key={edition} value={edition}>
-                    {edition}
-                  </option>
-                ))}
-              </select>
+                placeholder="E.g., Sports Edition, Ramadan Special..."
+                className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
+              />
             </div>
 
             <div>
