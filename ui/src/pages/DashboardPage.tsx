@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { IconRefresh } from '@tabler/icons-react'
+import { IconRefresh, IconUpload } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { DashboardHeader } from '../components/DashboardHeader'
 import { RevenueChart } from '../components/RevenueChart'
@@ -7,6 +7,7 @@ import { PostsChart } from '../components/PostsChart'
 import { InteractionsChart } from '../components/InteractionsChart'
 import { RPPChart } from '../components/RPPChart'
 import { TopPostsChart } from '../components/TopPostsChart'
+import { RevenueUploadModal } from '../components/RevenueUploadModal'
 import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils/dashboardUtils'
 import type { DashboardRow } from '../utils/dashboardUtils'
 
@@ -23,6 +24,7 @@ export function DashboardPage() {
   const [showComparison, setShowComparison] = useState(true)
   const [showTargets, setShowTargets] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -124,7 +126,15 @@ export function DashboardPage() {
                 Track revenue, posts and engagement across all brands
               </p>
             </div>
-            <div className="flex items-center gap-3 pt-1 shrink-0">
+            <div className="flex items-center gap-2 pt-1 shrink-0">
+              <button
+                onClick={() => setUploadModalOpen(true)}
+                disabled={!selectedBrand}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition disabled:opacity-50"
+              >
+                <IconUpload className="w-3.5 h-3.5" />
+                Upload revenue
+              </button>
               <button
                 onClick={refetch}
                 disabled={loading}
@@ -237,6 +247,15 @@ export function DashboardPage() {
           </div>
         )}
       </div>
+
+      {uploadModalOpen && selectedBrand && (
+        <RevenueUploadModal
+          brands={brands}
+          defaultBrand={selectedBrand}
+          onClose={() => setUploadModalOpen(false)}
+          onSuccess={refetch}
+        />
+      )}
     </main>
   )
 }

@@ -189,7 +189,13 @@ export function OnThisDayPage() {
     const highlightsUrl = import.meta.env.VITE_ONTHISDAY_HIGHLIGHTS_URL as
       | string
       | undefined
-    if (stage !== 'generate' || !selectedEvent || !brand || !highlightsUrl) return
+    if (stage !== 'generate' || !selectedEvent || !brand) return
+    if (!highlightsUrl) {
+      toast.error('On This Day highlights URL not configured.')
+      setFetchedHighlightTerms([])
+      setFetchedBrandHex(null)
+      return
+    }
     const controller = new AbortController()
     setFetchedHighlightTerms(undefined)
     setFetchedBrandHex(null)
