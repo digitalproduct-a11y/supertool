@@ -7,7 +7,7 @@ export async function renderImageOnCanvas(
   canvasHeight: number,
   headline: string = '',
   subtitle: string = '',
-  headlineOffset: number = 200,
+  _headlineOffset: number = 200,
   subtitleOffset: number = 220,
   brandLogoUrl: string = ''
 ) {
