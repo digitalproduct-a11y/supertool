@@ -11,13 +11,16 @@ import {
   IconCloudRain,
   IconBlockquote,
   IconBulb,
-  IconSoup,
+  IconFeather,
+  IconMotorbike,
 } from "@tabler/icons-react";
 import type React from "react";
 
 type ActiveTopicId =
   | "engagement-photos"
   | "ucl"
+  | "badminton"
+  | "motogp"
   | "latest-fuel-price"
   | "latest-currency-rate"
   | "klci-index"
@@ -54,10 +57,84 @@ interface Section {
 
 const sections: Section[] = [
   {
-    label: "Daily Briefings",
+    label: "Editorial",
     description:
-      "Recurring factual posts — markets, weather, and historical context.",
+      "Turn long-form articles and scripts into shareable image cards.",
     topics: [
+      {
+        id: "didyouknow",
+        label: "Did You Know?",
+        description:
+          "Generate fun facts and interesting moments with context-based search",
+        icon: IconBulb,
+        color: "#F05A35",
+      },
+      {
+        id: "prime-talk",
+        label: "Prime Talk 《八点最热报》",
+        description:
+          "Turn Prime Talk episode scripts into Simplified Chinese Facebook image cards",
+        icon: IconNews,
+        color: "#F05A35",
+      },
+      {
+        id: "quote",
+        label: "Quote",
+        description:
+          "Extract the most powerful quote from any article and create a branded image",
+        icon: IconBlockquote,
+        color: "#F05A35",
+      },
+    ],
+  },
+  {
+    label: "Sports",
+    description:
+      "Create engaging posts across different sports leagues and tournaments.",
+    topics: [
+      {
+        id: "badminton",
+        label: "Badminton",
+        description: "Badminton tournament highlights and player features",
+        icon: IconFeather,
+        color: "#0055EE",
+      },
+      {
+        id: "ucl",
+        label: "Champions League",
+        description: "European football highlights and player comparisons",
+        icon: IconTrophy,
+        color: "#0055EE",
+      },
+      {
+        id: "engagement-photos",
+        label: "English Premier League",
+        description:
+          "Create engaging football posts featuring Premier League players and debates",
+        icon: IconFlame,
+        color: "#0055EE",
+      },
+      {
+        id: "motogp",
+        label: "MotoGP",
+        description: "MotoGP race results and championship standings",
+        icon: IconMotorbike,
+        color: "#0055EE",
+      },
+    ],
+  },
+  {
+    label: "Auto Publish",
+    description:
+      "Automated posts that go live daily or whenever data updates — no manual trigger needed.",
+    topics: [
+      {
+        id: "klci-index",
+        label: "KLCI Index Closing",
+        description: "Kuala Lumpur Composite Index daily closing",
+        icon: IconTrendingUp,
+        color: "#10B981",
+      },
       {
         id: "latest-currency-rate",
         label: "Latest Currency Rate",
@@ -70,21 +147,7 @@ const sections: Section[] = [
         label: "Latest Fuel Price",
         description: "Weekly Malaysian fuel price updates",
         icon: IconDroplet,
-        color: "#F59E0B",
-      },
-      {
-        id: "klci-index",
-        label: "KLCI Index Closing",
-        description: "Kuala Lumpur Composite Index daily closing",
-        icon: IconTrendingUp,
-        color: "#EF4444",
-      },
-      {
-        id: "weather-malaysia",
-        label: "Weather Malaysia",
-        description: "Generate daily weather forecast posts for all 16 states",
-        icon: IconCloudRain,
-        color: "#00E5D4",
+        color: "#10B981",
       },
       {
         id: "on-this-day",
@@ -92,92 +155,18 @@ const sections: Section[] = [
         description:
           "Historical events from Malaysia — what happened today in history",
         icon: IconCalendar,
-        color: "#0055EE",
+        color: "#10B981",
+      },
+      {
+        id: "weather-malaysia",
+        label: "Weather Malaysia",
+        description: "Generate daily weather forecast posts for all 16 states",
+        icon: IconCloudRain,
+        color: "#10B981",
       },
     ],
   },
-  {
-    label: "Editorial",
-    description:
-      "Turn long-form articles and scripts into shareable image cards.",
-    topics: [
-      {
-        id: "prime-talk",
-        label: "Prime Talk 《八点最热报》",
-        description:
-          "Turn Prime Talk episode scripts into Simplified Chinese Facebook image cards",
-        icon: IconNews,
-        color: "#E03F3F",
-      },
-      {
-        id: "quote",
-        label: "Quote",
-        description:
-          "Extract the most powerful quote from any article and create a branded image",
-        icon: IconBlockquote,
-        color: "#0055EE",
-      },
-      {
-        id: "didyouknow",
-        label: "Did You Know?",
-        description:
-          "Generate fun facts and interesting moments with context-based search",
-        icon: IconBulb,
-        color: "#F05A35",
-      },
-    ],
-  },
-  {
-    label: "Sports",
-    description:
-      "Create engaging posts across different sports leagues and tournaments.",
-    topics: [
-      {
-        id: "engagement-photos",
-        label: "English Premier League",
-        description:
-          "Create engaging football posts featuring Premier League players and debates",
-        icon: IconFlame,
-        color: "#FF3FBF",
-      },
-      {
-        id: "ucl",
-        label: "Champions League",
-        description: "European football highlights and player comparisons",
-        icon: IconTrophy,
-        color: "#0055EE",
-      },
-    ],
-  },
-  {
-    label: "Entertainment",
-    description:
-      "Celebrity, lifestyle, and showbiz posts for Gempak's entertainment brands.",
-    topics: [
-      {
-        id: "gempak-entertainment",
-        label: "Entertainment",
-        description:
-          "Generate showbiz and celebrity posts curated from Malaysian entertainment news",
-        icon: IconMusicStar,
-        color: "#FF3FBF",
-      },
-    ],
-  },
-  {
-    label: "Food & Travel",
-    description: "Local discovery posts — places to eat, drink, and explore.",
-    topics: [
-      {
-        id: "food-places",
-        label: "Food Places Search",
-        description:
-          "Generate top food spot carousels for any dish + location in your brand's voice",
-        icon: IconSoup,
-        color: "#FF3FBF",
-      },
-    ],
-  },
+  // Entertainment and Food & Travel sections hidden temporarily
   {
     label: "Coming Soon",
     description: "More exciting features coming soon.",
@@ -188,14 +177,6 @@ const sections: Section[] = [
         description: "World Cup and international tournament content",
         icon: IconWorld,
         color: "#00E5D4",
-        comingSoon: true,
-      },
-      {
-        id: "coming-soon-3",
-        label: "Badminton",
-        description: "Badminton tournament highlights and player features",
-        icon: IconFlame,
-        color: "#F05A35",
         comingSoon: true,
       },
       {
