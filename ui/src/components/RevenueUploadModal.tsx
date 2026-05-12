@@ -185,7 +185,7 @@ export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, 
               tab === 'clear' ? 'border-neutral-950 text-neutral-950' : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
-            Clear range
+            Clear revenue data
           </button>
         </div>
 
@@ -405,7 +405,7 @@ export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, 
               disabled={!clearBrand || !clearStart || !clearEnd || clearStart > clearEnd || !clearConfirm || clearing}
               className="px-4 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {clearing ? 'Clearing…' : 'Clear range'}
+              {clearing ? 'Clearing…' : 'Clear data'}
             </button>
           )}
         </div>
