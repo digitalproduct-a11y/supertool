@@ -1,15 +1,13 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { BRANDS, type BrandName } from '../constants/brands'
 import type { QuickFactResult, QuickFactItem } from '../types'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl, updateFactInImageUrl } from '../utils/cloudinary'
+import { updateTitleInImageUrl, updateFactInImageUrl, uploadToCloudinary, replaceBaseImage } from '../utils/cloudinary'
 import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
-import ImageUploadModal from '../components/ImageUploadModal'
-import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 
 type PageState = 'idle' | 'loading' | 'result' | 'error'
 
@@ -94,14 +92,18 @@ export function QuickFactPage() {
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [showCropPicker, setShowCropPicker] = useState(false)
   const [adjustedImageUrl, setAdjustedImageUrl] = useState<string | null>(null)
+  const [adjustedAtTitle, setAdjustedAtTitle] = useState('')
+  const [adjustedAtFacts, setAdjustedAtFacts] = useState<QuickFactItem[]>([])
+  const [adjustedAtKeyPhrase, setAdjustedAtKeyPhrase] = useState('')
   const [cropLoading, setCropLoading] = useState(false)
   const [uploadedPublicId, setUploadedPublicId] = useState<string | null>(null)
-  const [showImageUploadModal, setShowImageUploadModal] = useState(false)
+  const [uploadLoading, setUploadLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Derive preview URL from committed values
   let baseImageUrl = result?.imageUrl ?? ''
   if (uploadedPublicId && result) {
-    baseImageUrl = buildCloudinaryUrl(uploadedPublicId, result.title, result.imageUrl)
+    baseImageUrl = replaceBaseImage(result.imageUrl, uploadedPublicId)
   }
   let previewImageUrl = baseImageUrl
   if (result) {
@@ -112,6 +114,66 @@ export function QuickFactPage() {
     }
     previewImageUrl = updateFactInImageUrl(previewImageUrl, -1, result.keyPhrase, committedKeyPhrase)
   }
+
+  // After crop, re-apply any text edits made since crop time
+  let displayImageUrl = adjustedImageUrl ?? previewImageUrl
+  if (adjustedImageUrl && result) {
+    displayImageUrl = updateTitleInImageUrl(displayImageUrl, adjustedAtTitle, committedTitle)
+    for (let i = 0; i < committedFacts.length; i++) {
+      displayImageUrl = updateFactInImageUrl(displayImageUrl, i, adjustedAtFacts[i]?.header ?? '', committedFacts[i]?.header ?? '')
+      displayImageUrl = updateFactInImageUrl(displayImageUrl, i, adjustedAtFacts[i]?.body ?? '', committedFacts[i]?.body ?? '')
+    }
+    displayImageUrl = updateFactInImageUrl(displayImageUrl, -1, adjustedAtKeyPhrase, committedKeyPhrase)
+  }
+
+  // Source URL for the crop picker — raw base photo without text overlays.
+  // Must remain a Cloudinary URL so crossOrigin="anonymous" works (external URLs lack CORS headers).
+  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? 'dymmqtqyg'
+  const cropSourceUrl = (() => {
+    if (uploadedPublicId) return `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
+    const composedUrl = result?.imageUrl ?? ''
+
+    // Helper: find last transform segment index (segments with commas are transforms)
+    const lastTransformIdx = (segments: string[]) => {
+      let idx = -1
+      for (let i = 0; i < segments.length; i++) if (segments[i].includes(',')) idx = i
+      return idx
+    }
+
+    // /image/fetch/ — keep Cloudinary as proxy but strip all transforms
+    const fetchPrefix = '/image/fetch/'
+    const fetchIdx = composedUrl.indexOf(fetchPrefix)
+    if (fetchIdx !== -1) {
+      const base = composedUrl.substring(0, fetchIdx)
+      const segments = composedUrl.substring(fetchIdx + fetchPrefix.length).split('/')
+      const ltIdx = lastTransformIdx(segments)
+      if (ltIdx >= 0 && ltIdx < segments.length - 1) {
+        const encodedSourceUrl = segments.slice(ltIdx + 1).join('/')
+        return `${base}${fetchPrefix}${encodedSourceUrl}`
+      }
+    }
+
+    // /image/upload/ — strip transforms, keep only the public_id
+    const uploadPrefix = '/image/upload/'
+    const uploadIdx = composedUrl.indexOf(uploadPrefix)
+    if (uploadIdx !== -1) {
+      const base = composedUrl.substring(0, uploadIdx)
+      const segments = composedUrl.substring(uploadIdx + uploadPrefix.length).split('?')[0].split('/')
+      const ltIdx = lastTransformIdx(segments)
+      if (ltIdx >= 0 && ltIdx < segments.length - 1) {
+        return `${base}${uploadPrefix}${segments[ltIdx + 1]}`
+      }
+    }
+
+    return result?.cloudinary_url || previewImageUrl
+  })()
+
+  // Derive crop aspect ratio from the actual post dimensions in the URL (w_ / h_)
+  const cropAspectRatio = (() => {
+    const match = previewImageUrl.match(/c_fill,g_[^,/]+,w_(\d+),h_(\d+)/)
+    if (match) return parseInt(match[1]) / parseInt(match[2])
+    return 1080 / 1350
+  })()
 
   async function handleGenerate() {
     if (!url.trim() || !brand) return
@@ -134,6 +196,9 @@ export function QuickFactPage() {
       setCommittedKeyPhrase(res.keyPhrase)
       setCaption(res.caption)
       setAdjustedImageUrl(null)
+      setAdjustedAtTitle('')
+      setAdjustedAtFacts([])
+      setAdjustedAtKeyPhrase('')
       setUploadedPublicId(null)
       setPageState('result')
     } catch (err) {
@@ -147,6 +212,9 @@ export function QuickFactPage() {
     try {
       const newUrl = await applyFocalCrop(previewImageUrl, cropRegion)
       setAdjustedImageUrl(newUrl)
+      setAdjustedAtTitle(committedTitle)
+      setAdjustedAtFacts(committedFacts.map(f => ({ ...f })))
+      setAdjustedAtKeyPhrase(committedKeyPhrase)
       setShowCropPicker(false)
       toast.success('Crop adjusted!')
     } catch {
@@ -156,11 +224,27 @@ export function QuickFactPage() {
     }
   }
 
+  async function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadLoading(true)
+    try {
+      const publicId = await uploadToCloudinary(file)
+      setUploadedPublicId(publicId)
+      setAdjustedImageUrl(null)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadLoading(false)
+      e.target.value = ''
+    }
+  }
+
   async function handleSchedule(scheduledFor: string, passcode: string) {
     if (!result) return
     setScheduleState('posting')
     const finalPasscode = passcode || getCredentials(result.brand.toLowerCase())?.passcode || ''
-    const response = await callZernioWebhook(adjustedImageUrl ?? previewImageUrl, caption, result.brand, scheduledFor, finalPasscode)
+    const response = await callZernioWebhook(displayImageUrl, caption, result.brand, scheduledFor, finalPasscode)
     if (response.status === 'AUTH_ERROR') {
       setShowScheduleModal(true)
       setScheduleState('idle')
@@ -177,7 +261,7 @@ export function QuickFactPage() {
 
   async function handleDownload() {
     try {
-      const res = await fetch(adjustedImageUrl ?? previewImageUrl)
+      const res = await fetch(displayImageUrl)
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -185,7 +269,7 @@ export function QuickFactPage() {
       a.click()
       URL.revokeObjectURL(a.href)
     } catch {
-      window.open(adjustedImageUrl ?? previewImageUrl, '_blank')
+      window.open(displayImageUrl, '_blank')
     }
   }
 
@@ -316,21 +400,10 @@ export function QuickFactPage() {
             )}
             {showCropPicker && createPortal(
               <FabricCropPicker
-                sourceImageUrl={result.cloudinary_url || previewImageUrl}
-                aspectRatio={1080 / 1350}
+                sourceImageUrl={cropSourceUrl}
+                aspectRatio={cropAspectRatio}
                 onDone={handleCropDone}
                 onCancel={() => setShowCropPicker(false)}
-              />,
-              document.body
-            )}
-            {showImageUploadModal && createPortal(
-              <ImageUploadModal
-                onSelect={({ publicId }) => {
-                  setUploadedPublicId(publicId)
-                  setAdjustedImageUrl(null)
-                  setShowImageUploadModal(false)
-                }}
-                onClose={() => setShowImageUploadModal(false)}
               />,
               document.body
             )}
@@ -459,7 +532,7 @@ export function QuickFactPage() {
               <div className="lg:sticky lg:top-6 space-y-3">
                 <div className="bg-neutral-50 rounded-2xl overflow-hidden border border-gray-200 aspect-[4/5] w-full shadow-[0_2px_24px_rgba(0,0,0,0.07)]">
                   <img
-                    src={adjustedImageUrl ?? previewImageUrl}
+                    src={displayImageUrl}
                     alt="Quick fact post preview"
                     className="w-full h-full object-cover"
                     onError={e => { (e.target as HTMLImageElement).src = '' }}
@@ -481,13 +554,14 @@ export function QuickFactPage() {
                 {/* Upload Custom Image + Download — side by side */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => setShowImageUploadModal(true)}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadLoading}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
-                    Upload Custom Image
+                    {uploadLoading ? 'Uploading…' : 'Upload Custom Image'}
                   </button>
                   <button
                     onClick={handleDownload}
@@ -505,6 +579,13 @@ export function QuickFactPage() {
         )}
 
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
     </main>
   )
 }

@@ -14,6 +14,7 @@ import {
   IconCalendarClock,
   IconBrandShopee,
   IconBulb,
+  IconChartBar,
 } from "@tabler/icons-react";
 
 type ToolId =
@@ -33,7 +34,8 @@ type ToolId =
   | "quick-fact"
   | "on-this-day"
   | "weather-malaysia"
-  | "quote";
+  | "quote"
+  | "dashboard";
 
 interface Tool {
   id: ToolId;
@@ -153,8 +155,15 @@ const sections: Section[] = [
         id: "post-queue",
         label: "Scheduled Queue",
         description: "View and manage all your scheduled Facebook posts",
-        color: "#6B7280",
+        color: "#0055EE",
         icon: IconCalendarClock,
+      },
+      {
+        id: "dashboard",
+        label: "Meta Dashboard",
+        description: "Track Facebook page performance across all your brands",
+        color: "#0055EE",
+        icon: IconChartBar,
       },
     ],
   },
@@ -194,32 +203,6 @@ const sections: Section[] = [
           "Creates on-brand social captions from article content instantly.",
         color: "#0055EE",
         icon: IconStack2,
-        comingSoon: true,
-      },
-      {
-        id: "fb-post",
-        label: "Trending Article Editor",
-        description:
-          "Rewrites trending content into optimized, publish-ready articles.",
-        color: "#0055EE",
-        icon: IconStack2,
-        comingSoon: true,
-      },
-      {
-        id: "affiliate-links",
-        label: "Threads Affiliate Automation",
-        description:
-          "Converts product links into monetizable Lazada affiliate links.",
-        color: "#F05A35",
-        icon: IconLink,
-        comingSoon: true,
-      },
-      {
-        id: "affiliate-links",
-        label: "Lazada Affiliate Link Generator",
-        description: "Upload a file to generate Shopee affiliate links",
-        color: "#F05A35",
-        icon: IconLink,
         comingSoon: true,
       },
     ],
