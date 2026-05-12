@@ -204,14 +204,6 @@ export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, 
                   </select>
                 </div>
               )}
-              {fixedBrand && (
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">Brand</label>
-                  <div className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-700">
-                    {fixedBrand}
-                  </div>
-                </div>
-              )}
 
               {!file && (
                 <div
@@ -342,14 +334,6 @@ export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, 
                   >
                     {brands.map(b => <option key={b.brand} value={b.brand}>{b.brand}</option>)}
                   </select>
-                </div>
-              )}
-              {fixedBrand && (
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">Brand</label>
-                  <div className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-700">
-                    {fixedBrand}
-                  </div>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
