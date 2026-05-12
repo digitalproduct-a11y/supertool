@@ -246,14 +246,7 @@ export function ImageCropAdjuster({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={onReset}
-            className="text-xs text-neutral-500 hover:text-neutral-800 transition"
-          >
-            Reset to auto
-          </button>
+        <div className="flex items-center justify-end gap-2">
           <div className="flex gap-2">
             <button
               type="button"
