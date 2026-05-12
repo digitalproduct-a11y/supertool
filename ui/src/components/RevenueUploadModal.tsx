@@ -262,7 +262,7 @@ export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, 
               {parseResult && dateRange && (
                 <>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-900">
-                    This will upsert <strong>{parseResult.rows.length}</strong> {parseResult.rows.length === 1 ? 'row' : 'rows'} for <strong>{brand}</strong> covering <strong>{dateRange.start}</strong> – <strong>{dateRange.end}</strong>. Existing revenue for these dates will be replaced.
+                    This will upsert <strong>{parseResult.rows.length}</strong> {parseResult.rows.length === 1 ? 'row' : 'rows'} for <strong>{fixedBrand || brand}</strong> covering <strong>{dateRange.start}</strong> – <strong>{dateRange.end}</strong>. Existing revenue for these dates will be replaced.
                   </div>
 
                   {parseResult.warnings.length > 0 && (
@@ -375,7 +375,7 @@ export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, 
 
               {clearStart && clearEnd && clearStart <= clearEnd && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-900">
-                  This will blank revenue for <strong>{clearBrand}</strong> from <strong>{clearStart}</strong> to <strong>{clearEnd}</strong>.
+                  This will blank revenue for <strong>{fixedBrand || clearBrand}</strong> from <strong>{clearStart}</strong> to <strong>{clearEnd}</strong>.
                 </div>
               )}
 
