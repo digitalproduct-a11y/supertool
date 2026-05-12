@@ -47,7 +47,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
-  const [showPasscodeModal, setShowPasscodeModal] = useState(false)
+  const [passcodeModalOpen, setPasscodeModalOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
@@ -74,7 +74,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
     if (isAuthenticated) {
       setUploadModalOpen(true)
     } else {
-      setShowPasscodeModal(true)
+      setPasscodeModalOpen(true)
     }
   }
 
@@ -205,7 +205,9 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
             </div>
           </div>
           <button
+            type="button"
             onClick={handleUploadClick}
+            aria-label="Upload revenue data"
             className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition"
           >
             <IconUpload className="w-3.5 h-3.5" />
@@ -356,18 +358,19 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
         </ComposedChart>
       </ResponsiveContainer>
 
-      {showPasscodeModal && (
+      {passcodeModalOpen && (
         <PasscodeModal
           onSuccess={() => {
-            setShowPasscodeModal(false)
+            setPasscodeModalOpen(false)
             setUploadModalOpen(true)
           }}
-          onClose={() => setShowPasscodeModal(false)}
+          onClose={() => setPasscodeModalOpen(false)}
         />
       )}
 
       {uploadModalOpen && (
         <RevenueUploadModal
+          // Empty brands array is safe here because fixedBrand mode hides the brand dropdown
           brands={[]}
           defaultBrand={brand}
           fixedBrand={brand}
