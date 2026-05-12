@@ -122,5 +122,9 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
     headlineLimit: 50,
     subtitleLimit: 200,
     captionLimit: 550,
+    postTypes: [
+      { id: 'quick-news', label: 'Quick News' },
+      { id: 'debate', label: 'Debate' },
+    ],
   },
 }
