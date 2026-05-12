@@ -23,6 +23,10 @@ import type {
   OnThisDayEvent,
   OnThisDayResponse,
 } from '../config/onThisDayCanvasConfig'
+import {
+  DEFAULT_ONTHISDAY_THEME,
+  BRAND_ONTHISDAY_THEMES,
+} from '../config/onThisDayBrandThemes'
 
 // ─── Event Row (used in both sections) ───────────────────────────────────────
 
@@ -466,46 +470,37 @@ export function OnThisDayPage() {
                 </div>
               ) : (
                 <>
-                  <OnThisDayCanvas
-                    ref={canvasRef}
-                    title={editedTitle}
-                    date={selectedEvent.date}
-                    brand={brand}
-                    eventUrl={selectedEvent.url}
-                    highlightTerms={fetchedHighlightTerms}
-                    accentColor={fetchedBrandHex}
-                    backgroundColor={
-                      // Per-brand canvas background overrides — currently only
-                      // Hotspot. Add more entries here when other brands need
-                      // a distinct surface tone.
-                      brand.toLowerCase() === 'hotspot' ? '#c01e2e' : null
-                    }
-                    headerLabelColor={
-                      brand.toLowerCase() === 'hotspot' ? '#FFFFFF' : null
-                    }
-                    bigYearColor={
-                      // Hotspot's red bg makes white year text disappear into
-                      // the white accent rect; switch to dark to match the
-                      // dark date circle on the right.
-                      brand.toLowerCase() === 'hotspot' ? '#2B1F18' : null
-                    }
-                    headlineColor={
-                      brand.toLowerCase() === 'hotspot' ? '#FFFFFF' : null
-                    }
-                    highlightTextColor={
-                      // Hotspot's accent block is white, so flipping the
-                      // highlighted phrase to dark (matches bigYear) keeps it
-                      // readable. Other brands inherit headlineColor.
-                      brand.toLowerCase() === 'hotspot' ? '#000000' : null
-                    }
-                    footerColor={
-                      brand.toLowerCase() === 'hotspot' ? '#FFFFFF' : null
-                    }
-                    onClick={() => {
-                      const dataUrl = canvasRef.current?.getDataUrl()
-                      if (dataUrl) setLightboxUrl(dataUrl)
-                    }}
-                  />
+                  {(() => {
+                    // If a brand is listed in BRAND_ONTHISDAY_THEMES, that
+                    // file is the single source of truth — n8n's brandHex is
+                    // intentionally ignored so brands stay standardized to
+                    // the default theme unless explicitly overridden here.
+                    // Brands NOT listed fall back to brandHex for accent.
+                    const brandTheme = BRAND_ONTHISDAY_THEMES[brand]
+                    const theme = brandTheme
+                      ? { ...DEFAULT_ONTHISDAY_THEME, ...brandTheme }
+                      : {
+                          ...DEFAULT_ONTHISDAY_THEME,
+                          accentColor:
+                            fetchedBrandHex ??
+                            DEFAULT_ONTHISDAY_THEME.accentColor,
+                        }
+                    return (
+                      <OnThisDayCanvas
+                        ref={canvasRef}
+                        title={editedTitle}
+                        date={selectedEvent.date}
+                        brand={brand}
+                        eventUrl={selectedEvent.url}
+                        highlightTerms={fetchedHighlightTerms}
+                        {...theme}
+                        onClick={() => {
+                          const dataUrl = canvasRef.current?.getDataUrl()
+                          if (dataUrl) setLightboxUrl(dataUrl)
+                        }}
+                      />
+                    )
+                  })()}
 
                   <div className="flex gap-2">
                     <button
