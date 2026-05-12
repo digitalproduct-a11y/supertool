@@ -14,7 +14,7 @@ export function DashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date(); d.setDate(d.getDate() - 8); d.setHours(0,0,0,0); return d
+    const d = new Date(); d.setDate(d.getDate() - 31); d.setHours(0,0,0,0); return d
   })
   const [endDate, setEndDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(23,59,59,999); return d
