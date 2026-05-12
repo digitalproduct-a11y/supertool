@@ -5,6 +5,7 @@ import { parseRevenueCsv, type ParseResult } from '../utils/revenueCsvParser'
 interface RevenueUploadModalProps {
   brands: { brand: string; bu: string }[]
   defaultBrand: string
+  fixedBrand?: string
   onClose: () => void
   onSuccess: () => void
 }
@@ -44,7 +45,7 @@ function networkErrorMessage(e: any): string {
   return raw || 'Request failed'
 }
 
-export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }: RevenueUploadModalProps) {
+export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, onSuccess }: RevenueUploadModalProps) {
   const [tab, setTab] = useState<Tab>('upload')
 
   // Upload tab state
@@ -91,7 +92,8 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
   }
 
   const handleSubmit = async () => {
-    if (!parseResult || !brand || submitting) return
+    const uploadBrand = fixedBrand || brand
+    if (!parseResult || !uploadBrand || submitting) return
     if (!UPLOAD_URL) {
       setSubmitError('VITE_REVENUE_UPLOAD_WEBHOOK_URL is not configured')
       return
@@ -103,7 +105,7 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
       const res = await fetch(UPLOAD_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brand, rows: parseResult.rows }),
+        body: JSON.stringify({ brand: uploadBrand, rows: parseResult.rows }),
       })
       if (!res.ok) {
         setSubmitError(await extractServerError(res, 'Upload failed'))
@@ -128,7 +130,8 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
   }
 
   const handleClear = async () => {
-    if (!clearBrand || !clearStart || !clearEnd || clearing) return
+    const clearingBrand = fixedBrand || clearBrand
+    if (!clearingBrand || !clearStart || !clearEnd || clearing) return
     if (!CLEAR_URL) {
       setClearError('VITE_REVENUE_CLEAR_WEBHOOK_URL is not configured')
       return
@@ -139,7 +142,7 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
       const res = await fetch(CLEAR_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brand: clearBrand, startDate: clearStart, endDate: clearEnd }),
+        body: JSON.stringify({ brand: clearingBrand, startDate: clearStart, endDate: clearEnd }),
       })
       if (!res.ok) {
         setClearError(await extractServerError(res, 'Clear failed'))
@@ -161,7 +164,9 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
         onClick={e => e.stopPropagation()}
       >
         <div className="px-6 pt-5 pb-3 border-b border-neutral-100 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-neutral-950">Revenue upload</h2>
+          <h2 className="text-lg font-semibold text-neutral-950">
+            {fixedBrand ? `Upload revenue for ${fixedBrand}` : 'Revenue upload'}
+          </h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-700 text-xl leading-none">×</button>
         </div>
 
@@ -180,23 +185,25 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
               tab === 'clear' ? 'border-neutral-950 text-neutral-950' : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
-            Clear range
+            Clear revenue data
           </button>
         </div>
 
         <div className="px-6 py-5 overflow-y-auto flex-1">
           {tab === 'upload' && (
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1.5">Brand</label>
-                <select
-                  value={brand}
-                  onChange={e => setBrand(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
-                >
-                  {brands.map(b => <option key={b.brand} value={b.brand}>{b.brand}</option>)}
-                </select>
-              </div>
+              {!fixedBrand && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">Brand</label>
+                  <select
+                    value={brand}
+                    onChange={e => setBrand(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
+                  >
+                    {brands.map(b => <option key={b.brand} value={b.brand}>{b.brand}</option>)}
+                  </select>
+                </div>
+              )}
 
               {!file && (
                 <div
@@ -247,7 +254,7 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
               {parseResult && dateRange && (
                 <>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-900">
-                    This will upsert <strong>{parseResult.rows.length}</strong> {parseResult.rows.length === 1 ? 'row' : 'rows'} for <strong>{brand}</strong> covering <strong>{dateRange.start}</strong> – <strong>{dateRange.end}</strong>. Existing revenue for these dates will be replaced.
+                    This will upsert <strong>{parseResult.rows.length}</strong> {parseResult.rows.length === 1 ? 'row' : 'rows'} for <strong>{fixedBrand || brand}</strong> covering <strong>{dateRange.start}</strong> – <strong>{dateRange.end}</strong>. Existing revenue for these dates will be replaced.
                   </div>
 
                   {parseResult.warnings.length > 0 && (
@@ -315,18 +322,20 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
           {tab === 'clear' && (
             <div className="space-y-4">
               <p className="text-sm text-neutral-600">
-                Blank the 6 revenue columns for a brand across a date range. Post and interaction columns are left untouched.
+                This action will clear the revenue data for dates you select
               </p>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1.5">Brand</label>
-                <select
-                  value={clearBrand}
-                  onChange={e => setClearBrand(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
-                >
-                  {brands.map(b => <option key={b.brand} value={b.brand}>{b.brand}</option>)}
-                </select>
-              </div>
+              {!fixedBrand && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">Brand</label>
+                  <select
+                    value={clearBrand}
+                    onChange={e => setClearBrand(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
+                  >
+                    {brands.map(b => <option key={b.brand} value={b.brand}>{b.brand}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1.5">Start date</label>
@@ -350,7 +359,7 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
 
               {clearStart && clearEnd && clearStart <= clearEnd && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-900">
-                  This will blank revenue for <strong>{clearBrand}</strong> from <strong>{clearStart}</strong> to <strong>{clearEnd}</strong>.
+                  This will blank revenue for <strong>{fixedBrand || clearBrand}</strong> from <strong>{clearStart}</strong> to <strong>{clearEnd}</strong>.
                 </div>
               )}
 
@@ -396,7 +405,7 @@ export function RevenueUploadModal({ brands, defaultBrand, onClose, onSuccess }:
               disabled={!clearBrand || !clearStart || !clearEnd || clearStart > clearEnd || !clearConfirm || clearing}
               className="px-4 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {clearing ? 'Clearing…' : 'Clear range'}
+              {clearing ? 'Clearing…' : 'Clear data'}
             </button>
           )}
         </div>

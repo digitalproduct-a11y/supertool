@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { IconRefresh, IconUpload } from '@tabler/icons-react'
+import { IconRefresh } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { DashboardHeader } from '../components/DashboardHeader'
 import { RevenueChart } from '../components/RevenueChart'
@@ -7,7 +7,6 @@ import { PostsChart } from '../components/PostsChart'
 import { InteractionsChart } from '../components/InteractionsChart'
 import { RPPChart } from '../components/RPPChart'
 import { TopPostsChart } from '../components/TopPostsChart'
-import { RevenueUploadModal } from '../components/RevenueUploadModal'
 import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils/dashboardUtils'
 import type { DashboardRow } from '../utils/dashboardUtils'
 
@@ -15,7 +14,7 @@ export function DashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date(); d.setDate(d.getDate() - 8); d.setHours(0,0,0,0); return d
+    const d = new Date(); d.setDate(d.getDate() - 31); d.setHours(0,0,0,0); return d
   })
   const [endDate, setEndDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(23,59,59,999); return d
@@ -24,7 +23,6 @@ export function DashboardPage() {
   const [showComparison, setShowComparison] = useState(true)
   const [showTargets, setShowTargets] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [uploadModalOpen, setUploadModalOpen] = useState(false)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -128,14 +126,6 @@ export function DashboardPage() {
             </div>
             <div className="flex items-center gap-2 pt-1 shrink-0">
               <button
-                onClick={() => setUploadModalOpen(true)}
-                disabled={!selectedBrand}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition disabled:opacity-50"
-              >
-                <IconUpload className="w-3.5 h-3.5" />
-                Upload revenue
-              </button>
-              <button
                 onClick={refetch}
                 disabled={loading}
                 className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition disabled:opacity-50"
@@ -222,7 +212,7 @@ export function DashboardPage() {
           {filteredData.length > 0 && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
+                <RevenueChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} brand={selectedBrand || ''} onRefetch={refetch} />
                 <PostsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} />
                 <InteractionsChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} targetData={targetData} showTargets={showTargets} viewMode={viewMode} startDate={startDate} endDate={endDate} onDateSelect={setSelectedDate} selectedDate={selectedDate} />
                 <RPPChart data={filteredData} prevData={prevFilteredData} showComparison={showComparison} />
@@ -242,15 +232,6 @@ export function DashboardPage() {
           </div>
         )}
       </div>
-
-      {uploadModalOpen && selectedBrand && (
-        <RevenueUploadModal
-          brands={brands}
-          defaultBrand={selectedBrand}
-          onClose={() => setUploadModalOpen(false)}
-          onSuccess={refetch}
-        />
-      )}
     </main>
   )
 }
