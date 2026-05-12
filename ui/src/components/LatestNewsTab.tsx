@@ -200,7 +200,6 @@ export function LatestNewsTab({ brand }: { brand: string }) {
   const [competitorsFetched, setCompetitorsFetched] = useState(false)
   const [competitorsLoading, setCompetitorsLoading] = useState(false)
   const [expandedAstro, setExpandedAstro] = useState(false)
-  const [expandedCompetitors, setExpandedCompetitors] = useState(false)
 
   const load = () => {
     setTabState('loading')
@@ -570,7 +569,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
               )}
             </button>
 
-            {(expandedCompetitors ? COMPETITOR_BRANDS : COMPETITOR_BRANDS.slice(0, 5)).map(b => {
+            {COMPETITOR_BRANDS.map(b => {
               const active = competitorSelectedBrand === b && activeSection === 'competitors'
               const count = competitorCountsByBrand[b] ?? 0
               return (
@@ -593,14 +592,6 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                 </button>
               )
             })}
-            {COMPETITOR_BRANDS.length > 5 && (
-              <button
-                onClick={() => setExpandedCompetitors(!expandedCompetitors)}
-                className="w-full text-left px-2.5 py-1 text-[10px] text-neutral-400 hover:text-neutral-600 transition"
-              >
-                {expandedCompetitors ? '← Show Less' : 'Show All →'}
-              </button>
-            )}
           </div>
         </div>
       </div>
