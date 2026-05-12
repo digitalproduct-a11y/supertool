@@ -322,7 +322,7 @@ export function RevenueUploadModal({ brands, defaultBrand, fixedBrand, onClose, 
           {tab === 'clear' && (
             <div className="space-y-4">
               <p className="text-sm text-neutral-600">
-                Blank the 6 revenue columns for a brand across a date range. Post and interaction columns are left untouched.
+                This action will clear the revenue data for dates you select
               </p>
               {!fixedBrand && (
                 <div>
