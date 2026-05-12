@@ -12,7 +12,6 @@ interface ImageCropAdjusterProps {
   aspectRatio: number;
   initialRegion?: CropRegion | null;
   onSave: (region: CropRegion) => void;
-  onReset: () => void;
   onCancel: () => void;
 }
 
@@ -29,7 +28,6 @@ export function ImageCropAdjuster({
   aspectRatio,
   initialRegion,
   onSave,
-  onReset,
   onCancel,
 }: ImageCropAdjusterProps) {
   const imgRef = useRef<HTMLImageElement | null>(null);

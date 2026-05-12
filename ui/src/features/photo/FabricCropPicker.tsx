@@ -23,10 +23,6 @@ export function FabricCropPicker({
       aspectRatio={aspectRatio}
       initialRegion={null}
       onSave={handleCropSave}
-      onReset={() => {
-        // When reset, pass a centered crop region
-        onDone({ x: 0, y: 0, width: 0, height: 0 })
-      }}
       onCancel={onCancel}
     />
   )

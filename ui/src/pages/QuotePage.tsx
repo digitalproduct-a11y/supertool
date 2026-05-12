@@ -1072,10 +1072,6 @@ export function QuotePage() {
             setManualCrop(region);
             setShowCropAdjuster(false);
           }}
-          onReset={() => {
-            setManualCrop(null);
-            setShowCropAdjuster(false);
-          }}
           onCancel={() => setShowCropAdjuster(false)}
         />
       )}
