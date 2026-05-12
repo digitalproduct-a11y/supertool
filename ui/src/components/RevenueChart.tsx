@@ -11,9 +11,11 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts'
-import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
+import { IconAdjustmentsHorizontal, IconUpload } from '@tabler/icons-react'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { formatDateLabel } from '../utils/dashboardUtils'
+import { PasscodeModal } from './PasscodeModal'
+import { RevenueUploadModal } from './RevenueUploadModal'
 
 interface RevenueChartProps {
   data: DashboardRow[]
@@ -24,6 +26,8 @@ interface RevenueChartProps {
   viewMode?: 'daily' | 'weekly' | 'monthly'
   startDate?: Date
   endDate?: Date
+  brand: string
+  onRefetch: () => void
 }
 
 const toNum = (v: unknown): number => {
@@ -39,9 +43,11 @@ const SERIES = [
   { key: 'bonus_revenue', label: 'Bonus', color: '#9333EA' },
 ]
 
-export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true }: RevenueChartProps) {
+export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, brand, onRefetch }: RevenueChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
@@ -61,6 +67,15 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
       next.has(key) ? next.delete(key) : next.add(key)
       return next
     })
+  }
+
+  const handleUploadClick = () => {
+    const isAuthenticated = sessionStorage.getItem('uploadAuth') === 'true'
+    if (isAuthenticated) {
+      setUploadModalOpen(true)
+    } else {
+      setShowPasscodeModal(true)
+    }
   }
 
   if (data.length === 0) {
@@ -189,6 +204,13 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
             )}
             </div>
           </div>
+          <button
+            onClick={handleUploadClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition"
+          >
+            <IconUpload className="w-3.5 h-3.5" />
+            Upload revenue
+          </button>
         </div>
         <div className="mb-4">
           <div className="flex items-center gap-2 justify-center">
@@ -333,6 +355,29 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
           </Bar>
         </ComposedChart>
       </ResponsiveContainer>
+
+      {showPasscodeModal && (
+        <PasscodeModal
+          onSuccess={() => {
+            setShowPasscodeModal(false)
+            setUploadModalOpen(true)
+          }}
+          onClose={() => setShowPasscodeModal(false)}
+        />
+      )}
+
+      {uploadModalOpen && (
+        <RevenueUploadModal
+          brands={[]}
+          defaultBrand={brand}
+          fixedBrand={brand}
+          onClose={() => setUploadModalOpen(false)}
+          onSuccess={() => {
+            onRefetch()
+            setUploadModalOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 }
