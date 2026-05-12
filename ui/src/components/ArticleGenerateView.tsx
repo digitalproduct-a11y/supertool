@@ -141,6 +141,7 @@ export function ArticleGenerateView({
 
   const [generateState, setGenerateState] = useState<GenerateState>('idle')
   const [generated, setGenerated] = useState<GeneratedPost | null>(null)
+  const autoGenerateFired = useRef(false)
 
   const [editableTitle, setEditableTitle] = useState('')
   const [committedTitle, setCommittedTitle] = useState('')
@@ -196,7 +197,7 @@ export function ArticleGenerateView({
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (autoGenerate) { void handleGenerate() } }, [])
+  useEffect(() => { if (autoGenerate && !autoGenerateFired.current) { autoGenerateFired.current = true; void handleGenerate() } }, [])
 
   const handleCopyCaption = async () => {
     try {

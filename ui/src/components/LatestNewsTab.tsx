@@ -310,8 +310,11 @@ export function LatestNewsTab({ brand }: { brand: string }) {
   const competitorCountsByBrand = useMemo(() => {
     const map: Record<string, number> = {}
     const brands = (Array.isArray(competitorBrands) ? competitorBrands : []) || []
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000
     for (const b of brands) {
-      if (b?.brand && Array.isArray(b.articles)) map[b.brand] = b.articles.length
+      if (b?.brand && Array.isArray(b.articles)) {
+        map[b.brand] = b.articles.filter(a => new Date(a?.publishedAt || 0).getTime() >= cutoff).length
+      }
     }
     return map
   }, [competitorBrands])
@@ -321,10 +324,13 @@ export function LatestNewsTab({ brand }: { brand: string }) {
     [allBrands]
   )
 
-  const totalCompetitorCount = useMemo(
-    () => (Array.isArray(competitorBrands) ? competitorBrands : []).reduce((s, b) => s + (Array.isArray(b?.articles) ? b.articles.length : 0), 0),
-    [competitorBrands]
-  )
+  const totalCompetitorCount = useMemo(() => {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000
+    return (Array.isArray(competitorBrands) ? competitorBrands : []).reduce((s, b) => {
+      if (!Array.isArray(b?.articles)) return s
+      return s + b.articles.filter(a => new Date(a?.publishedAt || 0).getTime() >= cutoff).length
+    }, 0)
+  }, [competitorBrands])
 
   // Merge articles for selected brand, attach sourceBrand, filter by search
   const filteredArticles = useMemo<ArticleWithBrand[]>(() => {
@@ -490,7 +496,6 @@ export function LatestNewsTab({ brand }: { brand: string }) {
             const sortedBrands = [...group.brands].sort((a, b) => (countsByBrand[b] ?? 0) - (countsByBrand[a] ?? 0))
             return (
             <div key={group.label}>
-              <div className="h-px bg-neutral-100 my-1" />
               <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-2 pt-1.5 pb-1">{group.label}</p>
               <button
                 onClick={() => { setSelectedBrand('all'); setActiveSection('astro') }}
@@ -688,13 +693,15 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                     <div className="flex gap-3 p-4">
                       {/* Thumbnail with checkbox overlay */}
                       <div className="w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden relative">
-                        {article.imageUrl && (
+                        {article.imageUrl ? (
                           <img
                             src={article.imageUrl}
                             alt=""
                             className="w-full h-full object-cover"
                             onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
                           />
+                        ) : activeSection === 'competitors' && (
+                          <span className="absolute inset-0 flex items-center justify-center text-[10px] text-neutral-400">No image</span>
                         )}
                         <button
                           type="button"

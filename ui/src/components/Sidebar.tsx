@@ -212,7 +212,7 @@ export function Sidebar({
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          <nav className="sidebar-nav flex-1 px-3 py-4 overflow-y-auto">
             {navSections.map((group, i) => (
               <div key={i} className={i > 0 ? "mt-4" : ""}>
                 {group.section && (
