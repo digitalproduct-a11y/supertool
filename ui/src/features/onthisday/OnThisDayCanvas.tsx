@@ -57,6 +57,9 @@ export interface OnThisDayCanvasProps {
   // text on a near-bg-coloured accent block).
   highlightTextColor?: string | null;
   footerColor?: string | null;       // bottom strip kicker / tagline / url
+  // Date circle (top-right) — fill of the circle and text inside it.
+  dateCircleColor?: string | null;
+  dateCircleTextColor?: string | null;
   onClick?: () => void;
 }
 
@@ -111,6 +114,8 @@ export const OnThisDayCanvas = forwardRef<
     headlineColor,
     highlightTextColor,
     footerColor,
+    dateCircleColor,
+    dateCircleTextColor,
     onClick,
   },
   ref,
@@ -155,6 +160,12 @@ export const OnThisDayCanvas = forwardRef<
           ? highlightTextColor!
           : headlineFill;
         const footerFill = isHex(footerColor) ? footerColor! : config.dark;
+        const dateCircleFill = isHex(dateCircleColor)
+          ? dateCircleColor!
+          : config.dark;
+        const dateCircleTextFill = isHex(dateCircleTextColor)
+          ? dateCircleTextColor!
+          : config.dateBox.color;
         // The n8n webhook is now the single source of truth for highlight
         // selection (LLM with a server-side deterministic fallback). We
         // render no highlight if the prop is empty/missing.
@@ -210,7 +221,7 @@ export const OnThisDayCanvas = forwardRef<
             radius: db.radius,
             originX: "center",
             originY: "center",
-            fill: config.dark,
+            fill: dateCircleFill,
             selectable: false,
             evented: false,
           }),
@@ -298,7 +309,7 @@ export const OnThisDayCanvas = forwardRef<
             fontFamily: "Archivo",
             fontSize: db.monthFontSize,
             fontWeight: 500,
-            fill: db.color,
+            fill: dateCircleTextFill,
             charSpacing: ls(db.monthLetterSpacing, db.monthFontSize),
             left: cx,
             top,
@@ -313,7 +324,7 @@ export const OnThisDayCanvas = forwardRef<
             fontFamily: "Archivo",
             fontSize: db.dayFontSize,
             fontWeight: 800,
-            fill: db.color,
+            fill: dateCircleTextFill,
             charSpacing: ls(db.dayLetterSpacing, db.dayFontSize),
             lineHeight: 0.9,
             left: cx,
@@ -330,7 +341,7 @@ export const OnThisDayCanvas = forwardRef<
             fontFamily: "Archivo",
             fontSize: db.yearFontSize,
             fontWeight: 400,
-            fill: db.color,
+            fill: dateCircleTextFill,
             charSpacing: ls(db.yearLetterSpacing, db.yearFontSize),
             left: cx,
             top: bottom,
@@ -538,6 +549,8 @@ export const OnThisDayCanvas = forwardRef<
       headlineColor,
       highlightTextColor,
       footerColor,
+      dateCircleColor,
+      dateCircleTextColor,
     ],
   );
 
@@ -603,6 +616,8 @@ export const OnThisDayCanvas = forwardRef<
     headlineColor,
     highlightTextColor,
     footerColor,
+    dateCircleColor,
+    dateCircleTextColor,
     config,
     renderCanvas,
   ]);
