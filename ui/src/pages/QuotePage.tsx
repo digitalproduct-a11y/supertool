@@ -281,28 +281,25 @@ export function QuotePage() {
         return;
       }
 
-      if (data.success) {
-        setQuoteData({
-          quote_text: data.quote_text,
-          quote_punch: data.quote_punch,
-          quote_author: data.quote_author,
-          quote_author_title: data.quote_author_title,
-        });
-        setCaption(data.fb_caption);
-        setImageUrl(data.image_url || null);
-        setFontUse(data.font_use || null);
-        // Pexels matches: prefer the array; fall back to the legacy left URL.
-        const urls =
-          (data.pexels_image_urls?.filter(Boolean) ?? []) as string[];
-        const fallback = data.pexels_image_left_url
-          ? [data.pexels_image_left_url]
-          : [];
-        setPexelsUrls(urls.length ? urls : fallback);
-        setPexelsIndex(0);
-        setStage("preview");
-      } else {
-        setError(data.message || "Failed to extract quote from article.");
-      }
+      // At this point structured errors have been handled above, so success
+      // is the only remaining shape.
+      setQuoteData({
+        quote_text: data.quote_text,
+        quote_punch: data.quote_punch,
+        quote_author: data.quote_author,
+        quote_author_title: data.quote_author_title,
+      });
+      setCaption(data.fb_caption);
+      setImageUrl(data.image_url || null);
+      setFontUse(data.font_use || null);
+      // Pexels matches: prefer the array; fall back to the legacy left URL.
+      const urls = (data.pexels_image_urls?.filter(Boolean) ?? []) as string[];
+      const fallback = data.pexels_image_left_url
+        ? [data.pexels_image_left_url]
+        : [];
+      setPexelsUrls(urls.length ? urls : fallback);
+      setPexelsIndex(0);
+      setStage("preview");
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
         setError("Request timed out. Please try again.");
