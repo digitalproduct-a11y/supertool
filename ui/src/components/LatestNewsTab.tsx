@@ -1,4 +1,12 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import {
+  fetchInHouseFeeds,
+  fetchCompetitorFeeds as fetchCompetitorFeedsFromStore,
+  clearInHouseCache,
+  clearCompetitorCache,
+  readInHouseCache,
+  readCompetitorCache as readCompetitorCacheFromStore,
+} from '../utils/rssStore'
 import { IconRefresh, IconExternalLink, IconChevronLeft, IconChevronRight, IconSearch } from '@tabler/icons-react'
 import { BRAND_GROUPS, COMPETITOR_BRANDS } from '../constants/rssFeedsByBrand'
 import { PostCard } from './PostCard'
@@ -35,48 +43,6 @@ interface BulkResult {
 
 type TabState = 'loading' | 'loaded' | 'error'
 
-function getCacheKey(): string {
-  const bucket = Math.floor(Date.now() / 900_000)
-  return `rss_latest_all_${bucket}`
-}
-
-function readCache(): BrandFeedData[] | null {
-  try {
-    const raw = sessionStorage.getItem(getCacheKey())
-    if (!raw) return null
-    return JSON.parse(raw) as BrandFeedData[]
-  } catch {
-    return null
-  }
-}
-
-function writeCache(data: BrandFeedData[]): void {
-  try {
-    sessionStorage.setItem(getCacheKey(), JSON.stringify(data))
-  } catch { /* quota — skip */ }
-}
-
-function getCompetitorCacheKey(): string {
-  const bucket = Math.floor(Date.now() / 900_000)
-  return `rss_competitor_all_${bucket}`
-}
-
-function readCompetitorCache(): BrandFeedData[] | null {
-  try {
-    const raw = sessionStorage.getItem(getCompetitorCacheKey())
-    if (!raw) return null
-    return JSON.parse(raw) as BrandFeedData[]
-  } catch {
-    return null
-  }
-}
-
-function writeCompetitorCache(data: BrandFeedData[]): void {
-  try {
-    sessionStorage.setItem(getCompetitorCacheKey(), JSON.stringify(data))
-  } catch { /* quota — skip */ }
-}
-
 function formatMYT(isoStr: string): string {
   const date = new Date(isoStr)
   if (isNaN(date.getTime())) return '—'
@@ -94,32 +60,13 @@ function formatMYT(isoStr: string): string {
 async function fetchAllRssFeeds(): Promise<BrandFeedData[]> {
   const webhookUrl = (import.meta.env.VITE_RSS_LATEST_WEBHOOK_URL as string | undefined)?.trim()
   if (!webhookUrl) throw new Error('RSS webhook not configured.')
-  const res = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const data = await res.json() as BrandFeedData[] | { error?: string }
-  if (!Array.isArray(data)) {
-    if (data.error) throw new Error(data.error)
-    throw new Error('Unexpected response format')
-  }
-  return data
+  return fetchInHouseFeeds(webhookUrl)
 }
 
 async function fetchCompetitorFeeds(): Promise<BrandFeedData[]> {
   const webhookUrl = (import.meta.env.VITE_RSS_COMPETITOR_WEBHOOK_URL as string | undefined)?.trim()
   if (!webhookUrl) throw new Error('Competitor RSS webhook not configured.')
-  const res = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const data = await res.json() as BrandFeedData[] | { error?: string }
-  if (!Array.isArray(data)) throw new Error((data as { error?: string }).error ?? 'Unexpected response format')
-  return data
+  return fetchCompetitorFeedsFromStore(webhookUrl)
 }
 
 // ─── Bulk item placeholder ────────────────────────────────────────────────────
@@ -208,7 +155,6 @@ export function LatestNewsTab({ brand }: { brand: string }) {
     setSelectedUrls(new Set())
     fetchAllRssFeeds()
       .then(data => {
-        writeCache(data)
         setAllBrands(data)
         setTabState('loaded')
       })
@@ -219,7 +165,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
     setSingleTarget(null)
     setView('browse')
     setSelectedUrls(new Set())
-    const cached = readCache()
+    const cached = readInHouseCache()
     if (cached) {
       setAllBrands(cached)
       setTabState('loaded')
@@ -228,14 +174,24 @@ export function LatestNewsTab({ brand }: { brand: string }) {
     load()
   }, [brand]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Pre-populate competitor counts from cache if available (no network call)
+  useEffect(() => {
+    if (competitorsFetched) return
+    const cached = readCompetitorCacheFromStore()
+    if (cached) {
+      setCompetitorBrands(cached)
+      setCompetitorTabState('loaded')
+      setCompetitorsFetched(true)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleRefresh = () => {
     if (activeSection === 'competitors') {
       // Refresh competitor feeds
-      try { sessionStorage.removeItem(getCompetitorCacheKey()) } catch { /* ignore */ }
+      clearCompetitorCache()
       setCompetitorsLoading(true)
       fetchCompetitorFeeds()
         .then(data => {
-          writeCompetitorCache(data)
           setCompetitorBrands(data)
           setCompetitorTabState('loaded')
           setCompetitorsLoading(false)
@@ -246,7 +202,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
         })
     } else {
       // Refresh Astro feeds
-      try { sessionStorage.removeItem(getCacheKey()) } catch { /* ignore */ }
+      clearInHouseCache()
       load()
     }
   }
@@ -257,7 +213,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
     // Fetch competitor feeds only on first click
     if (!competitorsFetched) {
-      const cached = readCompetitorCache()
+      const cached = readCompetitorCacheFromStore()
       if (cached) {
         setCompetitorBrands(cached)
         setCompetitorTabState('loaded')
@@ -267,7 +223,6 @@ export function LatestNewsTab({ brand }: { brand: string }) {
       setCompetitorsLoading(true)
       fetchCompetitorFeeds()
         .then(data => {
-          writeCompetitorCache(data)
           setCompetitorBrands(data)
           setCompetitorTabState('loaded')
           setCompetitorsFetched(true)
@@ -486,10 +441,10 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
   // ── Browse view ──
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex min-h-0 overflow-hidden">
 
       {/* Brand filter sidebar */}
-      <div className="w-40 shrink-0 border-r border-neutral-100 overflow-y-auto flex flex-col bg-white">
+      <div className="w-48 shrink-0 border-r border-neutral-200 overflow-y-auto flex flex-col bg-neutral-50">
         <div className="p-2 space-y-0.5">
           {BRAND_GROUPS.map((group) => {
             const sortedBrands = [...group.brands].sort((a, b) => (countsByBrand[b] ?? 0) - (countsByBrand[a] ?? 0))
@@ -598,7 +553,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
       {/* Article list */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
+        <div className="max-w-3xl px-4 md:px-6 py-4 space-y-3">
 
           {/* Search bar */}
           <div className="relative">
