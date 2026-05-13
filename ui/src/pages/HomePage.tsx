@@ -78,6 +78,27 @@ async function fetchCompetitorNews(): Promise<ArticleWithBrand[]> {
   return articles
 }
 
+// ── Nav row component ─────────────────────────────────────────────────────────
+
+function NavRow({ label, image, onClick }: { label: string; image?: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-5 py-3 hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+    >
+      {image ? (
+        <img src={image} alt={label} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+      ) : (
+        <div className="w-14 h-14 rounded-lg bg-neutral-100 flex-shrink-0" />
+      )}
+      <span className="flex-1 text-sm font-semibold text-neutral-900">{label}</span>
+      <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  )
+}
+
 // ── Engagement quick-link groups ──────────────────────────────────────────────
 
 const ENGAGEMENT_GROUPS = [
@@ -258,18 +279,19 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[0, 1, 2, 3].map(i => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[0, 1, 2].map(i => (
                 <div key={i} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
                   <div className="h-2 w-20 bg-neutral-100 rounded-full animate-pulse mb-3" />
-                  <div className="h-7 w-24 bg-neutral-100 rounded-lg animate-pulse mb-4" />
+                  <div className="h-7 w-24 bg-neutral-100 rounded-lg animate-pulse mb-1" />
+                  <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse mb-4" />
                   <div className="h-10 bg-neutral-100 rounded animate-pulse mb-3" />
-                  {i < 2 && <div className="h-1.5 w-full bg-neutral-100 rounded-full animate-pulse" />}
+                  {i < 2 && <div className="h-1 w-full bg-neutral-100 rounded-full animate-pulse" />}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {metricCards.map(card => {
                 const pct = card.target && card.target > 0
                   ? Math.min(100, (card.actual / card.target) * 100)
