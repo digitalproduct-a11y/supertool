@@ -235,27 +235,51 @@ export function QuotePage() {
         signal: controller.signal,
       });
 
-      if (!res.ok) {
-        setError(`Service error (${res.status}). Please try again.`);
-        setStage("generating");
+      const text = await res.text();
+      let data: QuoteResult | null = null;
+      if (text) {
+        try {
+          data = JSON.parse(text) as QuoteResult;
+        } catch {
+          // Fall through — handled below depending on res.ok.
+        }
+      }
+
+      if (controller.signal.aborted) return;
+
+      // Friendly "no quote found" branch. The n8n workflow returns 404 for this
+      // case; sometimes with a structured body, sometimes (n8n respond-node
+      // quirk) just the status. Match on either signal.
+      const noQuoteFound =
+        (data && !data.success && data.error === "no_quote_found") ||
+        res.status === 404;
+      if (noQuoteFound) {
+        setError(
+          "No quote found in this article. Try a different article — interviews, reaction pieces, or statements work best.",
+        );
         return;
       }
 
-      const text = await res.text();
+      // Other structured errors from the workflow (brand/fetch).
+      if (data && !data.success) {
+        setError(data.message || "Failed to extract quote from article.");
+        return;
+      }
+
+      if (!res.ok) {
+        setError(`Service error (${res.status}). Please try again.`);
+        return;
+      }
+
       if (!text) {
         setError("Service returned an empty response. Please try again.");
         return;
       }
 
-      let data: QuoteResult;
-      try {
-        data = JSON.parse(text) as QuoteResult;
-      } catch {
+      if (!data) {
         setError("Service returned an invalid response. Please try again.");
         return;
       }
-
-      if (controller.signal.aborted) return;
 
       if (data.success) {
         setQuoteData({
