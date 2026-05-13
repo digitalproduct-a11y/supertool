@@ -1,16 +1,36 @@
 import { useEffect, useState } from 'react'
 import { LineChart, Line, ResponsiveContainer } from 'recharts'
-import { IconExternalLink } from '@tabler/icons-react'
+import {
+  IconExternalLink,
+  IconBulb,
+  IconCalendar,
+  IconFlame,
+  IconTrophy,
+  IconFeather,
+  IconMotorbike,
+  IconTrendingUp,
+  IconCurrency,
+  IconDroplet,
+  IconCloudRain,
+} from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
 import { useBrand } from '../context/BrandContext'
 import { useNavigate } from 'react-router-dom'
+import {
+  fetchInHouseFeeds,
+  fetchCompetitorFeeds as fetchCompetitorFeedsFromStore,
+  clearInHouseCache,
+  clearCompetitorCache,
+  readInHouseCache,
+  readCompetitorCache as readCompetitorCacheFromStore,
+} from '../utils/rssStore'
 
 interface HomePageProps {
   onToolSelect: (id: string) => void
 }
 
-// ── News feed types (mirrors LatestNewsTab shape) ─────────────────────────────
+// ── News feed types ───────────────────────────────────────────────────────────
 
 interface RssArticle {
   title: string
@@ -25,73 +45,57 @@ interface ArticleWithBrand extends RssArticle {
   isCompetitor?: boolean
 }
 
-interface BrandFeedData {
-  brand: string
-  articles: RssArticle[]
-}
-
-function getNewsCacheKey(prefix: string): string {
-  const bucket = Math.floor(Date.now() / 900_000) // 15-min window
-  return `${prefix}_home_${bucket}`
-}
-
-function formatRelativeTime(isoStr: string): string {
-  const diff = Date.now() - new Date(isoStr).getTime()
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+function formatMYT(isoStr: string): string {
+  const date = new Date(isoStr)
+  if (isNaN(date.getTime())) return '—'
+  return date.toLocaleString('en-MY', {
+    timeZone: 'Asia/Kuala_Lumpur',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
 }
 
 async function fetchInHouseNews(): Promise<ArticleWithBrand[]> {
-  const cached = sessionStorage.getItem(getNewsCacheKey('inhouse'))
-  if (cached) {
-    try { return JSON.parse(cached) as ArticleWithBrand[] } catch { /* skip */ }
-  }
   const url = (import.meta.env.VITE_RSS_LATEST_WEBHOOK_URL as string | undefined)?.trim()
   if (!url) return []
-  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
-  if (!res.ok) return []
-  const data = await res.json() as BrandFeedData[]
-  const articles: ArticleWithBrand[] = data.flatMap(feed =>
-    (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: false }))
-  )
-  try { sessionStorage.setItem(getNewsCacheKey('inhouse'), JSON.stringify(articles)) } catch { /* quota */ }
-  return articles
+  try {
+    const feeds = await fetchInHouseFeeds(url)
+    return feeds.flatMap(feed => (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: false })))
+  } catch { return [] }
 }
 
 async function fetchCompetitorNews(): Promise<ArticleWithBrand[]> {
-  const cached = sessionStorage.getItem(getNewsCacheKey('competitor'))
-  if (cached) {
-    try { return JSON.parse(cached) as ArticleWithBrand[] } catch { /* skip */ }
-  }
   const url = (import.meta.env.VITE_RSS_COMPETITOR_WEBHOOK_URL as string | undefined)?.trim()
   if (!url) return []
-  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
-  if (!res.ok) return []
-  const data = await res.json() as BrandFeedData[]
-  const articles: ArticleWithBrand[] = data.flatMap(feed =>
-    (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: true }))
-  )
-  try { sessionStorage.setItem(getNewsCacheKey('competitor'), JSON.stringify(articles)) } catch { /* quota */ }
-  return articles
+  try {
+    const feeds = await fetchCompetitorFeedsFromStore(url)
+    return feeds.flatMap(feed => (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: true })))
+  } catch { return [] }
 }
 
 // ── Nav row component ─────────────────────────────────────────────────────────
 
-function NavRow({ label, image, onClick }: { label: string; image?: string; onClick: () => void }) {
+function NavRow({ label, description, image, onClick }: { label: string; description?: string; image?: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className="w-full flex items-center gap-3 px-5 py-3 hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
     >
-      {image ? (
-        <img src={image} alt={label} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-      ) : (
-        <div className="w-14 h-14 rounded-lg bg-neutral-100 flex-shrink-0" />
-      )}
-      <span className="flex-1 text-sm font-semibold text-neutral-900">{label}</span>
+      <img
+        src={image || '/kult-logo64.png'}
+        alt={label}
+        className={`w-14 h-14 rounded-lg object-cover flex-shrink-0 ${!image ? 'grayscale opacity-30' : ''}`}
+      />
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-semibold text-neutral-900">{label}</span>
+        {description && (
+          <p className="text-[11px] text-neutral-400 mt-0.5 leading-snug">{description}</p>
+        )}
+      </div>
       <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
@@ -105,26 +109,26 @@ const ENGAGEMENT_GROUPS = [
   {
     label: 'Fun Fact',
     links: [
-      { label: 'Did You Know?', path: '/engagement-posts/didyouknow', image: '' },
+      { label: 'Did You Know?', path: '/engagement-posts/didyouknow', icon: IconBulb, color: '#FEF9C3', iconColor: '#F05A35' },
+      { label: 'On This Day', path: '/engagement-posts/on-this-day-malaysia', icon: IconCalendar, color: '#EDE9FE', iconColor: '#10B981' },
     ],
   },
   {
     label: 'Sports',
     links: [
-      { label: 'EPL', path: '/engagement-posts/epl', image: '' },
-      { label: 'Champions League', path: '/engagement-posts/ucl', image: '' },
-      { label: 'Badminton', path: '/engagement-posts/badminton', image: '' },
-      { label: 'MotoGP', path: '/engagement-posts/motogp', image: '' },
+      { label: 'EPL', path: '/engagement-posts/epl', icon: IconFlame, color: '#DCFCE7', iconColor: '#0055EE' },
+      { label: 'Champions League', path: '/engagement-posts/ucl', icon: IconTrophy, color: '#FEF3C7', iconColor: '#0055EE' },
+      { label: 'Badminton', path: '/engagement-posts/badminton', icon: IconFeather, color: '#DBEAFE', iconColor: '#0055EE' },
+      { label: 'MotoGP', path: '/engagement-posts/motogp', icon: IconMotorbike, color: '#FFE4E6', iconColor: '#0055EE' },
     ],
   },
   {
     label: 'Information',
     links: [
-      { label: 'KLCI Index', path: '/engagement-posts/klci-index', image: '' },
-      { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate', image: '' },
-      { label: 'Fuel Price', path: '/engagement-posts/latest-fuel-price', image: '' },
-      { label: 'On This Day', path: '/engagement-posts/on-this-day-malaysia', image: '' },
-      { label: 'Weather Malaysia', path: '/engagement-posts/weather-malaysia', image: '' },
+      { label: 'KLCI Index', path: '/engagement-posts/klci-index', icon: IconTrendingUp, color: '#D1FAE5', iconColor: '#10B981' },
+      { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate', icon: IconCurrency, color: '#E0F2FE', iconColor: '#10B981' },
+      { label: 'Fuel Price', path: '/engagement-posts/latest-fuel-price', icon: IconDroplet, color: '#FEE2E2', iconColor: '#10B981' },
+      { label: 'Weather Malaysia', path: '/engagement-posts/weather-malaysia', icon: IconCloudRain, color: '#E0F7FA', iconColor: '#10B981' },
     ],
   },
 ]
@@ -134,7 +138,7 @@ const ENGAGEMENT_GROUPS = [
 export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   const { selectedBrand, isAdmin } = useBrand()
   const navigate = useNavigate()
-  const { data, targets, loading } = useDashboardData()
+  const { data, targets, loading, lastUpdated } = useDashboardData()
 
   // Use the latest date in the dataset as the window end (falls back to today)
   const latestDate = data.length > 0
@@ -146,20 +150,45 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   startDate.setDate(startDate.getDate() - 30)
   startDate.setHours(0, 0, 0, 0)
 
-  // Filter data
+  // Previous 30-day window (the 30 days before the current window)
+  const prevEndDate = new Date(startDate)
+  prevEndDate.setDate(prevEndDate.getDate() - 1)
+  prevEndDate.setHours(23, 59, 59, 999)
+  const prevStartDate = new Date(prevEndDate)
+  prevStartDate.setDate(prevStartDate.getDate() - 30)
+  prevStartDate.setHours(0, 0, 0, 0)
+
+  // Filter data — current and previous periods
   const filtered = isAdmin
     ? data.filter(row => new Date(row.date) >= startDate && new Date(row.date) <= endDate)
     : selectedBrand
       ? filterDashboardData(data, selectedBrand, startDate, endDate)
       : []
 
+  const prevFiltered = isAdmin
+    ? data.filter(row => new Date(row.date) >= prevStartDate && new Date(row.date) <= prevEndDate)
+    : selectedBrand
+      ? filterDashboardData(data, selectedBrand, prevStartDate, prevEndDate)
+      : []
+
   // Sort by date asc for sparklines
   const sparkRows = [...filtered].sort((a, b) => a.date.localeCompare(b.date))
 
-  // 30-day totals
+  // 30-day totals — current
   const totalPosts = filtered.reduce((s, r) => s + (r.total_posts || 0), 0)
   const totalRevenue = filtered.reduce((s, r) => s + (r.total_revenue || 0), 0)
   const totalInteractions = filtered.reduce((s, r) => s + (r.total_interactions || 0), 0)
+
+  // 30-day totals — previous
+  const prevPosts = prevFiltered.reduce((s, r) => s + (r.total_posts || 0), 0)
+  const prevRevenue = prevFiltered.reduce((s, r) => s + (r.total_revenue || 0), 0)
+  const prevInteractions = prevFiltered.reduce((s, r) => s + (r.total_interactions || 0), 0)
+
+  // Growth % helper — null if no previous data
+  function calcGrowth(current: number, previous: number): number | null {
+    if (previous === 0) return null
+    return ((current - previous) / previous) * 100
+  }
   // Targets
   const brandTarget = isAdmin ? null : targets.find(t => t.Brand === selectedBrand)
   const postsTarget = brandTarget ? Math.round(brandTarget['Avg Posts Per Day'] * 30) : null
@@ -191,6 +220,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
       value: totalPosts.toLocaleString(),
       target: postsTarget,
       actual: totalPosts,
+      growth: calcGrowth(totalPosts, prevPosts),
       footer: dataFooter,
       sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_posts || 0 }))),
       color: '#0055EE',
@@ -200,6 +230,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
       value: `$${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
       target: revenueTarget,
       actual: totalRevenue,
+      growth: calcGrowth(totalRevenue, prevRevenue),
       footer: missingRevenueDays > 0 && !isAdmin
         ? `${missingRevenueDays} day(s) missing data`
         : dataFooter,
@@ -211,21 +242,41 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
       label: 'Interactions',
       value: totalInteractions.toLocaleString(),
       target: null as number | null,
-      actual: 0,
+      actual: totalInteractions,
+      growth: calcGrowth(totalInteractions, prevInteractions),
       footer: dataFooter,
       sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_interactions || 0 }))),
       color: '#FF3FBF',
     },
   ]
 
-  // News feed
-  const [news, setNews] = useState<ArticleWithBrand[]>([])
-  const [newsLoading, setNewsLoading] = useState(true)
+  // News feed — seed from cache so navigating back never shows a loading flash
+  const [news, setNews] = useState<ArticleWithBrand[]>(() => {
+    const inhouse = readInHouseCache()
+    const competitor = readCompetitorCacheFromStore()
+    if (!inhouse && !competitor) return []
+    const inHouseArr = (inhouse ?? []).flatMap(feed =>
+      (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: false as const }))
+    )
+    const compArr = (competitor ?? []).flatMap(feed =>
+      (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: true as const }))
+    )
+    return [...inHouseArr, ...compArr]
+      .filter(a => a.publishedAt)
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+      .slice(0, 10)
+  })
+  const [newsLoading, setNewsLoading] = useState(() => !readInHouseCache())
+  const [newsFetchedAt, setNewsFetchedAt] = useState<Date | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  function loadNews(bust = false) {
+    if (bust) {
+      clearInHouseCache()
+      clearCompetitorCache()
+    }
+    // Only show loader when there's nothing to display yet (fresh load or forced bust)
+    if (bust || news.length === 0) setNewsLoading(true)
     Promise.allSettled([fetchInHouseNews(), fetchCompetitorNews()]).then(([inH, comp]) => {
-      if (cancelled) return
       const inHouseArr = inH.status === 'fulfilled' ? inH.value : []
       const compArr = comp.status === 'fulfilled' ? comp.value : []
       const merged = [...inHouseArr, ...compArr]
@@ -233,14 +284,19 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
         .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
         .slice(0, 10)
       setNews(merged)
+      setNewsFetchedAt(new Date())
       setNewsLoading(false)
     })
-    return () => { cancelled = true }
-  }, [])
+  }
+
+  useEffect(() => {
+    if (news.length > 0) return // already seeded from cache — skip re-fetch
+    loadNews()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
 
         {/* ── Row 1: Brand header ─────────────────────────────────────────── */}
         <div>
@@ -259,23 +315,30 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
           {/* Section header */}
           <div className="flex items-baseline justify-between mb-4">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">Performance</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">Meta Performance</p>
               <p className="text-sm font-medium text-neutral-700 mt-0.5">
                 Last 30 days
                 {latestDate && (
                   <span className="text-neutral-400 font-normal"> · {dateRangeLabel}</span>
                 )}
               </p>
+              {lastUpdated && (
+                <p className="text-[10px] text-neutral-400 mt-0.5">
+                  Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
             </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
-            >
-              View details
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
+              >
+                View details
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -300,7 +363,14 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                 return (
                   <div key={card.label} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5 flex flex-col">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
-                    <p className="font-display text-2xl font-bold text-neutral-950">{card.value}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="font-display text-2xl font-bold text-neutral-950">{card.value}</p>
+                      {card.growth !== null && (
+                        <span className={`text-[11px] font-semibold ${card.growth >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {card.growth >= 0 ? '▲' : '▼'} {Math.abs(card.growth).toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
 
                     {/* Target value (posts + revenue only) */}
                     {card.target !== null && card.target > 0 ? (
@@ -365,9 +435,15 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
             {/* Combined card: Article to Social + Engagement Posts */}
             <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
 
+              {/* Tools header */}
+              <div className="px-5 pt-4 pb-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">Tools</p>
+              </div>
+
               {/* Article to Social row */}
               <NavRow
                 label="Article to Social Post"
+                description="Photo · Carousel · Quote · Quick Fact"
                 image=""
                 onClick={() => navigate('/article-to-social')}
               />
@@ -383,14 +459,29 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                 {ENGAGEMENT_GROUPS.map((group, idx) => (
                   <div key={group.label}>
                     <p className="text-[11px] font-semibold text-neutral-400 px-5 pt-2 pb-1">{group.label}</p>
-                    {group.links.map(link => (
-                      <NavRow
-                        key={link.path}
-                        label={link.label}
-                        image={link.image}
-                        onClick={() => navigate(link.path)}
-                      />
-                    ))}
+                    <div className="grid grid-cols-2 px-3 pb-1 gap-1">
+                      {group.links.map(link => {
+                        const Icon = link.icon
+                        return (
+                        <button
+                          key={link.path}
+                          onClick={() => navigate(link.path)}
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+                        >
+                          <div
+                            className="w-[54px] h-[54px] rounded-md flex-shrink-0 flex items-center justify-center"
+                            style={{ backgroundColor: link.color }}
+                          >
+                            <Icon className="w-6 h-6" style={{ color: link.iconColor }} />
+                          </div>
+                          <span className="flex-1 text-sm font-semibold text-neutral-900 leading-tight">{link.label}</span>
+                          <svg className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                        )
+                      })}
+                    </div>
                     {idx < ENGAGEMENT_GROUPS.length - 1 && (
                       <div className="border-t border-neutral-100 mx-5 my-1" />
                     )}
@@ -403,7 +494,34 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
 
           {/* Right column: latest news */}
           <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-4">Latest News</p>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">Latest News</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <p className="text-[10px] text-neutral-400">
+                    {newsFetchedAt
+                      ? `Updated on ${newsFetchedAt.toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}`
+                      : 'Fetching…'}
+                  </p>
+                  <button
+                    onClick={() => loadNews(true)}
+                    disabled={newsLoading}
+                    className="text-[10px] text-neutral-400 hover:text-neutral-700 underline transition disabled:opacity-40"
+                  >
+                    {newsLoading ? 'Refreshing…' : 'Refresh'}
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/news-bank')}
+                className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
+              >
+                See all
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
 
             {newsLoading ? (
               <div className="space-y-3">
@@ -419,26 +537,53 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
             ) : (
               <div className="space-y-3">
                 {news.map((article, i) => (
-                  <a
+                  <div
                     key={`${article.url}-${i}`}
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start justify-between gap-3 group py-2 border-b border-neutral-50 last:border-0"
+                    className="border-b border-neutral-50 last:border-0 pb-3 last:pb-0"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-neutral-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                        {article.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${article.isCompetitor ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'}`}>
-                          {article.sourceBrand}
-                        </span>
-                        <span className="text-[10px] text-neutral-400">{formatRelativeTime(article.publishedAt)}</span>
+                    <div className="flex gap-3">
+                      {/* 16:9 thumbnail */}
+                      <div className="w-28 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden">
+                        {article.imageUrl ? (
+                          <img
+                            src={article.imageUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
+                          />
+                        ) : (
+                          <span className="flex items-center justify-center h-full text-[10px] text-neutral-300">No image</span>
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-neutral-400 mb-0.5">
+                          <span className={`font-semibold ${article.isCompetitor ? 'text-amber-600' : 'text-blue-600'}`}>{article.sourceBrand}</span>
+                          {' · '}{formatMYT(article.publishedAt)}
+                        </p>
+                        <p className="text-sm font-semibold text-neutral-900 leading-snug line-clamp-2">
+                          {article.title}
+                        </p>
                       </div>
                     </div>
-                    <IconExternalLink className="w-3.5 h-3.5 text-neutral-300 group-hover:text-blue-400 transition-colors flex-shrink-0 mt-1" />
-                  </a>
+                    {/* CTA */}
+                    <div className="mt-2 flex items-center justify-between">
+                      <a
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition"
+                      >
+                        Read article <IconExternalLink className="w-3 h-3" />
+                      </a>
+                      <button
+                        onClick={() => navigate('/article-to-social', { state: { articleUrl: article.url } })}
+                        className="text-xs font-semibold text-neutral-950 hover:text-neutral-600 transition"
+                      >
+                        Generate Post →
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
