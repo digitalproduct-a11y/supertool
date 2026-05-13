@@ -553,7 +553,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
       {/* Article list */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl px-4 md:px-6 py-4 space-y-3">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
 
           {/* Search bar */}
           <div className="relative">

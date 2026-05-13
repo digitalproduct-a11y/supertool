@@ -315,7 +315,7 @@ export function TrendingSpikePage() {
 
             {/* Loading skeleton */}
             {isFetchingTrending && trendingItems.length === 0 && (
-              <div className="max-w-3xl px-4 md:px-6 py-4 space-y-3">
+              <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
                 {[1, 2, 3, 4, 5].map(i => (
                   <div key={i} className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
                     <div className="flex gap-3 p-4">
@@ -332,7 +332,7 @@ export function TrendingSpikePage() {
             )}
 
             {trendingItems.length > 0 && (
-              <div className="max-w-3xl px-4 md:px-6 py-4 space-y-3">
+              <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
 
                 {/* Search bar */}
                 <div className="relative">
