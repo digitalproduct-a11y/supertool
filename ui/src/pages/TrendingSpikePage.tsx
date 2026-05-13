@@ -197,51 +197,53 @@ export function TrendingSpikePage() {
 
       {/* Header */}
       <div className="px-4 md:px-8 pb-4 shrink-0">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending News</h1>
-            <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from trending articles</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => handleFetchTrending(true)}
-              disabled={isFetchingTrending}
-              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors border border-neutral-200 hover:border-neutral-400 rounded-lg px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 disabled:opacity-50"
-              title="Refresh trending articles"
-            >
-              <IconRefresh size={16} className={isFetchingTrending ? 'animate-spin' : ''} />
-              Refresh
-            </button>
-            <GuideModal title="How to use Trending News">
-              <div className="space-y-4">
-                <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
-                  <iframe
-                    src="https://drive.google.com/file/d/1nExBvjJeMHR0cCkyYrIl3r2LAo4zIUzA/preview"
-                    className="w-full h-full"
-                    allow="autoplay"
-                    title="Trending News to FB Photo walkthrough video"
-                  />
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending News</h1>
+              <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from trending articles</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => handleFetchTrending(true)}
+                disabled={isFetchingTrending}
+                className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors border border-neutral-200 hover:border-neutral-400 rounded-lg px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 disabled:opacity-50"
+                title="Refresh trending articles"
+              >
+                <IconRefresh size={16} className={isFetchingTrending ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+              <GuideModal title="How to use Trending News">
+                <div className="space-y-4">
+                  <div className="rounded-xl overflow-hidden bg-neutral-100 aspect-video">
+                    <iframe
+                      src="https://drive.google.com/file/d/1nExBvjJeMHR0cCkyYrIl3r2LAo4zIUzA/preview"
+                      className="w-full h-full"
+                      allow="autoplay"
+                      title="Trending News to FB Photo walkthrough video"
+                    />
+                  </div>
+                  <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
+                    <li><strong>Select an article</strong> — Pick one article you want to create a Facebook post for.</li>
+                    <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
+                    <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
+                    <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
+                    <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
+                    <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
+                  </ol>
+                  <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
+                    <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
+                    <p className="text-xs text-neutral-700">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
+                  </div>
                 </div>
-                <ol className="space-y-3 list-decimal list-inside text-sm text-neutral-700">
-                  <li><strong>Select an article</strong> — Pick one article you want to create a Facebook post for.</li>
-                  <li><strong>Select a brand</strong> — Choose the brand the post is for.</li>
-                  <li><strong>Choose Image Title mode</strong> — Choose whether to use the original article headline, an AI-rewritten title, or a custom title on the image.</li>
-                  <li><strong>Choose Caption Title mode</strong> — Choose whether the caption uses the original article headline or an AI-rewritten version.</li>
-                  <li><strong>Click 'Generate Facebook Post Asset'</strong> — The system will generate the image and caption, which will appear on the right.</li>
-                  <li><strong>Download &amp; copy</strong> — Download the image and copy the caption.</li>
-                </ol>
-                <div className="mt-4 p-3 bg-neutral-100 border border-neutral-300 rounded-lg">
-                  <p className="text-xs font-semibold text-neutral-800 mb-1">💡 Tip</p>
-                  <p className="text-xs text-neutral-700">Trending stories are automatically pulled from all Astro brands every morning — come back daily for fresh content.</p>
-                </div>
-              </div>
-            </GuideModal>
+              </GuideModal>
+            </div>
           </div>
+          <div
+            className="mt-4 h-[3px] rounded-full animate-stripe-grow"
+            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
+          />
         </div>
-        <div
-          className="mt-4 h-[3px] rounded-full animate-stripe-grow"
-          style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
-        />
       </div>
 
       {/* Generate view */}

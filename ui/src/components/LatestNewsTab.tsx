@@ -502,7 +502,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
           {/* Competitors section */}
           <div>
             <div className="h-px bg-neutral-100 my-1" />
-            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-2 pt-1.5 pb-1">Competitors</p>
+            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-2 pt-1.5 pb-1">Others</p>
 
             {competitorTabState === 'error' && competitorsFetched && (
               <p className="text-[10px] text-red-400 px-2 py-2">Failed to load</p>
@@ -540,7 +540,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                   }`}
                 >
                   <span className="truncate text-left">{b}</span>
-                  {competitorsFetched && count > 0 && (
+                  {competitorsFetched && (
                     <span className={`text-[10px] tabular-nums shrink-0 ml-1 ${active ? 'text-neutral-300' : 'text-neutral-400'}`}>
                       {count}
                     </span>
@@ -585,7 +585,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                   : `${articlesToShow.length} article${articlesToShow.length !== 1 ? 's' : ''} · last 24 hours`}
               </p>
               {activeSection === 'competitors' && (
-                <span className="text-[10px] font-semibold text-neutral-400 bg-neutral-100 px-2 py-1 rounded">Competitors</span>
+                <span className="text-[10px] font-semibold text-neutral-400 bg-neutral-100 px-2 py-1 rounded">Others</span>
               )}
             </div>
             <button
