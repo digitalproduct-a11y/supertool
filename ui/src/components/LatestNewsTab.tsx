@@ -441,7 +441,8 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
   // ── Browse view ──
   return (
-    <div className="flex-1 flex min-h-0 overflow-hidden">
+    <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="max-w-6xl mx-auto h-full flex">
 
       {/* Brand filter sidebar */}
       <div className="w-48 shrink-0 border-r border-neutral-200 overflow-y-auto flex flex-col bg-neutral-50">
@@ -553,7 +554,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
       {/* Article list */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
+        <div className="px-4 md:px-6 py-4 space-y-3">
 
           {/* Search bar */}
           <div className="relative">
@@ -699,6 +700,8 @@ export function LatestNewsTab({ brand }: { brand: string }) {
             </div>
           )}
         </div>
+      </div>
+
       </div>
 
       {/* Floating bulk action bar */}
