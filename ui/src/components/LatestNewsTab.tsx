@@ -701,7 +701,6 @@ export function LatestNewsTab({ brand }: { brand: string }) {
           )}
         </div>
       </div>
-
       </div>
 
       {/* Floating bulk action bar */}
