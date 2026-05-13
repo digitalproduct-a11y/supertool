@@ -265,7 +265,7 @@ export function TrendingSpikePage() {
         <div className="flex-1 flex min-h-0 overflow-hidden border-t border-neutral-100">
 
           {/* Brand sidebar */}
-          <div className="w-44 shrink-0 border-r border-neutral-100 overflow-y-auto flex flex-col bg-white">
+          <div className="w-48 shrink-0 border-r border-neutral-200 overflow-y-auto flex flex-col bg-neutral-50">
             <div className="p-2 space-y-0.5">
               <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-2 pt-2 pb-1">Sources</p>
 
@@ -315,7 +315,7 @@ export function TrendingSpikePage() {
 
             {/* Loading skeleton */}
             {isFetchingTrending && trendingItems.length === 0 && (
-              <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
+              <div className="max-w-3xl px-4 md:px-6 py-4 space-y-3">
                 {[1, 2, 3, 4, 5].map(i => (
                   <div key={i} className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
                     <div className="flex gap-3 p-4">
@@ -332,7 +332,7 @@ export function TrendingSpikePage() {
             )}
 
             {trendingItems.length > 0 && (
-              <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 space-y-3">
+              <div className="max-w-3xl px-4 md:px-6 py-4 space-y-3">
 
                 {/* Search bar */}
                 <div className="relative">
