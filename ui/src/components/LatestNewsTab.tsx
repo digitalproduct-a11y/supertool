@@ -445,7 +445,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
       <div className="max-w-6xl mx-auto h-full flex">
 
       {/* Brand filter sidebar */}
-      <div className="w-48 shrink-0 border-r border-neutral-200 overflow-y-auto flex flex-col bg-[#f0eeeb]">
+      <div className="w-48 shrink-0 border-r border-neutral-200 overflow-y-auto flex flex-col">
         <div className="p-2 space-y-0.5">
           {BRAND_GROUPS.map((group) => {
             const sortedBrands = [...group.brands].sort((a, b) => (countsByBrand[b] ?? 0) - (countsByBrand[a] ?? 0))

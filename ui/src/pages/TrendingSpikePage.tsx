@@ -266,7 +266,7 @@ export function TrendingSpikePage() {
           <div className="max-w-6xl mx-auto h-full flex">
 
           {/* Brand sidebar */}
-          <div className="w-48 shrink-0 border-r border-neutral-200 overflow-y-auto flex flex-col bg-[#f0eeeb]">
+          <div className="w-48 shrink-0 border-r border-neutral-200 overflow-y-auto flex flex-col">
             <div className="p-2 space-y-0.5">
               <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-2 pt-2 pb-1">Sources</p>
 
