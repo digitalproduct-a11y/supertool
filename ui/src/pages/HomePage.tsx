@@ -365,36 +365,35 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
             {/* Combined card: Article to Social + Engagement Posts */}
             <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
 
-              {/* Article to Social featured section */}
-              <button
+              {/* Article to Social row */}
+              <NavRow
+                label="Article to Social Post"
+                image=""
                 onClick={() => navigate('/article-to-social')}
-                className="w-full text-left bg-white hover:bg-neutral-50 p-5 transition-colors"
-              >
-                <p className="font-display text-lg font-semibold text-neutral-950">Article to Social Post</p>
-                <p className="text-sm text-neutral-400 mt-1">Photo · Carousel · Quick Fact · Quote — all in one flow</p>
-              </button>
+              />
 
               {/* Divider */}
               <div className="border-t border-neutral-100" />
 
-              {/* Engagement quick links section */}
-              <div className="p-5 space-y-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">Engagement Posts</p>
+              {/* Engagement Posts section */}
+              <div className="py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 px-5 pt-3 pb-2">
+                  Engagement Posts
+                </p>
                 {ENGAGEMENT_GROUPS.map((group, idx) => (
                   <div key={group.label}>
-                    <p className="text-[11px] font-semibold text-neutral-400 mb-1.5">{group.label}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {group.links.map(link => (
-                        <button
-                          key={link.path}
-                          onClick={() => navigate(link.path)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 hover:text-neutral-950 transition-colors"
-                        >
-                          {link.label}
-                        </button>
-                      ))}
-                    </div>
-                    {idx < ENGAGEMENT_GROUPS.length - 1 && <div className="border-t border-neutral-100 mt-4" />}
+                    <p className="text-[11px] font-semibold text-neutral-400 px-5 pt-2 pb-1">{group.label}</p>
+                    {group.links.map(link => (
+                      <NavRow
+                        key={link.path}
+                        label={link.label}
+                        image={link.image}
+                        onClick={() => navigate(link.path)}
+                      />
+                    ))}
+                    {idx < ENGAGEMENT_GROUPS.length - 1 && (
+                      <div className="border-t border-neutral-100 mx-5 my-1" />
+                    )}
                   </div>
                 ))}
               </div>
