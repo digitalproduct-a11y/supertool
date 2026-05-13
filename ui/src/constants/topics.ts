@@ -66,6 +66,8 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
       "Polishing the punchlines...",
     ],
     downloadPrefix: "gempak-ent-post",
+    headlineLimit: 50,
+    subtitleLimit: 70,
     useFabricCanvas: true,
     pageSubtitle:
       "Create engaging entertainment posts featuring Malaysian celebrities and influencers",

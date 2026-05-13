@@ -73,7 +73,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
-  // '/engagement-posts/gempak-entertainment': 'engagement-photos',
+  '/engagement-posts/gempak-entertainment': 'engagement-photos',
   '/engagement-posts/badminton': 'engagement-photos',
   '/engagement-posts/motogp': 'engagement-photos',
   '/trending-news': 'scheduled-posts',
@@ -135,7 +135,7 @@ const topicToPath: Record<string, string> = {
   'quote': '/engagement-posts/quote',
   'didyouknow': '/engagement-posts/didyouknow',
   // 'food-places': '/engagement-posts/food-places',
-  // 'gempak-entertainment': '/engagement-posts/gempak-entertainment',
+  'gempak-entertainment': '/engagement-posts/gempak-entertainment',
   'badminton': '/engagement-posts/badminton',
   'motogp': '/engagement-posts/motogp',
 }
@@ -710,11 +710,11 @@ function App() {
           <EngagementPhotosPage topic="ucl" />
         </Layout>
       } />
-      {/* <Route path="/engagement-posts/gempak-entertainment" element={
+      <Route path="/engagement-posts/gempak-entertainment" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="gempak-entertainment" />
         </Layout>
-      } /> */}
+      } />
       <Route path="/engagement-posts/badminton" element={
         <Layout {...layoutProps}>
           <EngagementPhotosPage topic="badminton" />

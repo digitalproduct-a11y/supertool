@@ -64,6 +64,14 @@ export interface GempakEntertainmentCanvasConfig {
     // Distance in px from the bottom edge of the canvas.
     yFromBottom: number
   }
+  // Bottom-anchored stack: logo is pinned at `logo.yFromBottom`. Subtitle
+  // sits above the logo (separated by `subtitleToLogoGap`); headline sits
+  // above the subtitle (separated by `headlineToSubtitleGap`). The whole
+  // stack grows upward as text wraps — no overlap.
+  stack: {
+    headlineToSubtitleGap: number
+    subtitleToLogoGap: number
+  }
 }
 
 export const DEFAULT_GEMPAK_ENT_CANVAS_CONFIG: GempakEntertainmentCanvasConfig = {
@@ -134,5 +142,9 @@ export const DEFAULT_GEMPAK_ENT_CANVAS_CONFIG: GempakEntertainmentCanvasConfig =
     width: 150,
     maxHeight: 80,
     yFromBottom: 35,
+  },
+  stack: {
+    headlineToSubtitleGap: 40,
+    subtitleToLogoGap: 60,
   },
 }

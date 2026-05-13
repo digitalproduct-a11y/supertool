@@ -270,7 +270,7 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Headline</label>
-                <span className="text-xs text-gray-500">{headlineChars}/{headlineLimit}</span>
+                <span className="text-xs text-gray-500">{Number.isFinite(headlineLimit) ? `${headlineChars}/${headlineLimit}` : headlineChars}</span>
               </div>
               <input
                 type="text"
@@ -289,7 +289,7 @@ export default function IdeaCard({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-gray-700 uppercase">Subtitle</label>
-                <span className="text-xs text-gray-500">{subtitleChars}/{subtitleLimit}</span>
+                <span className="text-xs text-gray-500">{Number.isFinite(subtitleLimit) ? `${subtitleChars}/${subtitleLimit}` : subtitleChars}</span>
               </div>
               <input
                 type="text"

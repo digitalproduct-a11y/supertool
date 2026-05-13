@@ -200,7 +200,13 @@ export const GempakEntertainmentCanvas = forwardRef<
           canvas.add(t)
         }
 
-        // Layer 5: headline (white, bold, uppercase, dynamic-sized).
+        // Layers 5–7: bottom-anchored stack (headline → subtitle → logo).
+        // Each entry contributes height + the configured gap; the whole stack
+        // is pinned at `height - logo.yFromBottom` and grows upward, so
+        // multi-line headlines/subtitles never overlap each other or the logo.
+        // Mirrors the QuoteCanvas tabloid layout pattern.
+
+        // Build headline.
         const headlineTier = config.headline.dynamicSizing.find(
           (tier) => headline.length <= tier.maxLength,
         )
@@ -219,15 +225,14 @@ export const GempakEntertainmentCanvas = forwardRef<
           ...hStyle,
           width: config.headline.maxWidth,
           left: width / 2,
-          top: config.headline.yFromTop,
+          top: 0,
           originX: 'center',
           originY: 'top',
           selectable: false,
           evented: false,
         })
-        canvas.add(hBox)
 
-        // Layer 6: subtitle (white, regular, dynamic-sized).
+        // Build subtitle.
         const subtitleTier = config.subtitle.dynamicSizing.find(
           (tier) => subtitle.length <= tier.maxLength,
         )
@@ -243,42 +248,66 @@ export const GempakEntertainmentCanvas = forwardRef<
           ...sStyle,
           width: config.subtitle.maxWidth,
           left: width / 2,
-          top: config.subtitle.yFromTop,
+          top: 0,
           originX: 'center',
           originY: 'top',
           selectable: false,
           evented: false,
         })
-        canvas.add(sBox)
 
-        // Layer 7: brand logo (bottom-centered).
+        // Build logo (may fail to load — stack still composes without it).
+        let logoImg: FabricImage | null = null
         if (brand) {
           const logoId =
             BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] ?? ''
           if (logoId) {
             try {
               const logoUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/upload/${logoId}`
-              const logoImg = await FabricImage.fromURL(logoUrl, {
+              const loaded = await FabricImage.fromURL(logoUrl, {
                 crossOrigin: 'anonymous',
               })
               if (isCancelled()) return false
-              logoImg.scaleToWidth(config.logo.width)
-              if (logoImg.getScaledHeight() > config.logo.maxHeight) {
-                logoImg.scaleToHeight(config.logo.maxHeight)
+              loaded.scaleToWidth(config.logo.width)
+              if (loaded.getScaledHeight() > config.logo.maxHeight) {
+                loaded.scaleToHeight(config.logo.maxHeight)
               }
-              logoImg.set({
-                left: width / 2,
-                top: height - config.logo.yFromBottom,
-                originX: 'center',
-                originY: 'bottom',
-                selectable: false,
-                evented: false,
-              })
-              canvas.add(logoImg)
+              logoImg = loaded
             } catch {
-              // Logo failed — skip; preview still readable
+              // Logo failed — leave null; subtitle becomes the bottom-most item
             }
           }
+        }
+
+        // Stack: place from the bottom up.
+        // Logo sits at `height - logo.yFromBottom` (bottom-anchored).
+        // Subtitle sits above logo (or above the bottom padding when no logo).
+        // Headline sits above subtitle.
+        const hHeight = hBox.getScaledHeight()
+        const sHeight = sBox.getScaledHeight()
+        const lHeight = logoImg ? logoImg.getScaledHeight() : 0
+
+        const logoBottomY = height - config.logo.yFromBottom
+        const logoTopY = logoImg ? logoBottomY - lHeight : logoBottomY
+        const subtitleBottomY =
+          logoTopY - (logoImg ? config.stack.subtitleToLogoGap : 0)
+        const subtitleTopY = subtitleBottomY - sHeight
+        const headlineBottomY = subtitleTopY - config.stack.headlineToSubtitleGap
+        const headlineTopY = headlineBottomY - hHeight
+
+        hBox.set({ top: headlineTopY })
+        sBox.set({ top: subtitleTopY })
+        canvas.add(hBox)
+        canvas.add(sBox)
+        if (logoImg) {
+          logoImg.set({
+            left: width / 2,
+            top: logoTopY,
+            originX: 'center',
+            originY: 'top',
+            selectable: false,
+            evented: false,
+          })
+          canvas.add(logoImg)
         }
 
         canvas.renderAll()

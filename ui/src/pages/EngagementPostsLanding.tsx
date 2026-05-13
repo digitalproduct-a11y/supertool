@@ -85,6 +85,14 @@ const sections: Section[] = [
         icon: IconBlockquote,
         color: "#F05A35",
       },
+      {
+        id: "gempak-entertainment",
+        label: "Entertainment",
+        description:
+          "Generate showbiz and celebrity posts curated from Malaysian entertainment news",
+        icon: IconMusicStar,
+        color: "#F05A35",
+      },
     ],
   },
   {
@@ -166,7 +174,6 @@ const sections: Section[] = [
       },
     ],
   },
-  // Entertainment and Food & Travel sections hidden temporarily
   {
     label: "Coming Soon",
     description: "More exciting features coming soon.",
