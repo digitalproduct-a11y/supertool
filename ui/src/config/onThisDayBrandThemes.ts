@@ -164,6 +164,8 @@ export const BRAND_ONTHISDAY_THEMES: Record<
     headlineColor: "#FFFFFF",
     highlightTextColor: "#2B1F18",
     bigYearColor: "#2B1F18",
+    footerColor: "#FFFFFF",
+    headerLabelColor: "#FFFFFF",
   },
   Sinar: {
     accentColor: "#63412E",
