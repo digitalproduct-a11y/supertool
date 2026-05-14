@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useBrand } from '../context/BrandContext'
 import {
   IconChevronLeft,
   IconCalendar,
@@ -105,6 +106,7 @@ type Stage = 'list' | 'generate'
 
 export function OnThisDayPage() {
   const navigate = useNavigate()
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const webhookUrl = import.meta.env.VITE_ONTHISDAY_URL as string | undefined
 
   const [todayEvents, setTodayEvents] = useState<OnThisDayEvent[]>(
@@ -120,7 +122,7 @@ export function OnThisDayPage() {
   const [stage, setStage] = useState<Stage>('list')
   const [selectedEvent, setSelectedEvent] = useState<OnThisDayEvent | null>(null)
   const [editedTitle, setEditedTitle] = useState('')
-  const [brand, setBrand] = useState('')
+  const [brand, setBrand] = useState((!isAdmin && globalBrand) ? globalBrand : '')
   const canvasRef = useRef<OnThisDayCanvasHandle>(null)
 
   // Highlight terms fetched on-demand from the same n8n webhook (POST mode).
@@ -386,34 +388,36 @@ export function OnThisDayPage() {
             {/* Left — controls */}
             <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
               {/* Brand */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Brand To Generate For
-                </label>
-                <div className="relative">
-                  <select
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white transition appearance-none cursor-pointer"
-                  >
-                    <option value="">Select a brand...</option>
-                    {BRANDS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              {(isAdmin || !globalBrand) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Brand To Generate For
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white transition appearance-none cursor-pointer"
+                    >
+                      <option value="">Select a brand...</option>
+                      {BRANDS.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                    <svg
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {!brand && (
                 <p className="text-xs text-neutral-500">

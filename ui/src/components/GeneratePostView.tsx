@@ -13,6 +13,7 @@ import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
+import { useBrand } from '../context/BrandContext'
 
 // ─── API helper ───────────────────────────────────────────────────────────────
 
@@ -137,7 +138,8 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
   const detectedBrand = detectBrandFromUrl(source.articleUrl)
   const isBrandMismatch = !!detectedBrand && source.brand && detectedBrand !== source.brand
 
-  const [brand, setBrand] = useState(source.brand || '')
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
+  const [brand, setBrand] = useState(isAdmin ? (source.brand || '') : (globalBrand || source.brand || ''))
   const [titleMode, setTitleMode] = useState<TitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [captionTitleMode, setCaptionTitleMode] = useState<CaptionTitleMode>(isBrandMismatch ? 'ai' : 'original')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -332,27 +334,29 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
           </div>
 
           {/* Brand */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
-            <select
-              value={brand}
-              onChange={e => {
-                const newBrand = e.target.value
-                setBrand(newBrand)
-                if (detectedBrand && newBrand !== detectedBrand) {
-                  setTitleMode('ai')
-                  setCaptionTitleMode('ai')
-                } else {
-                  setTitleMode('original')
-                  setCaptionTitleMode('original')
-                }
-              }}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 bg-white"
-            >
-              <option value="">Select brand</option>
-              {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+              <select
+                value={brand}
+                onChange={e => {
+                  const newBrand = e.target.value
+                  setBrand(newBrand)
+                  if (detectedBrand && newBrand !== detectedBrand) {
+                    setTitleMode('ai')
+                    setCaptionTitleMode('ai')
+                  } else {
+                    setTitleMode('original')
+                    setCaptionTitleMode('original')
+                  }
+                }}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 bg-white"
+              >
+                <option value="">Select brand</option>
+                {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Title mode */}
           <div>

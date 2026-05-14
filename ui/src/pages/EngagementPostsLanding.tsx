@@ -15,6 +15,7 @@ import {
   IconMotorbike,
 } from "@tabler/icons-react";
 import type React from "react";
+import { useBrand } from "../context/BrandContext";
 
 type ActiveTopicId =
   | "engagement-photos"
@@ -201,6 +202,9 @@ const sections: Section[] = [
 export function EngagementPostsLanding({
   onSelectTopic,
 }: EngagementPostsLandingProps) {
+  const { selectedBrand, isAdmin } = useBrand()
+  const canSeePrimeTalk = isAdmin || selectedBrand === 'Hotspot'
+
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
@@ -241,9 +245,9 @@ export function EngagementPostsLanding({
                 </div>
 
                 {/* Cards grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   {section.topics
-                    .filter((t) => !t.hidden)
+                    .filter((t) => !t.hidden && (t.id !== 'prime-talk' || canSeePrimeTalk))
                     .map((topic) => {
                       const Icon = topic.icon;
 

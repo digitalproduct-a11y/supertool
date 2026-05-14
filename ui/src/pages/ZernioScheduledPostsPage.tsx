@@ -4,6 +4,7 @@ import { useZernioScheduledPosts } from '../hooks/useZernioScheduledPosts'
 import { Pagination } from '../components/ds/Pagination'
 import { getCredentials, saveCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
+import { useBrand } from '../context/BrandContext'
 import type { ZernioPost } from '../types'
 
 function formatScheduledTime(iso: string): { date: string; time: string } {
@@ -104,6 +105,7 @@ function DeleteModal({
 }
 
 export function ZernioScheduledPostsPage() {
+  const { selectedBrand, isAdmin } = useBrand()
   const {
     posts,
     isLoading,
@@ -132,18 +134,26 @@ export function ZernioScheduledPostsPage() {
     }
   }
 
+  // For non-admins, always filter to their selected brand
+  const brandPosts = useMemo(() => {
+    if (isAdmin) return posts
+    return posts.filter(p =>
+      p.platforms.some(pl => pl.accountId?.displayName === selectedBrand)
+    )
+  }, [posts, isAdmin, selectedBrand])
+
   const availableBrands = useMemo(() =>
     Array.from(new Set(
-      posts.flatMap(p => p.platforms.map(pl => pl.accountId?.displayName).filter(Boolean))
+      brandPosts.flatMap(p => p.platforms.map(pl => pl.accountId?.displayName).filter(Boolean))
     )).sort() as string[]
-  , [posts])
+  , [brandPosts])
 
   const filteredPosts = useMemo(() => {
-    if (!brandFilter) return posts
-    return posts.filter(p =>
+    if (!brandFilter) return brandPosts
+    return brandPosts.filter(p =>
       p.platforms.some(pl => pl.accountId?.displayName === brandFilter)
     )
-  }, [posts, brandFilter])
+  }, [brandPosts, brandFilter])
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-28">
@@ -174,8 +184,8 @@ export function ZernioScheduledPostsPage() {
 
         <div className="space-y-6">
 
-          {/* Brand filter */}
-          {availableBrands.length > 0 && (
+          {/* Brand filter — admin only */}
+          {isAdmin && availableBrands.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
               <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-full p-1 shadow-sm">
                 <button

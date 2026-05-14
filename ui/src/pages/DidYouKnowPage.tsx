@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useBlocker } from 'react-router-dom'
+import { useBrand } from '../context/BrandContext'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { useDidYouKnow } from '../hooks/useDidYouKnow'
 import { BRANDS } from '../constants/brands'
@@ -20,10 +21,11 @@ function getNextLoadingQuote(): string {
 
 export function DidYouKnowPage() {
   const navigate = useNavigate()
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const { ideas, setIdeas, brandLogoPublicId, language, isLoading, error, fetchIdeas } = useDidYouKnow()
   const [stage, setStage] = useState<Stage>('input')
   const [selectedIdea, setSelectedIdea] = useState<DidYouKnowIdea | null>(null)
-  const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const [selectedBrand, setSelectedBrand] = useState<string>((!isAdmin && globalBrand) ? globalBrand : '')
   const [selectedEdition, setSelectedEdition] = useState<string>('')
   const [context, setContext] = useState<string>('')
   const [loadingQuote, setLoadingQuote] = useState(getNextLoadingQuote())
@@ -128,21 +130,23 @@ export function DidYouKnowPage() {
         {/* Stage 1: Input */}
         {stage === 'input' && !isLoading && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
-              <select
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-              >
-                <option value="">Select a brand...</option>
-                {BRANDS.map((brand) => (
-                  <option key={brand} value={brand}>
-                    {brand}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {(isAdmin || !globalBrand) && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                >
+                  <option value="">Select a brand...</option>
+                  {BRANDS.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-neutral-950 mb-2">Edition</label>

@@ -42,6 +42,14 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const [showImagePicker, setShowImagePicker] = useState(false)
   const [pickerTargetId, setPickerTargetId] = useState<string | null>(null)
+  const [mainImgError, setMainImgError] = useState(false)
+
+  // Derived: active (non-deleted) images
+  const activeImages = result.images.filter(img => !deletedIds.has(img.id))
+
+  // Clamp selectedIndex when active images shrink
+  const clampedIndex = Math.min(selectedIndex, Math.max(0, activeImages.length - 1))
+  const currentImage = activeImages[clampedIndex]
 
   // Sync fields when result changes
   useEffect(() => { setTitle(result.title ?? '') }, [result.title])
@@ -57,6 +65,9 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
   // Keep ref in sync with replacements state
   useEffect(() => { replacementsRef.current = replacements }, [replacements])
 
+  // Reset error state when the active slide changes
+  useEffect(() => { setMainImgError(false) }, [currentImage?.id])
+
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
@@ -65,13 +76,6 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
       })
     }
   }, [])
-
-  // Derived: active (non-deleted) images
-  const activeImages = result.images.filter(img => !deletedIds.has(img.id))
-
-  // Clamp selectedIndex when active images shrink
-  const clampedIndex = Math.min(selectedIndex, Math.max(0, activeImages.length - 1))
-  const currentImage = activeImages[clampedIndex]
 
   function getDisplayUrl(id: string, fallback: string): string {
     const replacement = replacements.get(id)
@@ -359,8 +363,15 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
               src={getDisplayUrl(currentImage.id, currentImage.src)}
               alt={currentImage.alt}
               className="w-full h-full object-cover animate-fade-slide-up"
-              onError={(e) => { (e.target as HTMLImageElement).src = '' }}
+              style={{ display: mainImgError ? 'none' : undefined }}
+              onError={() => setMainImgError(true)}
             />
+            <div className="absolute inset-0 flex-col items-center justify-center bg-neutral-100 text-neutral-400 text-xs gap-2" style={{ display: mainImgError ? 'flex' : 'none' }}>
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Image unavailable
+            </div>
 
             {/* Nav arrows */}
             {clampedIndex > 0 && (
@@ -470,7 +481,18 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
                   src={getDisplayUrl(img.id, img.src)}
                   alt={img.alt}
                   className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '' }}
+                  onError={(e) => {
+                    const el = e.target as HTMLImageElement
+                    el.style.display = 'none'
+                    const parent = el.parentElement
+                    if (parent && !parent.querySelector('[data-placeholder]')) {
+                      const ph = document.createElement('div')
+                      ph.setAttribute('data-placeholder', '1')
+                      ph.className = 'w-full h-full bg-neutral-200 flex items-center justify-center'
+                      ph.innerHTML = '<svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>'
+                      parent.appendChild(ph)
+                    }
+                  }}
                 />
 
                 {/* Hero badge */}

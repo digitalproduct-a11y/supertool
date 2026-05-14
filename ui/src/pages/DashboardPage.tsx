@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { IconRefresh } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { useBrand } from '../context/BrandContext'
 import { DashboardHeader } from '../components/DashboardHeader'
 import { RevenueChart } from '../components/RevenueChart'
 import { PostsChart } from '../components/PostsChart'
@@ -12,6 +13,7 @@ import type { DashboardRow } from '../utils/dashboardUtils'
 
 export function DashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 31); d.setHours(0,0,0,0); return d
@@ -37,12 +39,18 @@ export function DashboardPage() {
     return list.sort((a, b) => a.brand.localeCompare(b.brand))
   }, [data])
 
-  // Auto-select first brand when data loads
+  // Auto-select brand when data loads
   useEffect(() => {
     if (brands.length > 0 && selectedBrand === null) {
-      setSelectedBrand(brands[0].brand)
+      // Non-Admin: prefer global brand if it exists in the data
+      if (!isAdmin && globalBrand) {
+        const match = brands.find(b => b.brand === globalBrand)
+        setSelectedBrand(match ? match.brand : brands[0].brand)
+      } else {
+        setSelectedBrand(brands[0].brand)
+      }
     }
-  }, [brands, selectedBrand])
+  }, [brands, selectedBrand, isAdmin, globalBrand])
 
 
   const selectedBrandInfo = brands.find(b => b.brand === selectedBrand)

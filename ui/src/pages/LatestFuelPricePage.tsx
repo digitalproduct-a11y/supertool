@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useBrand } from '../context/BrandContext'
 import { BRANDS } from '../constants/brands'
 import { IconChevronLeft, IconDownload, IconRefresh } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
@@ -45,9 +46,10 @@ async function callZernioWebhook(
 
 export function LatestFuelPricePage() {
   const navigate = useNavigate()
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const webhookUrl = import.meta.env.VITE_LATEST_FUEL_PRICE_WEBHOOK_URL as string | undefined
 
-  const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const [selectedBrand, setSelectedBrand] = useState<string>((!isAdmin && globalBrand) ? globalBrand : '')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
@@ -159,31 +161,33 @@ export function LatestFuelPricePage() {
           {/* LEFT: Controls */}
           <div>
             <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
-                <div className="relative">
-                  <select
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-                  >
-                    <option value="">Select a brand...</option>
-                    {BRANDS.map((brand) => (
-                      <option key={brand} value={brand}>
-                        {brand}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              {(isAdmin || !globalBrand) && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                  <div className="relative">
+                    <select
+                      value={selectedBrand}
+                      onChange={(e) => setSelectedBrand(e.target.value)}
+                      className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                    >
+                      <option value="">Select a brand...</option>
+                      {BRANDS.map((brand) => (
+                        <option key={brand} value={brand}>
+                          {brand}
+                        </option>
+                      ))}
+                    </select>
+                    <svg
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <button
                 onClick={handleGenerate}

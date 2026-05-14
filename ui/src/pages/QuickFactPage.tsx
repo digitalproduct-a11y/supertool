@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { BRANDS, type BrandName } from '../constants/brands'
+import { useBrand } from '../context/BrandContext'
 import type { QuickFactResult, QuickFactItem } from '../types'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl, updateFactInImageUrl, uploadToCloudinary, replaceBaseImage } from '../utils/cloudinary'
@@ -71,9 +72,10 @@ async function callZernioWebhook(
 }
 
 export function QuickFactPage() {
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const [pageState, setPageState] = useState<PageState>('idle')
   const [url, setUrl] = useState('')
-  const [brand, setBrand] = useState<BrandName | ''>('')
+  const [brand, setBrand] = useState<BrandName | ''>((!isAdmin && globalBrand) ? globalBrand as BrandName : '')
   const [result, setResult] = useState<QuickFactResult | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -321,22 +323,24 @@ export function QuickFactPage() {
                   className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Brand</label>
-                <div className="relative">
-                  <select
-                    value={brand}
-                    onChange={e => setBrand(e.target.value as BrandName)}
-                    className="w-full px-3 py-2.5 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition bg-white appearance-none cursor-pointer"
-                  >
-                    <option value="">Select a brand...</option>
-                    {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              {(isAdmin || !globalBrand) && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Brand</label>
+                  <div className="relative">
+                    <select
+                      value={brand}
+                      onChange={e => setBrand(e.target.value as BrandName)}
+                      className="w-full px-3 py-2.5 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition bg-white appearance-none cursor-pointer"
+                    >
+                      <option value="">Select a brand...</option>
+                      {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
+              )}
               {pageState === 'error' && errorMessage && (
                 <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
                   <p className="text-sm text-red-600">{errorMessage}</p>

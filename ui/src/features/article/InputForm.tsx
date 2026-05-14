@@ -1,6 +1,7 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useState, useEffect } from 'react'
 import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl, detectBrandInfoFromUrl } from '../../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../../types'
+import { useBrand } from '../../context/BrandContext'
 
 interface InputFormProps {
   url: string
@@ -27,7 +28,14 @@ export function InputForm({
   onSubmit,
   disabled,
 }: InputFormProps) {
+  const { selectedBrand, isAdmin } = useBrand()
   const [showSupportedSites, setShowSupportedSites] = useState(false)
+
+  useEffect(() => {
+    if (!isAdmin && selectedBrand && !brand) {
+      onBrandChange(selectedBrand)
+    }
+  }, [isAdmin, selectedBrand]) // intentionally omit brand and onBrandChange to only run once-ish
 
   // Track whether the URL itself was auto-detected (separate from manually selected brand)
   const detectedBrand = url ? detectBrandFromUrl(url) : null
@@ -108,42 +116,43 @@ export function InputForm({
         )}
       </div>
 
-      {/* Brand selector */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Brand To Generate For
-        </label>
-        <div className="relative">
-          <select
-            value={brand}
-            onChange={(e) => {
-              const newBrand = e.target.value
-              onBrandChange(newBrand)
-              // If manually selected brand doesn't match URL domain, pre-select AI; otherwise Original
-              if (detectedBrand && newBrand !== detectedBrand) {
-                onTitleModeChange('ai')
-                onCaptionTitleModeChange('ai')
-              } else {
-                onTitleModeChange('original')
-                onCaptionTitleModeChange('original')
-              }
-            }}
-            disabled={disabled}
-            required
-            className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 bg-white transition appearance-none cursor-pointer"
-          >
-            <option value="">Select a brand...</option>
-            {BRANDS.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-          <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+      {/* Brand selector — hidden for non-Admin when brand is pre-selected */}
+      {(isAdmin || !selectedBrand) && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Brand To Generate For
+          </label>
+          <div className="relative">
+            <select
+              value={brand}
+              onChange={(e) => {
+                const newBrand = e.target.value
+                onBrandChange(newBrand)
+                if (detectedBrand && newBrand !== detectedBrand) {
+                  onTitleModeChange('ai')
+                  onCaptionTitleModeChange('ai')
+                } else {
+                  onTitleModeChange('original')
+                  onCaptionTitleModeChange('original')
+                }
+              }}
+              disabled={disabled}
+              required
+              className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 bg-white transition appearance-none cursor-pointer"
+            >
+              <option value="">Select a brand...</option>
+              {BRANDS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Image title control */}
       <div>

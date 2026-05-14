@@ -7,10 +7,11 @@ interface ScheduleModalProps {
   isPosting: boolean
   onConfirm: (scheduledFor: string, passcode?: string) => void
   onClose: () => void
+  defaultScheduledFor?: string
 }
 
-export function ScheduleModal({ brand, hasCredentials, isPosting, onConfirm, onClose }: ScheduleModalProps) {
-  const [scheduledFor, setScheduledFor] = useState('')
+export function ScheduleModal({ brand, hasCredentials, isPosting, onConfirm, onClose, defaultScheduledFor }: ScheduleModalProps) {
+  const [scheduledFor, setScheduledFor] = useState(defaultScheduledFor ?? '')
   const [passcode, setPasscode] = useState('')
 
   const canSubmit = !!scheduledFor && (hasCredentials || !!passcode.trim()) && !isPosting

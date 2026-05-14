@@ -1,28 +1,31 @@
 import { useState } from "react";
 import type React from "react";
 import { createPortal } from "react-dom";
+import { useBrand } from '../context/BrandContext'
+import { useNavigate } from 'react-router-dom'
 import {
   IconHome,
-  IconPhoto,
-  IconCarouselHorizontal,
+  IconStack2,
   IconTrendingUp,
+  IconNews,
   IconLink,
   IconFileText,
   IconLayoutSidebar,
   IconHeart,
   IconCalendarClock,
   IconBrandThreads,
-  IconBolt,
   IconBrandShopee,
-  IconBulb,
   IconChartBar,
+  IconSwitchHorizontal,
 } from "@tabler/icons-react";
 
 type ToolId =
   | 'home'
   | 'dashboard'
   | 'youtube-dashboard'
+  | 'article-to-social'
   | 'fb-post'
+  | 'latest-news'
   | 'trending-news'
   | 'spike-news'
   | 'affiliate-links'
@@ -52,7 +55,6 @@ interface SidebarProps {
   onToolChange?: (id: ToolId) => void;
   isCollapsed: boolean;
   onCollapsedChange: (v: boolean) => void;
-  spikeUnreadCount?: number;
 }
 
 const navSections: { section: string | null; items: NavItem[] }[] = [
@@ -61,19 +63,12 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [{ id: "home", label: "Home", icon: IconHome }],
   },
   {
-    section: "Article to Social",
+    section: "Tools",
     items: [
-      { id: 'fb-post', label: 'Photo post', icon: IconPhoto },
-      { id: 'photo-carousel', label: 'Photo carousel post', icon: IconCarouselHorizontal },
-    ],
-  },
-  {
-    section: "Content Ideas",
-    items: [
-      { id: 'spike-news', label: 'Spike news', icon: IconBolt },
-      { id: 'scheduled-posts', label: 'News Bank', icon: IconTrendingUp },
+      { id: 'article-to-social', label: 'Article to Social Post', icon: IconStack2 },
+      { id: 'latest-news', label: 'Latest News', icon: IconNews },
+      { id: 'trending-news', label: 'Trending News', icon: IconTrendingUp },
       { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
-      { id: 'quick-fact', label: 'Quick fact post', icon: IconBulb },
     ],
   },
   {
@@ -112,11 +107,13 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
 ];
 
 const TOOL_NAMES: Record<ToolId, string> = {
-  home: 'KULT Digital Kit',
+  home: 'KULT Kit',
   'dashboard': 'Meta Dashboard',
   'youtube-dashboard': 'YouTube Dashboard',
+  'article-to-social': 'Article to Social Post',
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',
+  'latest-news': 'Latest News',
   'trending-news': 'Trending News',
   'spike-news': 'Spike News',
   'affiliate-links': 'Shopee Affiliate Links',
@@ -142,10 +139,28 @@ export function Sidebar({
   onToolChange,
   isCollapsed,
   onCollapsedChange,
-  spikeUnreadCount = 0,
 }: SidebarProps) {
+  const { selectedBrand, isAdmin, clearBrand } = useBrand()
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  const visibleSections = navSections
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        // PrimeTalk: only Hotspot brand or Admin
+        if (item.id === 'prime-talk') return selectedBrand === 'Hotspot' || isAdmin
+        return true
+      })
+    }))
+    // Hide Affiliate section entirely for non-Admin
+    .filter(group => {
+      if (group.section === 'Affiliate') return isAdmin
+      return true
+    })
+    // Remove sections with no items after filtering
+    .filter(group => group.items.length > 0)
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -200,11 +215,14 @@ export function Sidebar({
         <div className="w-60 flex flex-col h-full">
           {/* Header */}
           <div className="px-5 py-6 flex items-center justify-between">
-            <span className="text-[15px] font-semibold text-white tracking-tight">
-              <span className="glitch-text" data-text="KULT Digital Kit">
-                KULT Digital Kit
+            <div className="flex flex-col">
+              <span className="text-[15px] font-semibold text-white tracking-tight">
+                <span className="glitch-text" data-text="KULT Kit">
+                  KULT Kit
+                </span>
               </span>
-            </span>
+              <span className="text-[11px] text-neutral-500 mt-0.5">{isAdmin ? 'Admin' : (selectedBrand ?? '—')}</span>
+            </div>
             <button
               onClick={handleClose}
               aria-label="Collapse sidebar"
@@ -216,7 +234,7 @@ export function Sidebar({
 
           {/* Nav */}
           <nav className="sidebar-nav flex-1 px-3 py-4 overflow-y-auto">
-            {navSections.map((group, i) => (
+            {visibleSections.map((group, i) => (
               <div key={i} className={i > 0 ? "mt-4" : ""}>
                 {group.section && (
                   <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
@@ -240,7 +258,6 @@ export function Sidebar({
                         </div>
                       );
                     }
-                    const unread = tool.id === 'spike-news' ? spikeUnreadCount : 0
                     return (
                       <button
                         key={tool.id}
@@ -253,11 +270,6 @@ export function Sidebar({
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
                         <span className="flex-1">{tool.label}</span>
-                        {unread > 0 && (
-                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#FF3FBF] text-white text-[10px] font-bold leading-none shrink-0">
-                            {unread > 9 ? '9+' : unread}
-                          </span>
-                        )}
                       </button>
                     );
                   })}
@@ -269,6 +281,20 @@ export function Sidebar({
           {/* Footer */}
           <div className="mx-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-1" />
           <div className="px-3 pb-4 pt-2 space-y-0.5">
+            {/* Brand indicator + switch */}
+            <button
+              onClick={() => {
+                clearBrand()
+                navigate('/')
+              }}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"
+            >
+              <IconSwitchHorizontal className="w-4 h-4 flex-shrink-0 shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span>Switch brand</span>
+                <span className="text-[11px] font-normal text-neutral-500 truncate">{selectedBrand ?? '—'}</span>
+              </div>
+            </button>
             <button
               onClick={() => setShowFeedback(true)}
               className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"

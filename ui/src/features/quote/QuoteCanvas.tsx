@@ -1261,13 +1261,13 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
     const { width: cw, height: ch } = config.canvas;
 
     return (
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col w-full gap-4">
         {error && (
           <p className="text-sm text-red-500 font-medium">{error}</p>
         )}
         <div
-          className={`w-full overflow-hidden rounded-xl border border-neutral-200${onClick ? " cursor-pointer hover:opacity-90 transition" : ""}`}
-          style={{ maxWidth: 720, aspectRatio: `${cw} / ${ch}` }}
+          className={`w-full mx-auto rounded-xl border border-neutral-200${onClick ? " cursor-pointer hover:opacity-90 transition" : ""}`}
+          style={{ aspectRatio: `${cw} / ${ch}`, position: "relative", overflow: "hidden" }}
           onClick={onClick}
         >
           <canvas
@@ -1275,13 +1275,15 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
             width={cw}
             height={ch}
             style={{
+              position: "absolute",
+              inset: 0,
               width: "100%",
               height: "100%",
               display: quote.quote_text ? "block" : "none",
             }}
           />
           {!ready && quote.quote_text && (
-            <div className="flex items-center justify-center h-64 text-sm text-neutral-400">
+            <div style={{ position: "absolute", inset: 0 }} className="flex items-center justify-center text-sm text-neutral-400">
               Rendering preview...
             </div>
           )}

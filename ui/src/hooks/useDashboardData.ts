@@ -1,6 +1,48 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { DashboardRow } from '../utils/dashboardUtils'
 
+// Maps Google Sheet brand names (ALLCAPS / with prefixes) → app brand names
+const SHEET_TO_BRAND: Record<string, string> = {
+  'ASTRO AWANI': 'Astro Awani',
+  'ASTRO ARENA': 'Astro Arena',
+  'ASTRO ULAGAM': 'Astro Ulagam',
+  'ERA': 'Era',
+  'ERA SABAH': 'Era Sabah',
+  'ERA SARAWAK': 'Era Sarawak',
+  'GEGAR': 'Gegar',
+  'ASTRO GEMPAK': 'Gempak',
+  'GOXUAN': 'Goxuan',
+  'HITZ': 'Hitz',
+  '热点 HOTSPOT': 'Hotspot',
+  'IMPIANA': 'Impiana',
+  'KELUARGA': 'Keluarga',
+  'LITE': 'Lite',
+  'MASKULIN': 'Maskulin',
+  'MEDIA HIBURAN': 'Media Hiburan',
+  'MELETOP': 'Meletop',
+  'MELODY': 'Melody',
+  'MINGGUAN WANITA': 'Mingguan Wanita',
+  'MIX': 'Mix',
+  'MY (MALAYSIA)': 'MY',
+  'NONA': 'Nona',
+  'PA&MA': 'Pa&Ma',
+  'RAAGA': 'Raaga',
+  'RASA': 'Rasa',
+  'REMAJA': 'Remaja',
+  'RODA PANAS': 'Roda Panas',
+  'ROJAK DAILY': 'Rojak Daily',
+  'SINAR': 'Sinar',
+  'STADIUM ASTRO': 'Stadium Astro',
+  'XUAN': 'XUAN',
+  'ZAYAN': 'Zayan',
+  'ASTRO AEC 新闻报报看': 'Astro AEC',
+}
+
+function normalizeSheetRow(row: DashboardRow): DashboardRow {
+  const mapped = SHEET_TO_BRAND[row.brand]
+  return mapped ? { ...row, brand: mapped } : row
+}
+
 export interface TargetRow {
   Brand: string
   'Annual Revenue Target (USD)': number
@@ -13,7 +55,7 @@ interface CachedData {
   lastUpdated: string
 }
 
-const STORAGE_KEY = 'engagement_dashboard_data'
+const STORAGE_KEY = 'engagement_dashboard_data_v2'
 
 export function useDashboardData() {
   const [data, setData] = useState<DashboardRow[]>(() => {
@@ -47,9 +89,28 @@ export function useDashboardData() {
     }
     return []
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    // Start as not loading if we have cached data
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachedData
+        if (Array.isArray(parsed.data) && parsed.data.length > 0) return false
+      }
+    } catch { /* ignore */ }
+    return true
+  })
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(() => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachedData
+        if (parsed.lastUpdated) return new Date(parsed.lastUpdated)
+      }
+    } catch { /* ignore */ }
+    return null
+  })
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -106,15 +167,21 @@ export function useDashboardData() {
         throw new Error(`Unrecognised response format: ${JSON.stringify(result).slice(0, 100)}`)
       }
 
-      setData(dataArray)
-      setTargets(targetsArray)
+      const normalizedData = dataArray.map(normalizeSheetRow)
+      // Normalize target Brand names to match app brand names
+      const normalizedTargets = targetsArray.map(t => ({
+        ...t,
+        Brand: SHEET_TO_BRAND[t.Brand] ?? t.Brand,
+      }))
+      setData(normalizedData)
+      setTargets(normalizedTargets)
       const updated = new Date()
       setLastUpdated(updated)
 
       // Cache in localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        data: dataArray,
-        targets: targetsArray,
+        data: normalizedData,
+        targets: normalizedTargets,
         lastUpdated: updated.toISOString(),
       }))
     } catch (err) {
@@ -127,9 +194,21 @@ export function useDashboardData() {
   }, [])
 
   useEffect(() => {
-    console.log('useDashboardData useEffect - calling fetchData')
+    // Only fetch on mount if there is no cached data — navigation and profile
+    // switches reuse the cache. Use refetch() or the Refresh button for a forced reload.
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachedData
+        if (Array.isArray(parsed.data) && parsed.data.length > 0) {
+          console.log('useDashboardData useEffect - cache hit, skipping fetch')
+          return
+        }
+      }
+    } catch { /* fall through to fetch */ }
+    console.log('useDashboardData useEffect - no cache, fetching')
     fetchData()
-  }, [fetchData])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     data,

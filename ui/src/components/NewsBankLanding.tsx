@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useBrand } from '../context/BrandContext'
 
 const BRANDS = [
   'Astro Awani',
@@ -35,6 +37,19 @@ export function slugToBrand(slug: string): string {
 
 export function NewsBankLanding() {
   const navigate = useNavigate()
+  const { selectedBrand, isAdmin } = useBrand()
+
+  // Auto-redirect non-Admin to their brand's news bank
+  useEffect(() => {
+    if (!isAdmin && selectedBrand && selectedBrand !== 'Admin') {
+      navigate(`/news-bank/${brandToSlug(selectedBrand)}`, { replace: true })
+    }
+  }, [selectedBrand, isAdmin, navigate])
+
+  // Don't render grid for non-Admin (they're being redirected)
+  if (!isAdmin && selectedBrand && selectedBrand !== 'Admin') {
+    return null
+  }
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">

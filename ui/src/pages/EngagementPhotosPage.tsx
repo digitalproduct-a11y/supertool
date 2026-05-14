@@ -8,6 +8,7 @@ import { IconChevronLeft } from '@tabler/icons-react'
 import { TOPIC_CONFIGS } from '../constants/topics'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
+import { useBrand } from '../context/BrandContext'
 
 interface EngagementPhotosPageProps {
   topic?: string
@@ -20,7 +21,8 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
   const navigate = useNavigate()
   const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub, topics, isFetchingTopics, fetchTrendingTopics } = useEngagementPhotos()
-  const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
+  const [selectedBrand, setSelectedBrand] = useState<string>((!isAdmin && globalBrand) ? globalBrand : '')
   const [stage, setStage] = useState<'brand-select' | 'select-topics' | 'review'>('brand-select')
   async function handleScheduleOnFB(previewUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string): Promise<{ success: boolean; message: string }> {
     const resolvedPasscode = passcode ?? getCredentials(brand.toLowerCase())?.passcode
@@ -192,32 +194,34 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
             {/* LEFT: Brand Selector (spans 2 columns) */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-6">
-                  {/* Brand Selector */}
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
-                    <div className="relative">
-                      <select
-                        value={selectedBrand}
-                        onChange={(e) => setSelectedBrand(e.target.value)}
-                        className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-                      >
-                        <option value="">Select a brand...</option>
-                        {BRANDS.map((brand) => (
-                          <option key={brand} value={brand}>
-                            {brand}
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                  {/* Brand Selector — hidden for non-Admin when brand is pre-selected */}
+                  {(isAdmin || !globalBrand) && (
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                      <div className="relative">
+                        <select
+                          value={selectedBrand}
+                          onChange={(e) => setSelectedBrand(e.target.value)}
+                          className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                        >
+                          <option value="">Select a brand...</option>
+                          {BRANDS.map((brand) => (
+                            <option key={brand} value={brand}>
+                              {brand}
+                            </option>
+                          ))}
+                        </select>
+                        <svg
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <button
                     onClick={handleFetchTrendingTopics}

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useBrand } from '../context/BrandContext'
 import {
   IconChevronLeft,
   IconCloudRain,
@@ -191,8 +192,9 @@ function ModeToggle({
 
 export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const { posts, fontUse: rawFontUse, brandColor, nationalSummary, isLoading, error, generate } = useWeatherMalaysia();
-  const [brand, setBrand] = useState("");
+  const [brand, setBrand] = useState((!isAdmin && globalBrand) ? globalBrand : "");
   // Brands that should render the weather post in the canvas-default Inter
   // face rather than their usual brand font.
   const WEATHER_INTER_BRANDS = new Set(["Sinar", "Era"]);
@@ -417,23 +419,25 @@ export function WeatherMalaysiaPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
             {/* Left column — form (always visible) */}
             <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-5">
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 mb-1.5">
-                  Select brand
-                </label>
-                <select
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white"
-                >
-                  <option value="">Choose a brand…</option>
-                  {BRANDS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {(isAdmin || !globalBrand) && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-700 mb-1.5">
+                    Select brand
+                  </label>
+                  <select
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white"
+                  >
+                    <option value="">Choose a brand…</option>
+                    {BRANDS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-neutral-700 mb-1.5">
@@ -605,23 +609,25 @@ export function WeatherMalaysiaPage() {
         {mode !== "single" && stage === "brand-select" && (
           <div className="max-w-md">
             <div className="glass-card rounded-2xl p-6 space-y-5">
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 mb-1.5">
-                  Select brand
-                </label>
-                <select
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white"
-                >
-                  <option value="">Choose a brand…</option>
-                  {BRANDS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {(isAdmin || !globalBrand) && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-700 mb-1.5">
+                    Select brand
+                  </label>
+                  <select
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white"
+                  >
+                    <option value="">Choose a brand…</option>
+                    {BRANDS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Mode toggle */}
               <div>

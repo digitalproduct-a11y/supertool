@@ -109,26 +109,26 @@ const ENGAGEMENT_GROUPS = [
   {
     label: 'Fun Fact',
     links: [
-      { label: 'Did You Know?', path: '/engagement-posts/didyouknow', icon: IconBulb, color: '#FEF9C3', iconColor: '#F05A35' },
-      { label: 'On This Day', path: '/engagement-posts/on-this-day-malaysia', icon: IconCalendar, color: '#EDE9FE', iconColor: '#10B981' },
+      { label: 'Did You Know?', path: '/engagement-posts/didyouknow', icon: IconBulb, color: '#FEF1EB', iconColor: '#F05A35' },
+      { label: 'On This Day', path: '/engagement-posts/on-this-day-malaysia', icon: IconCalendar, color: '#FEF1EB', iconColor: '#F05A35' },
     ],
   },
   {
     label: 'Sports',
     links: [
-      { label: 'EPL', path: '/engagement-posts/epl', icon: IconFlame, color: '#DCFCE7', iconColor: '#0055EE' },
-      { label: 'Champions League', path: '/engagement-posts/ucl', icon: IconTrophy, color: '#FEF3C7', iconColor: '#0055EE' },
-      { label: 'Badminton', path: '/engagement-posts/badminton', icon: IconFeather, color: '#DBEAFE', iconColor: '#0055EE' },
-      { label: 'MotoGP', path: '/engagement-posts/motogp', icon: IconMotorbike, color: '#FFE4E6', iconColor: '#0055EE' },
+      { label: 'EPL', path: '/engagement-posts/epl', icon: IconFlame, color: '#EEF3FF', iconColor: '#0055EE' },
+      { label: 'Champions League', path: '/engagement-posts/ucl', icon: IconTrophy, color: '#EEF3FF', iconColor: '#0055EE' },
+      { label: 'Badminton', path: '/engagement-posts/badminton', icon: IconFeather, color: '#EEF3FF', iconColor: '#0055EE' },
+      { label: 'MotoGP', path: '/engagement-posts/motogp', icon: IconMotorbike, color: '#EEF3FF', iconColor: '#0055EE' },
     ],
   },
   {
     label: 'Information',
     links: [
-      { label: 'KLCI Index', path: '/engagement-posts/klci-index', icon: IconTrendingUp, color: '#D1FAE5', iconColor: '#10B981' },
-      { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate', icon: IconCurrency, color: '#E0F2FE', iconColor: '#10B981' },
-      { label: 'Fuel Price', path: '/engagement-posts/latest-fuel-price', icon: IconDroplet, color: '#FEE2E2', iconColor: '#10B981' },
-      { label: 'Weather Malaysia', path: '/engagement-posts/weather-malaysia', icon: IconCloudRain, color: '#E0F7FA', iconColor: '#10B981' },
+      { label: 'KLCI Index', path: '/engagement-posts/klci-index', icon: IconTrendingUp, color: '#ECFDF5', iconColor: '#10B981' },
+      { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate', icon: IconCurrency, color: '#ECFDF5', iconColor: '#10B981' },
+      { label: 'Fuel Price', path: '/engagement-posts/latest-fuel-price', icon: IconDroplet, color: '#ECFDF5', iconColor: '#10B981' },
+      { label: 'Weather Malaysia', path: '/engagement-posts/weather-malaysia', icon: IconCloudRain, color: '#ECFDF5', iconColor: '#10B981' },
     ],
   },
 ]
@@ -290,7 +290,11 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   }
 
   useEffect(() => {
-    if (news.length > 0) return // already seeded from cache — skip re-fetch
+    if (news.length > 0) {
+      // Seeded from cache — set timestamp so UI doesn't show "Fetching…"
+      setNewsFetchedAt(new Date())
+      return
+    }
     loadNews()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
