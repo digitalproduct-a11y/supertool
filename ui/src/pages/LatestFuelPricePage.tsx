@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
 import { BRANDS } from '../constants/brands'
 import { IconDownload, IconRefresh } from '@tabler/icons-react'
@@ -46,7 +45,6 @@ async function callZernioWebhook(
 }
 
 export function LatestFuelPricePage() {
-  const navigate = useNavigate()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const webhookUrl = import.meta.env.VITE_LATEST_FUEL_PRICE_WEBHOOK_URL as string | undefined
 

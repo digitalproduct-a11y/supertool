@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useBlocker } from 'react-router-dom'
+import { useBlocker } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { BackButton } from '../components/ds'
@@ -21,7 +21,6 @@ function getNextLoadingQuote(): string {
 }
 
 export function DidYouKnowPage() {
-  const navigate = useNavigate()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const { ideas, setIdeas, brandLogoPublicId, language, isLoading, error, fetchIdeas } = useDidYouKnow()
   const [stage, setStage] = useState<Stage>('input')

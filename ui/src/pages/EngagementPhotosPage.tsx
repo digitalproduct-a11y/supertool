@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useBlocker } from 'react-router-dom'
+import { useBlocker } from 'react-router-dom'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
 import { BRANDS } from '../constants/brands'
 import IdeaCard from '../components/IdeaCard'
@@ -20,7 +20,6 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const webhookUrl = import.meta.env[config.webhookEnvVar] as string | undefined
   const uploadPreset = import.meta.env[config.uploadPresetEnvVar] as string | undefined
 
-  const navigate = useNavigate()
   const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub, topics, isFetchingTopics, fetchTrendingTopics } = useEngagementPhotos()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const [selectedBrand, setSelectedBrand] = useState<string>((!isAdmin && globalBrand) ? globalBrand : '')

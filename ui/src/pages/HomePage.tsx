@@ -117,6 +117,7 @@ const TOOL_CARDS = [
     gradient: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF9 50%, #F5FEFB 100%)',
     icon: IconTrendingUp,
     iconColor: '#10B981',
+    image: '/information-post-card.png',
     links: [
       { label: 'KLCI Index', path: '/engagement-posts/klci-index' },
       { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate' },
