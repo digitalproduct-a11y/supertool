@@ -17,6 +17,7 @@ import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
 import { useBrand } from '../context/BrandContext'
 import { useNavigate } from 'react-router-dom'
+import { getBrandLogoUrl, getBrandHex, needsDarkBg } from '../constants/brands'
 import {
   fetchInHouseFeeds,
   fetchCompetitorFeeds as fetchCompetitorFeedsFromStore,
@@ -58,6 +59,7 @@ function formatMYT(isoStr: string): string {
     hour12: true,
   })
 }
+
 
 async function fetchInHouseNews(): Promise<ArticleWithBrand[]> {
   const url = (import.meta.env.VITE_RSS_LATEST_WEBHOOK_URL as string | undefined)?.trim()
@@ -304,9 +306,11 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
 
         {/* ── Row 1: Brand header ─────────────────────────────────────────── */}
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">KULT Digital Kit</p>
-          <h1 className="font-display text-3xl font-bold text-neutral-950 mt-0.5">
-            {isAdmin ? 'Admin' : (selectedBrand ?? '—')}
+          <p className="text-xs font-mono text-neutral-400 mb-3 uppercase tracking-widest">
+            KULT Digital Kit
+          </p>
+          <h1 className="font-display text-3xl font-bold text-neutral-950">
+            {!isAdmin && selectedBrand ? selectedBrand : (isAdmin ? 'Admin' : '—')}
           </h1>
           <div
             className="mt-4 h-[3px] rounded-full animate-stripe-grow"
@@ -379,7 +383,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                     {/* Target value (posts + revenue only) */}
                     {card.target !== null && card.target > 0 ? (
                       <p className="text-[10px] text-neutral-400 mt-0.5 mb-2">
-                        Target: {card.label === 'Revenue (USD)'
+                        Monthly Target: {card.label === 'Revenue (USD)'
                           ? `$${Math.round(card.target).toLocaleString()}`
                           : card.target.toLocaleString()}
                       </p>

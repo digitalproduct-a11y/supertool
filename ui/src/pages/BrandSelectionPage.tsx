@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
-import { BRANDS } from '../constants/brands'
+import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity } from '../constants/brands'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
+
+const ENTITY_LABELS: Record<BrandEntity, string> = {
+  'AASB': 'Astro',
+  'MBNS': 'Astro',
+  'ARSB': 'Astro Radio',
+  'NISB': 'Nu Ideaktiv',
+}
 
 export function BrandSelectionPage() {
   const { selectedBrand, setSelectedBrand } = useBrand()
@@ -17,12 +24,30 @@ export function BrandSelectionPage() {
 
   if (selectedBrand) return null
 
+  // Group brands by entity
+  const brandsByEntity: Record<BrandEntity, string[]> = {
+    'AASB': [],
+    'MBNS': [],
+    'ARSB': [],
+    'NISB': [],
+  }
+
+  BRANDS.forEach(brand => {
+    const entity = BRAND_ENTITY[brand]
+    brandsByEntity[entity].push(brand)
+  })
+
+  const handleSelectBrand = (brand: string) => {
+    setSelectedBrand(brand)
+    navigate('/home')
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f7f6] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-3xl">
+      <div className="w-full max-w-7xl">
 
         {/* Hero */}
-        <div className="mb-10 text-center">
+        <div className="mb-12 text-center">
           <p className="text-xs font-mono text-neutral-400 mb-3 uppercase tracking-widest">
             <span className="glitch-text" data-text="KULT Digital Kit">KULT Digital Kit</span>
           </p>
@@ -38,32 +63,119 @@ export function BrandSelectionPage() {
           />
         </div>
 
-        {/* Brand grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {BRANDS.map((brand) => (
-            <button
-              key={brand}
-              onClick={() => {
-                setSelectedBrand(brand)
-                navigate('/home')
-              }}
-              className="glass-card rounded-xl px-4 py-6 transition-all duration-200 text-left group flex items-center gap-3 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
-            >
-              <div className="flex-1 min-w-0">
-                <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
-              </div>
-              <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </span>
-            </button>
-          ))}
+        {/* Entities */}
+        <div className="grid grid-cols-3 gap-8">
+          {/* Astro (combines AASB + MBNS) */}
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-600 uppercase tracking-widest mb-4">
+              Astro
+            </h2>
+            <div className="grid grid-cols-1 gap-2">
+              {[...brandsByEntity['AASB'], ...brandsByEntity['MBNS']].map(brand => (
+                <button
+                  key={brand}
+                  onClick={() => handleSelectBrand(brand)}
+                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
+                >
+                  <div
+                    className="w-16 h-16 flex-shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: needsDarkBg(brand) ? getBrandHex(brand) : '#F9FAFB' }}
+                  >
+                    <img
+                      src={getBrandLogoUrl(brand)}
+                      alt={brand}
+                      className="w-12 h-12 object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 px-3 py-4">
+                    <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
+                  </div>
+                  <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {/* Admin card */}
+          {/* Astro Radio */}
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-600 uppercase tracking-widest mb-4">
+              Astro Radio
+            </h2>
+            <div className="grid grid-cols-1 gap-2">
+              {brandsByEntity['ARSB'].map(brand => (
+                <button
+                  key={brand}
+                  onClick={() => handleSelectBrand(brand)}
+                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
+                >
+                  <div
+                    className="w-16 h-16 flex-shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: needsDarkBg(brand) ? getBrandHex(brand) : '#F9FAFB' }}
+                  >
+                    <img
+                      src={getBrandLogoUrl(brand)}
+                      alt={brand}
+                      className="w-12 h-12 object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 px-3 py-4">
+                    <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
+                  </div>
+                  <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Nu Ideaktiv */}
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-600 uppercase tracking-widest mb-4">
+              Nu Ideaktiv
+            </h2>
+            <div className="grid grid-cols-1 gap-2">
+              {brandsByEntity['NISB'].map(brand => (
+                <button
+                  key={brand}
+                  onClick={() => handleSelectBrand(brand)}
+                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
+                >
+                  <div
+                    className="w-16 h-16 flex-shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: needsDarkBg(brand) ? getBrandHex(brand) : '#F9FAFB' }}
+                  >
+                    <img
+                      src={getBrandLogoUrl(brand)}
+                      alt={brand}
+                      className="w-12 h-12 object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 px-3 py-4">
+                    <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
+                  </div>
+                  <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Admin card */}
+        <div className="mt-8 pt-8 border-t border-neutral-200">
           <button
             onClick={() => setShowAdminModal(true)}
-            className="bg-neutral-900 hover:bg-neutral-800 rounded-xl px-4 py-6 transition-all duration-200 text-left group flex items-center gap-3 hover:shadow-[0_12px_40px_rgba(0,0,0,0.20)] hover:scale-[1.015]"
+            className="w-full bg-neutral-900 hover:bg-neutral-800 rounded-xl px-4 py-6 transition-all duration-200 text-left group flex items-center gap-3 hover:shadow-[0_12px_40px_rgba(0,0,0,0.20)] hover:scale-[1.01]"
           >
             <div className="flex-1 min-w-0">
               <h2 className="font-display text-sm font-semibold text-white">Admin</h2>
@@ -76,6 +188,7 @@ export function BrandSelectionPage() {
             </span>
           </button>
         </div>
+
       </div>
 
       {showAdminModal && (

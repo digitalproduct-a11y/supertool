@@ -11,6 +11,7 @@ export default {
         'shimmer': 'shimmer 1.8s ease-in-out infinite',
         'blob': 'blob-drift 18s ease-in-out infinite',
         'stripe-grow': 'stripe-grow 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.2s both',
+        'fade-in': 'fade-in 0.4s ease-out',
       },
       keyframes: {
         shimmer: {
@@ -25,6 +26,10 @@ export default {
         'stripe-grow': {
           'from': { width: '0', opacity: '0' },
           'to':   { width: '100%', opacity: '1' },
+        },
+        'fade-in': {
+          'from': { opacity: '0' },
+          'to':   { opacity: '1' },
         },
       },
     },

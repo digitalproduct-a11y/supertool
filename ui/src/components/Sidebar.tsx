@@ -3,6 +3,7 @@ import type React from "react";
 import { createPortal } from "react-dom";
 import { useBrand } from '../context/BrandContext'
 import { useNavigate } from 'react-router-dom'
+import { getBrandLogoUrl, getBrandHex, needsDarkBg, getEntityLabel } from '../constants/brands'
 import {
   IconHome,
   IconStack2,
@@ -217,11 +218,10 @@ export function Sidebar({
           <div className="px-5 py-6 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-[15px] font-semibold text-white tracking-tight">
-                <span className="glitch-text" data-text="KULT Kit">
-                  KULT Kit
+                <span className="glitch-text" data-text="KULT Digital Kit">
+                  KULT Digital Kit
                 </span>
               </span>
-              <span className="text-[11px] text-neutral-500 mt-0.5">{isAdmin ? 'Admin' : (selectedBrand ?? '—')}</span>
             </div>
             <button
               onClick={handleClose}
@@ -289,11 +289,27 @@ export function Sidebar({
               }}
               className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"
             >
-              <IconSwitchHorizontal className="w-4 h-4 flex-shrink-0 shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span>Switch brand</span>
-                <span className="text-[11px] font-normal text-neutral-500 truncate">{selectedBrand ?? '—'}</span>
+              {selectedBrand && !isAdmin ? (
+                <div
+                  className="w-7 h-7 rounded flex-shrink-0 flex items-center justify-center"
+                  style={{ backgroundColor: needsDarkBg(selectedBrand) ? getBrandHex(selectedBrand) : '#F9FAFB' }}
+                >
+                  <img
+                    src={getBrandLogoUrl(selectedBrand)}
+                    alt={selectedBrand}
+                    className="w-5 h-5 object-contain"
+                  />
+                </div>
+              ) : (
+                <IconSwitchHorizontal className="w-4 h-4 flex-shrink-0 shrink-0" />
+              )}
+              <div className="flex flex-col min-w-0 flex-1">
+                <span>{selectedBrand ?? 'Switch brand'}</span>
+                <span className="text-[11px] font-normal text-neutral-500 truncate">
+                  {selectedBrand ? getEntityLabel(selectedBrand) : '—'}
+                </span>
               </div>
+              <IconSwitchHorizontal className="w-4 h-4 flex-shrink-0 text-neutral-500" />
             </button>
             <button
               onClick={() => setShowFeedback(true)}

@@ -144,7 +144,7 @@ export function detectBrandInfoFromUrl(
 export const BRAND_HEX: Record<BrandName, string> = {
   "Astro Awani": "#ff4500",
   "Astro Arena": "#1473e6",
-  "Astro Ulagam": "#000000",
+  "Astro Ulagam": "#7B2CBF",
   Era: "#000000",
   "Era Sabah": "#000000",
   "Era Sarawak": "#000000",
@@ -153,23 +153,23 @@ export const BRAND_HEX: Record<BrandName, string> = {
   Goxuan: "#000000",
   Hitz: "#000000",
   Hotspot: "#CB2029",
-  Impiana: "#000000",
-  Keluarga: "#000000",
+  Impiana: "#4A2859",
+  Keluarga: "#5DADE2",
   Lite: "#000000",
-  Maskulin: "#000000",
-  "Media Hiburan": "#000000",
+  Maskulin: "#1A1A1A",
+  "Media Hiburan": "#E63946",
   Meletop: "#000000",
   Melody: "#000000",
-  "Mingguan Wanita": "#000000",
+  "Mingguan Wanita": "#C7161E",
   Mix: "#000000",
   MY: "#000000",
   Nona: "#000000",
-  "Pa&Ma": "#000000",
+  "Pa&Ma": "#FF69B4",
   Raaga: "#000000",
-  Rasa: "#000000",
-  Remaja: "#000000",
+  Rasa: "#E91D26",
+  Remaja: "#FF1493",
   "Roda Panas": "#000000",
-  "Rojak Daily": "#e50448",
+  "Rojak Daily": "#000000",
   Sinar: "#000000",
   "Stadium Astro": "#1473e6",
   XUAN: "#8900f2",
@@ -312,3 +312,116 @@ export const BRAND_LOGO_IDS: Record<BrandName, string> = {
   XUAN: "xuan_logo",
   Zayan: "zayan_logo",
 };
+
+export const BRAND_LOGO_URLS: Record<BrandName, string> = {
+  "Astro Awani": "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_awani_logo",
+  "Astro Arena": "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_arena_logo",
+  "Astro Ulagam": "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_ulagam_logo",
+  Era: "https://res.cloudinary.com/dymmqtqyg/image/upload/era_logo",
+  "Era Sabah": "https://res.cloudinary.com/dymmqtqyg/image/upload/era_sabah_logo",
+  "Era Sarawak": "https://res.cloudinary.com/dymmqtqyg/image/upload/era_sarawak_logo",
+  Gegar: "https://res.cloudinary.com/dymmqtqyg/image/upload/gegar_logo",
+  Gempak: "https://res.cloudinary.com/dymmqtqyg/image/upload/gempak_logo",
+  Goxuan: "https://res.cloudinary.com/dymmqtqyg/image/upload/goxuan_logo",
+  Hitz: "https://res.cloudinary.com/dymmqtqyg/image/upload/hitz_logo",
+  Hotspot: "https://res.cloudinary.com/dymmqtqyg/image/upload/hotspot_logo",
+  Impiana: "https://res.cloudinary.com/dymmqtqyg/image/upload/impiana_logo",
+  Keluarga: "https://res.cloudinary.com/dymmqtqyg/image/upload/keluarga_logo",
+  Lite: "https://res.cloudinary.com/dymmqtqyg/image/upload/lite_logo",
+  Maskulin: "https://res.cloudinary.com/dymmqtqyg/image/upload/maskulin_logo",
+  "Media Hiburan": "https://res.cloudinary.com/dymmqtqyg/image/upload/media_hiburan_logo",
+  Meletop: "https://res.cloudinary.com/dymmqtqyg/image/upload/meletop_logo",
+  Melody: "https://res.cloudinary.com/dymmqtqyg/image/upload/melody_logo",
+  "Mingguan Wanita": "https://res.cloudinary.com/dymmqtqyg/image/upload/mingguan_wanita_logo",
+  Mix: "https://res.cloudinary.com/dymmqtqyg/image/upload/mix_logo",
+  MY: "https://res.cloudinary.com/dymmqtqyg/image/upload/my_logo",
+  Nona: "https://res.cloudinary.com/dymmqtqyg/image/upload/nona_logo",
+  "Pa&Ma": "https://res.cloudinary.com/dymmqtqyg/image/upload/pa_ma_logo",
+  Raaga: "https://res.cloudinary.com/dymmqtqyg/image/upload/raaga_logo",
+  Rasa: "https://res.cloudinary.com/dymmqtqyg/image/upload/rasa_logo",
+  Remaja: "https://res.cloudinary.com/dymmqtqyg/image/upload/remaja_logo",
+  "Roda Panas": "https://res.cloudinary.com/dymmqtqyg/image/upload/roda_panas_logo",
+  "Rojak Daily": "https://res.cloudinary.com/dymmqtqyg/image/upload/rojak_daily_logo",
+  Sinar: "https://res.cloudinary.com/dymmqtqyg/image/upload/sinar_logo",
+  "Stadium Astro": "https://res.cloudinary.com/dymmqtqyg/image/upload/stadium_astro_logo",
+  XUAN: "https://res.cloudinary.com/dymmqtqyg/image/upload/xuan_logo",
+  Zayan: "https://res.cloudinary.com/dymmqtqyg/image/upload/zayan_logo",
+};
+
+export function getBrandLogoUrl(brand: string): string {
+  return (BRAND_LOGO_URLS as Record<string, string>)[brand] ?? "";
+}
+
+export const BRANDS_WITH_DARK_BG = new Set<BrandName>([
+  "Astro Ulagam",
+  "Rojak Daily",
+  "Stadium Astro",
+  "Hotspot",
+  "Impiana",
+  "Keluarga",
+  "Maskulin",
+  "Media Hiburan",
+  "Mingguan Wanita",
+  "Nona",
+  "Pa&Ma",
+  "Rasa",
+  "Remaja",
+  "Roda Panas",
+]);
+
+export function needsDarkBg(brand: string): boolean {
+  return BRANDS_WITH_DARK_BG.has(brand as BrandName);
+}
+
+export const ENTITY_LABELS: Record<BrandEntity, string> = {
+  'AASB': 'Astro',
+  'MBNS': 'Astro',
+  'ARSB': 'Astro Radio',
+  'NISB': 'Nu Ideaktiv',
+};
+
+export function getEntityLabel(brand: string): string {
+  const entity = (BRAND_ENTITY as Record<string, BrandEntity>)[brand];
+  return ENTITY_LABELS[entity] ?? '—';
+}
+
+export type BrandEntity = "AASB" | "MBNS" | "ARSB" | "NISB";
+
+export const BRAND_ENTITY: Record<BrandName, BrandEntity> = {
+  "Astro Awani": "AASB",
+  "Astro Arena": "MBNS",
+  "Astro Ulagam": "MBNS",
+  Era: "ARSB",
+  "Era Sabah": "ARSB",
+  "Era Sarawak": "ARSB",
+  Gegar: "ARSB",
+  Gempak: "MBNS",
+  Goxuan: "ARSB",
+  Hitz: "ARSB",
+  Hotspot: "MBNS",
+  Impiana: "NISB",
+  Keluarga: "NISB",
+  Lite: "ARSB",
+  Maskulin: "NISB",
+  "Media Hiburan": "NISB",
+  Meletop: "MBNS",
+  Melody: "ARSB",
+  "Mingguan Wanita": "NISB",
+  Mix: "ARSB",
+  MY: "ARSB",
+  Nona: "NISB",
+  "Pa&Ma": "NISB",
+  Raaga: "ARSB",
+  Rasa: "NISB",
+  Remaja: "NISB",
+  "Roda Panas": "NISB",
+  "Rojak Daily": "MBNS",
+  Sinar: "ARSB",
+  "Stadium Astro": "MBNS",
+  XUAN: "MBNS",
+  Zayan: "ARSB",
+};
+
+export function getBrandEntity(brand: string): BrandEntity {
+  return (BRAND_ENTITY as Record<string, BrandEntity>)[brand] ?? "NISB";
+}
