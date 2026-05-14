@@ -21,6 +21,7 @@ import {
 type ToolId =
   | 'home'
   | 'dashboard'
+  | 'youtube-dashboard'
   | 'fb-post'
   | 'trending-news'
   | 'spike-news'
@@ -104,6 +105,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     section: "Others",
     items: [
       { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
+      { id: 'youtube-dashboard', label: 'YouTube Dashboard', icon: IconChartBar },
       { id: 'post-queue', label: 'Scheduled queue', icon: IconCalendarClock },
     ],
   },
@@ -112,6 +114,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
 const TOOL_NAMES: Record<ToolId, string> = {
   home: 'KULT Digital Kit',
   'dashboard': 'Meta Dashboard',
+  'youtube-dashboard': 'YouTube Dashboard',
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',
   'trending-news': 'Trending News',

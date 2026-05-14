@@ -22,6 +22,7 @@ import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { YouTubeDashboardPage } from './pages/YouTubeDashboardPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,
@@ -61,7 +62,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard'
+type ToolId = 'home' | 'fb-post' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard' | 'youtube-dashboard'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -87,12 +88,16 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/weather-malaysia': 'weather-malaysia',
   '/engagement-posts/quote': 'quote',
   '/dashboard': 'dashboard',
+  '/youtube-dashboard': 'youtube-dashboard',
 }
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
 function getActiveTool(pathname: string): ToolId {
   if (pathname.startsWith('/trending-news') || pathname.startsWith('/news-bank')) {
     return 'scheduled-posts'
+  }
+  if (pathname.startsWith('/youtube-dashboard')) {
+    return 'youtube-dashboard'
   }
   if (pathname.startsWith('/dashboard')) {
     return 'dashboard'
@@ -120,6 +125,7 @@ const toolToPath: Record<ToolId, string> = {
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
   'dashboard': '/dashboard',
+  'youtube-dashboard': '/youtube-dashboard',
 }
 
 const topicToPath: Record<string, string> = {
@@ -822,6 +828,11 @@ function App() {
       <Route path="/dashboard" element={
         <Layout {...layoutProps}>
           <DashboardPage />
+        </Layout>
+      } />
+      <Route path="/youtube-dashboard" element={
+        <Layout {...layoutProps}>
+          <YouTubeDashboardPage />
         </Layout>
       } />
     </Routes>
