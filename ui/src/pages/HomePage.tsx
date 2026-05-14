@@ -55,12 +55,24 @@ function formatMYT(isoStr: string): string {
 }
 
 
+let _decoderEl: HTMLTextAreaElement | null = null
+function decodeHtml(text: string): string {
+  if (!text || (!text.includes('&') && !text.includes('&#'))) return text
+  if (!_decoderEl) _decoderEl = document.createElement('textarea')
+  _decoderEl.innerHTML = text
+  return _decoderEl.value
+}
+
+function decodeArticle<T extends { title: string; description?: string }>(a: T): T {
+  return { ...a, title: decodeHtml(a.title), description: a.description ? decodeHtml(a.description) : a.description }
+}
+
 async function fetchInHouseNews(): Promise<ArticleWithBrand[]> {
   const url = (import.meta.env.VITE_RSS_LATEST_WEBHOOK_URL as string | undefined)?.trim()
   if (!url) return []
   try {
     const feeds = await fetchInHouseFeeds(url)
-    return feeds.flatMap(feed => (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: false })))
+    return feeds.flatMap(feed => (feed.articles ?? []).map(a => decodeArticle({ ...a, sourceBrand: feed.brand, isCompetitor: false })))
   } catch { return [] }
 }
 
@@ -69,7 +81,7 @@ async function fetchCompetitorNews(): Promise<ArticleWithBrand[]> {
   if (!url) return []
   try {
     const feeds = await fetchCompetitorFeedsFromStore(url)
-    return feeds.flatMap(feed => (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: true })))
+    return feeds.flatMap(feed => (feed.articles ?? []).map(a => decodeArticle({ ...a, sourceBrand: feed.brand, isCompetitor: true })))
   } catch { return [] }
 }
 
@@ -251,10 +263,10 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
     const competitor = readCompetitorCacheFromStore()
     if (!inhouse && !competitor) return []
     const inHouseArr = (inhouse ?? []).flatMap(feed =>
-      (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: false as const }))
+      (feed.articles ?? []).map(a => decodeArticle({ ...a, sourceBrand: feed.brand, isCompetitor: false as const }))
     )
     const compArr = (competitor ?? []).flatMap(feed =>
-      (feed.articles ?? []).map(a => ({ ...a, sourceBrand: feed.brand, isCompetitor: true as const }))
+      (feed.articles ?? []).map(a => decodeArticle({ ...a, sourceBrand: feed.brand, isCompetitor: true as const }))
     )
     return [...inHouseArr, ...compArr]
       .filter(a => a.publishedAt)
