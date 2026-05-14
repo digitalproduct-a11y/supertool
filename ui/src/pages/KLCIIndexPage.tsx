@@ -135,9 +135,55 @@ export function KLCIIndexPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
+        {stage === 'intro' && (
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden grid grid-cols-1 md:grid-cols-2">
+              {/* Left: title, description, controls */}
+              <div className="p-8 flex flex-col justify-center space-y-4">
+                <div className="-ml-2"><BackButton /></div>
+                <div>
+                  <h2 className="font-display text-lg font-semibold text-neutral-950">KLCI Index Closing</h2>
+                  <p className="text-sm text-neutral-500 mt-1">Get the latest KLCI closing index data and generate a branded post ready for social media.</p>
+                </div>
+                {(isAdmin || !globalBrand) && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                    <div className="relative">
+                      <select
+                        value={selectedBrand}
+                        onChange={(e) => setSelectedBrand(e.target.value)}
+                        className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                      >
+                        <option value="">Select a brand...</option>
+                        {BRANDS.map((brand) => (
+                          <option key={brand} value={brand}>{brand}</option>
+                        ))}
+                      </select>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => { setStage('generate'); handleGenerate() }}
+                  disabled={!selectedBrand || isLoading}
+                  className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+                >
+                  Generate Post
+                </button>
+              </div>
+              {/* Right: image */}
+              <div className="aspect-video md:aspect-auto bg-[#ECFDF5] flex items-center justify-center">
+                <img src="/klci-index-card.png" alt="KLCI Index" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {stage === 'generate' && (<>
+        <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <BackButton />
             <h1 className="text-2xl font-semibold text-neutral-950">KLCI Index Closing</h1>
@@ -145,50 +191,10 @@ export function KLCIIndexPage() {
           <p className="text-sm text-neutral-600">Generate daily KLCI closing index graphics</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
-        {stage === 'intro' && (
-          <div className="max-w-lg mx-auto">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-8 text-center space-y-4">
-              <p className="text-sm text-neutral-600">Get the latest KLCI closing index data and generate a branded post ready for Facebook.</p>
-              {(isAdmin || !globalBrand) && (
-                <div className="text-left">
-                  <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
-                  <div className="relative">
-                    <select
-                      value={selectedBrand}
-                      onChange={(e) => setSelectedBrand(e.target.value)}
-                      className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-                    >
-                      <option value="">Select a brand...</option>
-                      {BRANDS.map((brand) => (
-                        <option key={brand} value={brand}>{brand}</option>
-                      ))}
-                    </select>
-                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={() => { setStage('generate'); handleGenerate() }}
-                disabled={!selectedBrand || isLoading}
-                className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
-              >
-                Generate Post
-              </button>
-            </div>
-          </div>
-        )}
-
-        {stage === 'generate' && (<>
         <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
           <p className="text-sm text-blue-900">KLCI closes on weekends and public holidays. Results shown are from the last trading day.</p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-stretch">
           {/* Left: Controls */}
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-5">
             {(isAdmin || !globalBrand) && (
@@ -212,18 +218,12 @@ export function KLCIIndexPage() {
               </div>
             )}
 
-            {imageUrl && (
-              <div className="pt-4 border-t border-neutral-100 space-y-4">
+            {(imageUrl || isLoading) && (
+              <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-neutral-700 mb-1.5">Caption</label>
                   {isLoading ? (
-                    <div className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm bg-neutral-50 flex items-center justify-center min-h-[7rem]">
-                      <div className="flex gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-neutral-300 animate-pulse" />
-                        <div className="w-2 h-2 rounded-full bg-neutral-300 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                        <div className="w-2 h-2 rounded-full bg-neutral-300 animate-pulse" style={{ animationDelay: '0.4s' }} />
-                      </div>
-                    </div>
+                    <div className="w-full h-28 bg-neutral-100 rounded-xl animate-pulse" />
                   ) : (
                     <textarea
                       value={caption}
@@ -234,32 +234,41 @@ export function KLCIIndexPage() {
                   )}
                 </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleDownload}
-                    className="flex-1 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
-                  >
-                    <IconDownload className="w-4 h-4" />
-                    Download image
-                  </button>
-                  <button
-                    onClick={() => setShowScheduleModal(true)}
-                    disabled={scheduleState === 'posting'}
-                    className="flex-1 px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
-                  >
-                    {scheduleState === 'posting' ? (
-                      <>
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                        Scheduling…
-                      </>
-                    ) : 'Schedule on FB'}
-                  </button>
-                </div>
-                {scheduleState === 'error' && (
-                  <p className="text-xs text-red-500">Failed to schedule. Please try again.</p>
+                {isLoading ? (
+                  <div className="flex gap-3">
+                    <div className="flex-1 h-12 bg-neutral-100 rounded-xl animate-pulse" />
+                    <div className="flex-1 h-12 bg-neutral-100 rounded-xl animate-pulse" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleDownload}
+                        className="flex-1 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
+                      >
+                        <IconDownload className="w-4 h-4" />
+                        Download image
+                      </button>
+                      <button
+                        onClick={() => setShowScheduleModal(true)}
+                        disabled={scheduleState === 'posting'}
+                        className="flex-1 px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
+                      >
+                        {scheduleState === 'posting' ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                            Scheduling…
+                          </>
+                        ) : 'Schedule on FB'}
+                      </button>
+                    </div>
+                    {scheduleState === 'error' && (
+                      <p className="text-xs text-red-500">Failed to schedule. Please try again.</p>
+                    )}
+                  </>
                 )}
               </div>
             )}

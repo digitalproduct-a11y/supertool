@@ -56,7 +56,7 @@ const TOOL_CARDS = [
     iconColor: "#FF3FBF",
     image: "/entertainment-post-card.png",
     links: [
-      { label: "Malay Entertainment", path: "/engagement-posts/gempak-entertainment" },
+      { label: "Malay Entertainment", path: "/engagement-posts/malay-entertainment" },
     ],
   },
 ];

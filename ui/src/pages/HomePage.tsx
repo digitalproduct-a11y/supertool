@@ -134,7 +134,7 @@ const TOOL_CARDS = [
     iconColor: '#FF3FBF',
     image: '/entertainment-post-card.png',
     links: [
-      { label: 'Malay Entertainment', path: '/engagement-posts/gempak-entertainment' },
+      { label: 'Malay Entertainment', path: '/engagement-posts/malay-entertainment' },
     ],
   },
 ]
@@ -330,32 +330,34 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
 
         {/* ── Row 2: Performance and Revenue ─────────────────────────────── */}
         <div>
-          <div className="flex items-baseline justify-between mb-4">
+          <div className="mb-4">
             <h2 className="text-lg font-bold text-neutral-950">Performance and Revenue</h2>
-            <button
-              onClick={() => brandNavigate('/dashboard')}
-              className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
-            >
-              View details
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </button>
           </div>
           <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6">
 
               {/* ── Meta (left) ─────────────────────────────────────────────── */}
               <div className="flex flex-col">
-                <h3 className="text-sm font-semibold text-neutral-950">Meta</h3>
-                <p className="text-sm text-neutral-400 mt-0.5 mb-4">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="text-base font-semibold text-neutral-950">Meta</h3>
+                  <button
+                    onClick={() => brandNavigate('/dashboard')}
+                    className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
+                  >
+                    View details
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-xs text-neutral-400 mt-0.5 mb-4">
                   Last 30 days
                   {latestDate && <span> · {dateRangeLabel}</span>}
                 </p>
                 {loading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
                     {[0, 1].map(i => (
-                      <div key={i} className="p-4 rounded-xl bg-white border border-neutral-100">
+                      <div key={i} className="rounded-xl bg-white">
                         <div className="h-2 w-20 bg-neutral-100 rounded-full animate-pulse mb-3" />
                         <div className="h-7 w-24 bg-neutral-100 rounded-lg animate-pulse mb-1" />
                         <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse mb-4" />
@@ -371,7 +373,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                         ? Math.min(100, (card.actual / card.target) * 100)
                         : null
                       return (
-                        <div key={card.label} className="p-4 rounded-xl bg-white border border-neutral-100 flex flex-col">
+                        <div key={card.label} className="rounded-xl bg-white flex flex-col">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
                           <div className="flex items-baseline gap-2">
                             <p className="font-display text-2xl font-bold text-neutral-950">{card.value}</p>
@@ -423,14 +425,25 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
 
               {/* ── YouTube (right) ─────────────────────────────────────────── */}
               <div className="flex flex-col">
-                <h3 className="text-sm font-semibold text-neutral-950">YouTube</h3>
-                <p className="text-sm text-neutral-400 mt-0.5 mb-4">Coming soon</p>
+                <div className="flex items-baseline justify-between">
+                  <h3 className="text-base font-semibold text-neutral-950">YouTube</h3>
+                  <button
+                    onClick={() => brandNavigate('/youtube-dashboard')}
+                    className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
+                  >
+                    View details
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-xs text-neutral-400 mt-0.5 mb-4">Coming soon</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
                   {[
                     { label: 'Watch Time', color: '#FF0000' },
                     { label: 'Revenue (USD)', color: '#FF0000' },
                   ].map(card => (
-                    <div key={card.label} className="relative p-4 rounded-xl bg-white border border-neutral-100 flex flex-col overflow-hidden">
+                    <div key={card.label} className="relative rounded-xl bg-white flex flex-col overflow-hidden">
                       <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
                         <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mb-2">
                           <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

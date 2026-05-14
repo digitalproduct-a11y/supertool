@@ -393,70 +393,74 @@ export function WeatherMalaysiaPage() {
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <button
-              onClick={handleBack}
-              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
-            >
-              <IconChevronLeft className="w-5 h-5" />
-            </button>
-            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-              Weather Malaysia
-            </h1>
-          </div>
-          <p className="text-neutral-500 text-sm">
-            Generate daily weather forecast posts for all states
-          </p>
-          <div
-            className="mt-4 h-[3px] rounded-full animate-stripe-grow"
-            style={{
-              background:
-                "linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)",
-            }}
-          />
-        </div>
-
         {/* Intro */}
         {stage === 'intro' && (
-          <div className="max-w-lg mx-auto">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-8 text-center space-y-4">
-              <p className="text-sm text-neutral-600">Get today's weather forecast for all Malaysian states and generate a branded post ready for Facebook.</p>
-              {(isAdmin || !globalBrand) && (
-                <div className="text-left">
-                  <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
-                  <div className="relative">
-                    <select
-                      value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-                    >
-                      <option value="">Select a brand...</option>
-                      {BRANDS.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden grid grid-cols-1 md:grid-cols-2">
+              {/* Left: title, description, controls */}
+              <div className="p-8 flex flex-col justify-center space-y-4">
+                <button
+                  onClick={handleBack}
+                  className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950 self-start -ml-2"
+                >
+                  <IconChevronLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="font-display text-lg font-semibold text-neutral-950">Weather Malaysia</h2>
+                  <p className="text-sm text-neutral-500 mt-1">Get today's weather forecast for all Malaysian states and generate a branded post ready for social media.</p>
                 </div>
-              )}
-              <button
-                onClick={() => { handleGenerate() }}
-                disabled={!brand || isLoading}
-                className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
-              >
-                Generate Post
-              </button>
+                {(isAdmin || !globalBrand) && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                    <div className="relative">
+                      <select
+                        value={brand}
+                        onChange={(e) => setBrand(e.target.value)}
+                        className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                      >
+                        <option value="">Select a brand...</option>
+                        {BRANDS.map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => { handleGenerate() }}
+                  disabled={!brand || isLoading}
+                  className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+                >
+                  Generate Post
+                </button>
+              </div>
+              {/* Right: image */}
+              <div className="aspect-video md:aspect-auto bg-[#ECFDF5] flex items-center justify-center">
+                <img src="/weather-malaysia-card.png" alt="Weather Malaysia" className="w-full h-full object-cover" />
+              </div>
             </div>
           </div>
         )}
 
         {/* Single-post mode — two-column layout */}
-        {mode === "single" && stage !== 'intro' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
+        {mode === "single" && stage !== 'intro' && (<>
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <button
+                onClick={handleBack}
+                className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
+              >
+                <IconChevronLeft className="w-5 h-5" />
+              </button>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Weather Malaysia</h1>
+            </div>
+            <p className="text-neutral-500 text-sm">Generate daily weather forecast posts for all states</p>
+            <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-stretch">
             {/* Left: Controls */}
             <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6 space-y-5">
               {(isAdmin || !globalBrand) && (
@@ -480,39 +484,53 @@ export function WeatherMalaysiaPage() {
                 </div>
               )}
 
-              {!isLoading && !error && posts.length > 0 && (
-                <div className="pt-4 border-t border-neutral-100 space-y-4">
+              {(isLoading || (!error && posts.length > 0)) && (
+                <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-neutral-700 mb-1.5">Caption</label>
-                    <textarea
-                      value={sharedCaption}
-                      onChange={(e) => setSharedCaption(e.target.value)}
-                      rows={4}
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
-                    />
+                    {isLoading ? (
+                      <div className="w-full h-28 bg-neutral-100 rounded-xl animate-pulse" />
+                    ) : (
+                      <textarea
+                        value={sharedCaption}
+                        onChange={(e) => setSharedCaption(e.target.value)}
+                        rows={4}
+                        className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none"
+                      />
+                    )}
                   </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => singleCanvasRef.current?.downloadAsPng()}
-                      className="flex-1 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
-                    >
-                      <IconDownload className="w-4 h-4" />
-                      Download image
-                    </button>
-                    <button
-                      onClick={() => setShowScheduleModal(true)}
-                      disabled={isScheduling || scheduleStatus === "done"}
-                      className="flex-1 px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
-                    >
-                      {isScheduling
-                        ? "Scheduling…"
-                        : scheduleStatus === "done"
-                          ? "Scheduled!"
-                          : "Schedule on FB"}
-                    </button>
-                  </div>
-                  {scheduleStatus === 'error' && (
-                    <p className="text-xs text-red-500">Failed to schedule. Please try again.</p>
+
+                  {isLoading ? (
+                    <div className="flex gap-3">
+                      <div className="flex-1 h-12 bg-neutral-100 rounded-xl animate-pulse" />
+                      <div className="flex-1 h-12 bg-neutral-100 rounded-xl animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => singleCanvasRef.current?.downloadAsPng()}
+                          className="flex-1 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
+                        >
+                          <IconDownload className="w-4 h-4" />
+                          Download image
+                        </button>
+                        <button
+                          onClick={() => setShowScheduleModal(true)}
+                          disabled={isScheduling || scheduleStatus === "done"}
+                          className="flex-1 px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
+                        >
+                          {isScheduling
+                            ? "Scheduling…"
+                            : scheduleStatus === "done"
+                              ? "Scheduled!"
+                              : "Schedule on FB"}
+                        </button>
+                      </div>
+                      {scheduleStatus === 'error' && (
+                        <p className="text-xs text-red-500">Failed to schedule. Please try again.</p>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -599,6 +617,23 @@ export function WeatherMalaysiaPage() {
                 onClose={() => setShowScheduleModal(false)}
               />
             )}
+          </div>
+        </>)}
+
+        {/* Header for non-single grouped/individual modes */}
+        {mode !== "single" && stage !== "intro" && (
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <button
+                onClick={handleBack}
+                className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
+              >
+                <IconChevronLeft className="w-5 h-5" />
+              </button>
+              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Weather Malaysia</h1>
+            </div>
+            <p className="text-neutral-500 text-sm">Generate daily weather forecast posts for all states</p>
+            <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
           </div>
         )}
 

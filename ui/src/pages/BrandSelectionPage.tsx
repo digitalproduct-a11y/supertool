@@ -6,17 +6,16 @@ import { brandToSlug } from '../utils/brandSlug'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
 
 export function BrandSelectionPage() {
-  const { selectedBrand, setSelectedBrand } = useBrand()
+  const { selectedBrand, setSelectedBrand, clearBrand } = useBrand()
   const navigate = useNavigate()
   const [showAdminModal, setShowAdminModal] = useState(false)
 
+  // Clear any lingering brand so the picker always shows
   useEffect(() => {
     if (selectedBrand) {
-      navigate(`/${selectedBrand === 'Admin' ? 'admin' : brandToSlug(selectedBrand as string)}/home`, { replace: true })
+      clearBrand()
     }
-  }, [selectedBrand, navigate])
-
-  if (selectedBrand) return null
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group brands by entity
   const brandsByEntity: Record<BrandEntity, string[]> = {

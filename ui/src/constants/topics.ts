@@ -10,7 +10,7 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   epl: {
     id: "epl",
     label: "EPL",
-    introDescription: "Get the latest EPL trending news and generate branded engagement posts for Facebook.",
+    introDescription: "Get the latest EPL trending news and generate branded engagement posts for social media.",
     trendingTopicsWebhookEnvVar: "VITE_ENGAGEMENT_TRENDING_TOPICS_WEBHOOK_URL",
     webhookEnvVar: "VITE_EPL_IDEA_GENERATION_WEBHOOK_URL",
     uploadPresetEnvVar: "VITE_CLOUDINARY_EPL_UPLOAD_PRESET",
@@ -31,7 +31,7 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   ucl: {
     id: "ucl",
     label: "Champions League",
-    introDescription: "Get the latest Champions League trending news and generate branded engagement posts for Facebook.",
+    introDescription: "Get the latest Champions League trending news and generate branded engagement posts for social media.",
     trendingTopicsWebhookEnvVar: "VITE_UCL_TRENDING_TOPICS_WEBHOOK_URL",
     webhookEnvVar: "VITE_UCL_IDEA_GENERATION_WEBHOOK_URL",
     uploadPresetEnvVar: "VITE_CLOUDINARY_UCL_UPLOAD_PRESET",
@@ -51,8 +51,8 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   },
   "gempak-entertainment": {
     id: "gempak-entertainment",
-    label: "Entertainment",
-    introDescription: "Get the latest entertainment news and generate branded engagement posts for Facebook.",
+    label: "Malay Entertainment",
+    introDescription: "Get the latest Malay entertainment news and generate branded engagement posts for social media.",
     trendingTopicsWebhookEnvVar: "VITE_GEMPAK_ENT_FETCH_IDEAS_WEBHOOK_URL",
     webhookEnvVar: "VITE_GEMPAK_ENT_GENERATE_POSTS_WEBHOOK_URL",
     uploadPresetEnvVar: "VITE_CLOUDINARY_GEMPAK_ENT_UPLOAD_PRESET",
@@ -95,7 +95,7 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   badminton: {
     id: 'badminton',
     label: 'Badminton',
-    introDescription: 'Get the latest badminton news and generate branded engagement posts for Facebook.',
+    introDescription: 'Get the latest badminton news and generate branded engagement posts for social media.',
     trendingTopicsWebhookEnvVar: 'VITE_BADMINTON_FETCH_IDEAS_WEBHOOK_URL',
     webhookEnvVar: 'VITE_BADMINTON_POSTS_WEBHOOK_URL',
     uploadPresetEnvVar: 'VITE_CLOUDINARY_BADMINTON_UPLOAD_PRESET',
@@ -118,7 +118,7 @@ export const TOPIC_CONFIGS: Record<string, TopicConfig> = {
   motogp: {
     id: 'motogp',
     label: 'MotoGP',
-    introDescription: 'Get the latest MotoGP news and generate branded engagement posts for Facebook.',
+    introDescription: 'Get the latest MotoGP news and generate branded engagement posts for social media.',
     trendingTopicsWebhookEnvVar: 'VITE_MOTOGP_FETCH_IDEAS_WEBHOOK_URL',
     webhookEnvVar: 'VITE_MOTOGP_POSTS_WEBHOOK_URL',
     uploadPresetEnvVar: 'VITE_CLOUDINARY_MOTOGP_UPLOAD_PRESET',

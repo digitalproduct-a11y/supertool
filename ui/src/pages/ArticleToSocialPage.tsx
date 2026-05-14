@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useLocation, useNavigate, useBlocker } from 'react-router-dom'
+import { useLocation, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { BackButton } from '../components/ds'
 import { useBrand } from '../context/BrandContext'
 import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl } from '../constants/brands'
@@ -21,7 +21,7 @@ import { ImageCropAdjuster, type CropRegion } from '../features/quote/ImageCropA
 import { TABLOID_QUOTE_CANVAS_CONFIG } from '../config/quoteCanvasConfig'
 import type { QuickFactItem, CarouselResult, CarouselImage } from '../types'
 import { CarouselResultPreview } from '../features/carousel/CarouselResultPreview'
-import { useBrandNavigate } from '../hooks/useBrandNavigate'
+import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -319,6 +319,19 @@ function StatusBadge({ status }: { status: ResultCard['status'] }) {
   return <span className="text-xs font-medium text-red-500">Failed</span>
 }
 
+function ScheduledSuccessMessage() {
+  const postQueuePath = useBrandPath('/post-queue')
+  return (
+    <div className="text-center space-y-1">
+      <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+      <p className="text-xs text-neutral-400">
+        To view or delete your scheduled post, check{' '}
+        <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">here</Link>.
+      </p>
+    </div>
+  )
+}
+
 function SchedulePostButton({ isPosting, postStatus, postError, onOpen }: {
   isPosting: boolean
   postStatus: 'idle' | 'posted' | 'error'
@@ -327,14 +340,7 @@ function SchedulePostButton({ isPosting, postStatus, postError, onOpen }: {
   onOpen: () => void
 }) {
   if (postStatus === 'posted') {
-    return (
-      <div className="flex items-center gap-2 text-sm font-medium text-green-600">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-        Scheduled on Facebook
-      </div>
-    )
+    return <ScheduledSuccessMessage />
   }
   return (
     <div>
@@ -1061,9 +1067,6 @@ function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
           <div>
             <SchedulePostButton isPosting={isPosting} postStatus={postStatus} postError={postError}
               scheduledFor={card.scheduledFor} onOpen={() => setShowScheduleModal(true)} />
-            {postStatus === 'posted' && (
-              <p className="text-xs text-green-600 mt-1 text-center">✓ Scheduled on Facebook!</p>
-            )}
           </div>
         </div>
 
@@ -1333,6 +1336,9 @@ function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
                 {isPosting ? 'Scheduling...' : postStatus === 'posted' ? 'Scheduled!' : 'Schedule on FB'}
               </button>
             </div>
+            {postStatus === 'posted' && (
+              <ScheduledSuccessMessage />
+            )}
             {postStatus === 'error' && postError && (
               <p className="text-xs text-red-500 text-center">{postError}</p>
             )}
@@ -1878,15 +1884,7 @@ function CarouselBulkContent({ card, brand, articleUrl }: {
 
   return (
     <div className="p-4 space-y-2">
-      {/* Row 1: See original article */}
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer"
-        className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition">
-        See original article
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-        </svg>
-      </a>
-      <CarouselResultPreview result={{ ...card.carouselResult, brand }} onPostDraft={onPostDraft} />
+      <CarouselResultPreview result={{ ...card.carouselResult, brand }} articleUrl={articleUrl} onPostDraft={onPostDraft} />
     </div>
   )
 }

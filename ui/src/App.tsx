@@ -76,7 +76,7 @@ const pathToTool: Record<string, ToolId> = {
   '/affiliate-article-editor': 'article-generator',
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
-  '/engagement-posts/gempak-entertainment': 'engagement-photos',
+  '/engagement-posts/malay-entertainment': 'engagement-photos',
   '/engagement-posts/badminton': 'engagement-photos',
   '/engagement-posts/motogp': 'engagement-photos',
   '/shopee-top-products': 'shopee-top-products',
@@ -637,7 +637,7 @@ function App() {
         <Route path="engagement-posts" element={<EngagementPostsLanding onSelectTopic={() => {}} />} />
         <Route path="engagement-posts/epl" element={<EngagementPhotosPage topic="epl" />} />
         <Route path="engagement-posts/ucl" element={<EngagementPhotosPage topic="ucl" />} />
-        <Route path="engagement-posts/gempak-entertainment" element={<EngagementPhotosPage topic="gempak-entertainment" />} />
+        <Route path="engagement-posts/malay-entertainment" element={<EngagementPhotosPage topic="gempak-entertainment" />} />
         <Route path="engagement-posts/badminton" element={<EngagementPhotosPage topic="badminton" />} />
         <Route path="engagement-posts/motogp" element={<EngagementPhotosPage topic="motogp" />} />
         <Route path="engagement-posts/worldcup" element={<EngagementPhotosPage topic="worldcup" />} />

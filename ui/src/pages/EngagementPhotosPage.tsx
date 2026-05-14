@@ -160,75 +160,94 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
     )
   }
 
+  const topicImageMap: Record<string, string> = {
+    'epl': '/epl-card.png',
+    'ucl': '/ucl-card.png',
+    'badminton': '/badminton-card.png',
+    'motogp': '/motogp-card.png',
+    'gempak-entertainment': '/gempak-entertainment-card.png',
+  }
+  const introImage = topicImageMap[topic] ?? '/sports-engagement-post-card.png'
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6">
-          <div className="flex items-center gap-3 mb-3">
-            <BackButton />
-            <h1 className="text-xl md:text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
+        {/* Persistent page header — shown for all stages except clean intro card */}
+        {!(stage === 'intro' && !isFetchingTopics) && (
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <BackButton />
+              <h1 className="text-2xl font-semibold text-neutral-950">{config.label}</h1>
+            </div>
+            <p className="text-sm text-neutral-600">{config.introDescription ?? `Create engaging ${config.label} posts`}</p>
+            <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
           </div>
-          <p className="text-sm text-neutral-600">{config.pageSubtitle ?? `Create engaging sports posts featuring ${config.label} players`}</p>
-          <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
-        </div>
-      </div>
+        )}
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {stage === 'intro' && !isFetchingTopics && (
-          <div className="max-w-lg mx-auto">
-            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-8 text-center space-y-4">
-              <p className="text-sm text-neutral-600">{config.introDescription ?? config.pageSubtitle ?? `Create engaging posts featuring ${config.label}`}</p>
-              {(isAdmin || !globalBrand) && (
-                <div className="text-left">
-                  <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
-                  <div className="relative">
-                    <select
-                      value={selectedBrand}
-                      onChange={(e) => setSelectedBrand(e.target.value)}
-                      className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
-                    >
-                      <option value="">Select a brand...</option>
-                      {BRANDS.map((brand) => (
-                        <option key={brand} value={brand}>{brand}</option>
-                      ))}
-                    </select>
-                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] overflow-hidden grid grid-cols-1 md:grid-cols-2">
+              {/* Left: title, description, controls */}
+              <div className="p-8 flex flex-col justify-center space-y-4">
+                <div className="-ml-2"><BackButton /></div>
+                <div>
+                  <h2 className="font-display text-lg font-semibold text-neutral-950">{config.label}</h2>
+                  <p className="text-sm text-neutral-500 mt-1">{config.introDescription ?? config.pageSubtitle ?? `Create engaging posts featuring ${config.label}`}</p>
                 </div>
-              )}
-              <button
-                onClick={handleFetchTrendingTopics}
-                disabled={!selectedBrand || isFetchingTopics || isLoading}
-                className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
-              >
-                Generate Post
-              </button>
-              {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
+                {(isAdmin || !globalBrand) && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                    <div className="relative">
+                      <select
+                        value={selectedBrand}
+                        onChange={(e) => setSelectedBrand(e.target.value)}
+                        className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                      >
+                        <option value="">Select a brand...</option>
+                        {BRANDS.map((brand) => (
+                          <option key={brand} value={brand}>{brand}</option>
+                        ))}
+                      </select>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={handleFetchTrendingTopics}
+                  disabled={!selectedBrand || isFetchingTopics || isLoading}
+                  className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+                >
+                  Generate Post
+                </button>
+                {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
+              </div>
+              {/* Right: image */}
+              <div className="aspect-video md:aspect-auto bg-[#EEF3FF] flex items-center justify-center">
+                <img src={introImage} alt={config.label} className="w-full h-full object-cover" />
+              </div>
             </div>
           </div>
         )}
 
-        {stage === 'intro' && isFetchingTopics && (
+        {stage === 'intro' && isFetchingTopics && (<>
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
             <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? config.loadingIcon ?? '⚽'}</div>
             <p className="text-sm font-semibold text-neutral-900">{config.fetchingTitle ?? 'Fetching Trending News'}</p>
             <p className="text-xs text-neutral-500">{config.fetchingSubtext ?? 'Scanning RSS feeds and curating stories...'}</p>
           </div>
-        )}
+        </>)}
 
-        {stage === 'brand-select' && isFetchingTopics && (
+        {stage === 'brand-select' && isFetchingTopics && (<>
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
             <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? config.loadingIcon ?? '⚽'}</div>
             <p className="text-sm font-semibold text-neutral-900">{config.fetchingTitle ?? 'Fetching Trending News'}</p>
             <p className="text-xs text-neutral-500">{config.fetchingSubtext ?? 'Scanning RSS feeds and curating stories...'}</p>
           </div>
-        )}
+        </>)}
 
-        {stage === 'brand-select' && !isFetchingTopics && (
+        {stage === 'brand-select' && !isFetchingTopics && (<>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
             {/* LEFT: Brand Selector (spans 2 columns) */}
             <div className="lg:col-span-2">
@@ -291,7 +310,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
               </div>
             </div>
           </div>
-        )}
+        </>)}
 
         {stage === 'select-topics' && (
           <div className="max-w-3xl mx-auto">
@@ -314,7 +333,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
           </div>
         )}
 
-        {stage === 'review' && isLoading && (
+        {stage === 'review' && isLoading && (<>
               <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-6">
                 <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? config.loadingIcon ?? '⚽'}</div>
                 <div className="flex justify-center gap-2">
@@ -347,14 +366,10 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                 </p>
                 <p className="text-xs text-neutral-400">Taking ~30 seconds to process</p>
               </div>
-        )}
+        </>)}
 
         {stage === 'review' && !isLoading && (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold text-neutral-950">Review Ideas</h2>
-              <p className="text-sm text-neutral-600">Edit ideas and download your posts</p>
-            </div>
 
             {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
