@@ -10,7 +10,6 @@ import {
 import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
 import { useBrand } from '../context/BrandContext'
-import { useNavigate } from 'react-router-dom'
 import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import { ArticleGenerateView } from '../components/ArticleGenerateView'
 import {
@@ -143,7 +142,6 @@ const TOOL_CARDS = [
 
 export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   const { selectedBrand, isAdmin } = useBrand()
-  const navigate = useNavigate()
   const brandNavigate = useBrandNavigate()
   const { data, targets, loading, lastUpdated } = useDashboardData()
 
