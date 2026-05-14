@@ -284,7 +284,7 @@ export function ScheduledPostsPage({ brand, embedded = false }: { brand: string;
         <div className="px-4 md:px-8 pb-4 shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={view !== 'browse' ? handleBack : () => navigate('/trending-news')}
+              onClick={view !== 'browse' ? handleBack : () => { if (window.history.length > 1) { navigate(-1); } else { navigate('/home'); } }}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />

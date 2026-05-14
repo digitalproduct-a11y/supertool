@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate, useBlocker } from 'react-router-dom'
+import { BackButton } from '../components/ds'
 import { useBrand } from '../context/BrandContext'
 import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl } from '../constants/brands'
 import { toast } from '../hooks/useToast'
@@ -313,7 +314,7 @@ function StatusBadge({ status }: { status: ResultCard['status'] }) {
       </span>
     )
   }
-  if (status === 'done') return <span className="text-xs font-medium text-green-600">Ready</span>
+  if (status === 'done') return null
   return <span className="text-xs font-medium text-red-500">Failed</span>
 }
 
@@ -419,6 +420,7 @@ const IcoRefresh = () => (
 export function ArticleToSocialPage() {
   const { selectedBrand, isAdmin } = useBrand()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [articleUrl, setArticleUrl] = useState<string>(
     (location.state as { articleUrl?: string } | null)?.articleUrl ?? ''
@@ -457,6 +459,24 @@ export function ArticleToSocialPage() {
   }, [articleUrl, effectiveBrand])
   const isBulk = orderedTypes.length > 1
 
+  // Block navigation away from preview page
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      stage === 'results' &&
+      currentLocation.pathname !== nextLocation.pathname
+  )
+
+  // Prevent browser close/refresh when on preview page
+  useEffect(() => {
+    if (stage !== 'results') return
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [stage])
+
   function toggleType(type: PostType) {
     setSelectedTypes(prev => {
       const next = new Set(prev)
@@ -478,6 +498,7 @@ export function ArticleToSocialPage() {
     }))
     setResults(initialCards)
     setStage('results')
+    navigate('?preview=1', { replace: false })
 
     const url = articleUrl.trim()
     const brand = effectiveBrand
@@ -513,7 +534,7 @@ export function ArticleToSocialPage() {
         updateCard(type, { status: 'error', errorMessage: msg })
       }
     })
-  }, [articleUrl, orderedTypes, effectiveBrand, configs])
+  }, [articleUrl, orderedTypes, effectiveBrand, configs, navigate])
 
   const handleRetry = useCallback(async (type: PostType) => {
     updateCard(type, { status: 'generating', errorMessage: undefined })
@@ -555,7 +576,10 @@ export function ArticleToSocialPage() {
       <div className="max-w-6xl mx-auto">
 
         <div className="mb-8">
-          <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Article to Social Post</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <BackButton />
+            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Article to Social Post</h1>
+          </div>
           <p className="text-neutral-500 mt-1 text-sm">Generate multiple post types from one article URL</p>
           <div className="mt-6 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
@@ -641,7 +665,7 @@ export function ArticleToSocialPage() {
         {/* ── Results stage ── */}
         {stage === 'results' && (
           <div>
-            <button onClick={() => setStage('input')}
+            <button onClick={() => { setStage('input'); navigate('/article-to-social', { replace: true }) }}
               className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition mb-6">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -697,6 +721,33 @@ export function ArticleToSocialPage() {
           </div>
         )}
       </div>
+
+      {/* Leave confirmation dialog */}
+      {blocker.state === 'blocked' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900">Leave this page?</h3>
+                <p className="text-sm text-neutral-600 mt-1">Your progress will be lost if you navigate away now.</p>
+              </div>
+              <button onClick={() => blocker.reset()} className="text-neutral-400 hover:text-neutral-600 transition flex-shrink-0 mt-0.5">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => blocker.reset()} className="flex-1 px-4 py-2.5 border border-neutral-300 text-neutral-950 rounded-lg font-medium hover:bg-neutral-50 transition text-sm">
+                Stay
+              </button>
+              <button onClick={() => blocker.proceed()} className="flex-1 px-4 py-2.5 bg-neutral-950 text-white rounded-lg font-medium hover:bg-neutral-800 transition text-sm">
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
@@ -728,7 +779,7 @@ function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
   const displayImageUrl = adjustedImageUrl
     ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle, committedTitle)
     : previewImageUrl
-  const cropSourceUrl = card.cloudinaryUrl ?? getCropSourceUrl(card.imageUrl, uploadedPublicId)
+  const cropSourceUrl = uploadedPublicId ? getCropSourceUrl(card.imageUrl, uploadedPublicId) : (card.cloudinaryUrl ?? getCropSourceUrl(card.imageUrl, null))
 
   async function handleCropDone(cropRegion: { x: number; y: number; width: number; height: number }) {
     setCropLoading(true)
@@ -928,7 +979,7 @@ function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
   return (
     <>
       {showCropPicker && createPortal(
-        <FabricCropPicker sourceImageUrl={cropSourceUrl} aspectRatio={1080 / 1350} onDone={handleCropDone} onCancel={() => setShowCropPicker(false)} />,
+        <FabricCropPicker sourceImageUrl={cropSourceUrl} aspectRatio={16 / 9} onDone={handleCropDone} onCancel={() => setShowCropPicker(false)} />,
         document.body
       )}
       {showScheduleModal && (
@@ -1400,7 +1451,7 @@ function PhotoBulkContent({ card, brand, articleUrl, onCaptionChange }: {
   const baseImageUrl = uploadedPublicId ? buildCloudinaryUrl(uploadedPublicId, committedTitle, card.imageUrl) : card.imageUrl
   const previewImageUrl = updateTitleInImageUrl(baseImageUrl, card.photoTitle ?? '', committedTitle)
   const displayImageUrl = adjustedImageUrl ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle, committedTitle) : previewImageUrl
-  const cropSourceUrl = card.cloudinaryUrl ?? getCropSourceUrl(card.imageUrl, uploadedPublicId)
+  const cropSourceUrl = uploadedPublicId ? getCropSourceUrl(card.imageUrl, uploadedPublicId) : (card.cloudinaryUrl ?? getCropSourceUrl(card.imageUrl, null))
 
   async function handleCropDone(r: { x: number; y: number; width: number; height: number }) {
     setCropLoading(true)
@@ -1555,7 +1606,7 @@ function QuickFactBulkContent({ card, brand, articleUrl, onCaptionChange }: {
 
   return (
     <>
-      {showCropPicker && createPortal(<FabricCropPicker sourceImageUrl={cropSourceUrl} aspectRatio={1080 / 1350} onDone={handleCropDone} onCancel={() => setShowCropPicker(false)} />, document.body)}
+      {showCropPicker && createPortal(<FabricCropPicker sourceImageUrl={cropSourceUrl} aspectRatio={16 / 9} onDone={handleCropDone} onCancel={() => setShowCropPicker(false)} />, document.body)}
       {showScheduleModal && <ScheduleModal brand={brand} hasCredentials={!!getCredentials(brand.toLowerCase())} isPosting={isPosting} defaultScheduledFor={card.scheduledFor} onConfirm={handleSchedule} onClose={() => setShowScheduleModal(false)} />}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
 
@@ -1806,7 +1857,7 @@ function QuoteBulkContent({ card, brand, onCaptionChange }: {
 
 // ── Carousel Bulk Content ─────────────────────────────────────────────────────
 
-function CarouselBulkContent({ card, brand }: {
+function CarouselBulkContent({ card, brand, articleUrl }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const onPostDraft = useCallback(
@@ -1824,7 +1875,15 @@ function CarouselBulkContent({ card, brand }: {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 space-y-2">
+      {/* Row 1: See original article */}
+      <a href={articleUrl} target="_blank" rel="noopener noreferrer"
+        className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition">
+        See original article
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </a>
       <CarouselResultPreview result={{ ...card.carouselResult, brand }} onPostDraft={onPostDraft} />
     </div>
   )

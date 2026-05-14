@@ -9,6 +9,7 @@ import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
+import { BackButton } from '../components/ds'
 
 type PageState = 'idle' | 'loading' | 'result' | 'error'
 
@@ -302,6 +303,7 @@ export function QuickFactPage() {
         {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
+            <BackButton />
             <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Quick Fact Generator</h1>
           </div>
           <p className="text-neutral-500 mt-1 text-sm">Turn any article into a key-facts photo post for Facebook</p>

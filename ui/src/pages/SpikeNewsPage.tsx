@@ -5,6 +5,7 @@ import { IconRefresh } from '@tabler/icons-react'
 import { Spinner } from '../components/ds/Spinner'
 import { GenerateView } from '../components/GeneratePostView'
 import type { GenerateSource } from '../components/GeneratePostView'
+import { BackButton } from '../components/ds'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,9 +106,12 @@ export function SpikeNewsPage({ onMarkRead }: { onMarkRead?: (urls: string[]) =>
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Spike News</h1>
-              <p className="text-neutral-500 mt-1 text-sm">Generate Facebook posts from real-time Chartbeat spike alerts</p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Spike News</h1>
+                <p className="text-neutral-500 mt-1 text-sm">Generate Facebook posts from real-time Chartbeat spike alerts</p>
+              </div>
             </div>
             <button
               onClick={handleLoadInbox}

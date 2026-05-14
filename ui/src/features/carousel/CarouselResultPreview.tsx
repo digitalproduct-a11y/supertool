@@ -426,32 +426,48 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
       {/* Per-image actions */}
       {currentImage && (
         <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => openPicker(currentImage.id)}
-            className="w-full py-2 rounded-lg text-sm font-medium border border-dashed border-neutral-300 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Change Image
-          </button>
           <div className="flex gap-2">
             <button
-              onClick={() => downloadImage(currentImage.id, currentImage.src, clampedIndex)}
-              className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 hover:bg-neutral-50 transition"
+              type="button"
+              onClick={() => openPicker(currentImage.id)}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-xs text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition"
             >
-              Download image
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Upload Image
             </button>
-            {currentImage.type === 'pexels' && (
-              <button
-                onClick={() => handleDelete(currentImage.id)}
-                className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 text-red-500 hover:bg-red-50 hover:border-red-200 transition"
-              >
-                Delete slide
-              </button>
-            )}
+            <button
+              onClick={handleDownloadZip}
+              disabled={isZipping || activeImages.length === 0}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-medium transition disabled:opacity-50"
+            >
+              {isZipping ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Packaging…
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </>
+              )}
+            </button>
           </div>
+          {currentImage.type === 'pexels' && (
+            <button
+              onClick={() => handleDelete(currentImage.id)}
+              className="w-full py-2 rounded-lg text-sm font-medium border border-neutral-200 text-red-500 hover:bg-red-50 hover:border-red-200 transition"
+            >
+              Delete slide
+            </button>
+          )}
         </div>
       )}
 
@@ -650,47 +666,23 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
 
       {/* Actions */}
       <div className="flex flex-col gap-2">
-        <div className="flex gap-2">
+        {onPostDraft && (
           <button
-            onClick={handleDownloadZip}
-            disabled={isZipping || activeImages.length === 0}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-neutral-200 hover:bg-neutral-50 disabled:opacity-50 rounded-xl text-sm font-medium transition-colors"
+            onClick={() => setShowScheduleModal(true)}
+            disabled={isPosting}
+            className="w-full py-3 px-4 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white rounded-xl text-sm font-semibold transition active:scale-[0.98]"
           >
-            {isZipping ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            {isPosting ? (
+              <span className="flex items-center justify-center gap-1.5">
+                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                Packaging…
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download ZIP
-              </>
-            )}
+                Scheduling…
+              </span>
+            ) : 'Schedule on FB'}
           </button>
-          {onPostDraft && (
-            <button
-              onClick={() => setShowScheduleModal(true)}
-              disabled={isPosting}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50"
-            >
-              {isPosting ? (
-                <span className="flex items-center justify-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  Scheduling…
-                </span>
-              ) : 'Schedule on FB'}
-            </button>
-          )}
-        </div>
+        )}
         {scheduleStatus === 'done' && (
           <div className="text-center space-y-1">
             <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>

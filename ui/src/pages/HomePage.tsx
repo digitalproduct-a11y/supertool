@@ -80,6 +80,7 @@ const TOOL_CARDS = [
     gradient: 'linear-gradient(135deg, #F8F0FF 0%, #EEF3FF 50%, #E8F4FD 100%)',
     icon: IconExternalLink,
     iconColor: '#7C3AED',
+    image: '/article-to-social-card.png',
     links: [
       { label: 'Photo', path: '/article-to-social', state: { postType: 'photo' } },
       { label: 'Carousel', path: '/article-to-social', state: { postType: 'carousel' } },
@@ -92,6 +93,7 @@ const TOOL_CARDS = [
     gradient: 'linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)',
     icon: IconBulb,
     iconColor: '#F05A35',
+    image: '/fun-fact-post-card.png',
     links: [
       { label: 'Did You Know?', path: '/engagement-posts/didyouknow' },
       { label: 'On This Day', path: '/engagement-posts/on-this-day-malaysia' },
@@ -102,6 +104,7 @@ const TOOL_CARDS = [
     gradient: 'linear-gradient(135deg, #EEF3FF 0%, #E8EEFF 50%, #F0F4FF 100%)',
     icon: IconTrophy,
     iconColor: '#0055EE',
+    image: '/sports-engagement-post-card.png',
     links: [
       { label: 'EPL', path: '/engagement-posts/epl' },
       { label: 'Champions League', path: '/engagement-posts/ucl' },
@@ -176,12 +179,9 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   // 30-day totals — current
   const totalPosts = filtered.reduce((s, r) => s + (r.total_posts || 0), 0)
   const totalRevenue = filtered.reduce((s, r) => s + (r.total_revenue || 0), 0)
-  const totalInteractions = filtered.reduce((s, r) => s + (r.total_interactions || 0), 0)
-
   // 30-day totals — previous
   const prevPosts = prevFiltered.reduce((s, r) => s + (r.total_posts || 0), 0)
   const prevRevenue = prevFiltered.reduce((s, r) => s + (r.total_revenue || 0), 0)
-  const prevInteractions = prevFiltered.reduce((s, r) => s + (r.total_interactions || 0), 0)
 
   // Growth % helper — null if no previous data
   function calcGrowth(current: number, previous: number): number | null {
@@ -235,17 +235,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
         : dataFooter,
       footerWarning: missingRevenueDays > 0 && !isAdmin,
       sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_revenue || 0 }))),
-      color: '#00E5D4',
-    },
-    {
-      label: 'Interactions',
-      value: totalInteractions.toLocaleString(),
-      target: null as number | null,
-      actual: totalInteractions,
-      growth: calcGrowth(totalInteractions, prevInteractions),
-      footer: dataFooter,
-      sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_interactions || 0 }))),
-      color: '#FF3FBF',
+      color: '#0055EE',
     },
   ]
 
@@ -315,129 +305,156 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
           />
         </div>
 
-        {/* ── Row 2: 4-col metrics with sparklines ────────────────────────── */}
+        {/* ── Row 2: Performance and Revenue ─────────────────────────────── */}
         <div>
-          {/* Section header */}
           <div className="flex items-baseline justify-between mb-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">Meta Performance</p>
-              <p className="text-sm font-medium text-neutral-700 mt-0.5">
-                Last 30 days
-                {latestDate && (
-                  <span className="text-neutral-400 font-normal"> · {dateRangeLabel}</span>
-                )}
-              </p>
-              {lastUpdated && (
-                <p className="text-[10px] text-neutral-400 mt-0.5">
-                  Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
-              >
-                View details
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            <h2 className="text-lg font-bold text-neutral-950">Performance and Revenue</h2>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
+            >
+              View details
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
+          <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6">
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[0, 1, 2].map(i => (
-                <div key={i} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
-                  <div className="h-2 w-20 bg-neutral-100 rounded-full animate-pulse mb-3" />
-                  <div className="h-7 w-24 bg-neutral-100 rounded-lg animate-pulse mb-1" />
-                  <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse mb-4" />
-                  <div className="h-10 bg-neutral-100 rounded animate-pulse mb-3" />
-                  {i < 2 && <div className="h-1 w-full bg-neutral-100 rounded-full animate-pulse" />}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {metricCards.map(card => {
-                const pct = card.target && card.target > 0
-                  ? Math.min(100, (card.actual / card.target) * 100)
-                  : null
-
-                return (
-                  <div key={card.label} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5 flex flex-col">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="font-display text-2xl font-bold text-neutral-950">{card.value}</p>
-                      {card.growth !== null && (
-                        <span className={`text-[11px] font-semibold ${card.growth >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                          {card.growth >= 0 ? '▲' : '▼'} {Math.abs(card.growth).toFixed(1)}%
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Target value (posts + revenue only) */}
-                    {card.target !== null && card.target > 0 ? (
-                      <p className="text-[10px] text-neutral-400 mt-0.5 mb-2">
-                        Monthly Target: {card.label === 'Revenue (USD)'
-                          ? `$${Math.round(card.target).toLocaleString()}`
-                          : card.target.toLocaleString()}
-                      </p>
-                    ) : (
-                      <p className="text-[10px] text-neutral-300 mt-0.5 mb-2">No target set</p>
-                    )}
-
-                    {/* Sparkline */}
-                    <div className="h-10 flex-1 min-h-[40px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={card.sparkData}>
-                          <Line
-                            type="monotone"
-                            dataKey="v"
-                            stroke={card.color}
-                            dot={false}
-                            strokeWidth={1.5}
-                            isAnimationActive={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Progress bar (posts + revenue only) */}
-                    {pct !== null && (
-                      <div className="mt-2">
-                        {card.footerWarning && (
-                          <p className="text-[10px] text-amber-600 mb-1">{card.footer}</p>
-                        )}
-                        <div className="w-full bg-neutral-100 rounded-full h-1">
-                          <div
-                            className="h-1 rounded-full transition-all duration-700"
-                            style={{
-                              width: `${pct.toFixed(1)}%`,
-                              backgroundColor: card.color,
-                            }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-neutral-400 mt-1">
-                          {pct.toFixed(0)}% of target
-                        </p>
+              {/* ── Meta (left) ─────────────────────────────────────────────── */}
+              <div className="flex flex-col">
+                <h3 className="text-sm font-semibold text-neutral-950">Meta</h3>
+                <p className="text-sm text-neutral-400 mt-0.5 mb-4">
+                  Last 30 days
+                  {latestDate && <span> · {dateRangeLabel}</span>}
+                </p>
+                {loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    {[0, 1].map(i => (
+                      <div key={i} className="p-4 rounded-xl bg-white border border-neutral-100">
+                        <div className="h-2 w-20 bg-neutral-100 rounded-full animate-pulse mb-3" />
+                        <div className="h-7 w-24 bg-neutral-100 rounded-lg animate-pulse mb-1" />
+                        <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse mb-4" />
+                        <div className="h-10 bg-neutral-100 rounded animate-pulse mb-3" />
+                        <div className="h-1 w-full bg-neutral-100 rounded-full animate-pulse" />
                       </div>
-                    )}
+                    ))}
                   </div>
-                )
-              })}
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    {metricCards.map(card => {
+                      const pct = card.target && card.target > 0
+                        ? Math.min(100, (card.actual / card.target) * 100)
+                        : null
+                      return (
+                        <div key={card.label} className="p-4 rounded-xl bg-white border border-neutral-100 flex flex-col">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
+                          <div className="flex items-baseline gap-2">
+                            <p className="font-display text-2xl font-bold text-neutral-950">{card.value}</p>
+                            {card.growth !== null && (
+                              <span className={`text-[11px] font-semibold ${card.growth >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                {card.growth >= 0 ? '▲' : '▼'} {Math.abs(card.growth).toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                          {card.target !== null && card.target > 0 ? (
+                            <p className="text-[10px] text-neutral-400 mt-0.5 mb-2">
+                              Monthly Target: {card.label === 'Revenue (USD)'
+                                ? `$${Math.round(card.target).toLocaleString()}`
+                                : card.target.toLocaleString()}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-neutral-300 mt-0.5 mb-2">No target set</p>
+                          )}
+                          <div className="h-10 flex-1 min-h-[40px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={card.sparkData}>
+                                <Line type="monotone" dataKey="v" stroke={card.color} dot={false} strokeWidth={1.5} isAnimationActive={false} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                          {pct !== null && (
+                            <div className="mt-2">
+                              {card.footerWarning && (
+                                <p className="text-[10px] text-amber-600 mb-1">{card.footer}</p>
+                              )}
+                              <div className="w-full bg-neutral-100 rounded-full h-1">
+                                <div
+                                  className="h-1 rounded-full transition-all duration-700"
+                                  style={{ width: `${pct.toFixed(1)}%`, backgroundColor: card.color }}
+                                />
+                              </div>
+                              <p className="text-[10px] text-neutral-400 mt-1">{pct.toFixed(0)}% of target</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Vertical divider ───────────────────────────────────────── */}
+              <div className="hidden lg:block bg-neutral-100" />
+
+              {/* ── YouTube (right) ─────────────────────────────────────────── */}
+              <div className="flex flex-col">
+                <h3 className="text-sm font-semibold text-neutral-950">YouTube</h3>
+                <p className="text-sm text-neutral-400 mt-0.5 mb-4">Coming soon</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                  {[
+                    { label: 'Watch Time', color: '#FF0000' },
+                    { label: 'Revenue (USD)', color: '#FF0000' },
+                  ].map(card => (
+                    <div key={card.label} className="relative p-4 rounded-xl bg-white border border-neutral-100 flex flex-col overflow-hidden">
+                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mb-2">
+                          <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-xs font-semibold text-neutral-500">Coming Soon</p>
+                      </div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
+                      <p className="font-display text-2xl font-bold text-neutral-950">—</p>
+                      <p className="text-[10px] text-neutral-300 mt-0.5 mb-2">No target set</p>
+                      <div className="h-10 flex-1 min-h-[40px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={FLAT_LINE}>
+                            <Line type="monotone" dataKey="v" stroke={card.color} dot={false} strokeWidth={1.5} isAnimationActive={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-2">
+                        <div className="w-full bg-neutral-100 rounded-full h-1">
+                          <div className="h-1 rounded-full" style={{ width: '0%', backgroundColor: card.color }} />
+                        </div>
+                        <p className="text-[10px] text-neutral-400 mt-1">&nbsp;</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
-          )}
+
+            {/* ── Footer: Updated on ─────────────────────────────────────── */}
+            <p className="text-[10px] text-neutral-400 mt-4">
+              {lastUpdated
+                ? `Updated on ${lastUpdated.toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}`
+                : '\u00A0'}
+            </p>
+          </div>
         </div>
 
         {/* ── Row 3: Tools + News side by side ────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Left: Tool cards */}
           <div>
             <div className="flex items-baseline justify-between mb-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">Tools</p>
+              <h2 className="text-lg font-bold text-neutral-950">Tools</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TOOL_CARDS.map(card => {
@@ -446,10 +463,14 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                   <div key={card.title} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
                     {/* 16:9 illustration area */}
                     <div
-                      className="aspect-video flex items-center justify-center"
+                      className="aspect-video flex items-center justify-center overflow-hidden"
                       style={{ background: card.gradient }}
                     >
-                      <Icon className="w-12 h-12 opacity-40" style={{ color: card.iconColor }} />
+                      {card.image ? (
+                        <img src={card.image} alt={card.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <Icon className="w-12 h-12 opacity-40" style={{ color: card.iconColor }} />
+                      )}
                     </div>
                     {/* Title */}
                     <div className="px-5 pt-4 pb-2">
@@ -477,25 +498,9 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
           </div>
 
           {/* Right: Latest news */}
-          <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5 h-fit">
+          <div>
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">Latest News</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <p className="text-[10px] text-neutral-400">
-                    {newsFetchedAt
-                      ? `Updated on ${newsFetchedAt.toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}`
-                      : 'Fetching…'}
-                  </p>
-                  <button
-                    onClick={() => loadNews(true)}
-                    disabled={newsLoading}
-                    className="text-[10px] text-neutral-400 hover:text-neutral-700 underline transition disabled:opacity-40"
-                  >
-                    {newsLoading ? 'Refreshing…' : 'Refresh'}
-                  </button>
-                </div>
-              </div>
+              <h2 className="text-lg font-bold text-neutral-950">Latest News</h2>
               <button
                 onClick={() => navigate('/news-bank')}
                 className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
@@ -507,6 +512,21 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
               </button>
             </div>
 
+            <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
+              <div className="flex items-center gap-1.5 mb-4">
+                <p className="text-[10px] text-neutral-400">
+                  {newsFetchedAt
+                    ? `Updated on ${newsFetchedAt.toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}`
+                    : 'Fetching…'}
+                </p>
+                <button
+                  onClick={() => loadNews(true)}
+                  disabled={newsLoading}
+                  className="text-[10px] text-neutral-400 hover:text-neutral-700 underline transition disabled:opacity-40"
+                >
+                  {newsLoading ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
             {newsLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -571,6 +591,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
 

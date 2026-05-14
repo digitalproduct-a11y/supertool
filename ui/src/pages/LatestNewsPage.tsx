@@ -1,5 +1,6 @@
 import { useBrand } from '../context/BrandContext'
 import { LatestNewsTab } from '../components/LatestNewsTab'
+import { BackButton } from '../components/ds'
 
 export function LatestNewsPage() {
   const { selectedBrand } = useBrand()
@@ -11,9 +12,12 @@ export function LatestNewsPage() {
       <div className="px-4 md:px-8 pb-4 shrink-0">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Latest News</h1>
-              <p className="text-neutral-500 mt-1 text-sm">Browse and generate posts from articles published in the last 24 hours</p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Latest News</h1>
+                <p className="text-neutral-500 mt-1 text-sm">Browse and generate posts from articles published in the last 24 hours</p>
+              </div>
             </div>
           </div>
           <div

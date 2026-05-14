@@ -4,6 +4,7 @@ import { BRANDS, type BrandName } from '../constants/brands'
 import { GuideModal } from '../components/ds/GuideModal'
 import { Spinner } from '../components/ds/Spinner'
 import { useShopeeTopProducts, type ShopeeTopProduct } from '../hooks/useShopeeTopProducts'
+import { BackButton } from '../components/ds'
 
 function formatPrice(price: number): string {
   if (!price) return '—'
@@ -103,14 +104,17 @@ export function ShopeeTopProductsPage() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Top Products</h1>
-              <p className="text-neutral-500 mt-1 text-sm">
-                Top-selling Shopee products sourced from TikTok trending keywords — refreshed daily at 8am.
-                {lastRefreshed && (
-                  <span className="ml-2 text-neutral-400">Last refreshed: {formatLastRefreshed(lastRefreshed)}</span>
-                )}
-              </p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Shopee Top Products</h1>
+                <p className="text-neutral-500 mt-1 text-sm">
+                  Top-selling Shopee products sourced from TikTok trending keywords — refreshed daily at 8am.
+                  {lastRefreshed && (
+                    <span className="ml-2 text-neutral-400">Last refreshed: {formatLastRefreshed(lastRefreshed)}</span>
+                  )}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button

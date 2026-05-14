@@ -379,7 +379,7 @@ export function WeatherMalaysiaPage() {
 
   function handleBack() {
     if (stage === "brand-select") {
-      navigate("/engagement-posts");
+      if (window.history.length > 1) { navigate(-1); } else { navigate("/home"); }
     } else {
       setStage("brand-select");
       setSharedCaption("");

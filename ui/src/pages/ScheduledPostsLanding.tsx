@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RECOMMENDED_SOURCES } from '../constants/scheduledPostSources'
+import { BackButton } from '../components/ds'
 
 const BRANDS = [
   'Astro Ulagam',
@@ -145,9 +146,12 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
 
         {/* Hero */}
         <div className="mb-10">
-          <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-            Trending News
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <BackButton />
+            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
+              Trending News
+            </h1>
+          </div>
           <p className="text-neutral-500 mt-3 text-sm max-w-xs">
             {isLoading
               ? 'Loading today\'s articles…'

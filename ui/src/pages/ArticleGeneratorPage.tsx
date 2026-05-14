@@ -33,6 +33,7 @@ import type {
 } from '../types'
 import { BRANDS } from '../constants/brands'
 import { GuideModal } from '../components/ds/GuideModal'
+import { BackButton } from '../components/ds'
 
 const STEPS: { step: ArticleGeneratorStep; label: string; shortLabel: string }[] = [
   { step: 'input', label: 'Input', shortLabel: 'Input' },
@@ -446,13 +447,16 @@ export function ArticleGeneratorPage({ isSidebarCollapsed = false }: { isSidebar
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-                Shopee Article Generator
-              </h1>
-              <p className="text-neutral-500 mt-1 text-sm">
-                Write engaging Shopee product articles from links
-              </p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
+                  Shopee Article Generator
+                </h1>
+                <p className="text-neutral-500 mt-1 text-sm">
+                  Write engaging Shopee product articles from links
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
             <button

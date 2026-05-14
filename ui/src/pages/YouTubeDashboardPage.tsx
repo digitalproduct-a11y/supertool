@@ -11,6 +11,7 @@ import {
   aggregateByMonth,
 } from '../utils/youtubeDashboardUtils'
 import type { YouTubeDashboardRow } from '../utils/youtubeDashboardUtils'
+import { BackButton } from '../components/ds'
 
 export function YouTubeDashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useYouTubeDashboardData()
@@ -87,13 +88,16 @@ export function YouTubeDashboardPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-                YouTube Performance & Revenue Dashboard
-              </h1>
-              <p className="text-neutral-500 mt-1 text-sm">
-                Track watch hours, videos published and revenue across all brand channels
-              </p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
+                  YouTube Performance & Revenue Dashboard
+                </h1>
+                <p className="text-neutral-500 mt-1 text-sm">
+                  Track watch hours, videos published and revenue across all brand channels
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2 pt-1 shrink-0">
               <button

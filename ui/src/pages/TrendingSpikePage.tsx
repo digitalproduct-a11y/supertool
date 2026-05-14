@@ -4,6 +4,7 @@ import { IconRefresh, IconSearch, IconExternalLink } from '@tabler/icons-react'
 import { Spinner } from '../components/ds/Spinner'
 import { GuideModal } from '../components/ds/GuideModal'
 import { ArticleGenerateView } from '../components/ArticleGenerateView'
+import { BackButton } from '../components/ds'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -199,9 +200,12 @@ export function TrendingSpikePage() {
       <div className="px-4 md:px-8 pb-4 shrink-0">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending News</h1>
-              <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from trending articles</p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Trending News</h1>
+                <p className="text-neutral-500 mt-1 text-sm">Generate Facebook images &amp; captions from trending articles</p>
+              </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button

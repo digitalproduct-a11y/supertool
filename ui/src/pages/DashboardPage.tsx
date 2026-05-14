@@ -10,6 +10,7 @@ import { RPPChart } from '../components/RPPChart'
 import { TopPostsChart } from '../components/TopPostsChart'
 import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils/dashboardUtils'
 import type { DashboardRow } from '../utils/dashboardUtils'
+import { BackButton } from '../components/ds'
 
 export function DashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
@@ -124,13 +125,16 @@ export function DashboardPage() {
         {/* Page header */}
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-                Meta Performance & Revenue Dashboard
-              </h1>
-              <p className="text-neutral-500 mt-1 text-sm">
-                Track revenue, posts and engagement across all brands
-              </p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
+                  Meta Performance & Revenue Dashboard
+                </h1>
+                <p className="text-neutral-500 mt-1 text-sm">
+                  Track revenue, posts and engagement across all brands
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2 pt-1 shrink-0">
               <button

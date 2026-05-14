@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useBlocker } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
 import { IconChevronLeft } from '@tabler/icons-react'
+import { BackButton } from '../components/ds'
 import { useDidYouKnow } from '../hooks/useDidYouKnow'
 import { BRANDS } from '../constants/brands'
 import { DidYouKnowCard, DidYouKnowTopicSelector } from '../features/didyouknow'
@@ -111,12 +112,7 @@ export function DidYouKnowPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <button
-              onClick={() => navigate('/engagement-posts')}
-              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
-            >
-              <IconChevronLeft className="w-5 h-5" />
-            </button>
+            <BackButton />
             <h1 className="text-2xl font-semibold text-neutral-950">Did You Know?</h1>
           </div>
           <p className="text-sm text-neutral-600">Generate fun facts and interesting moments</p>

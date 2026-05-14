@@ -5,6 +5,7 @@ import { BRANDS } from '../constants/brands'
 import IdeaCard from '../components/IdeaCard'
 import TrendingTopicsSelector from '../features/engagement/TrendingTopicsSelector'
 import { IconChevronLeft } from '@tabler/icons-react'
+import { BackButton } from '../components/ds'
 import { TOPIC_CONFIGS } from '../constants/topics'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
@@ -166,12 +167,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
       <div className="bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6">
           <div className="flex items-center gap-3 mb-3">
-            <button
-              onClick={() => navigate('/engagement-posts')}
-              className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
-            >
-              <IconChevronLeft className="w-5 h-5" />
-            </button>
+            <BackButton />
             <h1 className="text-xl md:text-2xl font-semibold text-neutral-950">Engagement Posts: {config.label}</h1>
           </div>
           <p className="text-sm text-neutral-600">{config.pageSubtitle ?? `Create engaging sports posts featuring ${config.label} players`}</p>

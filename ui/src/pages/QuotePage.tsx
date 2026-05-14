@@ -406,7 +406,7 @@ export function QuotePage() {
 
   function handleBack() {
     if (stage === "input") {
-      navigate("/engagement-posts");
+      if (window.history.length > 1) { navigate(-1); } else { navigate("/home"); }
     } else {
       setStage("input");
       setQuoteData(null);

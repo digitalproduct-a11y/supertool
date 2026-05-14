@@ -6,6 +6,7 @@ import { getCredentials, saveCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
 import { useBrand } from '../context/BrandContext'
 import type { ZernioPost } from '../types'
+import { BackButton } from '../components/ds'
 
 function formatScheduledTime(iso: string): { date: string; time: string } {
   const d = new Date(iso)
@@ -161,10 +162,13 @@ export function ZernioScheduledPostsPage() {
         {/* Page header */}
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Scheduled queue</h1>
-              <p className="text-neutral-500 mt-1 text-sm">View and manage all Facebook posts currently scheduled</p>
-              <p className="text-neutral-400 mt-1 text-xs">Note: rescheduling is not supported at the moment.</p>
+            <div className="flex items-center gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Scheduled queue</h1>
+                <p className="text-neutral-500 mt-1 text-sm">View and manage all Facebook posts currently scheduled</p>
+                <p className="text-neutral-400 mt-1 text-xs">Note: rescheduling is not supported at the moment.</p>
+              </div>
             </div>
             <button
               onClick={refetch}

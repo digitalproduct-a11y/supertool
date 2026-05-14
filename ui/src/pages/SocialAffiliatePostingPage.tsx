@@ -6,6 +6,7 @@ import { SocialAffiliateResultsMeta } from '../features/social-affiliate/SocialA
 import { SocialAffiliateThreadsSection } from '../features/social-affiliate/SocialAffiliateThreadsSection'
 import { SocialAffiliateFacebookSection } from '../features/social-affiliate/SocialAffiliateFacebookSection'
 import { Spinner } from '../components/ds/Spinner'
+import { BackButton } from '../components/ds'
 
 const LOADING_MESSAGES = [
   'Tengah cari info produk...',
@@ -56,7 +57,10 @@ export function SocialAffiliatePostingPage() {
       <div className="max-w-6xl mx-auto">
         {/* Page header */}
         <div className="mb-8">
-          <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Social Affiliate Posting</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <BackButton />
+            <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Social Affiliate Posting</h1>
+          </div>
           <p className="text-neutral-500 mt-1 text-sm">Generate Threads and Facebook content for Shopee affiliate products</p>
           <div className="mt-3 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
