@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { ScheduledPostsPage } from '../pages/ScheduledPostsPage'
 import { LatestNewsTab } from './LatestNewsTab'
-import { slugToBrand } from './NewsBankLanding'
+import { slugToBrand } from '../utils/brandSlug'
 
 type Tab = 'latest' | 'trending'
 
@@ -16,7 +16,7 @@ function NewsBankPage({ brand }: { brand: string }) {
       {/* Header */}
       <div className="bg-white border-b border-neutral-100 px-4 md:px-8 py-4 flex items-center gap-3">
         <button
-          onClick={() => navigate('/news-bank')}
+          onClick={() => navigate('/news-feed')}
           className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
         >
           <IconChevronLeft className="w-5 h-5" />
@@ -38,7 +38,7 @@ function NewsBankPage({ brand }: { brand: string }) {
                 : 'border-transparent text-neutral-400 hover:text-neutral-700'
             }`}
           >
-            Latest News
+            News Feed
           </button>
           <button
             onClick={() => setActiveTab('trending')}
@@ -67,6 +67,6 @@ function NewsBankPage({ brand }: { brand: string }) {
 
 export function NewsBankBrandPage() {
   const { brandSlug } = useParams<{ brandSlug: string }>()
-  const brand = slugToBrand(brandSlug ?? '')
+  const brand = slugToBrand(brandSlug ?? '') ?? ''
   return <NewsBankPage brand={brand} />
 }

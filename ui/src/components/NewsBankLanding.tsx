@@ -1,39 +1,8 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
-
-const BRANDS = [
-  'Astro Awani',
-  'Astro Ulagam',
-  'Era',
-  'Era Sabah',
-  'Era Sarawak',
-  'Gegar',
-  'Gempak',
-  'Goxuan',
-  'Hitz',
-  'Hotspot',
-  'Lite',
-  'Media Hiburan',
-  'Melody',
-  'Mingguan Wanita',
-  'Mix',
-  'MY',
-  'Raaga',
-  'Rojak Daily',
-  'Sinar',
-  'Stadium Astro',
-  'XUAN',
-  'Zayan',
-].sort()
-
-export function brandToSlug(brand: string): string {
-  return brand.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-}
-
-export function slugToBrand(slug: string): string {
-  return BRANDS.find(b => brandToSlug(b) === slug) ?? slug
-}
+import { BRANDS } from '../constants/brands'
+import { brandToSlug } from '../utils/brandSlug'
 
 export function NewsBankLanding() {
   const navigate = useNavigate()
@@ -42,7 +11,7 @@ export function NewsBankLanding() {
   // Auto-redirect non-Admin to their brand's news bank
   useEffect(() => {
     if (!isAdmin && selectedBrand && selectedBrand !== 'Admin') {
-      navigate(`/news-bank/${brandToSlug(selectedBrand)}`, { replace: true })
+      navigate(`/news-feed/${brandToSlug(selectedBrand)}`, { replace: true })
     }
   }, [selectedBrand, isAdmin, navigate])
 
@@ -74,7 +43,7 @@ export function NewsBankLanding() {
           {BRANDS.map((brand) => (
             <button
               key={brand}
-              onClick={() => navigate(`/news-bank/${brandToSlug(brand)}`)}
+              onClick={() => navigate(`/news-feed/${brandToSlug(brand)}`)}
               className="glass-card rounded-xl px-4 py-6 transition-all duration-200 text-left group flex items-center gap-3 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
             >
               <div className="flex-1 min-w-0">
