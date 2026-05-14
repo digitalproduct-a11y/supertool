@@ -763,13 +763,13 @@ function App() {
           </Layout>
         </RequireBrand>
       } />
-      {/* <Route path="/engagement-posts/gempak-entertainment" element={
+      <Route path="/engagement-posts/gempak-entertainment" element={
         <RequireBrand>
           <Layout {...layoutProps}>
             <EngagementPhotosPage topic="gempak-entertainment" />
           </Layout>
         </RequireBrand>
-      } /> */}
+      } />
       <Route path="/engagement-posts/badminton" element={
         <RequireBrand>
           <Layout {...layoutProps}>
