@@ -7,7 +7,6 @@ import { getBrandLogoUrl, getBrandHex, needsDarkBg, getEntityLabel } from '../co
 import {
   IconHome,
   IconStack2,
-  IconTrendingUp,
   IconNews,
   IconLink,
   IconFileText,
@@ -20,7 +19,7 @@ import {
   IconSwitchHorizontal,
 } from "@tabler/icons-react";
 
-type ToolId =
+export type ToolId =
   | 'home'
   | 'dashboard'
   | 'youtube-dashboard'
@@ -67,8 +66,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     section: "Tools",
     items: [
       { id: 'article-to-social', label: 'Article to Social Post', icon: IconStack2 },
-      { id: 'latest-news', label: 'Latest News', icon: IconNews },
-      { id: 'trending-news', label: 'Trending News', icon: IconTrendingUp },
+      { id: 'latest-news', label: 'News Feed', icon: IconNews },
       { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
     ],
   },
@@ -114,7 +112,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'article-to-social': 'Article to Social Post',
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',
-  'latest-news': 'Latest News',
+  'latest-news': 'News Feed',
   'trending-news': 'Trending News',
   'spike-news': 'Spike News',
   'affiliate-links': 'Shopee Affiliate Links',
