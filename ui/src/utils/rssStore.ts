@@ -53,6 +53,26 @@ function removeSession(key: string): void {
   } catch { /* ignore */ }
 }
 
+// ── HTML entity decoding ─────────────────────────────────────────────────────
+
+let _decoderEl: HTMLTextAreaElement | null = null
+function decodeHtmlEntities(text: string): string {
+  if (!text || (!text.includes('&') && !text.includes('&#'))) return text
+  if (!_decoderEl) _decoderEl = document.createElement('textarea')
+  _decoderEl.innerHTML = text
+  return _decoderEl.value
+}
+
+function decodeArticles(data: BrandFeedData[]): BrandFeedData[] {
+  for (const brand of data) {
+    for (const a of brand.articles) {
+      a.title = decodeHtmlEntities(a.title)
+      a.description = decodeHtmlEntities(a.description)
+    }
+  }
+  return data
+}
+
 // ── In-flight promise registry ────────────────────────────────────────────────
 
 let _inHousePromise: Promise<BrandFeedData[]> | null = null
@@ -84,6 +104,7 @@ export function fetchInHouseFeeds(webhookUrl: string): Promise<BrandFeedData[]> 
     })
     .then(data => {
       if (!Array.isArray(data)) throw new Error('Unexpected response format')
+      decodeArticles(data)
       writeSession(INHOUSE_CACHE_KEY, data)
       return data
     })
@@ -115,6 +136,7 @@ export function fetchCompetitorFeeds(webhookUrl: string): Promise<BrandFeedData[
     })
     .then(data => {
       if (!Array.isArray(data)) throw new Error('Unexpected response format')
+      decodeArticles(data)
       writeSession(COMPETITOR_CACHE_KEY, data)
       return data
     })
