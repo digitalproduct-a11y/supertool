@@ -607,8 +607,8 @@ export function LatestNewsTab({ brand }: { brand: string }) {
             <div className="space-y-3 pb-24">
               {[...Array(5)].map((_, idx) => (
                 <div key={idx} className="rounded-xl border border-neutral-100 bg-white p-4">
-                  <div className="flex gap-3">
-                    <div className="w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 animate-pulse" />
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="w-full sm:w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 animate-pulse" />
                     <div className="flex-1 space-y-2">
                       <div className="h-3 bg-neutral-100 rounded animate-pulse w-1/3" />
                       <div className="h-4 bg-neutral-100 rounded animate-pulse w-full" />
@@ -642,9 +642,9 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                       selected ? 'border-neutral-400 bg-neutral-50' : 'bg-white border-neutral-100 hover:border-neutral-200 hover:shadow-sm'
                     }`}
                   >
-                    <div className="flex gap-3 p-4">
+                    <div className="flex flex-col sm:flex-row gap-3 p-4">
                       {/* Thumbnail with checkbox overlay */}
-                      <div className="w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden relative">
+                      <div className="w-full sm:w-36 aspect-video shrink-0 rounded-lg bg-neutral-100 overflow-hidden relative">
                         {article.imageUrl ? (
                           <img
                             src={article.imageUrl}
