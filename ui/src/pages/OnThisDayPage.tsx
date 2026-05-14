@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import {
   IconChevronLeft,
   IconCalendar,
@@ -106,6 +107,7 @@ type Stage = 'list' | 'generate'
 
 export function OnThisDayPage() {
   const navigate = useNavigate()
+  const brandNavigate = useBrandNavigate()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const webhookUrl = import.meta.env.VITE_ONTHISDAY_URL as string | undefined
 
@@ -260,7 +262,7 @@ export function OnThisDayPage() {
       setEditedTitle('')
       setBrand('')
     } else {
-      if (window.history.length > 1) { navigate(-1) } else { navigate('/home') }
+      if (window.history.length > 1) { navigate(-1) } else { brandNavigate('/home') }
     }
   }
 

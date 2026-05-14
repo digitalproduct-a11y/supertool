@@ -11,6 +11,8 @@ import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
 import { useBrand } from '../context/BrandContext'
 import { useNavigate } from 'react-router-dom'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
+import { ArticleGenerateView } from '../components/ArticleGenerateView'
 import {
   fetchInHouseFeeds,
   fetchCompetitorFeeds as fetchCompetitorFeedsFromStore,
@@ -130,6 +132,7 @@ const TOOL_CARDS = [
     gradient: 'linear-gradient(135deg, #FFF0F7 0%, #FEF0FF 50%, #F8F0FF 100%)',
     icon: IconFlame,
     iconColor: '#FF3FBF',
+    image: '/entertainment-post-card.png',
     links: [
       { label: 'Malay Entertainment', path: '/engagement-posts/gempak-entertainment' },
     ],
@@ -141,6 +144,7 @@ const TOOL_CARDS = [
 export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   const { selectedBrand, isAdmin } = useBrand()
   const navigate = useNavigate()
+  const brandNavigate = useBrandNavigate()
   const { data, targets, loading, lastUpdated } = useDashboardData()
 
   // Use the latest date in the dataset as the window end (falls back to today)
@@ -240,6 +244,9 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
     },
   ]
 
+  // Generate post view
+  const [generateTarget, setGenerateTarget] = useState<ArticleWithBrand | null>(null)
+
   // News feed — seed from cache so navigating back never shows a loading flash
   const [news, setNews] = useState<ArticleWithBrand[]>(() => {
     const inhouse = readInHouseCache()
@@ -288,6 +295,21 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
     loadNews()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (generateTarget) {
+    return (
+      <main className="flex-1 pt-20 md:pt-10 flex flex-col min-h-0 overflow-hidden">
+        <ArticleGenerateView
+          article={generateTarget}
+          brand={selectedBrand ?? ''}
+          isCompetitor={generateTarget.isCompetitor}
+          autoGenerate={true}
+          backLabel="Back to Home"
+          onBack={() => setGenerateTarget(null)}
+        />
+      </main>
+    )
+  }
+
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -311,7 +333,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
           <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-lg font-bold text-neutral-950">Performance and Revenue</h2>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => brandNavigate('/dashboard')}
               className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
             >
               View details
@@ -482,7 +504,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                       {card.links.map((link, i) => (
                         <button
                           key={link.path + i}
-                          onClick={() => navigate(link.path, 'state' in link ? { state: link.state } : undefined)}
+                          onClick={() => brandNavigate(link.path, 'state' in link ? { state: link.state } : undefined)}
                           className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
                         >
                           <span className="text-sm text-neutral-600">{link.label}</span>
@@ -501,9 +523,9 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
           {/* Right: Latest news */}
           <div>
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-lg font-bold text-neutral-950">Latest News</h2>
+              <h2 className="text-lg font-bold text-neutral-950">News Feed</h2>
               <button
-                onClick={() => navigate('/news-bank')}
+                onClick={() => brandNavigate('/news-feed')}
                 className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
               >
                 See all
@@ -582,7 +604,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                         Read article <IconExternalLink className="w-3 h-3" />
                       </a>
                       <button
-                        onClick={() => navigate('/article-to-social', { state: { articleUrl: article.url } })}
+                        onClick={() => setGenerateTarget(article)}
                         className="text-xs font-semibold text-neutral-950 hover:text-neutral-600 transition"
                       >
                         Generate Post →

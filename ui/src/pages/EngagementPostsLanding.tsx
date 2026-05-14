@@ -1,210 +1,74 @@
 import {
-  IconFlame,
-  IconTrophy,
-  IconWorld,
-  IconMusicStar,
-  IconCurrency,
-  IconDroplet,
-  IconTrendingUp,
-  IconNews,
-  IconCalendar,
-  IconCloudRain,
-  IconBlockquote,
   IconBulb,
-  IconFeather,
-  IconMotorbike,
+  IconTrophy,
+  IconTrendingUp,
+  IconFlame,
 } from "@tabler/icons-react";
-import type React from "react";
-import { useBrand } from "../context/BrandContext";
+import { useBrandNavigate } from "../hooks/useBrandNavigate";
 import { BackButton } from "../components/ds";
 
-type ActiveTopicId =
-  | "engagement-photos"
-  | "ucl"
-  | "badminton"
-  | "motogp"
-  | "latest-fuel-price"
-  | "latest-currency-rate"
-  | "klci-index"
-  | "prime-talk"
-  | "on-this-day"
-  | "weather-malaysia"
-  | "quote"
-  | "didyouknow"
-  | "food-places"
-  | "gempak-entertainment";
-
-interface EngagementPostsLandingProps {
-  onSelectTopic: (id: ActiveTopicId) => void;
-}
-
-interface Topic {
-  id: string;
-  label: string;
-  description: string;
-  icon: React.ComponentType<{
-    className?: string;
-    style?: React.CSSProperties;
-  }>;
-  color: string;
-  comingSoon?: boolean;
-  hidden?: boolean;
-}
-
-interface Section {
-  label: string;
-  description: string;
-  topics: Topic[];
-}
-
-const sections: Section[] = [
+const TOOL_CARDS = [
   {
-    label: "Editorial",
-    description:
-      "Turn long-form articles and scripts into shareable image cards.",
-    topics: [
-      {
-        id: "didyouknow",
-        label: "Did You Know?",
-        description:
-          "Generate fun facts and interesting moments with context-based search",
-        icon: IconBulb,
-        color: "#F05A35",
-      },
-      {
-        id: "prime-talk",
-        label: "Prime Talk 《八点最热报》",
-        description:
-          "Turn Prime Talk episode scripts into Simplified Chinese Facebook image cards",
-        icon: IconNews,
-        color: "#F05A35",
-      },
-      {
-        id: "quote",
-        label: "Quote",
-        description:
-          "Extract the most powerful quote from any article and create a branded image",
-        icon: IconBlockquote,
-        color: "#F05A35",
-      },
-      {
-        id: "gempak-entertainment",
-        label: "Entertainment",
-        description:
-          "Generate showbiz and celebrity posts curated from Malaysian entertainment news",
-        icon: IconMusicStar,
-        color: "#F05A35",
-      },
+    title: "Fun Fact Post",
+    description: "Generate trivia cards and historical 'On This Day' posts for Malaysia — branded and ready to publish.",
+    gradient: "linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)",
+    icon: IconBulb,
+    iconColor: "#F05A35",
+    image: "/fun-fact-post-card.png",
+    links: [
+      { label: "Did You Know?", path: "/engagement-posts/didyouknow" },
+      { label: "On This Day", path: "/engagement-posts/on-this-day-malaysia" },
     ],
   },
   {
-    label: "Sports",
-    description:
-      "Create engaging posts across different sports leagues and tournaments.",
-    topics: [
-      {
-        id: "badminton",
-        label: "Badminton",
-        description: "Badminton tournament highlights and player features",
-        icon: IconFeather,
-        color: "#0055EE",
-      },
-      {
-        id: "ucl",
-        label: "Champions League",
-        description: "European football highlights and player comparisons",
-        icon: IconTrophy,
-        color: "#0055EE",
-      },
-      {
-        id: "engagement-photos",
-        label: "English Premier League",
-        description:
-          "Create engaging football posts featuring Premier League players and debates",
-        icon: IconFlame,
-        color: "#0055EE",
-      },
-      {
-        id: "motogp",
-        label: "MotoGP",
-        description: "MotoGP race results and championship standings",
-        icon: IconMotorbike,
-        color: "#0055EE",
-      },
+    title: "Sports Engagement Post",
+    description: "Create match-day graphics and fan engagement posts for EPL, Champions League, Badminton, and MotoGP.",
+    gradient: "linear-gradient(135deg, #EEF3FF 0%, #E8EEFF 50%, #F0F4FF 100%)",
+    icon: IconTrophy,
+    iconColor: "#0055EE",
+    image: "/sports-engagement-post-card.png",
+    links: [
+      { label: "EPL", path: "/engagement-posts/epl" },
+      { label: "Champions League", path: "/engagement-posts/ucl" },
+      { label: "Badminton", path: "/engagement-posts/badminton" },
+      { label: "MotoGP", path: "/engagement-posts/motogp" },
     ],
   },
   {
-    label: "Auto Publish",
-    description:
-      "Automated posts that go live daily or whenever data updates — no manual trigger needed.",
-    topics: [
-      {
-        id: "klci-index",
-        label: "KLCI Index Closing",
-        description: "Kuala Lumpur Composite Index daily closing",
-        icon: IconTrendingUp,
-        color: "#10B981",
-      },
-      {
-        id: "latest-currency-rate",
-        label: "Latest Currency Rate",
-        description: "Daily foreign exchange rates for major currencies",
-        icon: IconCurrency,
-        color: "#10B981",
-      },
-      {
-        id: "latest-fuel-price",
-        label: "Latest Fuel Price",
-        description: "Weekly Malaysian fuel price updates",
-        icon: IconDroplet,
-        color: "#10B981",
-      },
-      {
-        id: "on-this-day",
-        label: "On This Day — Malaysia",
-        description:
-          "Historical events from Malaysia — what happened today in history",
-        icon: IconCalendar,
-        color: "#10B981",
-      },
-      {
-        id: "weather-malaysia",
-        label: "Weather Malaysia",
-        description: "Generate daily weather forecast posts for all 16 states",
-        icon: IconCloudRain,
-        color: "#10B981",
-      },
+    title: "Information Post",
+    description: "Auto-generate daily infographics — KLCI index, currency rates, fuel prices, and weather forecasts.",
+    gradient: "linear-gradient(135deg, #ECFDF5 0%, #F0FDF9 50%, #F5FEFB 100%)",
+    icon: IconTrendingUp,
+    iconColor: "#10B981",
+    image: "/information-post-card.png",
+    links: [
+      { label: "KLCI Index", path: "/engagement-posts/klci-index" },
+      { label: "Currency Rate", path: "/engagement-posts/latest-currency-rate" },
+      { label: "Fuel Price", path: "/engagement-posts/latest-fuel-price" },
+      { label: "Weather Malaysia", path: "/engagement-posts/weather-malaysia" },
     ],
   },
   {
-    label: "Coming Soon",
-    description: "More exciting features coming soon.",
-    topics: [
-      {
-        id: "worldcup",
-        label: "International Football",
-        description: "World Cup and international tournament content",
-        icon: IconWorld,
-        color: "#00E5D4",
-        comingSoon: true,
-      },
-      {
-        id: "coming-soon-4",
-        label: "Celebrity News",
-        description: "Entertainment industry updates and celebrity features",
-        icon: IconMusicStar,
-        color: "#FF3FBF",
-        comingSoon: true,
-      },
+    title: "Entertainment Post",
+    description: "Generate eye-catching posts for trending celebrity news, drama buzz, and pop culture moments.",
+    gradient: "linear-gradient(135deg, #FFF0F7 0%, #FEF0FF 50%, #F8F0FF 100%)",
+    icon: IconFlame,
+    iconColor: "#FF3FBF",
+    image: "/entertainment-post-card.png",
+    links: [
+      { label: "Malay Entertainment", path: "/engagement-posts/gempak-entertainment" },
     ],
   },
 ];
 
+interface EngagementPostsLandingProps {
+  onSelectTopic: (id: string) => void;
+}
+
 export function EngagementPostsLanding({
-  onSelectTopic,
+  onSelectTopic: _onSelectTopic,
 }: EngagementPostsLandingProps) {
-  const { selectedBrand, isAdmin } = useBrand()
-  const canSeePrimeTalk = isAdmin || selectedBrand === 'Hotspot'
+  const brandNavigate = useBrandNavigate();
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
@@ -221,7 +85,6 @@ export function EngagementPostsLanding({
             Create captivating social media content across different topics and
             industries.
           </p>
-          {/* KULT gradient stripe — animated grow */}
           <div
             className="mt-6 h-[3px] rounded-full animate-stripe-grow"
             style={{
@@ -231,97 +94,68 @@ export function EngagementPostsLanding({
           />
         </div>
 
-        {/* Sections */}
-        <div className="space-y-12">
-          {sections.map((section) => {
+        {/* Tool cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {TOOL_CARDS.map((card) => {
+            const Icon = card.icon;
             return (
-              <div key={section.label}>
-                {/* Section header */}
-                <div className="mb-5">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-neutral-600">
-                    {section.label}
-                  </p>
-                  {section.description && (
-                    <p className="text-sm text-neutral-500 mt-0.5">
-                      {section.description}
-                    </p>
+              <div
+                key={card.title}
+                className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden"
+              >
+                {/* 16:9 illustration area */}
+                <div
+                  className="aspect-video flex items-center justify-center overflow-hidden"
+                  style={{ background: card.gradient }}
+                >
+                  {card.image ? (
+                    <img
+                      src={card.image}
+                      alt={card.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Icon
+                      className="w-12 h-12 opacity-40"
+                      style={{ color: card.iconColor }}
+                    />
                   )}
                 </div>
-
-                {/* Cards grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                  {section.topics
-                    .filter((t) => !t.hidden && (t.id !== 'prime-talk' || canSeePrimeTalk))
-                    .map((topic) => {
-                      const Icon = topic.icon;
-
-                      if (topic.comingSoon) {
-                        return (
-                          <div
-                            key={topic.label}
-                            className="glass-card rounded-xl overflow-hidden cursor-default opacity-60"
-                          >
-                            <div className="px-5 pt-5 pb-2 flex items-center justify-between">
-                              <Icon
-                                className="w-8 h-8 opacity-25"
-                                style={{ color: topic.color }}
-                              />
-                              <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-100/80 rounded px-2 py-0.5">
-                                Soon
-                              </span>
-                            </div>
-                            <div className="p-5">
-                              <h2 className="font-display text-base font-semibold text-neutral-400">
-                                {topic.label}
-                              </h2>
-                              <p className="text-xs text-neutral-300 mt-1">
-                                {topic.description}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <button
-                          key={topic.label}
-                          onClick={() =>
-                            onSelectTopic(topic.id as ActiveTopicId)
-                          }
-                          className="glass-card rounded-xl overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] transition-all duration-200 text-left group"
-                        >
-                          <div className="px-5 pt-5 pb-2 flex items-center justify-between">
-                            <Icon
-                              className="w-9 h-9"
-                              style={{ color: topic.color }}
-                            />
-                            <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M5 12h14M12 5l7 7-7 7"
-                                />
-                              </svg>
-                            </span>
-                          </div>
-                          <div className="p-5">
-                            <h2 className="font-display text-base font-semibold text-neutral-950">
-                              {topic.label}
-                            </h2>
-                            <p className="text-xs text-neutral-500 mt-1">
-                              {topic.description}
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    })}
+                {/* Title + description */}
+                <div className="px-5 pt-4 pb-2">
+                  <h3 className="font-display text-base font-semibold text-neutral-950">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
+                    {card.description}
+                  </p>
+                </div>
+                {/* Link list */}
+                <div className="pb-3">
+                  {card.links.map((link, i) => (
+                    <button
+                      key={link.path + i}
+                      onClick={() => brandNavigate(link.path)}
+                      className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+                    >
+                      <span className="text-sm text-neutral-600">
+                        {link.label}
+                      </span>
+                      <svg
+                        className="w-4 h-4 text-neutral-300 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  ))}
                 </div>
               </div>
             );

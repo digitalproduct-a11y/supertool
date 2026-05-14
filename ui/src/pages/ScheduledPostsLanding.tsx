@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import { RECOMMENDED_SOURCES } from '../constants/scheduledPostSources'
 import { BackButton } from '../components/ds'
 
@@ -104,7 +104,7 @@ function computeArticleCounts(articles: { source: string }[]): Record<string, nu
 }
 
 export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand: string) => void }) {
-  const navigate = useNavigate()
+  const brandNavigate = useBrandNavigate()
   const [articleCounts, setArticleCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(false)
 
@@ -137,7 +137,7 @@ export function ScheduledPostsLanding({ onSelectBrand }: { onSelectBrand: (brand
     if (DISABLED_BRANDS.has(brand)) return
 
     onSelectBrand(brand)
-    navigate(`/trending-news/${brand.toLowerCase().replace(/\s+/g, '-')}`)
+    brandNavigate('/trending-news')
   }
 
   return (

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
@@ -135,6 +136,7 @@ function CopyButton({ text }: { text: string }) {
 // ─── Generate View ────────────────────────────────────────────────────────────
 
 export function GenerateView({ source, onBack }: GenerateViewProps) {
+  const postQueuePath = useBrandPath('/post-queue')
   const detectedBrand = detectBrandFromUrl(source.articleUrl)
   const isBrandMismatch = !!detectedBrand && source.brand && detectedBrand !== source.brand
 
@@ -522,7 +524,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
                       <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
                       <p className="text-xs text-neutral-400">
                         To view or delete your scheduled post, check{' '}
-                        <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                        <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
                           here
                         </Link>.
                       </p>

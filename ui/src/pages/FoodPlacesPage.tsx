@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import {
   IconChevronLeft,
   IconDownload,
@@ -47,7 +47,7 @@ interface ResultData {
 }
 
 export function FoodPlacesPage() {
-  const navigate = useNavigate();
+  const brandNavigate = useBrandNavigate()
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
   const webhookUrl = import.meta.env.VITE_FOOD_PLACES_WEBHOOK_URL as
     | string
@@ -310,7 +310,7 @@ export function FoodPlacesPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={() => navigate("/engagement-posts")}
+              onClick={() => brandNavigate("/engagement-posts")}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />

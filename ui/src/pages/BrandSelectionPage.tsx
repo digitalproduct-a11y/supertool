@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
 import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity, type BrandName } from '../constants/brands'
+import { brandToSlug } from '../utils/brandSlug'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
 
 export function BrandSelectionPage() {
@@ -11,7 +12,7 @@ export function BrandSelectionPage() {
 
   useEffect(() => {
     if (selectedBrand) {
-      navigate('/home', { replace: true })
+      navigate(`/${selectedBrand === 'Admin' ? 'admin' : brandToSlug(selectedBrand as string)}/home`, { replace: true })
     }
   }, [selectedBrand, navigate])
 
@@ -32,7 +33,7 @@ export function BrandSelectionPage() {
 
   const handleSelectBrand = (brand: BrandName) => {
     setSelectedBrand(brand)
-    navigate('/home')
+    navigate(`/${brandToSlug(brand)}/home`)
   }
 
   return (
@@ -188,7 +189,7 @@ export function BrandSelectionPage() {
         <AdminPasscodeModal
           onSuccess={() => {
             setSelectedBrand('Admin')
-            navigate('/home')
+            navigate('/admin/home')
           }}
           onClose={() => setShowAdminModal(false)}
         />

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 import { IconUpload } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
@@ -22,6 +23,7 @@ export function ResultPreview({
   isRunning,
   onPostDraft,
 }: ResultPreviewProps) {
+  const postQueuePath = useBrandPath('/post-queue')
   const [title, setTitle] = useState(result.title ?? '')
   const [committedTitle, setCommittedTitle] = useState(result.title ?? '')
   const [caption, setCaption] = useState(result.caption ?? '')
@@ -371,7 +373,7 @@ export function ResultPreview({
               <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
               <p className="text-xs text-neutral-400">
                 To view or delete your scheduled post, check{' '}
-                <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
                   here
                 </Link>.
               </p>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 import type { EngagementIdea } from '../types'
 import { BRAND_LOGO_IDS } from '../constants/brands'
 import { TOPIC_CONFIGS } from '../constants/topics'
@@ -77,6 +78,7 @@ export default function IdeaCard({
   useFabricCanvas = false,
   topic = 'epl',
 }: IdeaCardProps) {
+  const postQueuePath = useBrandPath('/post-queue')
   const [showPhotoModal, setShowPhotoModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [isScheduling, setIsScheduling] = useState(false)
@@ -415,7 +417,7 @@ export default function IdeaCard({
                     <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
                     <p className="text-xs text-neutral-400">
                       To view or delete your scheduled post, check{' '}
-                      <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                      <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
                         here
                       </Link>.
                     </p>

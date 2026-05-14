@@ -146,6 +146,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
   const [activeSection, setActiveSection] = useState<'astro' | 'competitors'>('astro')
   const [competitorsFetched, setCompetitorsFetched] = useState(false)
   const [competitorsLoading, setCompetitorsLoading] = useState(false)
+  const HIDDEN_COMPETITORS = useMemo(() => new Set(['OhMedia']), [])
   const [expandedAstro, setExpandedAstro] = useState(false)
   const [expandedTitles, setExpandedTitles] = useState<Set<string>>(new Set())
 
@@ -262,17 +263,21 @@ export function LatestNewsTab({ brand }: { brand: string }) {
     return map
   }, [allBrands])
 
+  const visibleCompetitorBrands = useMemo(
+    () => (Array.isArray(competitorBrands) ? competitorBrands : []).filter(b => !HIDDEN_COMPETITORS.has(b?.brand)),
+    [competitorBrands, HIDDEN_COMPETITORS]
+  )
+
   const competitorCountsByBrand = useMemo(() => {
     const map: Record<string, number> = {}
-    const brands = (Array.isArray(competitorBrands) ? competitorBrands : []) || []
     const cutoff = Date.now() - 24 * 60 * 60 * 1000
-    for (const b of brands) {
+    for (const b of visibleCompetitorBrands) {
       if (b?.brand && Array.isArray(b.articles)) {
         map[b.brand] = b.articles.filter(a => new Date(a?.publishedAt || 0).getTime() >= cutoff).length
       }
     }
     return map
-  }, [competitorBrands])
+  }, [visibleCompetitorBrands])
 
   const totalCount = useMemo(
     () => (Array.isArray(allBrands) ? allBrands : []).reduce((s, b) => s + (Array.isArray(b?.articles) ? b.articles.length : 0), 0),
@@ -281,11 +286,11 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
   const totalCompetitorCount = useMemo(() => {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000
-    return (Array.isArray(competitorBrands) ? competitorBrands : []).reduce((s, b) => {
+    return visibleCompetitorBrands.reduce((s, b) => {
       if (!Array.isArray(b?.articles)) return s
       return s + b.articles.filter(a => new Date(a?.publishedAt || 0).getTime() >= cutoff).length
     }, 0)
-  }, [competitorBrands])
+  }, [visibleCompetitorBrands])
 
   // Merge articles for selected brand, attach sourceBrand, filter by search
   const filteredArticles = useMemo<ArticleWithBrand[]>(() => {
@@ -315,10 +320,9 @@ export function LatestNewsTab({ brand }: { brand: string }) {
 
   // Competitor articles
   const competitorFilteredArticles = useMemo<ArticleWithBrand[]>(() => {
-    const brands = (Array.isArray(competitorBrands) ? competitorBrands : []) || []
     const source = competitorSelectedBrand === 'all'
-      ? brands
-      : brands.filter(b => b?.brand === competitorSelectedBrand)
+      ? visibleCompetitorBrands
+      : visibleCompetitorBrands.filter(b => b?.brand === competitorSelectedBrand)
 
     const cutoff = Date.now() - 24 * 60 * 60 * 1000
     const merged = source
@@ -338,7 +342,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
       a?.title?.toLowerCase?.().includes(q) ||
       a?.description?.toLowerCase?.().includes(q)
     )
-  }, [competitorBrands, competitorSelectedBrand, searchQuery])
+  }, [visibleCompetitorBrands, competitorSelectedBrand, searchQuery])
 
   const handleBulkGenerate = useCallback(() => {
     const articles = (activeSection === 'competitors' ? competitorFilteredArticles : filteredArticles) || []

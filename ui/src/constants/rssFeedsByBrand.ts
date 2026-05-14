@@ -31,7 +31,7 @@ export const BRAND_GROUPS: { label: string; brands: string[] }[] = [
 
 export const COMPETITOR_BRANDS = [
   'ELLE', 'ETtoday 即時新聞',
-  'FMT', 'Harian Metro', 'Kosmo', 'LobakMerah', 'MalayMail',
-  'mStar', 'OhMedia', 'Oriental Daily', 'SAYS.com', 'SoccerNews',
+  'FMT', 'Harian Metro', 'Kosmo', 'LobakMerah', 'MalayMail', 'mStar',
+  'Oriental Daily', 'SAYS.com', 'SoccerNews',
   'Sportbible', 'WeirdKaya', 'WOB', 'Murai',
 ]

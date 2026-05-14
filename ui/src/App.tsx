@@ -71,7 +71,6 @@ const pathToTool: Record<string, ToolId> = {
   '/article-to-carousel': 'photo-carousel',
   '/news-feed': 'latest-news',
   '/trending-news': 'trending-news',
-  '/trending-news-to-fb': 'trending-news',
   '/spike-news': 'spike-news',
   '/affiliate-links': 'affiliate-links',
   '/affiliate-article-editor': 'article-generator',

@@ -15,7 +15,7 @@ export function LatestNewsPage() {
             <div className="flex items-center gap-3">
               <BackButton />
               <div>
-                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">Latest News</h1>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">News Feed</h1>
                 <p className="text-neutral-500 mt-1 text-sm">Browse and generate posts from articles published in the last 24 hours</p>
               </div>
             </div>

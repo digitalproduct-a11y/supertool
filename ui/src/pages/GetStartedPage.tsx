@@ -48,7 +48,7 @@ export function GetStartedPage() {
         </p>
 
         <button
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/")}
           className="mt-10 px-10 py-4 rounded-full bg-white text-neutral-950 font-display font-bold text-lg
                      hover:scale-[1.03] active:scale-[0.97] transition-transform
                      shadow-[0_8px_32px_rgba(0,0,0,0.35)]"

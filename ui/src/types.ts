@@ -105,6 +105,7 @@ export interface TopicConfig {
   subtitleLimit?: number
   captionLimit?: number
   // Optional per-topic copy overrides. Defaults match EPL/UCL (sports voice).
+  introDescription?: string     // Short description shown on the intro card
   pageSubtitle?: string         // Hero subtitle under the page title
   loadingEmoji?: string         // Emoji shown on loading panels (default ⚽)
   fetchingTitle?: string        // e.g. "Fetching Trending News" / "Fetching Entertainment News"

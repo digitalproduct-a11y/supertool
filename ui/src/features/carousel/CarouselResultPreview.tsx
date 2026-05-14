@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useBrandPath } from '../../hooks/useBrandNavigate'
 import JSZip from 'jszip'
 import type { CarouselResult } from '../../types'
 import { toast } from '../../hooks/useToast'
@@ -22,6 +23,7 @@ interface CarouselResultPreviewProps {
 }
 
 export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPreviewProps) {
+  const postQueuePath = useBrandPath('/post-queue')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [replacements, setReplacements] = useState<Map<string, ImageReplacement>>(new Map())
@@ -688,7 +690,7 @@ export function CarouselResultPreview({ result, onPostDraft }: CarouselResultPre
             <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
             <p className="text-xs text-neutral-400">
               To view or delete your scheduled post, check{' '}
-              <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">here</Link>.
+              <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">here</Link>.
             </p>
           </div>
         )}

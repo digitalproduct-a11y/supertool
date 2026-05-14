@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 import { IconUpload, IconDownload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
@@ -53,6 +54,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
+  const postQueuePath = useBrandPath('/post-queue')
   const [editTitle, setEditTitle] = useState(post.title)
   const [committedTitle, setCommittedTitle] = useState(post.title)
   const [editCaption, setEditCaption] = useState(post.caption)
@@ -335,7 +337,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
                 <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
                 <p className="text-xs text-neutral-400">
                   To view or delete your scheduled post, check{' '}
-                  <Link to="/post-queue" className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                  <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
                     here
                   </Link>.
                 </p>

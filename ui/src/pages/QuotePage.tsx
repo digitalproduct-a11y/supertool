@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBrand } from '../context/BrandContext'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import {
   IconChevronLeft,
   IconBlockquote,
@@ -72,6 +73,7 @@ const LOADING_STEPS = [
 
 export function QuotePage() {
   const navigate = useNavigate();
+  const brandNavigate = useBrandNavigate()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const [url, setUrl] = useState("");
   const [brand, setBrand] = useState((!isAdmin && globalBrand) ? globalBrand : "");
@@ -406,7 +408,7 @@ export function QuotePage() {
 
   function handleBack() {
     if (stage === "input") {
-      if (window.history.length > 1) { navigate(-1); } else { navigate("/home"); }
+      if (window.history.length > 1) { navigate(-1); } else { brandNavigate("/home"); }
     } else {
       setStage("input");
       setQuoteData(null);

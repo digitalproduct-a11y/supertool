@@ -23,7 +23,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   const { ideas, setIdeas, isLoading, error, generate, photosByPlayerClub, topics, isFetchingTopics, fetchTrendingTopics } = useEngagementPhotos()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const [selectedBrand, setSelectedBrand] = useState<string>((!isAdmin && globalBrand) ? globalBrand : '')
-  const [stage, setStage] = useState<'brand-select' | 'select-topics' | 'review'>('brand-select')
+  const [stage, setStage] = useState<'intro' | 'brand-select' | 'select-topics' | 'review'>('intro')
   async function handleScheduleOnFB(previewUrl: string, caption: string, brand: string, scheduledFor?: string, passcode?: string): Promise<{ success: boolean; message: string }> {
     const resolvedPasscode = passcode ?? getCredentials(brand.toLowerCase())?.passcode
     if (!resolvedPasscode) return { success: false, message: 'No passcode.' }
@@ -176,6 +176,50 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+        {stage === 'intro' && !isFetchingTopics && (
+          <div className="max-w-lg mx-auto">
+            <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-8 text-center space-y-4">
+              <p className="text-sm text-neutral-600">{config.introDescription ?? config.pageSubtitle ?? `Create engaging posts featuring ${config.label}`}</p>
+              {(isAdmin || !globalBrand) && (
+                <div className="text-left">
+                  <label className="block text-sm font-medium text-neutral-950 mb-2">Select Brand</label>
+                  <div className="relative">
+                    <select
+                      value={selectedBrand}
+                      onChange={(e) => setSelectedBrand(e.target.value)}
+                      className="w-full px-4 py-3 pr-10 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer transition"
+                    >
+                      <option value="">Select a brand...</option>
+                      {BRANDS.map((brand) => (
+                        <option key={brand} value={brand}>{brand}</option>
+                      ))}
+                    </select>
+                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={handleFetchTrendingTopics}
+                disabled={!selectedBrand || isFetchingTopics || isLoading}
+                className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
+              >
+                Generate Post
+              </button>
+              {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}
+            </div>
+          </div>
+        )}
+
+        {stage === 'intro' && isFetchingTopics && (
+          <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
+            <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? config.loadingIcon ?? '⚽'}</div>
+            <p className="text-sm font-semibold text-neutral-900">{config.fetchingTitle ?? 'Fetching Trending News'}</p>
+            <p className="text-xs text-neutral-500">{config.fetchingSubtext ?? 'Scanning RSS feeds and curating stories...'}</p>
+          </div>
+        )}
+
         {stage === 'brand-select' && isFetchingTopics && (
           <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-10 text-center space-y-4">
             <div className="text-4xl inline-block animate-bounce">{config.loadingEmoji ?? config.loadingIcon ?? '⚽'}</div>
@@ -253,11 +297,11 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
           <div className="max-w-3xl mx-auto">
             <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-6">
               <button
-                onClick={() => setStage('brand-select')}
+                onClick={() => setStage('intro')}
                 className="mb-4 text-sm text-neutral-600 hover:text-neutral-950 transition flex items-center gap-1"
               >
                 <IconChevronLeft className="w-4 h-4" />
-                Back to brand selection
+                Back
               </button>
               {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm mb-4">{error}</div>}
               <TrendingTopicsSelector

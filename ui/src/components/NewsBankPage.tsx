@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import { IconChevronLeft } from '@tabler/icons-react'
 import { ScheduledPostsPage } from '../pages/ScheduledPostsPage'
 import { LatestNewsTab } from './LatestNewsTab'
@@ -8,7 +9,7 @@ import { slugToBrand } from '../utils/brandSlug'
 type Tab = 'latest' | 'trending'
 
 function NewsBankPage({ brand }: { brand: string }) {
-  const navigate = useNavigate()
+  const brandNavigate = useBrandNavigate()
   const [activeTab, setActiveTab] = useState<Tab>('latest')
 
   return (
@@ -16,7 +17,7 @@ function NewsBankPage({ brand }: { brand: string }) {
       {/* Header */}
       <div className="bg-white border-b border-neutral-100 px-4 md:px-8 py-4 flex items-center gap-3">
         <button
-          onClick={() => navigate('/news-feed')}
+          onClick={() => brandNavigate('/news-feed')}
           className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
         >
           <IconChevronLeft className="w-5 h-5" />

@@ -21,6 +21,7 @@ import { ImageCropAdjuster, type CropRegion } from '../features/quote/ImageCropA
 import { TABLOID_QUOTE_CANVAS_CONFIG } from '../config/quoteCanvasConfig'
 import type { QuickFactItem, CarouselResult, CarouselImage } from '../types'
 import { CarouselResultPreview } from '../features/carousel/CarouselResultPreview'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -421,6 +422,7 @@ export function ArticleToSocialPage() {
   const { selectedBrand, isAdmin } = useBrand()
   const location = useLocation()
   const navigate = useNavigate()
+  const brandNavigate = useBrandNavigate()
 
   const [articleUrl, setArticleUrl] = useState<string>(
     (location.state as { articleUrl?: string } | null)?.articleUrl ?? ''
@@ -665,7 +667,7 @@ export function ArticleToSocialPage() {
         {/* ── Results stage ── */}
         {stage === 'results' && (
           <div>
-            <button onClick={() => { setStage('input'); navigate('/article-to-social', { replace: true }) }}
+            <button onClick={() => { setStage('input'); brandNavigate('/article-to-social', { replace: true }) }}
               className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition mb-6">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

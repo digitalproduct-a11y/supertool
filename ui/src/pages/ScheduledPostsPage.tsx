@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import { IconChevronLeft, IconRefresh, IconSearch, IconChevronRight, IconExternalLink } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { callGenerateWebhook } from '../components/GeneratePostView'
@@ -125,6 +126,7 @@ function BulkItemPlaceholder({ result }: { result: GeneratedResult }) {
 
 export function ScheduledPostsPage({ brand, embedded = false }: { brand: string; embedded?: boolean }) {
   const navigate = useNavigate()
+  const brandNavigate = useBrandNavigate()
 
   const rawBrand = brand
     .split('-')
@@ -284,7 +286,7 @@ export function ScheduledPostsPage({ brand, embedded = false }: { brand: string;
         <div className="px-4 md:px-8 pb-4 shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <button
-              onClick={view !== 'browse' ? handleBack : () => { if (window.history.length > 1) { navigate(-1); } else { navigate('/home'); } }}
+              onClick={view !== 'browse' ? handleBack : () => { if (window.history.length > 1) { navigate(-1); } else { brandNavigate('/home'); } }}
               className="p-2 hover:bg-neutral-100 rounded-lg transition text-neutral-600 hover:text-neutral-950"
             >
               <IconChevronLeft className="w-5 h-5" />

@@ -1,14 +1,16 @@
 import { useNavigate } from 'react-router-dom'
 import { IconChevronLeft } from '@tabler/icons-react'
+import { useBrandNavigate } from '../../hooks/useBrandNavigate'
 
 export function BackButton() {
   const navigate = useNavigate()
+  const brandNavigate = useBrandNavigate()
 
   function handleBack() {
     if (window.history.length > 1) {
       navigate(-1)
     } else {
-      navigate('/home')
+      brandNavigate('/home')
     }
   }
 
