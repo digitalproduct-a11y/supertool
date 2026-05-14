@@ -1,8 +1,6 @@
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
-import type { ReactNode } from 'react'
-import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
-import { Sidebar } from './components/Sidebar'
 import { HomePage } from './pages/HomePage'
 import { AffiliateLinksPage } from './pages/AffiliateLinksPage'
 import { ArticleGeneratorPage } from './pages/ArticleGeneratorPage'
@@ -13,9 +11,7 @@ import { EngagementPostsLanding } from './pages/EngagementPostsLanding'
 import { LatestCurrencyRatePage } from './pages/LatestCurrencyRatePage'
 import { LatestFuelPricePage } from './pages/LatestFuelPricePage'
 import { KLCIIndexPage } from './pages/KLCIIndexPage'
-import { ScheduledPostsPage } from './pages/ScheduledPostsPage'
-import { NewsBankLanding } from './components/NewsBankLanding'
-import { NewsBankBrandPage } from './components/NewsBankPage'
+import { BrandLayout } from './components/BrandLayout'
 import { ShopeeTopProductsPage } from './pages/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './pages/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './pages/SpikeNewsPage'
@@ -46,7 +42,6 @@ import { PreviewPanel } from './features/article/PreviewPanel'
 import { CarouselPreviewPanel } from './features/carousel/CarouselPreviewPanel'
 import { HistoryPanel } from './components/HistoryPanel'
 import { BrandSelectionPage } from './pages/BrandSelectionPage'
-import { useBrand } from './context/BrandContext'
 import { GetStartedPage } from './pages/GetStartedPage'
 import { GuideModal } from './components/ds/GuideModal'
 import { Spinner } from './components/ds/Spinner'
@@ -74,7 +69,7 @@ const pathToTool: Record<string, ToolId> = {
   '/article-to-social': 'article-to-social',
   '/article-to-fb': 'fb-post',
   '/article-to-carousel': 'photo-carousel',
-  '/latest-news': 'latest-news',
+  '/news-feed': 'latest-news',
   '/trending-news': 'trending-news',
   '/trending-news-to-fb': 'trending-news',
   '/spike-news': 'spike-news',
@@ -85,7 +80,6 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/gempak-entertainment': 'engagement-photos',
   '/engagement-posts/badminton': 'engagement-photos',
   '/engagement-posts/motogp': 'engagement-photos',
-  '/news-bank': 'latest-news',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
@@ -100,7 +94,7 @@ const pathToTool: Record<string, ToolId> = {
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
 function getActiveTool(pathname: string): ToolId {
-  if (pathname.startsWith('/latest-news') || pathname.startsWith('/news-bank')) {
+  if (pathname.startsWith('/news-feed')) {
     return 'latest-news'
   }
   if (pathname.startsWith('/trending-news')) {
@@ -120,14 +114,14 @@ const toolToPath: Record<ToolId, string> = {
   'article-to-social': '/article-to-social',
   'fb-post': '/article-to-fb',
   'photo-carousel': '/article-to-carousel',
-  'latest-news': '/latest-news',
+  'latest-news': '/news-feed',
   'trending-news': '/trending-news',
   'spike-news': '/spike-news',
   'affiliate-links': '/affiliate-links',
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-posts',
   'engagement-photos': '/engagement-posts/epl',
-  'scheduled-posts': '/latest-news',
+  'scheduled-posts': '/news-feed',
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
@@ -140,23 +134,6 @@ const toolToPath: Record<ToolId, string> = {
   'youtube-dashboard': '/youtube-dashboard',
 }
 
-const topicToPath: Record<string, string> = {
-  'engagement-photos': '/engagement-posts/epl',
-  'ucl': '/engagement-posts/ucl',
-  'latest-currency-rate': '/engagement-posts/latest-currency-rate',
-  'latest-fuel-price': '/engagement-posts/latest-fuel-price',
-  'klci-index': '/engagement-posts/klci-index',
-  'prime-talk': '/engagement-photos/prime-talk',
-  'shopee-top-products': '/shopee-top-products',
-  'on-this-day': '/engagement-posts/on-this-day-malaysia',
-  'weather-malaysia': '/engagement-posts/weather-malaysia',
-  'quote': '/engagement-posts/quote',
-  'didyouknow': '/engagement-posts/didyouknow',
-  // 'food-places': '/engagement-posts/food-places',
-  'gempak-entertainment': '/engagement-posts/gempak-entertainment',
-  'badminton': '/engagement-posts/badminton',
-  'motogp': '/engagement-posts/motogp',
-}
 
 // ─── Spike inbox badge helpers ────────────────────────────────────────────────
 
@@ -171,38 +148,6 @@ function saveSpikeSeenUrls(urls: string[]): void {
 
 
 
-function RequireBrand({ children }: { children: ReactNode }) {
-  const { selectedBrand } = useBrand()
-  if (!selectedBrand) return <Navigate to="/" replace />
-  return <>{children}</>
-}
-
-function ScheduledPostsBrandPage() {
-  const { brandSlug } = useParams<{ brandSlug: string }>()
-  return <ScheduledPostsPage brand={brandSlug || ''} />
-}
-
-function Layout({ children, isSidebarCollapsed, onCollapsedChange }: {
-  children: React.ReactNode
-  isSidebarCollapsed: boolean
-  onCollapsedChange: (v: boolean) => void
-}) {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const activeTool = getActiveTool(location.pathname)
-
-  return (
-    <div className={`min-h-screen bg-[#f7f7f6] transition-[padding] duration-300 ${isSidebarCollapsed ? 'md:pl-0' : 'md:pl-60'}`}>
-      <Sidebar
-        activeTool={activeTool}
-        onToolChange={(id) => navigate(toolToPath[id])}
-        isCollapsed={isSidebarCollapsed}
-        onCollapsedChange={onCollapsedChange}
-      />
-      {children}
-    </div>
-  )
-}
 
 function FbPostPage() {
   const [state, setState] = useState<AppState>('idle')
@@ -661,15 +606,9 @@ function CarouselPage() {
 }
 
 function App() {
-  const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   function markSpikeRead(urls: string[]) {
     saveSpikeSeenUrls(urls)
-  }
-
-  const layoutProps = {
-    isSidebarCollapsed,
-    onCollapsedChange: setIsSidebarCollapsed,
   }
 
   return (
@@ -678,252 +617,61 @@ function App() {
     <Routes>
       <Route path="/" element={<BrandSelectionPage />} />
       <Route path="/start" element={<GetStartedPage />} />
-      <Route path="/home" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <HomePage onToolSelect={(id) => navigate(toolToPath[id as ToolId] ?? '/home')} />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/article-to-social" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <ArticleToSocialPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/article-to-fb" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <FbPostPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/article-to-carousel" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <CarouselPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/latest-news" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <LatestNewsPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/trending-news" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <TrendingSpikePage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/trending-news-to-fb" element={<Navigate to="/trending-news" replace />} />
-      <Route path="/spike-news" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <SpikeNewsPage onMarkRead={markSpikeRead} />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/affiliate-links" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <AffiliateLinksPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/affiliate-article-editor" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <EngagementPostsLanding onSelectTopic={(id) => navigate(topicToPath[id])} />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/epl" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <EngagementPhotosPage topic="epl" />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/ucl" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <EngagementPhotosPage topic="ucl" />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/gempak-entertainment" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <EngagementPhotosPage topic="gempak-entertainment" />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/badminton" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <EngagementPhotosPage topic="badminton" />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/motogp" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <EngagementPhotosPage topic="motogp" />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/worldcup" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <EngagementPhotosPage topic="worldcup" />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/latest-currency-rate" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <LatestCurrencyRatePage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/latest-fuel-price" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <LatestFuelPricePage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/klci-index" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <KLCIIndexPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/news-bank" element={<Navigate to="/latest-news" replace />} />
-      <Route path="/trending-news/:brandSlug" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <ScheduledPostsBrandPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/news-bank" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <NewsBankLanding />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/news-bank/:brandSlug" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <NewsBankBrandPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/shopee-top-products" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <ShopeeTopProductsPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/post-queue" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <ZernioScheduledPostsPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/social-affiliate-posting" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <SocialAffiliatePostingPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/quick-fact" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <QuickFactPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-photos/prime-talk" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <PrimeTalkPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/didyouknow" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <DidYouKnowPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/on-this-day-malaysia" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
-              <OnThisDayPage />
-            </Suspense>
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/weather-malaysia" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
-              <WeatherMalaysiaPage />
-            </Suspense>
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/engagement-posts/quote" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
-              <QuotePage />
-            </Suspense>
-          </Layout>
-        </RequireBrand>
-      } />
-      {/* <Route path="/engagement-posts/food-places" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
-              <FoodPlacesPage />
-            </Suspense>
-          </Layout>
-        </RequireBrand>
-      } /> */}
-      <Route path="/dashboard" element={
-        <RequireBrand>
-          <Layout {...layoutProps}>
-            <DashboardPage />
-          </Layout>
-        </RequireBrand>
-      } />
-      <Route path="/youtube-dashboard" element={
-        <Layout {...layoutProps}>
-          <YouTubeDashboardPage />
-        </Layout>
-      } />
+
+      <Route path="/:brandSlug" element={
+        <BrandLayout
+          isSidebarCollapsed={isSidebarCollapsed}
+          onCollapsedChange={setIsSidebarCollapsed}
+          toolToPath={toolToPath}
+          getActiveTool={getActiveTool}
+        />
+      }>
+        <Route path="home" element={<HomePage onToolSelect={() => {}} />} />
+        <Route path="article-to-social" element={<ArticleToSocialPage />} />
+        <Route path="article-to-fb" element={<FbPostPage />} />
+        <Route path="article-to-carousel" element={<CarouselPage />} />
+        <Route path="news-feed" element={<LatestNewsPage />} />
+        <Route path="trending-news" element={<TrendingSpikePage />} />
+        <Route path="spike-news" element={<SpikeNewsPage onMarkRead={markSpikeRead} />} />
+        <Route path="affiliate-links" element={<AffiliateLinksPage />} />
+        <Route path="affiliate-article-editor" element={<ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />} />
+        <Route path="engagement-posts" element={<EngagementPostsLanding onSelectTopic={() => {}} />} />
+        <Route path="engagement-posts/epl" element={<EngagementPhotosPage topic="epl" />} />
+        <Route path="engagement-posts/ucl" element={<EngagementPhotosPage topic="ucl" />} />
+        <Route path="engagement-posts/gempak-entertainment" element={<EngagementPhotosPage topic="gempak-entertainment" />} />
+        <Route path="engagement-posts/badminton" element={<EngagementPhotosPage topic="badminton" />} />
+        <Route path="engagement-posts/motogp" element={<EngagementPhotosPage topic="motogp" />} />
+        <Route path="engagement-posts/worldcup" element={<EngagementPhotosPage topic="worldcup" />} />
+        <Route path="engagement-posts/latest-currency-rate" element={<LatestCurrencyRatePage />} />
+        <Route path="engagement-posts/latest-fuel-price" element={<LatestFuelPricePage />} />
+        <Route path="engagement-posts/klci-index" element={<KLCIIndexPage />} />
+        <Route path="engagement-posts/on-this-day-malaysia" element={
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <OnThisDayPage />
+          </Suspense>
+        } />
+        <Route path="engagement-posts/weather-malaysia" element={
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <WeatherMalaysiaPage />
+          </Suspense>
+        } />
+        <Route path="engagement-posts/quote" element={
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <QuotePage />
+          </Suspense>
+        } />
+        <Route path="engagement-posts/didyouknow" element={<DidYouKnowPage />} />
+        <Route path="engagement-photos/prime-talk" element={<PrimeTalkPage />} />
+        <Route path="shopee-top-products" element={<ShopeeTopProductsPage />} />
+        <Route path="post-queue" element={<ZernioScheduledPostsPage />} />
+        <Route path="social-affiliate-posting" element={<SocialAffiliatePostingPage />} />
+        <Route path="quick-fact" element={<QuickFactPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="youtube-dashboard" element={<YouTubeDashboardPage />} />
+      </Route>
+
+      {/* Catch-all: old bookmarks or invalid paths → brand picker */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
   )
