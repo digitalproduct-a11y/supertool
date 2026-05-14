@@ -462,10 +462,6 @@ export function ArticleToSocialPage() {
     })
   }
 
-  function _setConfig<K extends keyof Configs>(type: K, patch: Partial<Configs[K]>) {
-    setConfigs(prev => ({ ...prev, [type]: { ...prev[type], ...patch } }))
-  }
-
   function updateCard(type: PostType, patch: Partial<ResultCard>) {
     setResults(prev => prev.map(r => r.type === type ? { ...r, ...patch } : r))
   }
@@ -1665,7 +1661,6 @@ function QuoteBulkContent({ card, brand, onCaptionChange }: {
 
   const bgImageUrl = customBgUrl ?? (card.imageUrl || undefined)
   const config = TABLOID_QUOTE_CANVAS_CONFIG
-  const _SCALE = 0.42
 
   function handleBgFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return
