@@ -1,15 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
-import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity } from '../constants/brands'
+import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity, type BrandName } from '../constants/brands'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
-
-const ENTITY_LABELS: Record<BrandEntity, string> = {
-  'AASB': 'Astro',
-  'MBNS': 'Astro',
-  'ARSB': 'Astro Radio',
-  'NISB': 'Nu Ideaktiv',
-}
 
 export function BrandSelectionPage() {
   const { selectedBrand, setSelectedBrand } = useBrand()
@@ -37,7 +30,7 @@ export function BrandSelectionPage() {
     brandsByEntity[entity].push(brand)
   })
 
-  const handleSelectBrand = (brand: string) => {
+  const handleSelectBrand = (brand: BrandName) => {
     setSelectedBrand(brand)
     navigate('/home')
   }
@@ -74,7 +67,7 @@ export function BrandSelectionPage() {
               {[...brandsByEntity['AASB'], ...brandsByEntity['MBNS']].map(brand => (
                 <button
                   key={brand}
-                  onClick={() => handleSelectBrand(brand)}
+                  onClick={() => handleSelectBrand(brand as BrandName)}
                   className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
                 >
                   <div
@@ -109,7 +102,7 @@ export function BrandSelectionPage() {
               {brandsByEntity['ARSB'].map(brand => (
                 <button
                   key={brand}
-                  onClick={() => handleSelectBrand(brand)}
+                  onClick={() => handleSelectBrand(brand as BrandName)}
                   className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
                 >
                   <div
@@ -144,7 +137,7 @@ export function BrandSelectionPage() {
               {brandsByEntity['NISB'].map(brand => (
                 <button
                   key={brand}
-                  onClick={() => handleSelectBrand(brand)}
+                  onClick={() => handleSelectBrand(brand as BrandName)}
                   className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
                 >
                   <div

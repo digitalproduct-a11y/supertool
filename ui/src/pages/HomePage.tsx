@@ -17,7 +17,6 @@ import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
 import { useBrand } from '../context/BrandContext'
 import { useNavigate } from 'react-router-dom'
-import { getBrandLogoUrl, getBrandHex, needsDarkBg } from '../constants/brands'
 import {
   fetchInHouseFeeds,
   fetchCompetitorFeeds as fetchCompetitorFeedsFromStore,
