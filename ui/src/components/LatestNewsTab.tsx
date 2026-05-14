@@ -147,6 +147,7 @@ export function LatestNewsTab({ brand }: { brand: string }) {
   const [competitorsFetched, setCompetitorsFetched] = useState(false)
   const [competitorsLoading, setCompetitorsLoading] = useState(false)
   const [expandedAstro, setExpandedAstro] = useState(false)
+  const [expandedTitles, setExpandedTitles] = useState<Set<string>>(new Set())
 
   const load = () => {
     setTabState('loading')
@@ -669,9 +670,26 @@ export function LatestNewsTab({ brand }: { brand: string }) {
                         <p className="text-[11px] text-neutral-400 mb-1">
                           {article.sourceBrand} · {formatMYT(article.publishedAt)}
                         </p>
-                        <h3 className="text-sm font-semibold text-neutral-950 leading-snug line-clamp-2 mb-1">
+                        <h3 className={`text-sm font-semibold text-neutral-950 leading-snug mb-0.5 ${expandedTitles.has(article.url) ? '' : 'line-clamp-2'}`}>
                           {article.title}
                         </h3>
+                        {article.title.length > 60 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedTitles(prev => {
+                                const next = new Set(prev)
+                                if (next.has(article.url)) next.delete(article.url)
+                                else next.add(article.url)
+                                return next
+                              })
+                            }}
+                            className="text-[11px] text-neutral-400 hover:text-neutral-600 transition mb-0.5"
+                          >
+                            {expandedTitles.has(article.url) ? 'Show less' : 'Show more'}
+                          </button>
+                        )}
                         {article.description && (
                           <p className="text-xs text-neutral-500 line-clamp-2">{article.description}</p>
                         )}

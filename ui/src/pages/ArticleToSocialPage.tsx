@@ -424,7 +424,11 @@ export function ArticleToSocialPage() {
     (location.state as { articleUrl?: string } | null)?.articleUrl ?? ''
   )
   const [adminBrand, setAdminBrand] = useState<string>(BRANDS[0])
-  const [selectedTypes, setSelectedTypes] = useState<Set<PostType>>(new Set(['photo']))
+  const [selectedTypes, setSelectedTypes] = useState<Set<PostType>>(() => {
+    const st = location.state as { postType?: PostType } | null
+    if (st?.postType && ALL_TYPES.includes(st.postType)) return new Set([st.postType])
+    return new Set<PostType>(['photo'])
+  })
 
   const [configs, setConfigs] = useState<Configs>({
     photo:    { titleMode: 'original', captionTitleMode: 'original' },

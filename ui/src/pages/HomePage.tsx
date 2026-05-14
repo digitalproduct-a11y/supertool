@@ -3,15 +3,9 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts'
 import {
   IconExternalLink,
   IconBulb,
-  IconCalendar,
   IconFlame,
   IconTrophy,
-  IconFeather,
-  IconMotorbike,
   IconTrendingUp,
-  IconCurrency,
-  IconDroplet,
-  IconCloudRain,
 } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
@@ -78,58 +72,62 @@ async function fetchCompetitorNews(): Promise<ArticleWithBrand[]> {
   } catch { return [] }
 }
 
-// ── Nav row component ─────────────────────────────────────────────────────────
+// ── Tool cards ───────────────────────────────────────────────────────────────
 
-function NavRow({ label, description, image, onClick }: { label: string; description?: string; image?: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-5 py-3 hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
-    >
-      <img
-        src={image || '/kult-logo64.png'}
-        alt={label}
-        className={`w-14 h-14 rounded-lg object-cover flex-shrink-0 ${!image ? 'grayscale opacity-30' : ''}`}
-      />
-      <div className="flex-1 min-w-0">
-        <span className="text-sm font-semibold text-neutral-900">{label}</span>
-        {description && (
-          <p className="text-[11px] text-neutral-400 mt-0.5 leading-snug">{description}</p>
-        )}
-      </div>
-      <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-      </svg>
-    </button>
-  )
-}
-
-// ── Engagement quick-link groups ──────────────────────────────────────────────
-
-const ENGAGEMENT_GROUPS = [
+const TOOL_CARDS = [
   {
-    label: 'Fun Fact',
+    title: 'Article to Social Post',
+    gradient: 'linear-gradient(135deg, #F8F0FF 0%, #EEF3FF 50%, #E8F4FD 100%)',
+    icon: IconExternalLink,
+    iconColor: '#7C3AED',
     links: [
-      { label: 'Did You Know?', path: '/engagement-posts/didyouknow', icon: IconBulb, color: '#FEF1EB', iconColor: '#F05A35' },
-      { label: 'On This Day', path: '/engagement-posts/on-this-day-malaysia', icon: IconCalendar, color: '#FEF1EB', iconColor: '#F05A35' },
+      { label: 'Photo', path: '/article-to-social', state: { postType: 'photo' } },
+      { label: 'Carousel', path: '/article-to-social', state: { postType: 'carousel' } },
+      { label: 'Quote', path: '/article-to-social', state: { postType: 'quote' } },
+      { label: 'Quick Fact', path: '/article-to-social', state: { postType: 'quickfact' } },
     ],
   },
   {
-    label: 'Sports',
+    title: 'Fun Fact Post',
+    gradient: 'linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)',
+    icon: IconBulb,
+    iconColor: '#F05A35',
     links: [
-      { label: 'EPL', path: '/engagement-posts/epl', icon: IconFlame, color: '#EEF3FF', iconColor: '#0055EE' },
-      { label: 'Champions League', path: '/engagement-posts/ucl', icon: IconTrophy, color: '#EEF3FF', iconColor: '#0055EE' },
-      { label: 'Badminton', path: '/engagement-posts/badminton', icon: IconFeather, color: '#EEF3FF', iconColor: '#0055EE' },
-      { label: 'MotoGP', path: '/engagement-posts/motogp', icon: IconMotorbike, color: '#EEF3FF', iconColor: '#0055EE' },
+      { label: 'Did You Know?', path: '/engagement-posts/didyouknow' },
+      { label: 'On This Day', path: '/engagement-posts/on-this-day-malaysia' },
     ],
   },
   {
-    label: 'Information',
+    title: 'Sports Engagement Post',
+    gradient: 'linear-gradient(135deg, #EEF3FF 0%, #E8EEFF 50%, #F0F4FF 100%)',
+    icon: IconTrophy,
+    iconColor: '#0055EE',
     links: [
-      { label: 'KLCI Index', path: '/engagement-posts/klci-index', icon: IconTrendingUp, color: '#ECFDF5', iconColor: '#10B981' },
-      { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate', icon: IconCurrency, color: '#ECFDF5', iconColor: '#10B981' },
-      { label: 'Fuel Price', path: '/engagement-posts/latest-fuel-price', icon: IconDroplet, color: '#ECFDF5', iconColor: '#10B981' },
-      { label: 'Weather Malaysia', path: '/engagement-posts/weather-malaysia', icon: IconCloudRain, color: '#ECFDF5', iconColor: '#10B981' },
+      { label: 'EPL', path: '/engagement-posts/epl' },
+      { label: 'Champions League', path: '/engagement-posts/ucl' },
+      { label: 'Badminton', path: '/engagement-posts/badminton' },
+      { label: 'MotoGP', path: '/engagement-posts/motogp' },
+    ],
+  },
+  {
+    title: 'Information Post',
+    gradient: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF9 50%, #F5FEFB 100%)',
+    icon: IconTrendingUp,
+    iconColor: '#10B981',
+    links: [
+      { label: 'KLCI Index', path: '/engagement-posts/klci-index' },
+      { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate' },
+      { label: 'Fuel Price', path: '/engagement-posts/latest-fuel-price' },
+      { label: 'Weather Malaysia', path: '/engagement-posts/weather-malaysia' },
+    ],
+  },
+  {
+    title: 'Entertainment Post',
+    gradient: 'linear-gradient(135deg, #FFF0F7 0%, #FEF0FF 50%, #F8F0FF 100%)',
+    icon: IconFlame,
+    iconColor: '#FF3FBF',
+    links: [
+      { label: 'Malay Entertainment', path: '/engagement-posts/gempak-entertainment' },
     ],
   },
 ]
@@ -433,74 +431,53 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
           )}
         </div>
 
-        {/* ── Row 3: 2-col layout ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ── Row 3: Tools + News side by side ────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
 
-          {/* Left column: quick links */}
-          <div className="space-y-4">
-
-            {/* Combined card: Article to Social + Engagement Posts */}
-            <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
-
-              {/* Tools header */}
-              <div className="px-5 pt-4 pb-2">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">Tools</p>
-              </div>
-
-              {/* Article to Social row */}
-              <NavRow
-                label="Article to Social Post"
-                description="Photo · Carousel · Quote · Quick Fact"
-                image=""
-                onClick={() => navigate('/article-to-social')}
-              />
-
-              {/* Divider */}
-              <div className="border-t border-neutral-100" />
-
-              {/* Engagement Posts section */}
-              <div className="py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 px-5 pt-3 pb-2">
-                  Engagement Posts
-                </p>
-                {ENGAGEMENT_GROUPS.map((group, idx) => (
-                  <div key={group.label}>
-                    <p className="text-[11px] font-semibold text-neutral-400 px-5 pt-2 pb-1">{group.label}</p>
-                    <div className="grid grid-cols-2 px-3 pb-1 gap-1">
-                      {group.links.map(link => {
-                        const Icon = link.icon
-                        return (
+          {/* Left: Tool cards */}
+          <div>
+            <div className="flex items-baseline justify-between mb-4">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">Tools</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {TOOL_CARDS.map(card => {
+                const Icon = card.icon
+                return (
+                  <div key={card.title} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
+                    {/* 16:9 illustration area */}
+                    <div
+                      className="aspect-video flex items-center justify-center"
+                      style={{ background: card.gradient }}
+                    >
+                      <Icon className="w-12 h-12 opacity-40" style={{ color: card.iconColor }} />
+                    </div>
+                    {/* Title */}
+                    <div className="px-5 pt-4 pb-2">
+                      <h3 className="font-display text-base font-semibold text-neutral-950">{card.title}</h3>
+                    </div>
+                    {/* Link list */}
+                    <div className="pb-3">
+                      {card.links.map((link, i) => (
                         <button
-                          key={link.path}
-                          onClick={() => navigate(link.path)}
-                          className="flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+                          key={link.path + i}
+                          onClick={() => navigate(link.path, 'state' in link ? { state: link.state } : undefined)}
+                          className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
                         >
-                          <div
-                            className="w-[54px] h-[54px] rounded-md flex-shrink-0 flex items-center justify-center"
-                            style={{ backgroundColor: link.color }}
-                          >
-                            <Icon className="w-6 h-6" style={{ color: link.iconColor }} />
-                          </div>
-                          <span className="flex-1 text-sm font-semibold text-neutral-900 leading-tight">{link.label}</span>
-                          <svg className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <span className="text-sm text-neutral-600">{link.label}</span>
+                          <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
                         </button>
-                        )
-                      })}
+                      ))}
                     </div>
-                    {idx < ENGAGEMENT_GROUPS.length - 1 && (
-                      <div className="border-t border-neutral-100 mx-5 my-1" />
-                    )}
                   </div>
-                ))}
-              </div>
-
+                )
+              })}
             </div>
           </div>
 
-          {/* Right column: latest news */}
-          <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
+          {/* Right: Latest news */}
+          <div className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5 h-fit">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">Latest News</p>
