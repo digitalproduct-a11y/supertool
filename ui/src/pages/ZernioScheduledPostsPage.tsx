@@ -136,12 +136,14 @@ export function ZernioScheduledPostsPage() {
   }
 
   // For non-admins, always filter to their selected brand
-  const brandPosts = useMemo(() => {
-    if (isAdmin) return posts
-    return posts.filter(p =>
-      p.platforms.some(pl => pl.accountId?.displayName === selectedBrand)
-    )
-  }, [posts, isAdmin, selectedBrand])
+  const brandPosts = isAdmin
+    ? posts
+    : posts.filter(p =>
+        p.platforms.some(pl => {
+          const name = pl.accountId?.displayName ?? ''
+          return name.toLowerCase().includes((selectedBrand ?? '').toLowerCase())
+        })
+      )
 
   const availableBrands = useMemo(() =>
     Array.from(new Set(
