@@ -19,6 +19,7 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
     if (!input) return
     const correctPasscode = import.meta.env.VITE_ADMIN_PASSCODE as string | undefined
     if (correctPasscode && input === correctPasscode) {
+      sessionStorage.setItem('kult_admin_auth', '1')
       onSuccess()
     } else {
       setError('Incorrect passcode. Try again.')
