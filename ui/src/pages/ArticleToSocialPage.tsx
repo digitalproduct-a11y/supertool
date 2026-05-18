@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { trackToolSubmit, trackButtonClick } from '../utils/analytics'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { BackButton } from '../components/ds'
@@ -291,6 +292,7 @@ function CopyBtn({ text, className = '' }: { text: string; className?: string })
     <button
       onClick={() => {
         navigator.clipboard.writeText(text).then(() => {
+          trackButtonClick('caption_copied')
           setCopied(true)
           setTimeout(() => setCopied(false), 2000)
         })
@@ -500,6 +502,8 @@ export function ArticleToSocialPage() {
 
   const handleGenerate = useCallback(async () => {
     if (!articleUrl.trim() || orderedTypes.length === 0) return
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     const slots = getScheduledSlots(orderedTypes.length)
     const initialCards: ResultCard[] = orderedTypes.map((type, i) => ({
       type, status: 'generating', imageUrl: '', carouselImages: [], caption: '', scheduledFor: slots[i],
@@ -1172,7 +1176,10 @@ function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
   }
 
   function handleCopyCaption() {
-    navigator.clipboard.writeText(card.caption).then(() => toast.success('Caption copied!'))
+    navigator.clipboard.writeText(card.caption).then(() => {
+      trackButtonClick('caption_copied')
+      toast.success('Caption copied!')
+    })
   }
 
   return (

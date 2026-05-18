@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { trackToolSubmit } from '../utils/analytics'
 import { useBlocker } from 'react-router-dom'
 import { usePrimeTalk } from '../hooks/usePrimeTalk'
 import IdeaCard from '../components/IdeaCard'
@@ -157,6 +158,8 @@ export function PrimeTalkPage() {
       toast.error('Generate service not configured. Contact admin.')
       return
     }
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     setStage('review')
     await generate(selections, generateWebhookUrl)
   }

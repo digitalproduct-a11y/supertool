@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import type { WorkflowResponse, WorkflowRequest } from "../types";
+import { trackToolSubmit } from "../utils/analytics";
 
 interface UseWorkflowReturn {
   run: (request: WorkflowRequest) => Promise<WorkflowResponse>;
@@ -47,6 +48,10 @@ export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
       if (data.subTitle !== undefined && data.subtitle === undefined) {
         data.subtitle = data.subTitle;
       }
+
+      const [, brandSlug, ...toolParts] = window.location.pathname.split('/');
+      trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown');
+
       return data as unknown as WorkflowResponse;
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {

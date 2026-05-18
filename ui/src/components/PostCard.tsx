@@ -8,6 +8,7 @@ import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { trackButtonClick } from '../utils/analytics'
 import type { ScheduledPost, SchedulePostPayload } from '../types'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 
@@ -117,6 +118,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
   }
 
   async function handleDownload() {
+    trackButtonClick('download_image')
     try {
       const res = await fetch(displayUrl)
       const blob = await res.blob()
@@ -250,7 +252,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
           {/* Row 1: Adjust Image */}
           {cropSourceUrl && (
             <button
-              onClick={() => setShowCropPicker(true)}
+              onClick={() => { setShowCropPicker(true); trackButtonClick('adjust_image'); }}
               disabled={cropLoading}
               className="w-full py-2 rounded-lg text-sm font-medium border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
@@ -264,7 +266,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
           {/* Row 2: Upload Custom Image | Download Image */}
           <div className="flex gap-2">
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => { fileInputRef.current?.click(); trackButtonClick('upload_custom_image'); }}
               disabled={uploadLoading}
               className="flex-1 py-2 rounded-lg text-sm font-medium border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
             >

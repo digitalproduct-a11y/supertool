@@ -3,6 +3,7 @@ import type {
   ScheduledPost,
   SchedulePostPayload,
 } from '../types'
+import { trackPostScheduled } from '../utils/analytics'
 
 // ─── Cloudinary URL builder ───────────────────────────────────────────────────
 // Modifies the webhook-provided URL by replacing only the headline text
@@ -167,6 +168,8 @@ export function useScheduledPosts(brand: string = 'Astro Ulagam') {
                 : p
             )
           )
+          const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+          trackPostScheduled(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
           return true
         }
         return false

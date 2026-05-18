@@ -12,6 +12,7 @@ import ImageUploadModal from './ImageUploadModal'
 import { IconUpload } from '@tabler/icons-react'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { trackButtonClick, trackToolSubmit } from '../utils/analytics'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 import { useBrand } from '../context/BrandContext'
@@ -119,6 +120,7 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   function copy() {
     navigator.clipboard.writeText(text).then(() => {
+      trackButtonClick('caption_copied')
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -162,6 +164,8 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
 
   const handleGenerate = useCallback(async () => {
     if (!brand) return
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     setIsGenerating(true)
     setError('')
 
@@ -227,6 +231,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
 
   async function handleDownload() {
     if (!result?.imageUrl) return
+    trackButtonClick('download_image')
     const urlToDownload = displayImageUrl ?? result.imageUrl
     try {
       const res = await fetch(urlToDownload)
@@ -441,7 +446,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
 
               {result.cloudinary_url && (
                 <button
-                  onClick={() => setShowCropPicker(true)}
+                  onClick={() => { setShowCropPicker(true); trackButtonClick('adjust_image'); }}
                   disabled={cropLoading}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
@@ -454,7 +459,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowImageUploadModal(true)}
+                  onClick={() => { setShowImageUploadModal(true); trackButtonClick('upload_custom_image'); }}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors"
                 >
                   <IconUpload size={16} />

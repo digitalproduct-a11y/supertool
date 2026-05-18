@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { trackToolSubmit } from '../utils/analytics'
 import { useBlocker } from 'react-router-dom'
 import { useEngagementPhotos } from '../hooks/useEngagementPhotos'
 import { BRANDS } from '../constants/brands'
@@ -137,6 +138,8 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
   }
 
   const handleGenerateFromTopics = async (selections: Array<{ topicId: string; postType: string }>) => {
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     const selectedTopics = topics.filter((t) => selections.some((s) => s.topicId === t.id))
     const topicsWithTypes = selectedTopics.map((topic) => ({
       ...topic,
