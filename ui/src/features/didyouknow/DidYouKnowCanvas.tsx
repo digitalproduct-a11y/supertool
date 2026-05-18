@@ -252,7 +252,7 @@ export const DidYouKnowCanvas = forwardRef<
 
       // Add edition label with black background
       const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
-      const prefix = isMalay ? 'IMBAS KEMBALI' : 'THROWBACK'
+      const prefix = isMalay ? 'TAHUKAH ANDA?' : 'DID YOU KNOW?'
       const editionText = `${prefix} - ${translatedEdition}`.toUpperCase()
       const editionObj = new Text(editionText, {
         fontFamily: cfg.editionLabel.fontFamily,
