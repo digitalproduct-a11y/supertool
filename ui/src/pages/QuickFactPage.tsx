@@ -7,6 +7,7 @@ import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl, updateFactInImageUrl, uploadToCloudinary, replaceBaseImage } from '../utils/cloudinary'
 import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { trackPostScheduled, trackButtonClick, trackToolSubmit } from '../utils/analytics'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 import { BackButton } from '../components/ds'
@@ -180,6 +181,8 @@ export function QuickFactPage() {
 
   async function handleGenerate() {
     if (!url.trim() || !brand) return
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     setPageState('loading')
     setErrorMessage('')
     try {
@@ -256,6 +259,8 @@ export function QuickFactPage() {
       setScheduleState('done')
       setShowScheduleModal(false)
       toast.success('Scheduled on Facebook!')
+      const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+      trackPostScheduled(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     } else {
       setScheduleState('error')
       toast.error(response.message || "Couldn't schedule. Please try again.")
@@ -263,6 +268,7 @@ export function QuickFactPage() {
   }
 
   async function handleDownload() {
+    trackButtonClick('download_image')
     try {
       const res = await fetch(displayImageUrl)
       const blob = await res.blob()
@@ -278,6 +284,7 @@ export function QuickFactPage() {
 
   function handleCopy() {
     navigator.clipboard.writeText(caption).then(() => {
+      trackButtonClick('caption_copied')
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -547,7 +554,7 @@ export function QuickFactPage() {
 
                 {/* Adjust Image — full width */}
                 <button
-                  onClick={() => setShowCropPicker(true)}
+                  onClick={() => { setShowCropPicker(true); trackButtonClick('adjust_image'); }}
                   disabled={cropLoading}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
@@ -560,7 +567,7 @@ export function QuickFactPage() {
                 {/* Upload Custom Image + Download — side by side */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => { fileInputRef.current?.click(); trackButtonClick('upload_custom_image'); }}
                     disabled={uploadLoading}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >

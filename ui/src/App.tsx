@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { trackPostScheduled } from './utils/analytics'
 import './index.css'
 import { HomePage } from './pages/HomePage'
 import { AffiliateLinksPage } from './pages/AffiliateLinksPage'
@@ -12,6 +13,7 @@ import { LatestCurrencyRatePage } from './pages/LatestCurrencyRatePage'
 import { LatestFuelPricePage } from './pages/LatestFuelPricePage'
 import { KLCIIndexPage } from './pages/KLCIIndexPage'
 import { BrandLayout } from './components/BrandLayout'
+import { RouteTracker } from './components/RouteTracker'
 import { ShopeeTopProductsPage } from './pages/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './pages/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './pages/SpikeNewsPage'
@@ -265,6 +267,8 @@ function FbPostPage() {
       }
       if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
         saveCredentials(args.brand.toLowerCase(), creds.passcode)
+        const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+        trackPostScheduled(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
         return { success: true, message: data.message ?? 'Scheduled!', postId: data.post_id, status: data.status }
       }
       return { success: false, message: data.message ?? 'Something went wrong.' }
@@ -618,12 +622,15 @@ function App() {
       <Route path="/start" element={<GetStartedPage />} />
 
       <Route path="/:brandSlug" element={
-        <BrandLayout
-          isSidebarCollapsed={isSidebarCollapsed}
-          onCollapsedChange={setIsSidebarCollapsed}
-          toolToPath={toolToPath}
-          getActiveTool={getActiveTool}
-        />
+        <>
+          <RouteTracker />
+          <BrandLayout
+            isSidebarCollapsed={isSidebarCollapsed}
+            onCollapsedChange={setIsSidebarCollapsed}
+            toolToPath={toolToPath}
+            getActiveTool={getActiveTool}
+          />
+        </>
       }>
         <Route path="home" element={<HomePage onToolSelect={() => {}} />} />
         <Route path="article-to-social" element={<ArticleToSocialPage />} />
