@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { trackToolSubmit, trackButtonClick } from '../utils/analytics'
+import { trackToolSubmit, trackButtonClick, extractDomain } from '../utils/analytics'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { BackButton } from '../components/ds'
@@ -503,7 +503,7 @@ export function ArticleToSocialPage() {
   const handleGenerate = useCallback(async () => {
     if (!articleUrl.trim() || orderedTypes.length === 0) return
     const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
-    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown', extractDomain(articleUrl))
     const slots = getScheduledSlots(orderedTypes.length)
     const initialCards: ResultCard[] = orderedTypes.map((type, i) => ({
       type, status: 'generating', imageUrl: '', carouselImages: [], caption: '', scheduledFor: slots[i],

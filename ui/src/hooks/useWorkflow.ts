@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import type { WorkflowResponse, WorkflowRequest } from "../types";
-import { trackToolSubmit } from "../utils/analytics";
+import { trackToolSubmit, extractDomain } from "../utils/analytics";
 
 interface UseWorkflowReturn {
   run: (request: WorkflowRequest) => Promise<WorkflowResponse>;
@@ -50,7 +50,8 @@ export function useWorkflow(webhookUrlOverride?: string): UseWorkflowReturn {
       }
 
       const [, brandSlug, ...toolParts] = window.location.pathname.split('/');
-      trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown');
+      const sourceDomain = request.url ? extractDomain(request.url) : undefined;
+      trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown', sourceDomain);
 
       return data as unknown as WorkflowResponse;
     } catch (err) {

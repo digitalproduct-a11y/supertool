@@ -10,11 +10,20 @@ export function trackPageView(path: string, brandSlug: string) {
   });
 }
 
-export function trackToolSubmit(toolName: string, brandSlug: string) {
+export function extractDomain(url: string): string | undefined {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return undefined;
+  }
+}
+
+export function trackToolSubmit(toolName: string, brandSlug: string, sourceDomain?: string) {
   if (typeof gtag === 'undefined') return;
   gtag('event', 'tool_used', {
     tool_name: toolName,
     brand_slug: brandSlug,
+    ...(sourceDomain ? { source_domain: sourceDomain } : {}),
   });
 }
 
