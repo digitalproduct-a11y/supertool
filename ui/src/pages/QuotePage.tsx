@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { trackToolSubmit, trackButtonClick } from '../utils/analytics'
 import { useNavigate } from "react-router-dom";
 import { useBrand } from '../context/BrandContext'
 import { useBrandNavigate } from '../hooks/useBrandNavigate'
@@ -189,6 +190,8 @@ export function QuotePage() {
 
   async function handleGenerate() {
     if (!url.trim() || !brand) return;
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
 
     const webhookUrl = import.meta.env.VITE_QUOTE_WEBHOOK_URL as string | undefined;
     if (!webhookUrl) {
@@ -321,6 +324,7 @@ export function QuotePage() {
   }
 
   function handleCopyCaption() {
+    trackButtonClick('caption_copied')
     navigator.clipboard.writeText(caption);
     toast.success("Caption copied!");
   }

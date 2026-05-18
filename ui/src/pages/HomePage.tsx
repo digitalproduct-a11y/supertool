@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { trackHomeToolClick } from '../utils/analytics'
 import { LineChart, Line, ResponsiveContainer } from 'recharts'
 import {
   IconExternalLink,
@@ -527,7 +528,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                       {card.links.map((link, i) => (
                         <button
                           key={link.path + i}
-                          onClick={() => brandNavigate(link.path, 'state' in link ? { state: link.state } : undefined)}
+                          onClick={() => { trackHomeToolClick(link.label, link.path); brandNavigate(link.path, 'state' in link ? { state: link.state } : undefined) }}
                           className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
                         >
                           <span className="text-sm text-neutral-600">{link.label}</span>

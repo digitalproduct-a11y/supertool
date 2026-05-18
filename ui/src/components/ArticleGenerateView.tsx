@@ -4,6 +4,7 @@ import { IconChevronLeft, IconExternalLink, IconCopy, IconCheck, IconDownload, I
 import { toast } from '../hooks/useToast'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { trackButtonClick, trackToolSubmit } from '../utils/analytics'
 import { COMPETITOR_BRANDS } from '../constants/rssFeedsByBrand'
 import { updateTitleInImageUrl } from '../utils/cloudinary'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
@@ -181,6 +182,8 @@ export function ArticleGenerateView({
     : generated?.cloudinary_url || previewImageUrl || null
 
   const handleGenerate = async () => {
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     setGenerateState('generating')
     try {
       const result = await generatePost(article.url, brand, titleMode, undefined, isCompetitor)
@@ -202,6 +205,7 @@ export function ArticleGenerateView({
   const handleCopyCaption = async () => {
     try {
       await navigator.clipboard.writeText(caption)
+      trackButtonClick('caption_copied')
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
@@ -244,6 +248,7 @@ export function ArticleGenerateView({
   const handleDownload = async () => {
     const url = displayImageUrl
     if (!url) return
+    trackButtonClick('download_image')
     const filename = `${brand.toLowerCase().replace(/\s+/g, '-')}-post.jpg`
     try {
       const res = await fetch(url)
@@ -438,7 +443,7 @@ export function ArticleGenerateView({
                 {/* Adjust Image — full width, only when image is available */}
                 {previewImageUrl && (
                   <button
-                    onClick={() => setShowCropPicker(true)}
+                    onClick={() => { setShowCropPicker(true); trackButtonClick('adjust_image'); }}
                     disabled={cropLoading}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
@@ -452,7 +457,7 @@ export function ArticleGenerateView({
                 {/* Upload Custom Image | Download — side by side */}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => { fileInputRef.current?.click(); trackButtonClick('upload_custom_image'); }}
                     disabled={uploadLoading}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >

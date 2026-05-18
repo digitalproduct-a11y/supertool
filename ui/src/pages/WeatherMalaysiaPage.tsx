@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
+import { trackToolSubmit, trackButtonClick } from '../utils/analytics'
 import { useNavigate } from "react-router-dom";
 import { useBrand } from '../context/BrandContext'
 import { useBrandNavigate } from '../hooks/useBrandNavigate'
@@ -235,6 +236,8 @@ export function WeatherMalaysiaPage() {
 
   async function handleGenerate() {
     if (!brand) return;
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     setStage("review");
     setSharedCaption("");
     setQuoteIndex(0);
@@ -259,6 +262,7 @@ export function WeatherMalaysiaPage() {
   }
 
   function handleCopyCaption() {
+    trackButtonClick('caption_copied')
     navigator.clipboard.writeText(sharedCaption);
     toast.success("Caption copied!");
   }

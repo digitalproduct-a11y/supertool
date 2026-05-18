@@ -11,6 +11,7 @@ import { applyFocalCrop } from '../features/photo/cropUtils'
 import { ScheduleModal } from './ScheduleModal'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { trackButtonClick } from '../utils/analytics'
 
 interface ResultPreviewProps {
   result: WorkflowResult
@@ -88,6 +89,7 @@ export function ResultPreview({
     : result.cloudinary_url || null
 
   async function handleDownload() {
+    trackButtonClick('download_image')
     const urlToDownload = replacementPreviewUrl || displayImageUrl || result.imageUrl
     try {
       const res = await fetch(urlToDownload)
@@ -104,6 +106,7 @@ export function ResultPreview({
 
   function handleCopy() {
     navigator.clipboard.writeText(caption).then(() => {
+      trackButtonClick('caption_copied')
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -273,7 +276,7 @@ export function ResultPreview({
       {cropSourceUrl && (
         <div>
           <button
-            onClick={() => setShowCropPicker(true)}
+            onClick={() => { setShowCropPicker(true); trackButtonClick('adjust_image'); }}
             disabled={cropLoading}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
@@ -288,7 +291,7 @@ export function ResultPreview({
       {/* Custom image upload + Download */}
       <div className="flex gap-3">
         <button
-          onClick={() => customUploadInputRef.current?.click()}
+          onClick={() => { customUploadInputRef.current?.click(); trackButtonClick('upload_custom_image'); }}
           disabled={customUploadLoading}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
         >

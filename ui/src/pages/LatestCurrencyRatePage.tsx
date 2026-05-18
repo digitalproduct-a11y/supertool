@@ -7,6 +7,7 @@ import { BackButton } from '../components/ds'
 import { toast } from '../hooks/useToast'
 import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
+import { trackPostScheduled, trackToolSubmit } from '../utils/analytics'
 
 async function callZernioWebhook(
   imageUrl: string,
@@ -69,6 +70,8 @@ export function LatestCurrencyRatePage() {
       setScheduleState('done')
       setShowScheduleModal(false)
       toast.success('Scheduled on Facebook!')
+      const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+      trackPostScheduled(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     } else {
       setScheduleState('error')
       toast.error(response.message || "Couldn't schedule. Please try again.")
@@ -86,6 +89,8 @@ export function LatestCurrencyRatePage() {
       return
     }
 
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     setIsLoading(true)
     try {
       const response = await fetch(webhookUrl, {
