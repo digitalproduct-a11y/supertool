@@ -15,9 +15,10 @@ export function BrandSelectionPage() {
 
   const webhookUrl = (import.meta.env.VITE_BRAND_PASSCODE_WEBHOOK_URL as string | undefined)?.trim()
 
-  // Clear brand context and all brand passcode auth tokens when returning to the picker
+  // Clear brand context and all auth tokens when returning to the picker
   useEffect(() => {
     if (selectedBrand) clearBrand()
+    sessionStorage.removeItem('kult_admin_auth')
     Object.keys(sessionStorage)
       .filter(k => k.startsWith('kult_brand_auth_'))
       .forEach(k => sessionStorage.removeItem(k))
