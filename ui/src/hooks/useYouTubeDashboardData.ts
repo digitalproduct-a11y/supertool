@@ -4,8 +4,8 @@ import type { YouTubeDashboardRow } from '../utils/youtubeDashboardUtils'
 export interface YouTubeTargetRow {
   Brand: string
   'Annual Revenue Target (USD)'?: number
-  'Avg Posts Per Day'?: number
-  // Targets workbook stays as-is; carry through any extra fields untouched.
+  'Avg Vids Per Day'?: number
+  'Daily Avg Watch Hour'?: number
   [key: string]: unknown
 }
 
