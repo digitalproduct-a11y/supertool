@@ -425,3 +425,45 @@ export const BRAND_ENTITY: Record<BrandName, BrandEntity> = {
 export function getBrandEntity(brand: string): BrandEntity {
   return (BRAND_ENTITY as Record<string, BrandEntity>)[brand] ?? "NISB";
 }
+
+// Normalize brand names from n8n data to canonical BRANDS list
+export const N8N_TO_CANONICAL_BRAND: Record<string, string> = {
+  'ASTRO AWANI': 'Astro Awani',
+  'ASTRO ARENA': 'Astro Arena',
+  'ASTRO ULAGAM': 'Astro Ulagam',
+  'ERA': 'Era',
+  'ERA SABAH': 'Era Sabah',
+  'ERA SARAWAK': 'Era Sarawak',
+  'GEGAR': 'Gegar',
+  'ASTRO GEMPAK': 'Gempak',
+  'GOXUAN': 'Goxuan',
+  'HITZ': 'Hitz',
+  '热点 HOTSPOT': 'Hotspot',
+  'IMPIANA': 'Impiana',
+  'KELUARGA': 'Keluarga',
+  'LITE': 'Lite',
+  'MASKULIN': 'Maskulin',
+  'MEDIA HIBURAN': 'Media Hiburan',
+  'MELETOP': 'Meletop',
+  'MELODY': 'Melody',
+  'MINGGUAN WANITA': 'Mingguan Wanita',
+  'MIX': 'Mix',
+  'MY (MALAYSIA)': 'MY',
+  'NONA': 'Nona',
+  'PA&MA': 'Pa&Ma',
+  'RAAGA': 'Raaga',
+  'RASA': 'Rasa',
+  'REMAJA': 'Remaja',
+  'RODA PANAS': 'Roda Panas',
+  'ROJAK DAILY': 'Rojak Daily',
+  'SINAR': 'Sinar',
+  'STADIUM ASTRO': 'Stadium Astro',
+  'XUAN': 'XUAN',
+  'ZAYAN': 'Zayan',
+  'ASTRO AEC 新闻报报看': 'ASTRO AEC 新闻报报看',
+  'Astro AEC 新闻报报看': 'ASTRO AEC 新闻报报看',
+};
+
+export function normalizeN8NBrand(n8nBrand: string): string | null {
+  return N8N_TO_CANONICAL_BRAND[n8nBrand] ?? null;
+}

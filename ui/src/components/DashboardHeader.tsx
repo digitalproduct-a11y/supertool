@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
+import { IconRefresh, IconCheck } from '@tabler/icons-react'
 
 interface DashboardHeaderProps {
   brand: string
@@ -8,9 +9,16 @@ interface DashboardHeaderProps {
   startDate: Date
   endDate: Date
   onDateRangeChange: (start: Date, end: Date) => void
+  onRefresh?: () => void
+  loading?: boolean
 }
 
-const toInput = (d: Date) => d.toISOString().split('T')[0]
+const toInput = (d: Date) => {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 const daysAgo = (n: number) => {
   const d = new Date()
@@ -124,12 +132,19 @@ function CalendarMonth({ date, onSelect, isStart, minDate, maxDate }: CalendarMo
   )
 }
 
+const BUSINESS_UNIT_LABELS: Record<string, string> = {
+  'AASB': 'Astro',
+  'MBNS': 'Astro',
+  'ARSB': 'Astro Radio',
+  'NISB': 'Nu Ideaktiv',
+}
+
 const PRESETS = [
-  { label: '7D', start: () => daysAgo(8), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
-  { label: '14D', start: () => daysAgo(15), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
-  { label: '30D', start: () => daysAgo(31), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'Last 3M', start: () => daysAgo(91), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'This month', start: () => startOfMonth(0), end: () => { const d = daysAgo(1); d.setHours(23, 59, 59, 999); return d } },
+  { label: '7D', start: () => daysAgo(9), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: '14D', start: () => daysAgo(16), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: '30D', start: () => daysAgo(32), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'Last 3M', start: () => daysAgo(92), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'This month', start: () => startOfMonth(0), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
   { label: 'Last month', start: () => startOfMonth(-1), end: () => endOfMonth(-1) },
 ]
 
@@ -140,6 +155,8 @@ export function DashboardHeader({
   startDate,
   endDate,
   onDateRangeChange,
+  onRefresh,
+  loading,
 }: DashboardHeaderProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false)
@@ -188,38 +205,83 @@ export function DashboardHeader({
     }
   }, [pickerOpen, brandDropdownOpen])
 
+  const maxSelectableDate = daysAgo(2)
+
   return (
     <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2">
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        {/* Brand dropdown */}
-        <div className="relative" ref={brandRef}>
-          <button
-            onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}
-            className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition flex items-center gap-2"
-          >
-            {brand}
-            <svg className={`w-3 h-3 transition ${brandDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          {brandDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-[180px]">
-              {brands.map(({ brand: b }) => (
-                <button
-                  key={b}
-                  onClick={() => {
-                    onBrandChange(b)
-                    setBrandDropdownOpen(false)
-                  }}
-                  className={`w-full px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${brand === b ? 'bg-neutral-100' : ''}`}
-                >
-                  {b}
-                </button>
-              ))}
-            </div>
+        {/* Left section: Brand dropdown and Refresh button */}
+        <div className="flex gap-3 items-center">
+          {/* Brand dropdown */}
+          <div className="relative" ref={brandRef}>
+            <button
+              onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}
+              className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition flex items-center gap-2"
+            >
+              {brand}
+              <svg className={`w-3 h-3 transition ${brandDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {brandDropdownOpen && (() => {
+              const groupedByEntity: Record<string, typeof brands> = {}
+              const entityOrder = ['Astro', 'Astro Radio', 'Nu Ideaktiv']
+
+              brands.forEach(item => {
+                const label = BUSINESS_UNIT_LABELS[item.bu] || item.bu
+                if (!groupedByEntity[label]) groupedByEntity[label] = []
+                groupedByEntity[label].push(item)
+              })
+
+              return (
+                <div className="absolute top-full left-0 mt-3 z-20 bg-white border border-neutral-200 rounded-lg shadow-xl p-6" style={{ width: '700px' }}>
+                  <div className="grid grid-cols-3 gap-8">
+                    {entityOrder.map(entity => (
+                      <div key={entity}>
+                        <h3 className="text-xs font-semibold text-neutral-600 uppercase tracking-widest pb-2 border-b border-neutral-200 mb-3">
+                          {entity}
+                        </h3>
+                        <div className="space-y-1">
+                          {(groupedByEntity[entity] || []).map(({ brand: b }) => (
+                            <button
+                              key={b}
+                              onClick={() => {
+                                onBrandChange(b)
+                                setBrandDropdownOpen(false)
+                              }}
+                              className={`w-full px-2 py-1.5 text-xs text-left rounded transition flex items-center justify-between ${
+                                brand === b
+                                  ? 'text-neutral-950 font-medium bg-neutral-100'
+                                  : 'text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950'
+                              }`}
+                            >
+                              {b}
+                              {brand === b && <IconCheck className="w-4 h-4 flex-shrink-0" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
+          {/* Refresh button */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition disabled:opacity-50"
+            >
+              <IconRefresh className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh data
+            </button>
           )}
         </div>
 
+        {/* Right section: Presets and date picker */}
         <div className="flex flex-wrap gap-3 items-center">
           {/* Preset chips */}
           <div className="flex gap-1.5 items-center">
@@ -258,7 +320,7 @@ export function DashboardHeader({
                   </div>
                   <div>
                     <p className="text-xs font-medium text-neutral-600 mb-3">End Date</p>
-                    <CalendarMonth date={tempEnd} onSelect={setTempEnd} isStart={false} minDate={tempStart} />
+                    <CalendarMonth date={tempEnd} onSelect={setTempEnd} isStart={false} minDate={tempStart} maxDate={maxSelectableDate} />
                   </div>
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -283,8 +345,7 @@ export function DashboardHeader({
       <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
         <ul className="text-xs text-amber-900 space-y-1 list-disc list-inside">
           <li><span className="font-medium">Data available from 2 Jan 2026 onwards</span></li>
-          <li>Revenue data refreshed every Tuesday for previous week</li>
-          <li>Posts & Interactions data available at T-2 10am daily</li>
+          <li>All data available at T-2 (2 days delay). Revenue data may have additional delay</li>
         </ul>
       </div>
     </div>
