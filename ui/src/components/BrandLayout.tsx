@@ -42,6 +42,12 @@ export function BrandLayout({
     return <Navigate to="/" replace />
   }
 
+  // Brand passcode guard — redirect to picker if not authenticated this session
+  if (resolvedBrand !== 'Admin' && sessionStorage.getItem(`kult_brand_auth_${brandSlug}`) !== '1') {
+    return <Navigate to="/" replace />
+  }
+
+
   // Strip the /:brandSlug prefix to get the page path for active tool detection
   const pagePath = location.pathname.replace(`/${brandSlug}`, '') || '/home'
   const activeTool = getActiveTool(pagePath)
