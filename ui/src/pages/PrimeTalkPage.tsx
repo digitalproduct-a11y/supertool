@@ -237,9 +237,9 @@ export function PrimeTalkPage() {
             >
               <IconChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-semibold text-neutral-950">Prime Talk 《八点最热报》 Post Generator</h1>
+            <h1 className="text-2xl font-semibold text-neutral-950">TV Script to Post</h1>
           </div>
-          <p className="text-sm text-neutral-600">Turn Prime Talk episode scripts into ready-to-post Facebook image cards</p>
+          <p className="text-sm text-neutral-600">Turn Evening Edition 《新闻报报看》 &amp; Prime Talk 《八点最热报》 scripts into ready-to-post Facebook image cards</p>
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
       </div>
@@ -252,7 +252,7 @@ export function PrimeTalkPage() {
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-8">
               <h2 className="text-lg font-semibold text-neutral-950 mb-1">Upload Script</h2>
-              <p className="text-sm text-neutral-500 mb-6">Upload this week's Prime Talk episode script (.docx)</p>
+              <p className="text-sm text-neutral-500 mb-6">Upload this week's TV episode script (.docx)</p>
 
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -366,7 +366,7 @@ export function PrimeTalkPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-semibold text-neutral-950">Review Posts</h2>
-              <p className="text-sm text-neutral-600">Edit and schedule your Prime Talk engagement posts</p>
+              <p className="text-sm text-neutral-600">Edit and schedule your TV Script engagement posts</p>
             </div>
 
             {error && <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error}</div>}

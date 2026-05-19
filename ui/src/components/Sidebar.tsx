@@ -124,7 +124,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'post-queue': 'Scheduled queue',
   'social-affiliate-posting': 'Social Affiliate Posting',
   'quick-fact': 'Quick Fact Generator',
-  'prime-talk': 'Prime Talk',
+  'prime-talk': 'TV Script to Post',
   'on-this-day': 'On This Day',
   'weather-malaysia': 'Weather Malaysia',
   'quote': 'Quote',
