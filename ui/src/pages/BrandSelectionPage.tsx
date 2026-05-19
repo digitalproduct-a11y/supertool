@@ -15,11 +15,12 @@ export function BrandSelectionPage() {
 
   const webhookUrl = (import.meta.env.VITE_BRAND_PASSCODE_WEBHOOK_URL as string | undefined)?.trim()
 
-  // Clear any lingering brand so the picker always shows
+  // Clear brand context and all brand passcode auth tokens when returning to the picker
   useEffect(() => {
-    if (selectedBrand) {
-      clearBrand()
-    }
+    if (selectedBrand) clearBrand()
+    Object.keys(sessionStorage)
+      .filter(k => k.startsWith('kult_brand_auth_'))
+      .forEach(k => sessionStorage.removeItem(k))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group brands by entity
