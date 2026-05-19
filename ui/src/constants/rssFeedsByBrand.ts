@@ -4,8 +4,8 @@ export const RSS_FEEDS_BY_BRAND: Record<string, string[]> = {
   'XUAN':            ['https://xuan.com.my/rss.xml'],
   'Hotspot':         [], // Derived from XUAN feed — articles under /hotspot/ path
   'Astro Ulagam':    ['https://astroulagam.com.my/rss.xml'],
-  'Stadium Astro':   ['https://stadiumastro.com/rss.xml'],
-  'Astro Arena':     ['https://english.stadiumastro.com/rss.xml'],
+  'Stadium Astro':   ['https://english.stadiumastro.com/rss.xml'],
+  'Astro Arena':     ['https://stadiumastro.com/rss.xml'],
   'Astro Awani':     ['https://www.astroawani.com/rss/latest/public', 'https://www.astroawani.com/rss/latest/en/public'],
   // NISB
   'Impiana':         ['https://www.impiana.my/feed/nisb'],

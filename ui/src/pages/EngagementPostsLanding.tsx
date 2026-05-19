@@ -5,7 +5,12 @@ import {
   IconFlame,
 } from "@tabler/icons-react";
 import { useBrandNavigate } from "../hooks/useBrandNavigate";
+import { useBrand } from "../context/BrandContext";
 import { BackButton } from "../components/ds";
+
+const BRAND_CUSTOM_ENGAGEMENT: Record<string, { label: string; path: string }[]> = {
+  'Hotspot': [{ label: 'TV Script to Post', path: '/engagement-photos/prime-talk' }],
+};
 
 const TOOL_CARDS = [
   {
@@ -58,6 +63,17 @@ const TOOL_CARDS = [
     links: [
       { label: "Malay Entertainment", path: "/engagement-posts/malay-entertainment" },
     ],
+    brandSpecific: false,
+  },
+  {
+    title: "Custom Engagement Post",
+    description: "Brand-specific engagement tools tailored to your content format and audience.",
+    gradient: "linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)",
+    icon: IconBulb,
+    iconColor: "#F05A35",
+    image: "/custom-engagement-post-card.png",
+    links: [] as { label: string; path: string }[],
+    brandSpecific: true,
   },
 ];
 
@@ -69,6 +85,7 @@ export function EngagementPostsLanding({
   onSelectTopic: _onSelectTopic,
 }: EngagementPostsLandingProps) {
   const brandNavigate = useBrandNavigate();
+  const { selectedBrand, isAdmin } = useBrand();
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
@@ -98,6 +115,11 @@ export function EngagementPostsLanding({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {TOOL_CARDS.map((card) => {
             const Icon = card.icon;
+            const links = card.brandSpecific
+              ? isAdmin
+                ? Object.values(BRAND_CUSTOM_ENGAGEMENT).flat()
+                : (selectedBrand ? (BRAND_CUSTOM_ENGAGEMENT[selectedBrand] ?? []) : [])
+              : card.links;
             return (
               <div
                 key={card.title}
@@ -132,7 +154,7 @@ export function EngagementPostsLanding({
                 </div>
                 {/* Link list */}
                 <div className="pb-3">
-                  {card.links.map((link, i) => (
+                  {links.length > 0 ? links.map((link, i) => (
                     <button
                       key={link.path + i}
                       onClick={() => brandNavigate(link.path)}
@@ -155,7 +177,9 @@ export function EngagementPostsLanding({
                         />
                       </svg>
                     </button>
-                  ))}
+                  )) : card.brandSpecific ? (
+                    <p className="px-5 py-2.5 text-sm text-neutral-300">Coming soon for your brand</p>
+                  ) : null}
                 </div>
               </div>
             );

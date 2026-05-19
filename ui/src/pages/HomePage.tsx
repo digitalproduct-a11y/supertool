@@ -86,6 +86,12 @@ async function fetchCompetitorNews(): Promise<ArticleWithBrand[]> {
   } catch { return [] }
 }
 
+// ── Brand-specific custom engagement posts ───────────────────────────────────
+
+const BRAND_CUSTOM_ENGAGEMENT: Record<string, { label: string; path: string }[]> = {
+  'Hotspot': [{ label: 'TV Script to Post', path: '/engagement-photos/prime-talk' }],
+}
+
 // ── Tool cards ───────────────────────────────────────────────────────────────
 
 const TOOL_CARDS = [
@@ -148,6 +154,15 @@ const TOOL_CARDS = [
     links: [
       { label: 'Malay Entertainment', path: '/engagement-posts/malay-entertainment' },
     ],
+  },
+  {
+    title: 'Custom Engagement Post',
+    gradient: 'linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)',
+    icon: IconBulb,
+    iconColor: '#F05A35',
+    image: '/custom-engagement-post-card.png',
+    links: [] as { label: string; path: string; state?: Record<string, unknown> }[],
+    brandSpecific: true,
   },
 ]
 
@@ -521,6 +536,11 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TOOL_CARDS.map(card => {
                 const Icon = card.icon
+                const links = ('brandSpecific' in card && card.brandSpecific)
+                  ? isAdmin
+                    ? Object.values(BRAND_CUSTOM_ENGAGEMENT).flat()
+                    : (selectedBrand ? (BRAND_CUSTOM_ENGAGEMENT[selectedBrand] ?? []) : [])
+                  : card.links
                 return (
                   <div key={card.title} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
                     {/* 16:9 illustration area */}
@@ -540,7 +560,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                     </div>
                     {/* Link list */}
                     <div className="pb-3">
-                      {card.links.map((link, i) => (
+                      {links.length > 0 ? links.map((link, i) => (
                         <button
                           key={link.path + i}
                           onClick={() => { trackHomeToolClick(link.label, link.path); brandNavigate(link.path, 'state' in link ? { state: link.state } : undefined) }}
@@ -551,7 +571,9 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
                         </button>
-                      ))}
+                      )) : ('brandSpecific' in card && card.brandSpecific) ? (
+                        <p className="px-5 py-2.5 text-sm text-neutral-300">Coming soon for your brand</p>
+                      ) : null}
                     </div>
                   </div>
                 )
