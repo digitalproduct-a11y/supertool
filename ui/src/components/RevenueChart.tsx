@@ -16,6 +16,7 @@ import type { DashboardRow } from '../utils/dashboardUtils'
 import { formatDateLabel } from '../utils/dashboardUtils'
 import { PasscodeModal } from './PasscodeModal'
 import { RevenueUploadModal } from './RevenueUploadModal'
+import { useBrand } from '../context/BrandContext'
 
 interface RevenueChartProps {
   data: DashboardRow[]
@@ -44,6 +45,7 @@ const SERIES = [
 ]
 
 export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, brand, onRefetch }: RevenueChartProps) {
+  const { isAdmin } = useBrand()
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
@@ -204,15 +206,17 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
             )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleUploadClick}
-            aria-label="Upload revenue data"
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition"
-          >
-            <IconUpload className="w-3.5 h-3.5" />
-            Upload revenue
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleUploadClick}
+              aria-label="Upload revenue data"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition"
+            >
+              <IconUpload className="w-3.5 h-3.5" />
+              Upload revenue
+            </button>
+          )}
         </div>
         <div className="mb-4">
           <div className="flex items-center gap-2 justify-center">

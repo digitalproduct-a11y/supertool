@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react'
-import { IconRefresh } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useBrand } from '../context/BrandContext'
 import { DashboardHeader } from '../components/DashboardHeader'
@@ -11,10 +10,12 @@ import { TopPostsChart } from '../components/TopPostsChart'
 import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils/dashboardUtils'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { BackButton } from '../components/ds'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 
 export function DashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
+  const brandNavigate = useBrandNavigate()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 31); d.setHours(0,0,0,0); return d
@@ -26,6 +27,8 @@ export function DashboardPage() {
   const [showComparison, setShowComparison] = useState(true)
   const [showTargets, setShowTargets] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showMonthsModal, setShowMonthsModal] = useState(false)
+  const [monthsPage, setMonthsPage] = useState(0)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -43,15 +46,22 @@ export function DashboardPage() {
   // Auto-select brand when data loads
   useEffect(() => {
     if (brands.length > 0 && selectedBrand === null) {
-      // Non-Admin: prefer global brand if it exists in the data
-      if (!isAdmin && globalBrand) {
+      let brand: string | undefined
+
+      // Priority 1: Global brand from URL (set by BrandLayout) — works for both admin and non-admin
+      if (globalBrand) {
         const match = brands.find(b => b.brand === globalBrand)
-        setSelectedBrand(match ? match.brand : brands[0].brand)
-      } else {
-        setSelectedBrand(brands[0].brand)
+        brand = match?.brand
       }
+
+      // Priority 2: First brand
+      if (!brand) {
+        brand = brands[0].brand
+      }
+
+      setSelectedBrand(brand)
     }
-  }, [brands, selectedBrand, isAdmin, globalBrand])
+  }, [brands, selectedBrand, globalBrand])
 
 
   const selectedBrandInfo = brands.find(b => b.brand === selectedBrand)
@@ -119,6 +129,68 @@ export function DashboardPage() {
     }
   }, [selectedBrand, targets, viewMode])
 
+  // Month-to-date data (independent of date selection)
+  const monthToDateData = useMemo(() => {
+    if (!selectedBrand) return []
+    const today = new Date()
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+    monthStart.setHours(0, 0, 0, 0)
+    const bu = selectedBrandInfo?.bu || ''
+    return filterDashboardData(data, selectedBrand, monthStart, today, bu)
+  }, [data, selectedBrand, selectedBrandInfo])
+
+  const monthTargetData = useMemo(() => {
+    if (!selectedBrand) return null
+    const brandTarget = targets.find(t => t.Brand === selectedBrand)
+    if (!brandTarget) return null
+
+    const annualRevenue = brandTarget['Annual Revenue Target (USD)']
+    const avgPostsPerDay = brandTarget['Avg Posts Per Day']
+    const dailyRevenueTarget = annualRevenue / 365
+    const dailyPostsTarget = avgPostsPerDay
+
+    // Calculate month target (using 30 days as standard month)
+    return {
+      revenueTarget: dailyRevenueTarget * 30,
+      postsTarget: dailyPostsTarget * 30,
+    }
+  }, [selectedBrand, targets])
+
+  // Get data for all months (for modal)
+  const allMonthsData = useMemo(() => {
+    if (!selectedBrand || !monthTargetData) return []
+    const bu = selectedBrandInfo?.bu || ''
+    const months = []
+
+    // Get current month and up to 11 previous months
+    for (let i = 0; i < 12; i++) {
+      const monthStart = new Date()
+      monthStart.setMonth(monthStart.getMonth() - i)
+      monthStart.setDate(1)
+      monthStart.setHours(0, 0, 0, 0)
+
+      const monthEnd = new Date(monthStart)
+      monthEnd.setMonth(monthEnd.getMonth() + 1)
+      monthEnd.setDate(0)
+      monthEnd.setHours(23, 59, 59, 999)
+
+      const monthData = filterDashboardData(data, selectedBrand, monthStart, monthEnd, bu)
+      const revenue = monthData.reduce((sum, row) => sum + (row.total_revenue || 0), 0)
+      const posts = monthData.reduce((sum, row) => sum + (row.total_posts || 0), 0)
+
+      months.push({
+        date: monthStart,
+        label: monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        revenue,
+        posts,
+        revenuePercent: (revenue / (monthTargetData.revenueTarget || 1)) * 100,
+        postsPercent: (posts / (monthTargetData.postsTarget || 1)) * 100,
+      })
+    }
+
+    return months
+  }, [selectedBrand, selectedBrandInfo, data, monthTargetData])
+
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <div className="max-w-7xl mx-auto">
@@ -135,16 +207,6 @@ export function DashboardPage() {
                   Track revenue, posts and engagement across all brands
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-2 pt-1 shrink-0">
-              <button
-                onClick={refetch}
-                disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition disabled:opacity-50"
-              >
-                <IconRefresh className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
             </div>
           </div>
           <div
@@ -167,6 +229,8 @@ export function DashboardPage() {
                 setStartDate(start)
                 setEndDate(end)
               }}
+              onRefresh={refetch}
+              loading={loading}
             />
 
             {/* View mode and comparison toggle */}
@@ -204,7 +268,180 @@ export function DashboardPage() {
                 />
                 <span className="text-sm text-neutral-600 whitespace-nowrap">Show targets</span>
               </label>
+
+              {isAdmin && (
+                <button
+                  onClick={() => brandNavigate('/weekly-report')}
+                  className="ml-auto px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition"
+                >
+                  Weekly Report
+                </button>
+              )}
             </div>
+
+            {/* Monthly Progress Card */}
+            {selectedBrand && monthTargetData && monthToDateData.length > 0 && (
+              <div className="mt-6 bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-neutral-950">Monthly Progress ({new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})</h2>
+                  <button
+                    onClick={() => {
+                      setShowMonthsModal(true)
+                      setMonthsPage(0)
+                    }}
+                    className="text-sm text-neutral-600 hover:text-neutral-950 transition-colors underline"
+                  >
+                    View previous months
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Revenue Progress */}
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-neutral-600 font-medium mb-1">Revenue</p>
+                      <p className="text-2xl font-semibold text-neutral-950">${(monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / 1000).toFixed(1)}K</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="relative h-6">
+                        <div
+                          className="absolute text-xs text-neutral-600 font-medium whitespace-nowrap"
+                          style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%`, transform: 'translateX(-50%)' }}
+                        >
+                          {new Date().getDate()}/{new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()} days
+                        </div>
+                      </div>
+                      <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500"
+                          style={{ width: `${Math.min(100, (monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / (monthTargetData.revenueTarget || 1)) * 100)}%` }}
+                        />
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+                          style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / (monthTargetData.revenueTarget || 1)) * 100).toFixed(0)}% of ${(monthTargetData.revenueTarget / 1000).toFixed(0)}K target</p>
+                    </div>
+                  </div>
+
+                  {/* Posts Progress */}
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-neutral-600 font-medium mb-1">Posts</p>
+                      <p className="text-2xl font-semibold text-neutral-950">{monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="relative h-6">
+                        <div
+                          className="absolute text-xs text-neutral-600 font-medium whitespace-nowrap"
+                          style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%`, transform: 'translateX(-50%)' }}
+                        >
+                          {new Date().getDate()}/{new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()} days
+                        </div>
+                      </div>
+                      <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500"
+                          style={{ width: `${Math.min(100, (monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0) / (monthTargetData.postsTarget || 1)) * 100)}%` }}
+                        />
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+                          style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0) / (monthTargetData.postsTarget || 1)) * 100).toFixed(0)}% of {Math.round(monthTargetData.postsTarget)} target</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Previous Months Modal */}
+            {showMonthsModal && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowMonthsModal(false)}>
+                <div className="bg-white rounded-2xl shadow-lg max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                  {/* Header */}
+                  <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-neutral-950">Monthly Progress History</h3>
+                    <button onClick={() => setShowMonthsModal(false)} className="text-neutral-500 hover:text-neutral-950">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="overflow-y-auto flex-1 px-6 py-6 space-y-4">
+                    {allMonthsData.filter(m => m.revenue > 0 || m.posts > 0).slice(monthsPage * 12, (monthsPage + 1) * 12).map(month => (
+                      <div key={month.label} className="bg-neutral-50 rounded-lg border border-neutral-200 p-4">
+                        <p className="text-sm font-semibold text-neutral-950 mb-4">{month.label}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Revenue Progress */}
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs text-neutral-600 font-medium mb-1">Revenue</p>
+                              <p className="text-2xl font-semibold text-neutral-950">${(month.revenue / 1000).toFixed(1)}K</p>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-emerald-500"
+                                  style={{ width: `${Math.min(100, month.revenuePercent)}%` }}
+                                />
+                              </div>
+                              <p className="text-xs text-neutral-500">{month.revenuePercent.toFixed(0)}% of target</p>
+                            </div>
+                          </div>
+
+                          {/* Posts Progress */}
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs text-neutral-600 font-medium mb-1">Posts</p>
+                              <p className="text-2xl font-semibold text-neutral-950">{month.posts}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-blue-500"
+                                  style={{ width: `${Math.min(100, month.postsPercent)}%` }}
+                                />
+                              </div>
+                              <p className="text-xs text-neutral-500">{month.postsPercent.toFixed(0)}% of target</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {(() => {
+                    const filteredMonths = allMonthsData.filter(m => m.revenue > 0 || m.posts > 0)
+                    return filteredMonths.length > 12 ? (
+                      <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
+                        <button
+                          onClick={() => setMonthsPage(p => Math.max(0, p - 1))}
+                          disabled={monthsPage === 0}
+                          className="px-3 py-1.5 text-sm font-medium rounded-lg border border-neutral-200 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        >
+                          Previous
+                        </button>
+                        <p className="text-xs text-neutral-600">
+                          Page {monthsPage + 1} of {Math.ceil(filteredMonths.length / 12)}
+                        </p>
+                        <button
+                          onClick={() => setMonthsPage(p => p + 1)}
+                          disabled={(monthsPage + 1) * 12 >= filteredMonths.length}
+                          className="px-3 py-1.5 text-sm font-medium rounded-lg border border-neutral-200 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    ) : null
+                  })()}
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="text-center py-8">

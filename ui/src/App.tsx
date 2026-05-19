@@ -23,6 +23,7 @@ import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { YouTubeDashboardPage } from './pages/YouTubeDashboardPage'
+import { WeeklyReportPage } from './pages/WeeklyReportPage'
 import { ArticleToSocialPage } from './pages/ArticleToSocialPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
@@ -673,6 +674,7 @@ function App() {
         <Route path="social-affiliate-posting" element={<SocialAffiliatePostingPage />} />
         <Route path="quick-fact" element={<QuickFactPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="weekly-report" element={<WeeklyReportPage />} />
         <Route path="youtube-dashboard" element={<YouTubeDashboardPage />} />
       </Route>
 

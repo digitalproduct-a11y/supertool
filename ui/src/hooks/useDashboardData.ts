@@ -1,47 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { DashboardRow } from '../utils/dashboardUtils'
+import { normalizeN8NBrand } from '../constants/brands'
 
-// Maps Google Sheet brand names (ALLCAPS / with prefixes) → app brand names
-const SHEET_TO_BRAND: Record<string, string> = {
-  'ASTRO AWANI': 'Astro Awani',
-  'ASTRO ARENA': 'Astro Arena',
-  'ASTRO ULAGAM': 'Astro Ulagam',
-  'ERA': 'Era',
-  'ERA SABAH': 'Era Sabah',
-  'ERA SARAWAK': 'Era Sarawak',
-  'GEGAR': 'Gegar',
-  'ASTRO GEMPAK': 'Gempak',
-  'GOXUAN': 'Goxuan',
-  'HITZ': 'Hitz',
-  '热点 HOTSPOT': 'Hotspot',
-  'IMPIANA': 'Impiana',
-  'KELUARGA': 'Keluarga',
-  'LITE': 'Lite',
-  'MASKULIN': 'Maskulin',
-  'MEDIA HIBURAN': 'Media Hiburan',
-  'MELETOP': 'Meletop',
-  'MELODY': 'Melody',
-  'MINGGUAN WANITA': 'Mingguan Wanita',
-  'MIX': 'Mix',
-  'MY (MALAYSIA)': 'MY',
-  'NONA': 'Nona',
-  'PA&MA': 'Pa&Ma',
-  'RAAGA': 'Raaga',
-  'RASA': 'Rasa',
-  'REMAJA': 'Remaja',
-  'RODA PANAS': 'Roda Panas',
-  'ROJAK DAILY': 'Rojak Daily',
-  'SINAR': 'Sinar',
-  'STADIUM ASTRO': 'Stadium Astro',
-  'XUAN': 'XUAN',
-  'ZAYAN': 'Zayan',
-  'ASTRO AEC 新闻报报看': 'Astro AEC',
-}
-
-function normalizeSheetRow(row: DashboardRow): DashboardRow {
-  const mapped = SHEET_TO_BRAND[row.brand]
-  return mapped ? { ...row, brand: mapped } : row
-}
 
 export interface TargetRow {
   Brand: string
@@ -155,7 +115,10 @@ export function useDashboardData() {
         if (responseItem.data && Array.isArray(responseItem.data)) {
           dataArray = responseItem.data.flatMap((item: any) => {
             if (item?.json?.data && Array.isArray(item.json.data)) {
-              return item.json.data
+              return item.json.data.map((row: any) => ({
+                ...row,
+                brand: normalizeN8NBrand(row.brand) || row.brand,
+              }))
             }
             return []
           }) as DashboardRow[]
@@ -167,20 +130,21 @@ export function useDashboardData() {
         throw new Error(`Unrecognised response format: ${JSON.stringify(result).slice(0, 100)}`)
       }
 
-      const normalizedData = dataArray.map(normalizeSheetRow)
-      // Normalize target Brand names to match app brand names
-      const normalizedTargets = targetsArray.map(t => ({
-        ...t,
-        Brand: SHEET_TO_BRAND[t.Brand] ?? t.Brand,
-      }))
-      setData(normalizedData)
+      setData(dataArray)
+      const normalizedTargets = targetsArray.map(t => {
+        const canonicalBrand = normalizeN8NBrand(t.Brand) || t.Brand
+        return {
+          ...t,
+          Brand: canonicalBrand,
+        }
+      })
       setTargets(normalizedTargets)
       const updated = new Date()
       setLastUpdated(updated)
 
       // Cache in localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        data: normalizedData,
+        data: dataArray,
         targets: normalizedTargets,
         lastUpdated: updated.toISOString(),
       }))
