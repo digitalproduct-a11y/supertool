@@ -8,10 +8,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Server misconfigured' })
   }
 
-  const path = (req.query['path'] as string[] | undefined)?.join('/') ?? ''
+  const rawPath = req.query['path']
+  const path = Array.isArray(rawPath) ? rawPath.join('/') : (rawPath ?? '')
   const query = { ...req.query }
   delete query['path']
-  const qs = new URLSearchParams(query as Record<string, string>).toString()
+  const qs = new URLSearchParams(
+    Object.fromEntries(
+      Object.entries(query).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')])
+    )
+  ).toString()
   const upstream = `${ZERNIO_BASE}/v1/${path}${qs ? `?${qs}` : ''}`
 
   const headers: HeadersInit = {
