@@ -438,7 +438,7 @@ export interface QuickFactError {
 
 export type QuickFactResponse = QuickFactResult | QuickFactError
 
-// Prime Talk Post Generator types
+// TV Script to Post types
 export interface PrimeTalkTopic {
   id: string
   title: string

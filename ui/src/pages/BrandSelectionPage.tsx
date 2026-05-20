@@ -4,17 +4,25 @@ import { useBrand } from '../context/BrandContext'
 import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity, type BrandName } from '../constants/brands'
 import { brandToSlug } from '../utils/brandSlug'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
+import { BrandPasscodeModal } from '../components/BrandPasscodeModal'
+import { clearAdminToken } from '../utils/adminAuth'
 
 export function BrandSelectionPage() {
   const { selectedBrand, setSelectedBrand, clearBrand } = useBrand()
   const navigate = useNavigate()
   const [showAdminModal, setShowAdminModal] = useState(false)
+  const [pendingBrand, setPendingBrand] = useState<BrandName | null>(null)
+  const [loadingBrand, setLoadingBrand] = useState<BrandName | null>(null)
 
-  // Clear any lingering brand so the picker always shows
+  const webhookUrl = (import.meta.env.VITE_BRAND_PASSCODE_WEBHOOK_URL as string | undefined)?.trim()
+
+  // Clear brand context and all auth tokens when returning to the picker
   useEffect(() => {
-    if (selectedBrand) {
-      clearBrand()
-    }
+    if (selectedBrand) clearBrand()
+    clearAdminToken()
+    Object.keys(sessionStorage)
+      .filter(k => k.startsWith('kult_brand_auth_'))
+      .forEach(k => sessionStorage.removeItem(k))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group brands by entity
@@ -30,9 +38,31 @@ export function BrandSelectionPage() {
     brandsByEntity[entity].push(brand)
   })
 
-  const handleSelectBrand = (brand: BrandName) => {
-    setSelectedBrand(brand)
-    navigate(`/${brandToSlug(brand)}/home`)
+  const handleSelectBrand = async (brand: BrandName) => {
+    setLoadingBrand(brand)
+    try {
+      if (!webhookUrl) {
+        setPendingBrand(brand)
+        return
+      }
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand, passcode: '' }),
+      })
+      const data = await res.json() as { success?: boolean; requires_passcode?: boolean }
+      if (data.success && !data.requires_passcode) {
+        sessionStorage.setItem(`kult_brand_auth_${brandToSlug(brand)}`, '1')
+        setSelectedBrand(brand)
+        navigate(`/${brandToSlug(brand)}/home`)
+      } else {
+        setPendingBrand(brand)
+      }
+    } catch {
+      setPendingBrand(brand)
+    } finally {
+      setLoadingBrand(null)
+    }
   }
 
   return (
@@ -67,8 +97,9 @@ export function BrandSelectionPage() {
               {[...brandsByEntity['AASB'], ...brandsByEntity['MBNS']].map(brand => (
                 <button
                   key={brand}
-                  onClick={() => handleSelectBrand(brand as BrandName)}
-                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
+                  onClick={() => void handleSelectBrand(brand as BrandName)}
+                  disabled={loadingBrand !== null}
+                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   <div
                     className="w-16 h-16 flex-shrink-0 flex items-center justify-center"
@@ -83,11 +114,17 @@ export function BrandSelectionPage() {
                   <div className="flex-1 min-w-0 px-3 py-4">
                     <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
                   </div>
-                  <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </span>
+                  {loadingBrand === brand ? (
+                    <span className="text-neutral-300 shrink-0 pr-3">
+                      <span className="w-4 h-4 border-2 border-neutral-200 border-t-neutral-500 rounded-full animate-spin inline-block" />
+                    </span>
+                  ) : (
+                    <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -102,8 +139,9 @@ export function BrandSelectionPage() {
               {brandsByEntity['ARSB'].map(brand => (
                 <button
                   key={brand}
-                  onClick={() => handleSelectBrand(brand as BrandName)}
-                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
+                  onClick={() => void handleSelectBrand(brand as BrandName)}
+                  disabled={loadingBrand !== null}
+                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   <div
                     className="w-16 h-16 flex-shrink-0 flex items-center justify-center"
@@ -118,11 +156,17 @@ export function BrandSelectionPage() {
                   <div className="flex-1 min-w-0 px-3 py-4">
                     <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
                   </div>
-                  <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </span>
+                  {loadingBrand === brand ? (
+                    <span className="text-neutral-300 shrink-0 pr-3">
+                      <span className="w-4 h-4 border-2 border-neutral-200 border-t-neutral-500 rounded-full animate-spin inline-block" />
+                    </span>
+                  ) : (
+                    <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -137,8 +181,9 @@ export function BrandSelectionPage() {
               {brandsByEntity['NISB'].map(brand => (
                 <button
                   key={brand}
-                  onClick={() => handleSelectBrand(brand as BrandName)}
-                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]"
+                  onClick={() => void handleSelectBrand(brand as BrandName)}
+                  disabled={loadingBrand !== null}
+                  className="glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   <div
                     className="w-16 h-16 flex-shrink-0 flex items-center justify-center"
@@ -153,11 +198,17 @@ export function BrandSelectionPage() {
                   <div className="flex-1 min-w-0 px-3 py-4">
                     <h2 className="font-display text-sm font-semibold text-neutral-950">{brand}</h2>
                   </div>
-                  <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </span>
+                  {loadingBrand === brand ? (
+                    <span className="text-neutral-300 shrink-0 pr-3">
+                      <span className="w-4 h-4 border-2 border-neutral-200 border-t-neutral-500 rounded-full animate-spin inline-block" />
+                    </span>
+                  ) : (
+                    <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -191,6 +242,18 @@ export function BrandSelectionPage() {
             navigate('/admin/home')
           }}
           onClose={() => setShowAdminModal(false)}
+        />
+      )}
+
+      {pendingBrand && (
+        <BrandPasscodeModal
+          brand={pendingBrand}
+          onSuccess={() => {
+            setSelectedBrand(pendingBrand)
+            navigate(`/${brandToSlug(pendingBrand)}/home`)
+            setPendingBrand(null)
+          }}
+          onClose={() => setPendingBrand(null)}
         />
       )}
     </div>

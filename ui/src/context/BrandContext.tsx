@@ -21,8 +21,9 @@ function initializeBrand(): BrandValue {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return null
 
-    // Validate stored value: must be 'Admin' or a member of BRANDS
-    const isValid = stored === 'Admin' || BRANDS.includes(stored as BrandName)
+    // Admin is session-only — never restore from localStorage
+    if (stored === 'Admin') return null
+    const isValid = BRANDS.includes(stored as BrandName)
     return isValid ? (stored as BrandValue) : null
   } catch {
     return null
@@ -41,8 +42,10 @@ export function BrandProvider({ children }: { children: ReactNode }) {
         // silently fail if localStorage is unavailable
       }
     } else {
+      // Admin is session-only — never persist to localStorage
+      if (brand === 'Admin') return
       // Validate brand before writing to localStorage
-      const isValid = brand === 'Admin' || BRANDS.includes(brand as BrandName)
+      const isValid = BRANDS.includes(brand as BrandName)
       if (isValid) {
         try {
           localStorage.setItem(STORAGE_KEY, brand)
