@@ -240,124 +240,124 @@ export function ZernioScheduledPostsPage() {
               <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
                 <IconCalendarClock size={24} className="text-neutral-400" />
               </div>
-              <p className="text-sm font-medium text-neutral-700">No scheduled posts</p>
-              <p className="text-xs text-neutral-400 mt-1">Posts you schedule on Facebook will appear here.</p>
+              <p className="text-sm font-medium text-neutral-700">No posts on this page</p>
+              <p className="text-xs text-neutral-400 mt-1">
+                {totalPages > 1 ? 'Your scheduled posts may be on another page — use the navigation below.' : 'Posts you schedule on Facebook will appear here.'}
+              </p>
             </div>
           )}
 
           {/* Table */}
           {!error && filteredPosts.length > 0 && (
-            <>
-              <div className="glass-card rounded-2xl overflow-hidden">
-                <div className="px-6 py-4 border-b border-neutral-100">
-                  <h2 className="text-sm font-semibold text-neutral-700">
-                    {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''} in queue{brandFilter ? ` · ${brandFilter}` : ''}
-                  </h2>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-neutral-100 text-left text-xs font-medium text-neutral-400 uppercase tracking-wide">
-                        <th className="px-6 py-3">Caption</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Page</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Platform</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Scheduled for</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Created on</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Post ID</th>
-                        <th className="px-4 py-3" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredPosts.map(post => {
-                        const firstPlatform = post.platforms[0]
-                        const displayName = firstPlatform?.accountId?.displayName
-                        const platformName = firstPlatform?.platform ?? 'facebook'
-
-                        return (
-                          <tr
-                            key={post._id}
-                            className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors"
-                          >
-                            {/* Caption */}
-                            <td className="px-6 py-4 max-w-[400px]">
-                              <p className={`text-neutral-800 text-sm leading-snug font-mulish ${expandedId === post._id ? '' : 'line-clamp-2'}`}>
-                                {post.content || <span className="text-neutral-400 italic">No caption</span>}
-                              </p>
-                              {post.content && post.content.length > 80 && (
-                                <button
-                                  onClick={() => setExpandedId(expandedId === post._id ? null : post._id)}
-                                  className="mt-1 text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
-                                >
-                                  {expandedId === post._id ? 'Show less' : 'Show more'}
-                                </button>
-                              )}
-                            </td>
-
-                            {/* Page/Profile */}
-                            <td className="px-4 py-4">
-                              {displayName ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium whitespace-nowrap">
-                                  {displayName}
-                                </span>
-                              ) : (
-                                <span className="text-neutral-300 text-xs">—</span>
-                              )}
-                            </td>
-
-                            {/* Platform */}
-                            <td className="px-4 py-4">
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium capitalize whitespace-nowrap">
-                                {platformName}
-                              </span>
-                            </td>
-
-                            {/* Scheduled time */}
-                            <td className="px-4 py-4 font-mulish">
-                              <p className="text-xs text-neutral-600">{formatScheduledTime(post.scheduledFor).date}</p>
-                              <p className="text-xs text-neutral-400">{formatScheduledTime(post.scheduledFor).time}</p>
-                            </td>
-
-                            {/* Created */}
-                            <td className="px-4 py-4">
-                              <div className="font-mulish">
-                                <p className="text-xs text-neutral-500">{formatScheduledTime(post.createdAt).date}</p>
-                                <p className="text-xs text-neutral-400">{formatScheduledTime(post.createdAt).time}</p>
-                              </div>
-                            </td>
-
-                            {/* Post ID */}
-                            <td className="px-4 py-4">
-                              <span className="text-xs text-neutral-400 font-mono">{post._id}</span>
-                            </td>
-
-                            {/* Delete */}
-                            <td className="px-4 py-4">
-                              <button
-                                onClick={() => setPendingDelete(post)}
-                                disabled={deletingId === post._id}
-                                className="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30"
-                                title="Delete post"
-                              >
-                                <IconTrash size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+            <div className="glass-card rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100">
+                <h2 className="text-sm font-semibold text-neutral-700">
+                  {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''} in queue{brandFilter ? ` · ${brandFilter}` : ''}
+                </h2>
               </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-100 text-left text-xs font-medium text-neutral-400 uppercase tracking-wide">
+                      <th className="px-6 py-3">Caption</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Page</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Platform</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Scheduled for</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Created on</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Post ID</th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPosts.map(post => {
+                      const firstPlatform = post.platforms[0]
+                      const displayName = firstPlatform?.accountId?.displayName
+                      const platformName = firstPlatform?.platform ?? 'facebook'
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Pagination
-                  page={page - 1}
-                  totalPages={totalPages}
-                  onPageChange={(p) => setPage(p + 1)}
-                />
-              )}
-            </>
+                      return (
+                        <tr
+                          key={post._id}
+                          className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors"
+                        >
+                          {/* Caption */}
+                          <td className="px-6 py-4 max-w-[400px]">
+                            <p className={`text-neutral-800 text-sm leading-snug font-mulish ${expandedId === post._id ? '' : 'line-clamp-2'}`}>
+                              {post.content || <span className="text-neutral-400 italic">No caption</span>}
+                            </p>
+                            {post.content && post.content.length > 80 && (
+                              <button
+                                onClick={() => setExpandedId(expandedId === post._id ? null : post._id)}
+                                className="mt-1 text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+                              >
+                                {expandedId === post._id ? 'Show less' : 'Show more'}
+                              </button>
+                            )}
+                          </td>
+
+                          {/* Page/Profile */}
+                          <td className="px-4 py-4">
+                            {displayName ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium whitespace-nowrap">
+                                {displayName}
+                              </span>
+                            ) : (
+                              <span className="text-neutral-300 text-xs">—</span>
+                            )}
+                          </td>
+
+                          {/* Platform */}
+                          <td className="px-4 py-4">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium capitalize whitespace-nowrap">
+                              {platformName}
+                            </span>
+                          </td>
+
+                          {/* Scheduled time */}
+                          <td className="px-4 py-4 font-mulish">
+                            <p className="text-xs text-neutral-600">{formatScheduledTime(post.scheduledFor).date}</p>
+                            <p className="text-xs text-neutral-400">{formatScheduledTime(post.scheduledFor).time}</p>
+                          </td>
+
+                          {/* Created */}
+                          <td className="px-4 py-4">
+                            <div className="font-mulish">
+                              <p className="text-xs text-neutral-500">{formatScheduledTime(post.createdAt).date}</p>
+                              <p className="text-xs text-neutral-400">{formatScheduledTime(post.createdAt).time}</p>
+                            </div>
+                          </td>
+
+                          {/* Post ID */}
+                          <td className="px-4 py-4">
+                            <span className="text-xs text-neutral-400 font-mono">{post._id}</span>
+                          </td>
+
+                          {/* Delete */}
+                          <td className="px-4 py-4">
+                            <button
+                              onClick={() => setPendingDelete(post)}
+                              disabled={deletingId === post._id}
+                              className="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30"
+                              title="Delete post"
+                            >
+                              <IconTrash size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination — always visible when multiple pages exist */}
+          {!error && totalPages > 1 && (
+            <Pagination
+              page={page - 1}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p + 1)}
+            />
           )}
 
         </div>
