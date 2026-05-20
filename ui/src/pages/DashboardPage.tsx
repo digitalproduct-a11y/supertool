@@ -13,7 +13,7 @@ import { BackButton } from '../components/ds'
 import { useBrandNavigate } from '../hooks/useBrandNavigate'
 
 export function DashboardPage() {
-  const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
+  const { data, targets, bonuses, loading, lastUpdated, refetch } = useDashboardData()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const brandNavigate = useBrandNavigate()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -29,6 +29,7 @@ export function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showMonthsModal, setShowMonthsModal] = useState(false)
   const [monthsPage, setMonthsPage] = useState(0)
+  const [selectedBonusIndex, setSelectedBonusIndex] = useState(0)
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -279,24 +280,26 @@ export function DashboardPage() {
               )}
             </div>
 
-            {/* Monthly Progress Card */}
+            {/* Monthly Progress and Bonus Cards */}
             {selectedBrand && monthTargetData && monthToDateData.length > 0 && (
-              <div className="mt-6 bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-neutral-950">Monthly Progress ({new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})</h2>
-                  <button
-                    onClick={() => {
-                      setShowMonthsModal(true)
-                      setMonthsPage(0)
-                    }}
-                    className="text-sm text-neutral-600 hover:text-neutral-950 transition-colors underline"
-                  >
-                    View previous months
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Revenue Progress */}
-                  <div className="space-y-3">
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Monthly Progress Card */}
+                <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-neutral-950">Monthly Progress ({new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})</h2>
+                    <button
+                      onClick={() => {
+                        setShowMonthsModal(true)
+                        setMonthsPage(0)
+                      }}
+                      className="text-sm text-neutral-600 hover:text-neutral-950 transition-colors underline"
+                    >
+                      View previous months
+                    </button>
+                  </div>
+                  <div className="space-y-6">
+                    {/* Revenue Progress */}
+                    <div className="space-y-3">
                     <div>
                       <p className="text-xs text-neutral-600 font-medium mb-1">Revenue</p>
                       <p className="text-2xl font-semibold text-neutral-950">${(monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / 1000).toFixed(1)}K</p>
@@ -322,10 +325,10 @@ export function DashboardPage() {
                       </div>
                       <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / (monthTargetData.revenueTarget || 1)) * 100).toFixed(0)}% of ${(monthTargetData.revenueTarget / 1000).toFixed(0)}K target</p>
                     </div>
-                  </div>
+                    </div>
 
-                  {/* Posts Progress */}
-                  <div className="space-y-3">
+                    {/* Posts Progress */}
+                    <div className="space-y-3">
                     <div>
                       <p className="text-xs text-neutral-600 font-medium mb-1">Posts</p>
                       <p className="text-2xl font-semibold text-neutral-950">{monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0)}</p>
@@ -351,8 +354,70 @@ export function DashboardPage() {
                       </div>
                       <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0) / (monthTargetData.postsTarget || 1)) * 100).toFixed(0)}% of {Math.round(monthTargetData.postsTarget)} target</p>
                     </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Bonus Card */}
+                {bonuses[selectedBrand] && bonuses[selectedBrand].length > 0 ? (
+                  <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
+                    <h2 className="text-lg font-semibold text-neutral-950 mb-4">Extra Bonus from Facebook</h2>
+                    {/* Bonus Tabs */}
+                    <div className="flex gap-1 border-b border-neutral-200 mb-4">
+                      {bonuses[selectedBrand].map((bonus, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setSelectedBonusIndex(idx)}
+                          className={`px-3 py-2 text-xs font-medium transition ${
+                            selectedBonusIndex === idx
+                              ? 'text-blue-600 border-b-2 border-blue-600 -mb-px bg-blue-50 rounded-t-lg'
+                              : 'text-neutral-600 hover:text-neutral-950'
+                          }`}
+                        >
+                          Bonus {idx + 1}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Bonus Content */}
+                    {bonuses[selectedBrand][selectedBonusIndex] && (
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="text-base font-semibold text-neutral-950 flex-1">{bonuses[selectedBrand][selectedBonusIndex].title}</h3>
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${
+                            bonuses[selectedBrand][selectedBonusIndex].status === 'In Progress'
+                              ? 'bg-green-100 text-green-700'
+                              : bonuses[selectedBrand][selectedBonusIndex].status === 'Not Activated'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-neutral-100 text-neutral-700'
+                          }`}>
+                            {bonuses[selectedBrand][selectedBonusIndex].status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-neutral-700">{bonuses[selectedBrand][selectedBonusIndex].description}</p>
+                        <div className="bg-neutral-50 rounded-lg p-3 mt-3">
+                          <p className="text-sm font-medium text-neutral-950">{bonuses[selectedBrand][selectedBonusIndex].progress}</p>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-neutral-500 pt-2 border-t border-neutral-200">
+                          <span>Last Updated: {bonuses[selectedBrand][selectedBonusIndex].dateScraped}</span>
+                          <a
+                            href={bonuses[selectedBrand][selectedBonusIndex].bonusUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 font-medium hover:text-blue-700 transition-colors flex items-center gap-1"
+                          >
+                            View Bonus in Meta Business Suite <span>→</span>
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
+                    <h2 className="text-lg font-semibold text-neutral-950 mb-4">Extra Bonus from Facebook</h2>
+                    <p className="text-neutral-500 text-center py-6">No bonuses available for now, check back again soon!</p>
+                  </div>
+                )}
               </div>
             )}
 
