@@ -2,22 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { ZernioPost, ZernioPostsResponse } from '../types'
 
 const PAGE_SIZE = 20
-
-function getApiBase(): string {
-  return ((import.meta.env.VITE_ZERNIO_API_BASE_URL as string | undefined) ?? '').trim()
-}
-
-function getApiKey(): string {
-  return ((import.meta.env.VITE_ZERNIO_API_KEY as string | undefined) ?? '').trim()
-}
-
-function authHeaders(includeContentType = false): HeadersInit {
-  const headers: HeadersInit = {
-    'Authorization': `Bearer ${getApiKey()}`,
-  }
-  if (includeContentType) headers['Content-Type'] = 'application/json'
-  return headers
-}
+const API_BASE = '/api/zernio'
 
 export function useZernioScheduledPosts() {
   const [posts, setPosts] = useState<ZernioPost[]>([])
@@ -29,14 +14,6 @@ export function useZernioScheduledPosts() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchPosts = useCallback(async (pageNum: number) => {
-    const base = getApiBase()
-    const key = getApiKey()
-    if (!base || !key) {
-      setError('Zernio API is not configured. Add VITE_ZERNIO_API_BASE_URL and VITE_ZERNIO_API_KEY to .env.local.')
-      setIsLoading(false)
-      return
-    }
-
     setIsLoading(true)
     setError(null)
 
@@ -50,8 +27,7 @@ export function useZernioScheduledPosts() {
         page: String(pageNum),
         limit: String(PAGE_SIZE),
       })
-      const res = await fetch(`${base}/v1/posts?${params}`, {
-        headers: authHeaders(false),
+      const res = await fetch(`${API_BASE}/posts?${params}`, {
         signal: controller.signal,
       })
 
@@ -85,15 +61,10 @@ export function useZernioScheduledPosts() {
   }, [fetchPosts, page])
 
   const deletePost = useCallback(async (postId: string): Promise<boolean> => {
-    const base = getApiBase()
-    const key = getApiKey()
-    if (!base || !key) return false
-
     setDeletingId(postId)
     try {
-      const res = await fetch(`${base}/v1/posts/${postId}`, {
+      const res = await fetch(`${API_BASE}/posts/${postId}`, {
         method: 'DELETE',
-        headers: authHeaders(false),
       })
       if (!res.ok) return false
       setPosts(prev => prev.filter(p => p._id !== postId))

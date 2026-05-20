@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/webhook/:path*", "destination": "https://astroproduct.app.n8n.cloud/webhook/:path*" },
+    { "source": "/api/zernio/:path*", "destination": "/api/zernio?path=:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "installCommand": "npm install"
