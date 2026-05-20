@@ -467,3 +467,45 @@ export const N8N_TO_CANONICAL_BRAND: Record<string, string> = {
 export function normalizeN8NBrand(n8nBrand: string): string | null {
   return N8N_TO_CANONICAL_BRAND[n8nBrand] ?? null;
 }
+
+// Maps each brand to its exact Facebook page display name as shown in Zernio.
+// null = not yet mapped; the filter will fall back to a loose includes() match.
+// Update this when FB page names change or new brands are onboarded.
+export const BRAND_FB_PAGE_NAME: Partial<Record<BrandName, string | null>> = {
+  "Astro Awani": "Astro AWANI",
+  "Astro Arena": null,
+  "Astro Ulagam": null,
+  Era: "ERA (Malaysia)",
+  "Era Sabah": null,
+  "Era Sarawak": null,
+  Gegar: null,
+  Gempak: null,
+  Goxuan: null,
+  Hitz: null,
+  Hotspot: null,
+  Impiana: null,
+  Keluarga: null,
+  Lite: null,
+  Maskulin: null,
+  "Media Hiburan": null,
+  Meletop: null,
+  Melody: null,
+  "Mingguan Wanita": null,
+  Mix: null,
+  MY: null,
+  Nona: null,
+  "Pa&Ma": "Pa&Ma",
+  Raaga: null,
+  Rasa: null,
+  Remaja: null,
+  "Roda Panas": null,
+  "Rojak Daily": null,
+  Sinar: null,
+  "Stadium Astro": null,
+  XUAN: null,
+  Zayan: null,
+};
+
+export function getBrandFbPageName(brand: string): string | null {
+  return (BRAND_FB_PAGE_NAME as Record<string, string | null>)[brand] ?? null;
+}

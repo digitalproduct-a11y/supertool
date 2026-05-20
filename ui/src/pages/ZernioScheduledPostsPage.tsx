@@ -7,6 +7,7 @@ import { toast } from '../hooks/useToast'
 import { useBrand } from '../context/BrandContext'
 import type { ZernioPost } from '../types'
 import { BackButton } from '../components/ds'
+import { getBrandFbPageName } from '../constants/brands'
 
 function formatScheduledTime(iso: string): { date: string; time: string } {
   const d = new Date(iso)
@@ -140,8 +141,10 @@ export function ZernioScheduledPostsPage() {
     ? posts
     : posts.filter(p =>
         p.platforms.some(pl => {
-          const name = pl.accountId?.displayName ?? ''
-          return name.toLowerCase().includes((selectedBrand ?? '').toLowerCase())
+          const displayName = pl.accountId?.displayName ?? ''
+          const fbPageName = getBrandFbPageName(selectedBrand ?? '')
+          if (fbPageName) return displayName === fbPageName
+          return displayName.toLowerCase().includes((selectedBrand ?? '').toLowerCase())
         })
       )
 
