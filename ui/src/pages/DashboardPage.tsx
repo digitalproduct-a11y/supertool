@@ -364,7 +364,7 @@ export function DashboardPage() {
                     <h2 className="text-lg font-semibold text-neutral-950 mb-4">Extra Bonus from Facebook</h2>
                     {/* Bonus Tabs */}
                     <div className="flex gap-1 border-b border-neutral-200 mb-4">
-                      {bonuses[selectedBrand].map((bonus, idx) => (
+                      {bonuses[selectedBrand].map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setSelectedBonusIndex(idx)}
