@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { saveAdminToken } from '../utils/adminAuth'
 
 interface AdminPasscodeModalProps {
   onSuccess: () => void
@@ -9,22 +10,36 @@ interface AdminPasscodeModalProps {
 export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalProps) {
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
-  const handleSubmit = () => {
-    if (!input) return
-    const correctPasscode = import.meta.env.VITE_ADMIN_PASSCODE as string | undefined
-    if (correctPasscode && input === correctPasscode) {
-      sessionStorage.setItem('kult_admin_auth', '1')
-      onSuccess()
-    } else {
-      setError('Incorrect passcode. Try again.')
-      setInput('')
-      inputRef.current?.focus()
+  const handleSubmit = async () => {
+    if (!input || loading) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/admin-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: input }),
+      })
+      if (res.ok) {
+        const { token } = await res.json() as { token: string }
+        saveAdminToken(token)
+        onSuccess()
+      } else {
+        setError('Incorrect passcode. Try again.')
+        setInput('')
+        inputRef.current?.focus()
+      }
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -82,10 +97,10 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!input}
+            disabled={!input || loading}
             className="w-full px-4 py-2 text-sm bg-neutral-950 text-white rounded-lg hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed font-medium"
           >
-            Continue →
+            {loading ? 'Checking…' : 'Continue →'}
           </button>
         </div>
       </div>

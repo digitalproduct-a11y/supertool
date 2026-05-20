@@ -5,6 +5,7 @@ import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type B
 import { brandToSlug } from '../utils/brandSlug'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
 import { BrandPasscodeModal } from '../components/BrandPasscodeModal'
+import { clearAdminToken } from '../utils/adminAuth'
 
 export function BrandSelectionPage() {
   const { selectedBrand, setSelectedBrand, clearBrand } = useBrand()
@@ -18,7 +19,7 @@ export function BrandSelectionPage() {
   // Clear brand context and all auth tokens when returning to the picker
   useEffect(() => {
     if (selectedBrand) clearBrand()
-    sessionStorage.removeItem('kult_admin_auth')
+    clearAdminToken()
     Object.keys(sessionStorage)
       .filter(k => k.startsWith('kult_brand_auth_'))
       .forEach(k => sessionStorage.removeItem(k))
