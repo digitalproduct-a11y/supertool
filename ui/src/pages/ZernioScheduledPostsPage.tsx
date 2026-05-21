@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { IconRefresh, IconTrash, IconCalendarClock } from '@tabler/icons-react'
 import { useZernioScheduledPosts } from '../hooks/useZernioScheduledPosts'
 import { Pagination } from '../components/ds/Pagination'
+
+const PAGE_SIZE = 20
 import { getCredentials, saveCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
 import { useBrand } from '../context/BrandContext'
@@ -112,9 +114,6 @@ export function ZernioScheduledPostsPage() {
     posts,
     isLoading,
     error,
-    page,
-    totalPages,
-    setPage,
     refetch,
     deletePost,
     deletingId,
@@ -123,6 +122,7 @@ export function ZernioScheduledPostsPage() {
   const [pendingDelete, setPendingDelete] = useState<ZernioPost | null>(null)
   const [brandFilter, setBrandFilter] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
   const pendingDeleteBrand = pendingDelete?.platforms[0]?.accountId?.displayName ?? ''
 
@@ -160,6 +160,21 @@ export function ZernioScheduledPostsPage() {
       p.platforms.some(pl => pl.accountId?.displayName === brandFilter)
     )
   }, [brandPosts, brandFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / PAGE_SIZE))
+
+  useEffect(() => {
+    setPage(1)
+  }, [brandFilter])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(1)
+  }, [page, totalPages])
+
+  const pagedPosts = useMemo(
+    () => filteredPosts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredPosts, page]
+  )
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-28">
@@ -243,10 +258,8 @@ export function ZernioScheduledPostsPage() {
               <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
                 <IconCalendarClock size={24} className="text-neutral-400" />
               </div>
-              <p className="text-sm font-medium text-neutral-700">No posts on this page</p>
-              <p className="text-xs text-neutral-400 mt-1">
-                {totalPages > 1 ? 'Your scheduled posts may be on another page — use the navigation below.' : 'Posts you schedule on Facebook will appear here.'}
-              </p>
+              <p className="text-sm font-medium text-neutral-700">No scheduled posts</p>
+              <p className="text-xs text-neutral-400 mt-1">Posts you schedule on Facebook will appear here.</p>
             </div>
           )}
 
@@ -272,7 +285,7 @@ export function ZernioScheduledPostsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredPosts.map(post => {
+                    {pagedPosts.map(post => {
                       const firstPlatform = post.platforms[0]
                       const displayName = firstPlatform?.accountId?.displayName
                       const platformName = firstPlatform?.platform ?? 'facebook'
@@ -355,7 +368,7 @@ export function ZernioScheduledPostsPage() {
           )}
 
           {/* Pagination — always visible when multiple pages exist */}
-          {!error && totalPages > 1 && (
+          {!error && filteredPosts.length > 0 && totalPages > 1 && (
             <Pagination
               page={page - 1}
               totalPages={totalPages}
