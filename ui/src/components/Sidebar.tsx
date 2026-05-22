@@ -149,7 +149,8 @@ export function Sidebar({
 
   const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
   const userEmail = account?.username ?? ''
-  const userInitials = userEmail.split('@')[0].slice(0, 2).toUpperCase()
+  const userDisplayName = account?.name ?? userEmail.split('@')[0]
+  const userInitials = userDisplayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
 
   const visibleSections = navSections
     .map(group => ({
@@ -316,6 +317,28 @@ export function Sidebar({
               </div>
               <IconSwitchHorizontal className="w-4 h-4 flex-shrink-0 text-neutral-500" />
             </button>
+
+            {/* User profile + logout */}
+            <div className="flex items-center gap-2.5 px-3 py-2.5">
+              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-[11px] font-semibold text-neutral-300">{userInitials}</span>
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[13px] font-medium text-neutral-200 truncate">{userDisplayName}</span>
+                <span className="text-[11px] text-neutral-500 truncate">{userEmail}</span>
+              </div>
+              <button
+                onClick={() => instance.logoutRedirect()}
+                aria-label="Sign out"
+                title="Sign out"
+                className="flex-shrink-0 text-neutral-500 hover:text-red-400 transition-colors"
+              >
+                <IconLogout className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Send feedback — last item */}
+            <div className="mx-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1" />
             <button
               onClick={() => setShowFeedback(true)}
               className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"
@@ -335,21 +358,6 @@ export function Sidebar({
               </svg>
               Send feedback
             </button>
-            {/* User profile + logout */}
-            <div className="flex items-center gap-2.5 px-3 py-2.5">
-              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-[11px] font-semibold text-neutral-300">{userInitials}</span>
-              </div>
-              <span className="flex-1 text-[12px] text-neutral-400 truncate min-w-0">{userEmail}</span>
-              <button
-                onClick={() => instance.logoutRedirect()}
-                aria-label="Sign out"
-                title="Sign out"
-                className="flex-shrink-0 text-neutral-500 hover:text-red-400 transition-colors"
-              >
-                <IconLogout className="w-4 h-4" />
-              </button>
-            </div>
             <p className="px-3 pt-1 text-[11px] text-neutral-400">
               Made with ♥ by Digital team
             </p>
