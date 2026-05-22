@@ -23,6 +23,11 @@ import { TABLOID_QUOTE_CANVAS_CONFIG } from '../config/quoteCanvasConfig'
 import type { QuickFactItem, CarouselResult, CarouselImage } from '../types'
 import { CarouselResultPreview } from '../features/carousel/CarouselResultPreview'
 import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
+import {
+  DEFAULT_PHOTO_TEMPLATE,
+  getPhotoTemplatesForBrand,
+  getDefaultTemplateForBrand,
+} from '../config/photoTemplates'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,7 +44,7 @@ const POST_TYPE_LABELS: Record<PostType, string> = {
 }
 const ALL_TYPES: PostType[] = ['photo', 'carousel', 'quickfact', 'quote']
 
-interface PhotoConfig    { titleMode: TitleMode; captionTitleMode: CaptionTitleMode }
+interface PhotoConfig    { titleMode: TitleMode; captionTitleMode: CaptionTitleMode; template: string }
 interface CarouselConfig { titleMode: TitleMode; captionTitleMode: CaptionTitleMode }
 interface QuickFactConfig { /* no extra */ }
 interface QuoteConfig   { captionTitleMode: CaptionTitleMode; language: Language }
@@ -152,7 +157,13 @@ async function generatePhoto(
     const res = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, brand, title_mode: cfg.titleMode, caption_title_mode: cfg.captionTitleMode }),
+      body: JSON.stringify({
+        url,
+        brand,
+        title_mode: cfg.titleMode,
+        caption_title_mode: cfg.captionTitleMode,
+        template: cfg.template,
+      }),
       signal: controller.signal,
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -443,7 +454,7 @@ export function ArticleToSocialPage() {
   })
 
   const [configs, setConfigs] = useState<Configs>({
-    photo:    { titleMode: 'original', captionTitleMode: 'original' },
+    photo:    { titleMode: 'original', captionTitleMode: 'original', template: DEFAULT_PHOTO_TEMPLATE },
     carousel: { titleMode: 'original', captionTitleMode: 'original' },
     quickfact: {},
     quote:    { captionTitleMode: 'original', language: 'malay' },
@@ -467,6 +478,14 @@ export function ArticleToSocialPage() {
       quote:    { ...prev.quote,    captionTitleMode: mode },
     }))
   }, [articleUrl, effectiveBrand])
+
+  // Reset photo template when brand changes — use brand's first template, or generic default
+  useEffect(() => {
+    setConfigs(prev => ({
+      ...prev,
+      photo: { ...prev.photo, template: getDefaultTemplateForBrand(effectiveBrand) },
+    }))
+  }, [effectiveBrand])
   const isBulk = orderedTypes.length > 1
 
   // Block navigation away from preview page
@@ -647,6 +666,34 @@ export function ArticleToSocialPage() {
                 </div>
               </div>
 
+              {/* Photo template picker — only when Photo is selected and brand has multiple templates */}
+              {selectedTypes.has('photo') && getPhotoTemplatesForBrand(effectiveBrand).length > 1 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Photo Template</label>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {getPhotoTemplatesForBrand(effectiveBrand).map(t => {
+                      const checked = configs.photo.template === t.id
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setConfigs(prev => ({ ...prev, photo: { ...prev.photo, template: t.id } }))}
+                          className={`flex flex-col items-start gap-0.5 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-colors ${
+                            checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
+                          }`}
+                        >
+                          <span>{t.label}</span>
+                          {t.description && (
+                            <span className={`text-[11px] font-normal ${checked ? 'text-neutral-300' : 'text-neutral-500'}`}>
+                              {t.description}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               <button onClick={handleGenerate} disabled={!articleUrl.trim() || orderedTypes.length === 0}
                 className="w-full py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white rounded-xl text-sm font-semibold transition active:scale-[0.98]">
