@@ -3,6 +3,7 @@ import type React from "react";
 import { createPortal } from "react-dom";
 import { useBrand } from '../context/BrandContext'
 import { useNavigate } from 'react-router-dom'
+import { useMsal } from '@azure/msal-react'
 import { getBrandLogoUrl, getBrandHex, needsDarkBg, getEntityLabel } from '../constants/brands'
 import {
   IconHome,
@@ -17,6 +18,7 @@ import {
   IconBrandShopee,
   IconChartBar,
   IconSwitchHorizontal,
+  IconLogout,
 } from "@tabler/icons-react";
 
 export type ToolId =
@@ -141,8 +143,13 @@ export function Sidebar({
 }: SidebarProps) {
   const { selectedBrand, isAdmin, clearBrand } = useBrand()
   const navigate = useNavigate()
+  const { instance } = useMsal()
   const [isOpen, setIsOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
+  const userEmail = account?.username ?? ''
+  const userInitials = userEmail.split('@')[0].slice(0, 2).toUpperCase()
 
   const visibleSections = navSections
     .map(group => ({
@@ -328,7 +335,22 @@ export function Sidebar({
               </svg>
               Send feedback
             </button>
-            <p className="px-3 pt-2 text-[11px] text-neutral-400">
+            {/* User profile + logout */}
+            <div className="flex items-center gap-2.5 px-3 py-2.5">
+              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-[11px] font-semibold text-neutral-300">{userInitials}</span>
+              </div>
+              <span className="flex-1 text-[12px] text-neutral-400 truncate min-w-0">{userEmail}</span>
+              <button
+                onClick={() => instance.logoutRedirect()}
+                aria-label="Sign out"
+                title="Sign out"
+                className="flex-shrink-0 text-neutral-500 hover:text-red-400 transition-colors"
+              >
+                <IconLogout className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="px-3 pt-1 text-[11px] text-neutral-400">
               Made with ♥ by Digital team
             </p>
           </div>
