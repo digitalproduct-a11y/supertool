@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
+import { useMsal } from '@azure/msal-react'
 import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity, type BrandName } from '../constants/brands'
 import { brandToSlug } from '../utils/brandSlug'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
@@ -85,9 +86,15 @@ function BrandCard({
 export function BrandSelectionPage() {
   const { selectedBrand, setSelectedBrand, clearBrand } = useBrand()
   const navigate = useNavigate()
+  const { instance } = useMsal()
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [pendingBrand, setPendingBrand] = useState<BrandName | null>(null)
   const [loadingBrand, setLoadingBrand] = useState<BrandName | null>(null)
+
+  const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
+  const userEmail = account?.username ?? ''
+  const userDisplayName = account?.name ?? userEmail.split('@')[0]
+  const userInitials = userDisplayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
 
   const webhookUrl = (import.meta.env.VITE_BRAND_PASSCODE_WEBHOOK_URL as string | undefined)?.trim()
 
@@ -144,6 +151,28 @@ export function BrandSelectionPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f7f6] flex items-center justify-center px-4 py-16">
+
+      {/* User profile — top right */}
+      <div className="fixed top-4 right-4 flex items-center gap-3 bg-white border border-neutral-200 rounded-xl px-3 py-2 shadow-sm z-10">
+        <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center flex-shrink-0">
+          <span className="text-[11px] font-semibold text-white">{userInitials}</span>
+        </div>
+        <div className="flex flex-col min-w-0">
+          <span className="text-[13px] font-medium text-neutral-900 leading-tight truncate max-w-[160px]">{userDisplayName}</span>
+          <span className="text-[11px] text-neutral-400 leading-tight truncate max-w-[160px]">{userEmail}</span>
+        </div>
+        <button
+          onClick={() => instance.logoutRedirect()}
+          aria-label="Sign out"
+          title="Sign out"
+          className="ml-1 text-neutral-400 hover:text-red-500 transition-colors flex-shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
+      </div>
+
       <div className="w-full max-w-7xl">
 
         {/* Hero */}
