@@ -287,6 +287,29 @@ export function Sidebar({
           {/* Footer */}
           <div className="mx-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-1" />
           <div className="px-3 pb-4 pt-2 space-y-0.5">
+            {/* Send feedback */}
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"
+            >
+              <svg
+                className="w-4 h-4 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              Send feedback
+            </button>
+
+            <div className="mx-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1" />
+
             {/* Brand indicator + switch */}
             <button
               onClick={() => {
@@ -336,28 +359,6 @@ export function Sidebar({
                 <IconLogout className="w-4 h-4" />
               </button>
             </div>
-
-            {/* Send feedback — last item */}
-            <div className="mx-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1" />
-            <button
-              onClick={() => setShowFeedback(true)}
-              className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"
-            >
-              <svg
-                className="w-4 h-4 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              Send feedback
-            </button>
             <p className="px-3 pt-1 text-[11px] text-neutral-400">
               Made with ♥ by Digital team
             </p>
