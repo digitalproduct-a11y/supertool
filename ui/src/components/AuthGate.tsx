@@ -26,7 +26,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-sm flex flex-col items-center gap-6">
           <div className="flex flex-col items-center gap-1">
             <span className="text-2xl font-bold text-white tracking-tight">KULT Digital Kit</span>
-            <span className="text-gray-400 text-sm">Internal tool · Astro</span>
           </div>
           <p className="text-gray-400 text-sm text-center leading-relaxed">
             Sign in with your Astro Microsoft account to continue.
