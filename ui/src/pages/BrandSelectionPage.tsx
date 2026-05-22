@@ -5,7 +5,6 @@ import { useMsal } from '@azure/msal-react'
 import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity, type BrandName } from '../constants/brands'
 import { brandToSlug } from '../utils/brandSlug'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
-import { BrandPasscodeModal } from '../components/BrandPasscodeModal'
 import { clearAdminToken } from '../utils/adminAuth'
 
 // A brand is treated as "coming soon" while it has no Cloudinary logo URL.
@@ -16,28 +15,24 @@ function isComingSoon(brand: BrandName): boolean {
 
 function BrandCard({
   brand,
-  loadingBrand,
   onSelect,
 }: {
   brand: BrandName
-  loadingBrand: BrandName | null
   onSelect: (brand: BrandName) => void
 }) {
   const comingSoon = isComingSoon(brand)
-  const isLoading = loadingBrand === brand
-  const disabled = comingSoon || loadingBrand !== null
 
   return (
     <button
       key={brand}
       onClick={() => !comingSoon && onSelect(brand)}
-      disabled={disabled}
-      aria-disabled={disabled}
+      disabled={comingSoon}
+      aria-disabled={comingSoon}
       title={comingSoon ? 'Coming soon' : undefined}
       className={`glass-card rounded-xl transition-all duration-200 text-left group flex items-center overflow-hidden ${
         comingSoon
           ? 'opacity-60 cursor-not-allowed'
-          : 'hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none'
+          : 'hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:scale-[1.015]'
       }`}
     >
       <div
@@ -68,17 +63,13 @@ function BrandCard({
           <p className="text-[10px] uppercase tracking-wider text-neutral-400 mt-0.5">Coming soon</p>
         )}
       </div>
-      {isLoading ? (
-        <span className="text-neutral-300 shrink-0 pr-3">
-          <span className="w-4 h-4 border-2 border-neutral-200 border-t-neutral-500 rounded-full animate-spin inline-block" />
-        </span>
-      ) : !comingSoon ? (
+      {!comingSoon && (
         <span className="text-neutral-300 group-hover:text-neutral-500 transition-colors shrink-0 pr-3">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </span>
-      ) : null}
+      )}
     </button>
   )
 }
@@ -88,23 +79,16 @@ export function BrandSelectionPage() {
   const navigate = useNavigate()
   const { instance } = useMsal()
   const [showAdminModal, setShowAdminModal] = useState(false)
-  const [pendingBrand, setPendingBrand] = useState<BrandName | null>(null)
-  const [loadingBrand, setLoadingBrand] = useState<BrandName | null>(null)
 
   const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
   const userEmail = account?.username ?? ''
   const userDisplayName = account?.name ?? userEmail.split('@')[0]
   const userInitials = userDisplayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
 
-  const webhookUrl = (import.meta.env.VITE_BRAND_PASSCODE_WEBHOOK_URL as string | undefined)?.trim()
-
-  // Clear brand context and all auth tokens when returning to the picker
+  // Clear brand context and admin token when returning to the picker
   useEffect(() => {
     if (selectedBrand) clearBrand()
     clearAdminToken()
-    Object.keys(sessionStorage)
-      .filter(k => k.startsWith('kult_brand_auth_'))
-      .forEach(k => sessionStorage.removeItem(k))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group brands by entity
@@ -115,38 +99,14 @@ export function BrandSelectionPage() {
     'NISB': [],
   }
 
-  // Hide brands that don't have a logo URL yet (treated as "coming soon").
-  // Fill in BRAND_LOGO_URLS for a brand to make it appear in the picker.
   BRANDS.filter(brand => !isComingSoon(brand)).forEach(brand => {
     const entity = BRAND_ENTITY[brand]
     brandsByEntity[entity].push(brand)
   })
 
-  const handleSelectBrand = async (brand: BrandName) => {
-    setLoadingBrand(brand)
-    try {
-      if (!webhookUrl) {
-        setPendingBrand(brand)
-        return
-      }
-      const res = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brand, passcode: '' }),
-      })
-      const data = await res.json() as { success?: boolean; requires_passcode?: boolean }
-      if (data.success && !data.requires_passcode) {
-        sessionStorage.setItem(`kult_brand_auth_${brandToSlug(brand)}`, '1')
-        setSelectedBrand(brand)
-        navigate(`/${brandToSlug(brand)}/home`)
-      } else {
-        setPendingBrand(brand)
-      }
-    } catch {
-      setPendingBrand(brand)
-    } finally {
-      setLoadingBrand(null)
-    }
+  const handleSelectBrand = (brand: BrandName) => {
+    setSelectedBrand(brand)
+    navigate(`/${brandToSlug(brand)}/home`)
   }
 
   return (
@@ -204,8 +164,7 @@ export function BrandSelectionPage() {
                 <BrandCard
                   key={brand}
                   brand={brand as BrandName}
-                  loadingBrand={loadingBrand}
-                  onSelect={(b) => void handleSelectBrand(b)}
+                  onSelect={handleSelectBrand}
                 />
               ))}
             </div>
@@ -221,8 +180,7 @@ export function BrandSelectionPage() {
                 <BrandCard
                   key={brand}
                   brand={brand as BrandName}
-                  loadingBrand={loadingBrand}
-                  onSelect={(b) => void handleSelectBrand(b)}
+                  onSelect={handleSelectBrand}
                 />
               ))}
             </div>
@@ -238,8 +196,7 @@ export function BrandSelectionPage() {
                 <BrandCard
                   key={brand}
                   brand={brand as BrandName}
-                  loadingBrand={loadingBrand}
-                  onSelect={(b) => void handleSelectBrand(b)}
+                  onSelect={handleSelectBrand}
                 />
               ))}
             </div>
@@ -276,17 +233,6 @@ export function BrandSelectionPage() {
         />
       )}
 
-      {pendingBrand && (
-        <BrandPasscodeModal
-          brand={pendingBrand}
-          onSuccess={() => {
-            setSelectedBrand(pendingBrand)
-            navigate(`/${brandToSlug(pendingBrand)}/home`)
-            setPendingBrand(null)
-          }}
-          onClose={() => setPendingBrand(null)}
-        />
-      )}
     </div>
   )
 }
