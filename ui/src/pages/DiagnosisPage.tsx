@@ -10,7 +10,7 @@ import { BackButton } from '../components/ds'
 export function DiagnosisPage() {
   const { data, targets, loading, lastUpdated, refetch } = useDashboardData()
   const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date(2026, 0, 2); d.setHours(0, 0, 0, 0); return d
+    const d = new Date(); d.setDate(d.getDate() - 90); d.setHours(0, 0, 0, 0); return d
   })
   const [endDate, setEndDate] = useState<Date>(() => {
     const d = new Date(); d.setHours(23, 59, 59, 999); return d
@@ -18,6 +18,15 @@ export function DiagnosisPage() {
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('weekly')
   const [metric, setMetric] = useState<'revenue' | 'posts'>('revenue')
   const [showCalendar, setShowCalendar] = useState(false)
+  const [showBrandBreakdown, setShowBrandBreakdown] = useState(false)
+  const [selectedBU, setSelectedBU] = useState<string | null>(null)
+
+  const BUSINESS_UNIT_LABELS: Record<string, string> = {
+    'AASB': 'Astro',
+    'MBNS': 'Astro',
+    'ARSB': 'Astro Radio',
+    'NISB': 'Nu Ideaktiv',
+  }
 
   // Extract unique brands from data and get their targets
   const brandsWithTargets = useMemo(() => {
@@ -36,6 +45,15 @@ export function DiagnosisPage() {
     // Sort by revenue target, highest first
     return list.sort((a, b) => b.revenueTarget - a.revenueTarget)
   }, [data, targets, viewMode])
+
+  const businessUnits = useMemo(() => {
+    const unique = new Map<string, string>()
+    brandsWithTargets.forEach(b => {
+      const label = BUSINESS_UNIT_LABELS[b.bu] || b.bu
+      if (!unique.has(label)) unique.set(label, label)
+    })
+    return Array.from(unique.values())
+  }, [brandsWithTargets])
 
   // Per-brand data
   const brandCharts = useMemo(() => {
@@ -78,6 +96,14 @@ export function DiagnosisPage() {
     })
   }, [brandsWithTargets, data, targets, startDate, endDate, viewMode])
 
+  const filteredBrandCharts = useMemo(() => {
+    if (!selectedBU) return []
+    return brandCharts.filter(chart => {
+      const label = BUSINESS_UNIT_LABELS[chart.data[0]?.business_unit] || chart.data[0]?.business_unit
+      return label === selectedBU
+    })
+  }, [brandCharts, selectedBU, BUSINESS_UNIT_LABELS])
+
   // Aggregate all brands data by summing individual brand aggregates
   const allBrandsData = useMemo(() => {
     if (brandCharts.length === 0) return []
@@ -88,48 +114,61 @@ export function DiagnosisPage() {
       allRows.push(...chart.data)
     })
 
-    // Group by week/month and sum
+    // Group by week/month/day and sum
     const grouped = new Map<string, DashboardRow[]>()
     allRows.forEach(row => {
-      const key = viewMode === 'weekly' ? `${row.month}|${row.week}` : row.month
+      let key: string
+      if (viewMode === 'weekly') {
+        key = `${row.month}|${row.week}`
+      } else if (viewMode === 'monthly') {
+        key = row.week
+      } else {
+        key = row.date
+      }
       if (!grouped.has(key)) grouped.set(key, [])
       grouped.get(key)!.push(row)
     })
 
     // Sum across all brands for each period
-    return Array.from(grouped.values()).map(rows => {
-      const row0 = rows[0]
-      return {
-        ...row0,
-        date: row0.date,
-        total_posts: rows.reduce((s, r) => s + r.total_posts, 0),
-        photo_posts: rows.reduce((s, r) => s + r.photo_posts, 0),
-        video_posts: rows.reduce((s, r) => s + r.video_posts, 0),
-        text_link_posts: rows.reduce((s, r) => s + r.text_link_posts, 0),
-        total_interactions: rows.reduce((s, r) => s + r.total_interactions, 0),
-        reactions: rows.reduce((s, r) => s + r.reactions, 0),
-        comments: rows.reduce((s, r) => s + r.comments, 0),
-        shares: rows.reduce((s, r) => s + r.shares, 0),
-        total_revenue: rows.reduce((s, r) => s + r.total_revenue, 0),
-        bonus_revenue: rows.reduce((s, r) => s + r.bonus_revenue, 0),
-        photo_revenue: rows.reduce((s, r) => s + r.photo_revenue, 0),
-        video_revenue: rows.reduce((s, r) => s + r.video_revenue, 0),
-        story_revenue: rows.reduce((s, r) => s + r.story_revenue, 0),
-        text_link_revenue: rows.reduce((s, r) => s + r.text_link_revenue, 0),
+    const entries = Array.from(grouped.entries()).sort(([keyA], [keyB]) => {
+      if (viewMode === 'monthly') {
+        return keyA.localeCompare(keyB)
       }
-    }).sort((a, b) => {
-      // Get the minimum date from each grouped set to use for proper chronological sorting
-      const aKey = viewMode === 'weekly' ? `${a.month}|${a.week}` : a.month
-      const bKey = viewMode === 'weekly' ? `${b.month}|${b.week}` : b.month
 
-      const aDates = grouped.get(aKey)?.map(r => r.date).sort() || []
-      const bDates = grouped.get(bKey)?.map(r => r.date).sort() || []
+      const [aMonthStr, aWeekStr] = keyA.split('|')
+      const [bMonthStr, bWeekStr] = keyB.split('|')
 
-      const aMinDate = aDates[0] || a.date
-      const bMinDate = bDates[0] || b.date
+      const aMonthNum = aMonthStr.includes('-') ? parseInt(aMonthStr.replace('-', ''), 10) : 0
+      const bMonthNum = bMonthStr.includes('-') ? parseInt(bMonthStr.replace('-', ''), 10) : 0
+      const aWeekNum = parseInt((aWeekStr || '').replace(/\D/g, ''), 10) || 0
+      const bWeekNum = parseInt((bWeekStr || '').replace(/\D/g, ''), 10) || 0
 
-      return aMinDate.localeCompare(bMinDate)
+      if (aMonthNum !== bMonthNum) return aMonthNum - bMonthNum
+      return aWeekNum - bWeekNum
     })
+
+    return entries
+      .map(([, rows]) => {
+        const row0 = rows[0]
+        return {
+          ...row0,
+          date: row0.date,
+          total_posts: rows.reduce((s, r) => s + r.total_posts, 0),
+          photo_posts: rows.reduce((s, r) => s + r.photo_posts, 0),
+          video_posts: rows.reduce((s, r) => s + r.video_posts, 0),
+          text_link_posts: rows.reduce((s, r) => s + r.text_link_posts, 0),
+          total_interactions: rows.reduce((s, r) => s + r.total_interactions, 0),
+          reactions: rows.reduce((s, r) => s + r.reactions, 0),
+          comments: rows.reduce((s, r) => s + r.comments, 0),
+          shares: rows.reduce((s, r) => s + r.shares, 0),
+          total_revenue: rows.reduce((s, r) => s + r.total_revenue, 0),
+          bonus_revenue: rows.reduce((s, r) => s + r.bonus_revenue, 0),
+          photo_revenue: rows.reduce((s, r) => s + r.photo_revenue, 0),
+          video_revenue: rows.reduce((s, r) => s + r.video_revenue, 0),
+          story_revenue: rows.reduce((s, r) => s + r.story_revenue, 0),
+          text_link_revenue: rows.reduce((s, r) => s + r.text_link_revenue, 0),
+        }
+      })
   }, [brandCharts, viewMode])
 
   // Calculate overall targets
@@ -180,7 +219,7 @@ export function DiagnosisPage() {
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <div className="flex items-center gap-3 mb-3">
@@ -194,7 +233,7 @@ export function DiagnosisPage() {
         </div>
 
         {/* Controls */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="sticky top-0 z-40 bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2 flex gap-3 flex-col sm:flex-row items-start sm:items-center justify-between">
           <div className="flex gap-3 flex-wrap items-center">
             {/* Metric selector */}
             <div className="inline-flex bg-neutral-100 rounded-lg p-1">
@@ -278,36 +317,73 @@ export function DiagnosisPage() {
               data={allBrandsData}
               targetData={overallTargetData}
               showTargets={true}
+              title="All Brands"
             />
           )}
         </div>
 
-        {/* Brand breakdown grid */}
+        {/* Brand breakdown */}
         <div>
-          <h2 className="text-lg font-semibold text-neutral-950 mb-4">By Brand</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {brandCharts.map(chart => (
-              <div key={chart.brand}>
-                {metric === 'revenue' ? (
-                  <RevenueChart
-                    data={chart.data}
-                    targetData={chart.targetData}
-                    showTargets={true}
-                    brand={chart.brand}
-                    onRefetch={refetch}
-                    title={chart.brand}
-                    showUpload={false}
-                  />
-                ) : (
-                  <PostsChart
-                    data={chart.data}
-                    targetData={chart.targetData}
-                    showTargets={true}
-                  />
-                )}
+          <button
+            onClick={() => {
+              setShowBrandBreakdown(!showBrandBreakdown)
+              if (!showBrandBreakdown && !selectedBU && businessUnits.length > 0) {
+                setSelectedBU(businessUnits[0])
+              }
+            }}
+            className="flex items-center gap-2 text-lg font-semibold text-neutral-950 mb-4 hover:text-neutral-600 transition"
+          >
+            <svg className={`w-5 h-5 transition ${showBrandBreakdown ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            By Brand
+          </button>
+          {showBrandBreakdown && (
+            <div className="space-y-6">
+              {/* Business Unit tabs */}
+              <div className="flex gap-2 border-b border-neutral-200">
+                {businessUnits.map(bu => (
+                  <button
+                    key={bu}
+                    onClick={() => setSelectedBU(bu)}
+                    className={`px-4 py-2 font-medium text-sm border-b-2 transition ${
+                      selectedBU === bu
+                        ? 'text-neutral-950 border-neutral-950'
+                        : 'text-neutral-600 border-transparent hover:text-neutral-950'
+                    }`}
+                  >
+                    {bu}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
+
+              {/* Brand charts for selected BU */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {filteredBrandCharts.map(chart => (
+                  <div key={chart.brand}>
+                    {metric === 'revenue' ? (
+                      <RevenueChart
+                        data={chart.data}
+                        targetData={chart.targetData}
+                        showTargets={true}
+                        brand={chart.brand}
+                        onRefetch={refetch}
+                        title={chart.brand}
+                        showUpload={false}
+                      />
+                    ) : (
+                      <PostsChart
+                        data={chart.data}
+                        targetData={chart.targetData}
+                        showTargets={true}
+                        title={chart.brand}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {lastUpdated && (
