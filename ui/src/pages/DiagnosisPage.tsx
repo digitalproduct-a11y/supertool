@@ -118,13 +118,17 @@ export function DiagnosisPage() {
         text_link_revenue: rows.reduce((s, r) => s + r.text_link_revenue, 0),
       }
     }).sort((a, b) => {
-      // Sort by month first, then by week number
-      const monthCompare = a.month.localeCompare(b.month)
-      if (monthCompare !== 0) return monthCompare
-      // Extract week number from "Week1", "Week2", etc.
-      const aWeekNum = parseInt(a.week.replace('Week', ''), 10)
-      const bWeekNum = parseInt(b.week.replace('Week', ''), 10)
-      return aWeekNum - bWeekNum
+      // Get the minimum date from each grouped set to use for proper chronological sorting
+      const aKey = viewMode === 'weekly' ? `${a.month}|${a.week}` : a.month
+      const bKey = viewMode === 'weekly' ? `${b.month}|${b.week}` : b.month
+
+      const aDates = grouped.get(aKey)?.map(r => r.date).sort() || []
+      const bDates = grouped.get(bKey)?.map(r => r.date).sort() || []
+
+      const aMinDate = aDates[0] || a.date
+      const bMinDate = bDates[0] || b.date
+
+      return aMinDate.localeCompare(bMinDate)
     })
   }, [brandCharts, viewMode])
 
