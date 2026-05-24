@@ -117,7 +117,15 @@ export function DiagnosisPage() {
         story_revenue: rows.reduce((s, r) => s + r.story_revenue, 0),
         text_link_revenue: rows.reduce((s, r) => s + r.text_link_revenue, 0),
       }
-    }).sort((a, b) => a.date.localeCompare(b.date))
+    }).sort((a, b) => {
+      // Sort by month first, then by week number
+      const monthCompare = a.month.localeCompare(b.month)
+      if (monthCompare !== 0) return monthCompare
+      // Extract week number from "Week1", "Week2", etc.
+      const aWeekNum = parseInt(a.week.replace('Week', ''), 10)
+      const bWeekNum = parseInt(b.week.replace('Week', ''), 10)
+      return aWeekNum - bWeekNum
+    })
   }, [brandCharts, viewMode])
 
   // Calculate overall targets
