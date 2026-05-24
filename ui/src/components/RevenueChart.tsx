@@ -30,6 +30,7 @@ interface RevenueChartProps {
   brand: string
   onRefetch: () => void
   title?: string
+  showUpload?: boolean
 }
 
 const toNum = (v: unknown): number => {
@@ -45,7 +46,7 @@ const SERIES = [
   { key: 'bonus_revenue', label: 'Bonus', color: '#9333EA' },
 ]
 
-export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, brand, onRefetch, title = 'REVENUE (USD)' }: RevenueChartProps) {
+export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, brand, onRefetch, title = 'REVENUE (USD)', showUpload = true }: RevenueChartProps) {
   const { isAdmin } = useBrand()
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
@@ -207,7 +208,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
             )}
             </div>
           </div>
-          {isAdmin && (
+          {isAdmin && showUpload && (
             <button
               type="button"
               onClick={handleUploadClick}

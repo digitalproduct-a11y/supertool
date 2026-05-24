@@ -228,6 +228,7 @@ export function DiagnosisPage() {
               brand="All Brands"
               onRefetch={refetch}
               title="All Brands"
+              showUpload={false}
             />
           ) : (
             <PostsChart
@@ -252,6 +253,7 @@ export function DiagnosisPage() {
                     brand={chart.brand}
                     onRefetch={refetch}
                     title={chart.brand}
+                    showUpload={false}
                   />
                 ) : (
                   <PostsChart
