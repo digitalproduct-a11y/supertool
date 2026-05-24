@@ -37,50 +37,6 @@ export function DiagnosisPage() {
     return list.sort((a, b) => b.revenueTarget - a.revenueTarget)
   }, [data, targets, viewMode])
 
-  // Aggregate all brands data
-  const allBrandsData = useMemo(() => {
-    const filtered = data.filter(row => {
-      const d = new Date(row.date)
-      return d >= startDate && d <= endDate
-    })
-    if (viewMode === 'weekly') return aggregateByWeek(filtered) as DashboardRow[]
-    if (viewMode === 'monthly') return aggregateByMonth(filtered) as DashboardRow[]
-    return filtered
-  }, [data, startDate, endDate, viewMode])
-
-  // Calculate overall targets
-  const overallTargetData = useMemo(() => {
-    let totalRevenueTarget = 0
-    let totalPostsTarget = 0
-    let targetLabel = 'DAILY TARGET'
-
-    targets.forEach(t => {
-      const annualRevenue = t['Annual Revenue Target (USD)'] || 0
-      const avgPostsPerDay = t['Avg Posts Per Day'] || 0
-      totalRevenueTarget += annualRevenue / 365
-      totalPostsTarget += avgPostsPerDay
-    })
-
-    if (viewMode === 'weekly') {
-      totalRevenueTarget *= 7
-      totalPostsTarget *= 7
-      targetLabel = 'WEEKLY TARGET'
-    } else if (viewMode === 'monthly') {
-      totalRevenueTarget *= 30
-      totalPostsTarget *= 30
-      targetLabel = 'MONTHLY TARGET'
-    }
-
-    return {
-      dailyRevenue: totalRevenueTarget / (viewMode === 'weekly' ? 7 : viewMode === 'monthly' ? 30 : 1),
-      dailyPosts: totalPostsTarget / (viewMode === 'weekly' ? 7 : viewMode === 'monthly' ? 30 : 1),
-      revenueTarget: totalRevenueTarget,
-      postsTarget: totalPostsTarget,
-      targetLabel,
-      interactions: null,
-    }
-  }, [targets, viewMode])
-
   // Per-brand data
   const brandCharts = useMemo(() => {
     return brandsWithTargets.map(brandInfo => {
@@ -121,6 +77,81 @@ export function DiagnosisPage() {
       }
     })
   }, [brandsWithTargets, data, targets, startDate, endDate, viewMode])
+
+  // Aggregate all brands data by summing individual brand aggregates
+  const allBrandsData = useMemo(() => {
+    if (brandCharts.length === 0) return []
+
+    // Collect all aggregated rows from each brand
+    const allRows: DashboardRow[] = []
+    brandCharts.forEach(chart => {
+      allRows.push(...chart.data)
+    })
+
+    // Group by week/month and sum
+    const grouped = new Map<string, DashboardRow[]>()
+    allRows.forEach(row => {
+      const key = viewMode === 'weekly' ? `${row.month}|${row.week}` : row.month
+      if (!grouped.has(key)) grouped.set(key, [])
+      grouped.get(key)!.push(row)
+    })
+
+    // Sum across all brands for each period
+    return Array.from(grouped.values()).map(rows => {
+      const row0 = rows[0]
+      return {
+        ...row0,
+        date: row0.date,
+        total_posts: rows.reduce((s, r) => s + r.total_posts, 0),
+        photo_posts: rows.reduce((s, r) => s + r.photo_posts, 0),
+        video_posts: rows.reduce((s, r) => s + r.video_posts, 0),
+        text_link_posts: rows.reduce((s, r) => s + r.text_link_posts, 0),
+        total_interactions: rows.reduce((s, r) => s + r.total_interactions, 0),
+        reactions: rows.reduce((s, r) => s + r.reactions, 0),
+        comments: rows.reduce((s, r) => s + r.comments, 0),
+        shares: rows.reduce((s, r) => s + r.shares, 0),
+        total_revenue: rows.reduce((s, r) => s + r.total_revenue, 0),
+        bonus_revenue: rows.reduce((s, r) => s + r.bonus_revenue, 0),
+        photo_revenue: rows.reduce((s, r) => s + r.photo_revenue, 0),
+        video_revenue: rows.reduce((s, r) => s + r.video_revenue, 0),
+        story_revenue: rows.reduce((s, r) => s + r.story_revenue, 0),
+        text_link_revenue: rows.reduce((s, r) => s + r.text_link_revenue, 0),
+      }
+    }).sort((a, b) => a.date.localeCompare(b.date))
+  }, [brandCharts, viewMode])
+
+  // Calculate overall targets
+  const overallTargetData = useMemo(() => {
+    let totalRevenueTarget = 0
+    let totalPostsTarget = 0
+    let targetLabel = 'DAILY TARGET'
+
+    targets.forEach(t => {
+      const annualRevenue = t['Annual Revenue Target (USD)'] || 0
+      const avgPostsPerDay = t['Avg Posts Per Day'] || 0
+      totalRevenueTarget += annualRevenue / 365
+      totalPostsTarget += avgPostsPerDay
+    })
+
+    if (viewMode === 'weekly') {
+      totalRevenueTarget *= 7
+      totalPostsTarget *= 7
+      targetLabel = 'WEEKLY TARGET'
+    } else if (viewMode === 'monthly') {
+      totalRevenueTarget *= 30
+      totalPostsTarget *= 30
+      targetLabel = 'MONTHLY TARGET'
+    }
+
+    return {
+      dailyRevenue: totalRevenueTarget / (viewMode === 'weekly' ? 7 : viewMode === 'monthly' ? 30 : 1),
+      dailyPosts: totalPostsTarget / (viewMode === 'weekly' ? 7 : viewMode === 'monthly' ? 30 : 1),
+      revenueTarget: totalRevenueTarget,
+      postsTarget: totalPostsTarget,
+      targetLabel,
+      interactions: null,
+    }
+  }, [targets, viewMode])
 
   if (loading) {
     return (
