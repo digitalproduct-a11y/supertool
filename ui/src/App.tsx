@@ -24,6 +24,7 @@ import { DidYouKnowPage } from './pages/DidYouKnowPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { YouTubeDashboardPage } from './pages/YouTubeDashboardPage'
 import { WeeklyReportPage } from './pages/WeeklyReportPage'
+import { DiagnosisPage } from './pages/DiagnosisPage'
 import { ArticleToSocialPage } from './pages/ArticleToSocialPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
@@ -65,7 +66,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard' | 'youtube-dashboard'
+type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard' | 'youtube-dashboard' | 'diagnosis'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -92,6 +93,7 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/quote': 'quote',
   '/dashboard': 'dashboard',
   '/youtube-dashboard': 'youtube-dashboard',
+  '/diagnosis': 'diagnosis',
 }
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
@@ -107,6 +109,9 @@ function getActiveTool(pathname: string): ToolId {
   }
   if (pathname.startsWith('/dashboard')) {
     return 'dashboard'
+  }
+  if (pathname.startsWith('/diagnosis')) {
+    return 'diagnosis'
   }
   return pathToTool[pathname] ?? 'home'
 }
@@ -134,6 +139,7 @@ const toolToPath: Record<ToolId, string> = {
   'quote': '/engagement-posts/quote',
   'dashboard': '/dashboard',
   'youtube-dashboard': '/youtube-dashboard',
+  'diagnosis': '/diagnosis',
 }
 
 
@@ -675,6 +681,7 @@ function App() {
         <Route path="quick-fact" element={<QuickFactPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="weekly-report" element={<WeeklyReportPage />} />
+        <Route path="diagnosis" element={<DiagnosisPage />} />
         <Route path="youtube-dashboard" element={<YouTubeDashboardPage />} />
       </Route>
 

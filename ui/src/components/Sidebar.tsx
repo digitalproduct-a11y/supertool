@@ -23,6 +23,7 @@ export type ToolId =
   | 'home'
   | 'dashboard'
   | 'youtube-dashboard'
+  | 'diagnosis'
   | 'article-to-social'
   | 'fb-post'
   | 'latest-news'
@@ -109,6 +110,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   home: 'KULT Kit',
   'dashboard': 'Meta Dashboard',
   'youtube-dashboard': 'YouTube Dashboard',
+  'diagnosis': 'Diagnosis',
   'article-to-social': 'Article to Social Post',
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',

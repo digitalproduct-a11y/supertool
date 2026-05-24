@@ -4,7 +4,6 @@ import { slugToBrand } from '../utils/brandSlug'
 import { useBrand } from '../context/BrandContext'
 import { Sidebar } from './Sidebar'
 import type { ToolId } from './Sidebar'
-import { isAdminAuthed } from '../utils/adminAuth'
 
 interface BrandLayoutProps {
   isSidebarCollapsed: boolean

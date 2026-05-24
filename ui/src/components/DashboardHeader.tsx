@@ -34,110 +34,7 @@ const daysAgo = (n: number) => {
   return d
 }
 
-const startOfMonth = (offset = 0) => {
-  const d = new Date()
-  d.setDate(1)
-  d.setMonth(d.getMonth() + offset)
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-
-const endOfMonth = (offset = 0) => {
-  const d = new Date()
-  d.setDate(1)
-  d.setMonth(d.getMonth() + offset + 1)
-  d.setDate(d.getDate() - 1)
-  d.setHours(23, 59, 59, 999)
-  return d
-}
-
 const MIN_DATA_DATE = new Date(2026, 0, 2, 0, 0, 0, 0)
-
-const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-
-interface CalendarMonthProps {
-  date: Date
-  onSelect: (date: Date) => void
-  isStart: boolean
-  minDate?: Date
-  maxDate?: Date
-}
-
-function CalendarMonth({ date, onSelect, isStart, minDate, maxDate }: CalendarMonthProps) {
-  const [displayMonth, setDisplayMonth] = useState(new Date(date.getFullYear(), date.getMonth(), 1))
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const daysInMonth = getDaysInMonth(displayMonth)
-  const firstDay = getFirstDayOfMonth(displayMonth)
-  const days: (number | null)[] = Array(firstDay).fill(null)
-
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i)
-  }
-
-  const handleDayClick = (day: number) => {
-    const newDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day, 0, 0, 0, 0)
-    onSelect(newDate)
-    if (!isStart) setDisplayMonth(new Date(newDate.getFullYear(), newDate.getMonth(), 1))
-  }
-
-  const monthName = displayMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-
-  return (
-    <div className="w-64">
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={() => setDisplayMonth(new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1))}
-          className="text-neutral-500 hover:text-neutral-700"
-        >
-          ←
-        </button>
-        <p className="text-sm font-medium text-neutral-700">{monthName}</p>
-        <button
-          onClick={() => setDisplayMonth(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 1))}
-          className="text-neutral-500 hover:text-neutral-700"
-        >
-          →
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-          <p key={d} className="text-xs text-neutral-400 text-center py-1 font-medium">{d}</p>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-0.5">
-        {days.map((day, i) => {
-          if (day === null) return <div key={`empty-${i}`} />
-          const cellDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day, 0, 0, 0, 0)
-          const isFuture = cellDate > today
-          const isDisabled = isFuture || (minDate && cellDate < minDate) || (maxDate && cellDate > maxDate)
-          const isSelected = date.toDateString() === cellDate.toDateString()
-
-          return (
-            <button
-              key={day}
-              onClick={() => !isDisabled && handleDayClick(day)}
-              disabled={isDisabled}
-              className={`w-7 h-7 text-xs text-center rounded transition ${
-                isSelected
-                  ? 'bg-neutral-950 text-white font-medium'
-                  : isDisabled
-                  ? 'text-neutral-300 cursor-not-allowed'
-                  : 'text-neutral-700 hover:bg-neutral-100'
-              }`}
-            >
-              {day}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 const BUSINESS_UNIT_LABELS: Record<string, string> = {
   'AASB': 'Astro',
@@ -145,15 +42,6 @@ const BUSINESS_UNIT_LABELS: Record<string, string> = {
   'ARSB': 'Astro Radio',
   'NISB': 'Nu Ideaktiv',
 }
-
-const PRESETS = [
-  { label: 'Last 7 Days', start: () => daysAgo(9), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'Last 14 Days', start: () => daysAgo(16), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'Last 30 Days', start: () => daysAgo(32), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'Last 3 Months', start: () => daysAgo(92), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'This Month', start: () => startOfMonth(0), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'Last Month', start: () => startOfMonth(-1), end: () => endOfMonth(-1) },
-]
 
 export function DashboardHeader({
   brand,
@@ -183,27 +71,6 @@ export function DashboardHeader({
   const appliedStart = toInput(startDate)
   const appliedEnd = toInput(endDate)
 
-  const activePreset = PRESETS.findIndex(p =>
-    toInput(p.start()) === appliedStart && toInput(p.end()) === appliedEnd
-  )
-
-  const applyPreset = (p: typeof PRESETS[number]) => {
-    const start = p.start()
-    const end = p.end()
-    onDateRangeChange(start, end)
-    setPickerOpen(false)
-  }
-
-  const handleApply = () => {
-    if (tempStart < tempEnd) {
-      const start = new Date(tempStart)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(tempEnd)
-      end.setHours(23, 59, 59, 999)
-      onDateRangeChange(start, end)
-      setPickerOpen(false)
-    }
-  }
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

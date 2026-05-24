@@ -213,12 +213,20 @@ export function DashboardPage() {
                   </div>
                 </div>
                 {isAdmin && (
-                  <button
-                    onClick={() => brandNavigate('/weekly-report')}
-                    className="px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap"
-                  >
-                    Weekly Analysis
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => brandNavigate('/diagnosis')}
+                      className="px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap"
+                    >
+                      Diagnosis
+                    </button>
+                    <button
+                      onClick={() => brandNavigate('/weekly-report')}
+                      className="px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap"
+                    >
+                      Weekly Analysis
+                    </button>
+                  </div>
                 )}
               </div>
               <div
