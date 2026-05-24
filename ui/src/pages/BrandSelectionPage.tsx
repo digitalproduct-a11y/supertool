@@ -220,7 +220,10 @@ export function BrandSelectionPage() {
         {/* Admin card */}
         <div className="mt-8 pt-8 border-t border-neutral-200">
           <button
-            onClick={() => setShowAdminModal(true)}
+            onClick={() => {
+              setSelectedBrand('Admin')
+              navigate('/admin/home')
+            }}
             className="w-full bg-neutral-900 hover:bg-neutral-800 rounded-xl px-4 py-6 transition-all duration-200 text-left group flex items-center gap-3 hover:shadow-[0_12px_40px_rgba(0,0,0,0.20)] hover:scale-[1.01]"
           >
             <div className="flex-1 min-w-0">

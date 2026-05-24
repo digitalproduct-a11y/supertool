@@ -193,96 +193,77 @@ export function DashboardPage() {
   }, [selectedBrand, selectedBrandInfo, data, monthTargetData])
 
   return (
-    <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Page header */}
-        <div className="mb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <BackButton />
-              <div>
-                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-                  Meta Performance & Revenue Dashboard
-                </h1>
-                <p className="text-neutral-500 mt-1 text-sm">
-                  Track revenue, posts and engagement across all brands
-                </p>
-              </div>
-            </div>
-          </div>
-          <div
-            className="mt-3 h-[3px] rounded-full animate-stripe-grow"
-            style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
-          />
-        </div>
-
-        {/* Filters */}
-        {selectedBrand ? (
-          <>
-            <DashboardHeader
-              brand={selectedBrand}
-              businessUnit={selectedBrandInfo?.bu || ''}
-              brands={brands}
-              onBrandChange={setSelectedBrand}
-              startDate={startDate}
-              endDate={endDate}
-              onDateRangeChange={(start, end) => {
-                setStartDate(start)
-                setEndDate(end)
-              }}
-              onRefresh={refetch}
-              loading={loading}
-            />
-
-            {/* View mode and comparison toggle */}
-            <div className="mt-4 flex gap-4 items-center">
-              <div className="flex gap-1 border border-neutral-200 rounded-lg p-1">
-                {(['daily', 'weekly', 'monthly'] as const).map(mode => (
+    <main className="pb-8">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-40 bg-[#f7f7f6]">
+        <div className="pt-20 md:pt-10 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Page header */}
+            <div className="mb-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <BackButton />
+                  <div>
+                    <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
+                      Meta Performance & Revenue Dashboard
+                    </h1>
+                    <p className="text-neutral-500 mt-1 text-sm">
+                      Track revenue, posts and engagement across all brands
+                    </p>
+                  </div>
+                </div>
+                {isAdmin && (
                   <button
-                    key={mode}
-                    onClick={() => setViewMode(mode)}
-                    className={`px-3 py-1 rounded text-sm font-medium transition capitalize ${
-                      viewMode === mode ? 'bg-neutral-950 text-white' : 'text-neutral-700 hover:bg-neutral-100'
-                    }`}
+                    onClick={() => brandNavigate('/weekly-report')}
+                    className="px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap"
                   >
-                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                    Weekly Analysis
                   </button>
-                ))}
+                )}
               </div>
-
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={showComparison}
-                  onChange={() => setShowComparison(v => !v)}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
-                />
-                <span className="text-sm text-neutral-600 whitespace-nowrap">vs Previous Period</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={showTargets}
-                  onChange={() => setShowTargets(v => !v)}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
-                />
-                <span className="text-sm text-neutral-600 whitespace-nowrap">Show targets</span>
-              </label>
-
-              {isAdmin && (
-                <button
-                  onClick={() => brandNavigate('/weekly-report')}
-                  className="ml-auto px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition"
-                >
-                  Weekly Report
-                </button>
-              )}
+              <div
+                className="mt-3 h-[3px] rounded-full animate-stripe-grow"
+                style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
+              />
             </div>
 
-            {/* Monthly Progress and Bonus Cards */}
-            {selectedBrand && monthTargetData && monthToDateData.length > 0 && (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Dashboard header */}
+            {selectedBrand && (
+              <div className="pb-4 mb-2">
+                <DashboardHeader
+                  brand={selectedBrand}
+                  businessUnit={selectedBrandInfo?.bu || ''}
+                  brands={brands}
+                  onBrandChange={setSelectedBrand}
+                  startDate={startDate}
+                  endDate={endDate}
+                  onDateRangeChange={(start, end) => {
+                    setStartDate(start)
+                    setEndDate(end)
+                  }}
+                  onRefresh={refetch}
+                  loading={loading}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  showComparison={showComparison}
+                  onShowComparisonChange={setShowComparison}
+                  showTargets={showTargets}
+                  onShowTargetsChange={setShowTargets}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          {selectedBrand ? (
+            <>
+              {/* Monthly Progress and Bonus Cards */}
+              {selectedBrand && monthTargetData && monthToDateData.length > 0 && (
+              <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Monthly Progress Card */}
                 <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
                   <div className="flex items-center justify-between mb-4">
@@ -297,15 +278,14 @@ export function DashboardPage() {
                       View previous months
                     </button>
                   </div>
-                  <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
                     {/* Revenue Progress */}
-                    <div className="space-y-3">
-                    <div>
-                      <p className="text-xs text-neutral-600 font-medium mb-1">Revenue</p>
-                      <p className="text-2xl font-semibold text-neutral-950">${(monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / 1000).toFixed(1)}K</p>
-                    </div>
                     <div className="space-y-1">
-                      <div className="relative h-6">
+                      <div>
+                        <p className="text-xs text-neutral-600 font-medium mb-0.5">Revenue</p>
+                        <p className="text-lg font-semibold text-neutral-950">${(monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / 1000).toFixed(1)}K</p>
+                      </div>
+                      <div className="relative h-4">
                         <div
                           className="absolute text-xs text-neutral-600 font-medium whitespace-nowrap"
                           style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%`, transform: 'translateX(-50%)' }}
@@ -313,7 +293,7 @@ export function DashboardPage() {
                           {new Date().getDate()}/{new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()} days
                         </div>
                       </div>
-                      <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                      <div className="relative h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-emerald-500"
                           style={{ width: `${Math.min(100, (monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / (monthTargetData.revenueTarget || 1)) * 100)}%` }}
@@ -323,18 +303,16 @@ export function DashboardPage() {
                           style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%` }}
                         />
                       </div>
-                      <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / (monthTargetData.revenueTarget || 1)) * 100).toFixed(0)}% of ${(monthTargetData.revenueTarget / 1000).toFixed(0)}K target</p>
-                    </div>
+                      <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_revenue || 0), 0) / (monthTargetData.revenueTarget || 1)) * 100).toFixed(0)}% of ${(monthTargetData.revenueTarget / 1000).toFixed(0)}K</p>
                     </div>
 
                     {/* Posts Progress */}
-                    <div className="space-y-3">
-                    <div>
-                      <p className="text-xs text-neutral-600 font-medium mb-1">Posts</p>
-                      <p className="text-2xl font-semibold text-neutral-950">{monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0)}</p>
-                    </div>
                     <div className="space-y-1">
-                      <div className="relative h-6">
+                      <div>
+                        <p className="text-xs text-neutral-600 font-medium mb-0.5">Posts</p>
+                        <p className="text-lg font-semibold text-neutral-950">{monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0)}</p>
+                      </div>
+                      <div className="relative h-4">
                         <div
                           className="absolute text-xs text-neutral-600 font-medium whitespace-nowrap"
                           style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%`, transform: 'translateX(-50%)' }}
@@ -342,7 +320,7 @@ export function DashboardPage() {
                           {new Date().getDate()}/{new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()} days
                         </div>
                       </div>
-                      <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                      <div className="relative h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-blue-500"
                           style={{ width: `${Math.min(100, (monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0) / (monthTargetData.postsTarget || 1)) * 100)}%` }}
@@ -352,8 +330,7 @@ export function DashboardPage() {
                           style={{ left: `${(new Date().getDate() / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}%` }}
                         />
                       </div>
-                      <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0) / (monthTargetData.postsTarget || 1)) * 100).toFixed(0)}% of {Math.round(monthTargetData.postsTarget)} target</p>
-                    </div>
+                      <p className="text-xs text-neutral-500">{((monthToDateData.reduce((sum, row) => sum + (row.total_posts || 0), 0) / (monthTargetData.postsTarget || 1)) * 100).toFixed(0)}% of {Math.round(monthTargetData.postsTarget)}</p>
                     </div>
                   </div>
                 </div>
@@ -381,33 +358,33 @@ export function DashboardPage() {
 
                     {/* Bonus Content */}
                     {bonuses[selectedBrand][selectedBonusIndex] && (
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <h3 className="text-base font-semibold text-neutral-950 flex-1">{bonuses[selectedBrand][selectedBonusIndex].title}</h3>
-                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${
-                            bonuses[selectedBrand][selectedBonusIndex].status === 'In Progress'
-                              ? 'bg-green-100 text-green-700'
-                              : bonuses[selectedBrand][selectedBonusIndex].status === 'Not Activated'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-neutral-100 text-neutral-700'
-                          }`}>
-                            {bonuses[selectedBrand][selectedBonusIndex].status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-neutral-700">{bonuses[selectedBrand][selectedBonusIndex].description}</p>
-                        <div className="bg-neutral-50 rounded-lg p-3 mt-3">
-                          <p className="text-sm font-medium text-neutral-950">{bonuses[selectedBrand][selectedBonusIndex].progress}</p>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-neutral-500 pt-2 border-t border-neutral-200">
-                          <span>Last Updated: {bonuses[selectedBrand][selectedBonusIndex].dateScraped}</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-neutral-950">{bonuses[selectedBrand][selectedBonusIndex].title}</h3>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
+                              bonuses[selectedBrand][selectedBonusIndex].status === 'In Progress'
+                                ? 'bg-green-100 text-green-700'
+                                : bonuses[selectedBrand][selectedBonusIndex].status === 'Not Activated'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-neutral-100 text-neutral-700'
+                            }`}>
+                              {bonuses[selectedBrand][selectedBonusIndex].status}
+                            </span>
+                          </div>
                           <a
                             href={bonuses[selectedBrand][selectedBonusIndex].bonusUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 font-medium hover:text-blue-700 transition-colors flex items-center gap-1"
+                            className="text-blue-600 font-medium hover:text-blue-700 transition-colors text-xs whitespace-nowrap flex-shrink-0"
                           >
-                            View Bonus in Meta Business Suite <span>→</span>
+                            View →
                           </a>
+                        </div>
+                        <p className="text-xs text-neutral-600">{bonuses[selectedBrand][selectedBonusIndex].description}</p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-neutral-950">{bonuses[selectedBrand][selectedBonusIndex].progress}</span>
+                          <span className="text-neutral-600">Last updated: {bonuses[selectedBrand][selectedBonusIndex].dateScraped}</span>
                         </div>
                       </div>
                     )}
@@ -415,7 +392,7 @@ export function DashboardPage() {
                 ) : (
                   <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
                     <h2 className="text-lg font-semibold text-neutral-950 mb-4">Extra Bonus from Facebook</h2>
-                    <p className="text-neutral-500 text-center py-6">No bonuses available for now, check back again soon!</p>
+                    <p className="text-neutral-500 text-center py-4">No bonuses available for now, check back again soon!</p>
                   </div>
                 )}
               </div>
@@ -545,6 +522,7 @@ export function DashboardPage() {
             </p>
           </div>
         )}
+        </div>
       </div>
     </main>
   )

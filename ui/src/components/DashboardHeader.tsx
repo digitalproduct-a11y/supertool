@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { IconRefresh, IconCheck } from '@tabler/icons-react'
+import { RangeCalendarPicker } from './RangeCalendarPicker'
 
 interface DashboardHeaderProps {
   brand: string
@@ -11,6 +12,12 @@ interface DashboardHeaderProps {
   onDateRangeChange: (start: Date, end: Date) => void
   onRefresh?: () => void
   loading?: boolean
+  viewMode?: 'daily' | 'weekly' | 'monthly'
+  onViewModeChange?: (mode: 'daily' | 'weekly' | 'monthly') => void
+  showComparison?: boolean
+  onShowComparisonChange?: (show: boolean) => void
+  showTargets?: boolean
+  onShowTargetsChange?: (show: boolean) => void
 }
 
 const toInput = (d: Date) => {
@@ -140,12 +147,12 @@ const BUSINESS_UNIT_LABELS: Record<string, string> = {
 }
 
 const PRESETS = [
-  { label: '7D', start: () => daysAgo(9), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: '14D', start: () => daysAgo(16), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: '30D', start: () => daysAgo(32), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'Last 3M', start: () => daysAgo(92), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'This month', start: () => startOfMonth(0), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
-  { label: 'Last month', start: () => startOfMonth(-1), end: () => endOfMonth(-1) },
+  { label: 'Last 7 Days', start: () => daysAgo(9), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'Last 14 Days', start: () => daysAgo(16), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'Last 30 Days', start: () => daysAgo(32), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'Last 3 Months', start: () => daysAgo(92), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'This Month', start: () => startOfMonth(0), end: () => { const d = daysAgo(2); d.setHours(23, 59, 59, 999); return d } },
+  { label: 'Last Month', start: () => startOfMonth(-1), end: () => endOfMonth(-1) },
 ]
 
 export function DashboardHeader({
@@ -157,11 +164,19 @@ export function DashboardHeader({
   onDateRangeChange,
   onRefresh,
   loading,
+  viewMode = 'daily',
+  onViewModeChange,
+  showComparison = true,
+  onShowComparisonChange,
+  showTargets = true,
+  onShowTargetsChange,
 }: DashboardHeaderProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false)
   const [tempStart, setTempStart] = useState(startDate)
   const [tempEnd, setTempEnd] = useState(endDate)
+  const [showInfoModal, setShowInfoModal] = useState(false)
+  const [showViewOptions, setShowViewOptions] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
   const brandRef = useRef<HTMLDivElement>(null)
 
@@ -208,10 +223,9 @@ export function DashboardHeader({
   const maxSelectableDate = daysAgo(2)
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2">
-      <div className="flex flex-wrap gap-3 items-center justify-between">
-        {/* Left section: Brand dropdown and Refresh button */}
-        <div className="flex gap-3 items-center">
+    <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2 flex gap-3 items-center justify-between">
+      {/* Left section: Brand dropdown */}
+      <div className="flex gap-3 items-center">
           {/* Brand dropdown */}
           <div className="relative" ref={brandRef}>
             <button
@@ -267,7 +281,10 @@ export function DashboardHeader({
               )
             })()}
           </div>
+        </div>
 
+        {/* Right section: Refresh, Data availability, View mode, Calendar picker */}
+        <div className="flex gap-3 items-center">
           {/* Refresh button */}
           {onRefresh && (
             <button
@@ -279,30 +296,81 @@ export function DashboardHeader({
               Refresh data
             </button>
           )}
-        </div>
 
-        {/* Right section: Presets and date picker */}
-        <div className="flex flex-wrap gap-3 items-center">
-          {/* Preset chips */}
-          <div className="flex gap-1.5 items-center">
-            {PRESETS.map((p, i) => (
-              <button
-                key={p.label}
-                onClick={() => applyPreset(p)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                  activePreset === i
-                    ? 'bg-neutral-950 text-white'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
+          {/* Data availability button */}
+          <button
+            onClick={() => setShowInfoModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition"
+            title="Data availability info"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Data availability
+          </button>
+
+          {/* View options dropdown */}
+          <div className="relative">
+          <button
+            onClick={() => setShowViewOptions(!showViewOptions)}
+            className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition flex items-center gap-2"
+          >
+            View: {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}
+            <svg className={`w-3 h-3 transition ${showViewOptions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {showViewOptions && (
+            <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4" style={{ width: '280px', right: 0 }}>
+              {/* View mode */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-neutral-600 uppercase tracking-widest mb-2">View Mode</p>
+                <div className="flex gap-1 border border-neutral-200 rounded-lg p-1">
+                  {(['daily', 'weekly', 'monthly'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        onViewModeChange?.(mode)
+                        setShowViewOptions(false)
+                      }}
+                      className={`flex-1 px-2 py-1 rounded text-xs font-medium transition capitalize ${
+                        viewMode === mode ? 'bg-neutral-950 text-white' : 'text-neutral-700 hover:bg-neutral-100'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Checkboxes */}
+              <div className="space-y-2 border-t border-neutral-200 pt-3">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showComparison}
+                    onChange={() => onShowComparisonChange?.(!showComparison)}
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
+                  />
+                  <span className="text-sm text-neutral-600">vs Previous Period</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showTargets}
+                    onChange={() => onShowTargetsChange?.(!showTargets)}
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
+                  />
+                  <span className="text-sm text-neutral-600">Show targets</span>
+                </label>
+              </div>
+            </div>
+          )}
           </div>
 
-          <span className="text-neutral-300 text-sm">|</span>
-
-          {/* Custom date range */}
+          {/* Date range picker */}
           <div className="flex gap-2 items-center relative" ref={pickerRef}>
             <button
               onClick={() => setPickerOpen(v => !v)}
@@ -312,42 +380,46 @@ export function DashboardHeader({
             </button>
 
             {pickerOpen && (
-              <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4" style={{ right: 0, width: '550px', paddingRight: '24px' }}>
-                <div className="grid grid-cols-2 gap-6 mb-4">
-                  <div>
-                    <p className="text-xs font-medium text-neutral-600 mb-3">Start Date</p>
-                    <CalendarMonth date={tempStart} onSelect={setTempStart} isStart maxDate={tempEnd} minDate={MIN_DATA_DATE} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-neutral-600 mb-3">End Date</p>
-                    <CalendarMonth date={tempEnd} onSelect={setTempEnd} isStart={false} minDate={tempStart} maxDate={maxSelectableDate} />
-                  </div>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => setPickerOpen(false)}
-                    className="px-3 py-1 text-sm text-neutral-600 hover:bg-neutral-100 rounded transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleApply}
-                    className="px-3 py-1 bg-neutral-950 text-white rounded text-sm font-medium hover:bg-neutral-800 transition"
-                  >
-                    Apply
-                  </button>
-                </div>
+              <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4" style={{ right: 0, width: '520px' }}>
+                <RangeCalendarPicker
+                  startDate={tempStart}
+                  endDate={tempEnd}
+                  onRangeChange={(start, end) => {
+                    const adjustedStart = new Date(start)
+                    adjustedStart.setHours(0, 0, 0, 0)
+                    const adjustedEnd = new Date(end)
+                    adjustedEnd.setHours(23, 59, 59, 999)
+                    setTempStart(adjustedStart)
+                    setTempEnd(adjustedEnd)
+                    onDateRangeChange(adjustedStart, adjustedEnd)
+                    setPickerOpen(false)
+                  }}
+                  minDate={MIN_DATA_DATE}
+                  maxDate={maxSelectableDate}
+                />
               </div>
             )}
           </div>
         </div>
-      </div>
-      <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-        <ul className="text-xs text-amber-900 space-y-1 list-disc list-inside">
-          <li><span className="font-medium">Data available from 2 Jan 2026 onwards</span></li>
-          <li>All data available at T-2 (2 days delay). Revenue data may have additional delay</li>
-        </ul>
-      </div>
+
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInfoModal(false)}>
+          <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-base font-semibold text-neutral-950">Data Availability</h3>
+              <button onClick={() => setShowInfoModal(false)} className="text-neutral-400 hover:text-neutral-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <ul className="text-sm text-neutral-700 space-y-2 list-disc list-inside">
+              <li><span className="font-medium">Data available from 2 Jan 2026 onwards</span></li>
+              <li>All data available at T-2 (2 days delay). Revenue data may have additional delay</li>
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

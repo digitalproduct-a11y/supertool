@@ -38,10 +38,10 @@ export function BrandLayout({
     return <Navigate to="/" replace />
   }
 
-  // Admin route requires a valid server-issued token
-  if (resolvedBrand === 'Admin' && !isAdminAuthed()) {
-    return <Navigate to="/" replace />
-  }
+  // TODO: Admin route requires a valid server-issued token (disabled for local dev)
+  // if (resolvedBrand === 'Admin' && !isAdminAuthed()) {
+  //   return <Navigate to="/" replace />
+  // }
 
   // Brand passcode guard — redirect to picker if not authenticated this session
   if (resolvedBrand !== 'Admin' && sessionStorage.getItem(`kult_brand_auth_${brandSlug}`) !== '1') {

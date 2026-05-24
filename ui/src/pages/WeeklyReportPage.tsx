@@ -38,6 +38,7 @@ export function WeeklyReportPage() {
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null)
   const [sortBy, setSortBy] = useState<SortBy>('brand-name')
   const [showSortModal, setShowSortModal] = useState(false)
+  const [weeklyMeetingMode, setWeeklyMeetingMode] = useState(false)
   const sortModalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -131,38 +132,36 @@ export function WeeklyReportPage() {
       <div className="max-w-7xl mx-auto">
         {/* Page header */}
         <div className="mb-6">
-          <div className="flex items-start gap-3 mb-4">
-            <BackButton />
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
-                Weekly Revenue Report
-              </h1>
-              <p className="text-neutral-500 mt-1 text-sm">
-                {weekLabel}
-              </p>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-start gap-3">
+              <BackButton />
+              <div>
+                <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">
+                  Weekly Revenue Report
+                </h1>
+                <p className="text-neutral-500 mt-1 text-sm">
+                  {weekLabel}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-neutral-700 whitespace-nowrap">Select week:</label>
+              <input
+                type="date"
+                value={selectedWeekStart ? toInput(selectedWeekStart) : ''}
+                onChange={(e) => {
+                  const newDate = new Date(e.target.value)
+                  newDate.setHours(0, 0, 0, 0)
+                  setSelectedWeekStart(newDate)
+                }}
+                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+              />
             </div>
           </div>
           <div
             className="h-[3px] rounded-full animate-stripe-grow"
             style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
           />
-        </div>
-
-        {/* Week picker */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4 mb-8">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-neutral-700">Select week:</label>
-            <input
-              type="date"
-              value={selectedWeekStart ? toInput(selectedWeekStart) : ''}
-              onChange={(e) => {
-                const newDate = new Date(e.target.value)
-                newDate.setHours(0, 0, 0, 0)
-                setSelectedWeekStart(newDate)
-              }}
-              className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
-            />
-          </div>
         </div>
 
         {!selectedWeekStart && (
@@ -189,7 +188,7 @@ export function WeeklyReportPage() {
                     <span>Actual vs Target</span>
                     <span>{((summaryMetrics.current.revenue / totalTargets.revenue) * 100).toFixed(0)}%</span>
                   </div>
-                  <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                  <div className="relative h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-500"
                       style={{ width: `${Math.min(100, (summaryMetrics.current.revenue / totalTargets.revenue) * 100)}%` }}
@@ -213,7 +212,7 @@ export function WeeklyReportPage() {
                     <span>Actual vs Target</span>
                     <span>{((summaryMetrics.current.posts / totalTargets.posts) * 100).toFixed(0)}%</span>
                   </div>
-                  <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden">
+                  <div className="relative h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500"
                       style={{ width: `${Math.min(100, (summaryMetrics.current.posts / totalTargets.posts) * 100)}%` }}
@@ -240,30 +239,42 @@ export function WeeklyReportPage() {
 
             </div>
 
-            {/* AI Summary - Coming Soon */}
-            <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden mb-8">
-              <div
-                className="h-1"
-                style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }}
-              />
-              <div className="px-6 py-8 text-center">
-                <svg className="w-6 h-6 mx-auto mb-3 text-neutral-950" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <p className="text-neutral-700 font-medium">AI-Powered Revenue Insights (Coming Soon)</p>
-              </div>
-            </div>
-
             {/* Main table */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-neutral-950">Performance by Brand</h2>
+                <h2 className="text-lg font-semibold text-neutral-950">{weeklyMeetingMode ? 'Weekly Meeting' : 'Performance by Brand'}</h2>
 
-                {/* Sort button and modal */}
-                <div className="relative" ref={sortModalRef}>
+                <div className="flex items-center gap-3">
+                  {/* Weekly Meeting toggle */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-neutral-600">Weekly Meeting</span>
+                    <button
+                      onClick={() => setWeeklyMeetingMode(!weeklyMeetingMode)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        weeklyMeetingMode
+                          ? 'bg-neutral-950'
+                          : 'bg-neutral-200'
+                      }`}
+                      title="Toggle Weekly Meeting Mode"
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                          weeklyMeetingMode ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Sort button and modal */}
+                  <div className="relative" ref={sortModalRef}>
                   <button
-                    onClick={() => setShowSortModal(!showSortModal)}
-                    className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm font-medium bg-white cursor-pointer hover:bg-neutral-50 transition flex items-center gap-2"
+                    onClick={() => !weeklyMeetingMode && setShowSortModal(!showSortModal)}
+                    disabled={weeklyMeetingMode}
+                    className={`px-3 py-1.5 border rounded-lg text-sm font-medium flex items-center gap-2 transition ${
+                      weeklyMeetingMode
+                        ? 'border-neutral-200 bg-neutral-50 text-neutral-400 cursor-not-allowed'
+                        : 'border-neutral-200 bg-white text-neutral-700 cursor-pointer hover:bg-neutral-50'
+                    }`}
                   >
                     Sort by: {SORT_OPTIONS.find(o => o.value === sortBy)?.label}
                     <svg className={`w-3 h-3 transition ${showSortModal ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
@@ -310,6 +321,7 @@ export function WeeklyReportPage() {
                       </div>
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
               <WeeklyReportTable
@@ -317,6 +329,7 @@ export function WeeklyReportPage() {
                 prevWeekData={prevWeekData}
                 targets={targets}
                 sortBy={sortBy}
+                weeklyMeetingMode={weeklyMeetingMode}
               />
             </div>
           </>
