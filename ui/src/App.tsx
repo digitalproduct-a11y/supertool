@@ -14,6 +14,7 @@ import { LatestFuelPricePage } from './pages/LatestFuelPricePage'
 import { KLCIIndexPage } from './pages/KLCIIndexPage'
 import { BrandLayout } from './components/BrandLayout'
 import { RouteTracker } from './components/RouteTracker'
+import { PageTitle } from './components/PageTitle'
 import { ShopeeTopProductsPage } from './pages/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './pages/ZernioScheduledPostsPage'
 import { SpikeNewsPage } from './pages/SpikeNewsPage'
@@ -623,6 +624,7 @@ function App() {
 
   return (
     <>
+    <PageTitle />
     <ToastContainer />
     <Routes>
       <Route path="/" element={<BrandSelectionPage />} />

@@ -3,6 +3,7 @@ import type React from "react";
 import { createPortal } from "react-dom";
 import { useBrand } from '../context/BrandContext'
 import { useNavigate } from 'react-router-dom'
+import { useMsal } from '@azure/msal-react'
 import { getBrandLogoUrl, getBrandHex, needsDarkBg, getEntityLabel } from '../constants/brands'
 import {
   IconHome,
@@ -17,6 +18,7 @@ import {
   IconBrandShopee,
   IconChartBar,
   IconSwitchHorizontal,
+  IconLogout,
 } from "@tabler/icons-react";
 
 export type ToolId =
@@ -143,8 +145,14 @@ export function Sidebar({
 }: SidebarProps) {
   const { selectedBrand, isAdmin, clearBrand } = useBrand()
   const navigate = useNavigate()
+  const { instance } = useMsal()
   const [isOpen, setIsOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
+  const userEmail = account?.username ?? ''
+  const userDisplayName = account?.name ?? userEmail.split('@')[0]
+  const userInitials = userDisplayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
 
   const visibleSections = navSections
     .map(group => ({
@@ -281,6 +289,29 @@ export function Sidebar({
           {/* Footer */}
           <div className="mx-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-1" />
           <div className="px-3 pb-4 pt-2 space-y-0.5">
+            {/* Send feedback */}
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"
+            >
+              <svg
+                className="w-4 h-4 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              Send feedback
+            </button>
+
+            <div className="mx-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1" />
+
             {/* Brand indicator + switch */}
             <button
               onClick={() => {
@@ -311,26 +342,26 @@ export function Sidebar({
               </div>
               <IconSwitchHorizontal className="w-4 h-4 flex-shrink-0 text-neutral-500" />
             </button>
-            <button
-              onClick={() => setShowFeedback(true)}
-              className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"
-            >
-              <svg
-                className="w-4 h-4 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+
+            {/* User profile + logout */}
+            <div className="flex items-center gap-2.5 px-3 py-2.5">
+              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-[11px] font-semibold text-neutral-300">{userInitials}</span>
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[13px] font-medium text-neutral-200 truncate">{userDisplayName}</span>
+                <span className="text-[11px] text-neutral-500 truncate">{userEmail}</span>
+              </div>
+              <button
+                onClick={() => instance.logoutRedirect()}
+                aria-label="Sign out"
+                title="Sign out"
+                className="flex-shrink-0 text-neutral-500 hover:text-red-400 transition-colors"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              Send feedback
-            </button>
-            <p className="px-3 pt-2 text-[11px] text-neutral-400">
+                <IconLogout className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="px-3 pt-1 text-[11px] text-neutral-400">
               Made with ♥ by Digital team
             </p>
           </div>
