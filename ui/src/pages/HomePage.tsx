@@ -156,12 +156,15 @@ const TOOL_CARDS = [
     ],
   },
   {
-    title: 'Custom Engagement Post',
+    title: 'Custom Post',
     gradient: 'linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)',
     icon: IconBulb,
     iconColor: '#F05A35',
     image: '/custom-engagement-post-card.png',
     links: [] as { label: string; path: string; state?: Record<string, unknown> }[],
+    sharedLinks: [
+      { label: 'News Poster', path: '/engagement-posts/news-poster' },
+    ] as { label: string; path: string }[],
     brandSpecific: true,
   },
 ]
@@ -536,11 +539,12 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TOOL_CARDS.map(card => {
                 const Icon = card.icon
-                const links = ('brandSpecific' in card && card.brandSpecific)
+                const brandLinks = ('brandSpecific' in card && card.brandSpecific)
                   ? isAdmin
                     ? Object.values(BRAND_CUSTOM_ENGAGEMENT).flat()
                     : (selectedBrand ? (BRAND_CUSTOM_ENGAGEMENT[selectedBrand] ?? []) : [])
                   : card.links
+                const links = [...(('sharedLinks' in card && card.sharedLinks) ? card.sharedLinks : []), ...brandLinks]
                 return (
                   <div key={card.title} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
                     {/* 16:9 illustration area */}
