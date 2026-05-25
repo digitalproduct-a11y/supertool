@@ -1,15 +1,15 @@
 EVENT NAME,TRIGGER,PARAMETER 1,PARAMETER 2,PARAMETER 3,PARAMETER 4,GA4 DIMENSION NEEDED,COVERAGE,FILE(S)
-page_view,Editor navigates to any tool page,page_path,brand_slug,,,brand_slug + page_path,All 28 tool pages,src/components/RouteTracker.tsx
-tool_used,Editor clicks Generate button,tool_name,brand_slug,source_domain (optional),,brand_slug + tool_name + source_domain,All generate buttons (13 pages/components),src/hooks/useWorkflow.ts + multiple pages
-post_scheduled,Post successfully sent/scheduled to Facebook,tool_name,brand_slug,,,brand_slug + tool_name,All FB post/schedule paths,src/App.tsx + src/hooks/useScheduledPosts.ts + 4 pages
-button_click,Editor clicks a tracked action button,action,tool_name,brand_slug,,action + brand_slug + tool_name,All tools with image/caption actions,src/components/ResultPreview.tsx + GeneratePostView + ArticleGenerateView + PostCard + QuickFactPage + ArticleToSocialPage + QuotePage + WeatherMalaysiaPage
+page_view,Editor navigates to any tool page,page_path,brand_slug,,,brand_slug + page_path,All 25 tool routes (auto-fires on every route change),src/components/RouteTracker.tsx
+tool_used,Editor clicks Generate button,tool_name,brand_slug,source_domain (optional),,brand_slug + tool_name + source_domain,13 generate entry points (1 hook + 12 standalone pages),src/hooks/useWorkflow.ts + GeneratePostView + ArticleGenerateView + QuickFactPage + WeatherMalaysiaPage + QuotePage + ArticleToSocialPage + LatestFuelPricePage + KLCIIndexPage + LatestCurrencyRatePage + PrimeTalkPage + DidYouKnowPage + EngagementPhotosPage
+post_scheduled,Post successfully sent/scheduled to Facebook,tool_name,brand_slug,,,brand_slug + tool_name,All FB post/schedule paths (App.tsx + hook + 4 pages),src/App.tsx + src/hooks/useScheduledPosts.ts + QuickFactPage + LatestFuelPricePage + KLCIIndexPage + LatestCurrencyRatePage
+button_click,Editor clicks a tracked action button,action,tool_name,brand_slug,,action + brand_slug + tool_name,8 files (PrimeTalk/DidYouKnow/EngagementPhotos rely on PostCard — image actions only no caption_copied),src/components/ResultPreview.tsx + GeneratePostView + ArticleGenerateView + PostCard + QuickFactPage + ArticleToSocialPage + QuotePage + WeatherMalaysiaPage
 home_tool_click,Editor clicks a tool link on the homepage,tool_label,tool_path,brand_slug,,tool_label + tool_path + brand_slug,Homepage tool cards,src/pages/HomePage.tsx
 ,,,,,,,,
 EVENT NAME,ACTION VALUE,DESCRIPTION,TOOLS COVERED,,,,,
 button_click,adjust_image,Editor opens crop/adjust image tool,Article to FB + Carousel + Engagement Posts + Post Queue + Quick Fact,,,,,
 button_click,download_image,Editor downloads the generated image,Article to FB + Carousel + Engagement Posts + Post Queue + Quick Fact,,,,,
 button_click,upload_custom_image,Editor uploads a custom image,Article to FB + Carousel + Engagement Posts + Post Queue + Quick Fact,,,,,
-button_click,caption_copied,Editor copies the post caption,Article to FB + Carousel + Article to Social + Weather Malaysia + Quote + Quick Fact,,,,,
+button_click,caption_copied,Editor copies the post caption,Article to FB + Carousel + Article to Social + Weather Malaysia + Quote + Quick Fact (NOT tracked on: Prime Talk + Did You Know + Engagement Photos + On This Day),,,,,
 ,,,,,,,,
 EVENT NAME,TOOL NAME VALUE,ROUTE,NOTES,,,,,
 tool_used,article-to-fb,/article-to-fb,Article to FB Photo,,,,,
