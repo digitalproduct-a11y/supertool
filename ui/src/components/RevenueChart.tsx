@@ -14,8 +14,8 @@ import {
 import { IconAdjustmentsHorizontal, IconUpload } from '@tabler/icons-react'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { formatDateLabel } from '../utils/dashboardUtils'
-import { PasscodeModal } from './PasscodeModal'
 import { RevenueUploadModal } from './RevenueUploadModal'
+import { useBrand } from '../context/BrandContext'
 
 interface RevenueChartProps {
   data: DashboardRow[]
@@ -28,6 +28,8 @@ interface RevenueChartProps {
   endDate?: Date
   brand: string
   onRefetch: () => void
+  title?: string
+  showUpload?: boolean
 }
 
 const toNum = (v: unknown): number => {
@@ -43,11 +45,11 @@ const SERIES = [
   { key: 'bonus_revenue', label: 'Bonus', color: '#9333EA' },
 ]
 
-export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, brand, onRefetch }: RevenueChartProps) {
+export function RevenueChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, brand, onRefetch, title = 'REVENUE (USD)', showUpload = true }: RevenueChartProps) {
+  const { isAdmin } = useBrand()
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
-  const [passcodeModalOpen, setPasscodeModalOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
@@ -70,12 +72,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
   }
 
   const handleUploadClick = () => {
-    const isAuthenticated = sessionStorage.getItem('uploadAuth') === 'true'
-    if (isAuthenticated) {
-      setUploadModalOpen(true)
-    } else {
-      setPasscodeModalOpen(true)
-    }
+    setUploadModalOpen(true)
   }
 
   if (data.length === 0) {
@@ -141,7 +138,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-neutral-950">REVENUE (USD)</h2>
+            <h2 className="text-lg font-semibold text-neutral-950">{title}</h2>
             <div ref={ref} className="relative">
               <button
                 onClick={() => setOpen(v => !v)}
@@ -204,15 +201,17 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
             )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleUploadClick}
-            aria-label="Upload revenue data"
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition"
-          >
-            <IconUpload className="w-3.5 h-3.5" />
-            Upload revenue
-          </button>
+          {isAdmin && showUpload && (
+            <button
+              type="button"
+              onClick={handleUploadClick}
+              aria-label="Upload revenue data"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition"
+            >
+              <IconUpload className="w-3.5 h-3.5" />
+              Upload revenue
+            </button>
+          )}
         </div>
         <div className="mb-4">
           <div className="flex items-center gap-2 justify-center">
@@ -357,16 +356,6 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
           </Bar>
         </ComposedChart>
       </ResponsiveContainer>
-
-      {passcodeModalOpen && (
-        <PasscodeModal
-          onSuccess={() => {
-            setPasscodeModalOpen(false)
-            setUploadModalOpen(true)
-          }}
-          onClose={() => setPasscodeModalOpen(false)}
-        />
-      )}
 
       {uploadModalOpen && (
         <RevenueUploadModal

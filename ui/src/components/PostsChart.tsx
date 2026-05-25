@@ -24,6 +24,7 @@ interface PostsChartProps {
   viewMode?: 'daily' | 'weekly' | 'monthly'
   startDate?: Date
   endDate?: Date
+  title?: string
 }
 
 const SERIES = [
@@ -32,7 +33,7 @@ const SERIES = [
   { key: 'text_link_posts', label: 'Text Link', color: '#F05A35' },
 ]
 
-export function PostsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true }: PostsChartProps) {
+export function PostsChart({ data, prevData = [], showComparison = false, targetData, showTargets = true, title = 'Posts Published' }: PostsChartProps) {
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -107,7 +108,7 @@ export function PostsChart({ data, prevData = [], showComparison = false, target
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-neutral-950">Posts Published</h2>
+            <h2 className="text-lg font-semibold text-neutral-950">{title}</h2>
             <div ref={ref} className="relative">
               <button
                 onClick={() => setOpen(v => !v)}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { trackToolSubmit } from '../utils/analytics'
 import { useBlocker } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
 import { IconChevronLeft } from '@tabler/icons-react'
@@ -78,6 +79,8 @@ export function DidYouKnowPage() {
       return
     }
 
+    const [, brandSlug, ...toolParts] = window.location.pathname.split('/')
+    trackToolSubmit(toolParts.join('/') || 'unknown', brandSlug ?? 'unknown')
     await fetchIdeas(selectedBrand, context, webhookUrl)
     setStage('select')
   }

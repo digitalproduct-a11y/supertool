@@ -4,6 +4,7 @@ import { slugToBrand } from '../utils/brandSlug'
 import { useBrand } from '../context/BrandContext'
 import { Sidebar } from './Sidebar'
 import type { ToolId } from './Sidebar'
+import { isAdminAuthed } from '../utils/adminAuth'
 
 interface BrandLayoutProps {
   isSidebarCollapsed: boolean
@@ -34,6 +35,16 @@ export function BrandLayout({
 
   // Invalid slug → brand picker
   if (!resolvedBrand) {
+    return <Navigate to="/" replace />
+  }
+
+  // Admin route requires a valid server-issued token
+  if (resolvedBrand === 'Admin' && !isAdminAuthed()) {
+    return <Navigate to="/" replace />
+  }
+
+  // Brand passcode guard — redirect to picker if not authenticated this session
+  if (resolvedBrand !== 'Admin' && sessionStorage.getItem(`kult_brand_auth_${brandSlug}`) !== '1') {
     return <Navigate to="/" replace />
   }
 

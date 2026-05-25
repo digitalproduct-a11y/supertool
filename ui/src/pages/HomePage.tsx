@@ -86,6 +86,12 @@ async function fetchCompetitorNews(): Promise<ArticleWithBrand[]> {
   } catch { return [] }
 }
 
+// ── Brand-specific custom engagement posts ───────────────────────────────────
+
+const BRAND_CUSTOM_ENGAGEMENT: Record<string, { label: string; path: string }[]> = {
+  'Hotspot': [{ label: 'TV Script to Post', path: '/engagement-photos/prime-talk' }],
+}
+
 // ── Tool cards ───────────────────────────────────────────────────────────────
 
 const TOOL_CARDS = [
@@ -149,6 +155,15 @@ const TOOL_CARDS = [
       { label: 'Malay Entertainment', path: '/engagement-posts/malay-entertainment' },
     ],
   },
+  {
+    title: 'Custom Engagement Post',
+    gradient: 'linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)',
+    icon: IconBulb,
+    iconColor: '#F05A35',
+    image: '/custom-engagement-post-card.png',
+    links: [] as { label: string; path: string; state?: Record<string, unknown> }[],
+    brandSpecific: true,
+  },
 ]
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -189,8 +204,17 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
       ? filterDashboardData(data, selectedBrand, prevStartDate, prevEndDate)
       : []
 
-  // Sort by date asc for sparklines
-  const sparkRows = [...filtered].sort((a, b) => a.date.localeCompare(b.date))
+  // Aggregate filtered rows by date for sparklines (sum all brands/profiles per day)
+  const sparkByDate = filtered.reduce<Record<string, { total_posts: number; total_revenue: number }>>((acc, r) => {
+    const day = r.date.split('T')[0]
+    if (!acc[day]) acc[day] = { total_posts: 0, total_revenue: 0 }
+    acc[day].total_posts += r.total_posts || 0
+    acc[day].total_revenue += r.total_revenue || 0
+    return acc
+  }, {})
+  const sparkRows = Object.entries(sparkByDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, v]) => v)
 
   // 30-day totals — current
   const totalPosts = filtered.reduce((s, r) => s + (r.total_posts || 0), 0)
@@ -213,6 +237,10 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   const fmtDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   const dateRangeLabel = `${fmtDate(startDate)} – ${fmtDate(endDate)}`
   const dataFooter = latestDate ? dateRangeLabel : 'Last 30 days'
+
+  // Admin summary counts
+  const adminBrandCount = isAdmin ? new Set(filtered.map(r => r.brand)).size : 0
+  const adminProfileCount = isAdmin ? new Set(filtered.map(r => r.profile_id)).size : 0
 
   // Missing revenue days (within the actual window)
   const windowDates: string[] = []
@@ -237,7 +265,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
       actual: totalPosts,
       growth: calcGrowth(totalPosts, prevPosts),
       footer: dataFooter,
-      sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_posts || 0 }))),
+      sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_posts }))),
       color: '#0055EE',
     },
     {
@@ -250,7 +278,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
         ? `${missingRevenueDays} day(s) missing data`
         : dataFooter,
       footerWarning: missingRevenueDays > 0 && !isAdmin,
-      sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_revenue || 0 }))),
+      sparkData: toSparkData(sparkRows.map(r => ({ v: r.total_revenue }))),
       color: '#0055EE',
     },
   ]
@@ -350,7 +378,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
               {/* ── Meta (left) ─────────────────────────────────────────────── */}
               <div className="flex flex-col">
                 <div className="flex items-baseline justify-between">
-                  <h3 className="text-base font-semibold text-neutral-950">Meta</h3>
+                  <h3 className="text-base font-semibold text-neutral-950">{isAdmin ? 'Meta · All Profiles' : 'Meta'}</h3>
                   <button
                     onClick={() => brandNavigate('/dashboard')}
                     className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
@@ -362,7 +390,9 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                   </button>
                 </div>
                 <p className="text-xs text-neutral-400 mt-0.5 mb-4">
-                  Last 30 days
+                  {isAdmin
+                    ? `${adminBrandCount} brands · ${adminProfileCount} profiles · Last 30 days`
+                    : 'Last 30 days'}
                   {latestDate && <span> · {dateRangeLabel}</span>}
                 </p>
                 {loading ? (
@@ -506,6 +536,11 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TOOL_CARDS.map(card => {
                 const Icon = card.icon
+                const links = ('brandSpecific' in card && card.brandSpecific)
+                  ? isAdmin
+                    ? Object.values(BRAND_CUSTOM_ENGAGEMENT).flat()
+                    : (selectedBrand ? (BRAND_CUSTOM_ENGAGEMENT[selectedBrand] ?? []) : [])
+                  : card.links
                 return (
                   <div key={card.title} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
                     {/* 16:9 illustration area */}
@@ -525,7 +560,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                     </div>
                     {/* Link list */}
                     <div className="pb-3">
-                      {card.links.map((link, i) => (
+                      {links.length > 0 ? links.map((link, i) => (
                         <button
                           key={link.path + i}
                           onClick={() => { trackHomeToolClick(link.label, link.path); brandNavigate(link.path, 'state' in link ? { state: link.state } : undefined) }}
@@ -536,7 +571,9 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
                         </button>
-                      ))}
+                      )) : ('brandSpecific' in card && card.brandSpecific) ? (
+                        <p className="px-5 py-2.5 text-sm text-neutral-300">Coming soon for your brand</p>
+                      ) : null}
                     </div>
                   </div>
                 )
