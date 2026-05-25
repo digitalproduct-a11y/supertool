@@ -3,7 +3,6 @@ import {
   IconTrophy,
   IconTrendingUp,
   IconFlame,
-  IconNews,
 } from "@tabler/icons-react";
 import { useBrandNavigate } from "../hooks/useBrandNavigate";
 import { useBrand } from "../context/BrandContext";
@@ -67,25 +66,17 @@ const TOOL_CARDS = [
     brandSpecific: false,
   },
   {
-    title: "Custom Engagement Post",
+    title: "Custom Post",
     description: "Brand-specific engagement tools tailored to your content format and audience.",
     gradient: "linear-gradient(135deg, #FEF1EB 0%, #FFF5F0 50%, #FFFBF8 100%)",
     icon: IconBulb,
     iconColor: "#F05A35",
     image: "/custom-engagement-post-card.png",
     links: [] as { label: string; path: string }[],
-    brandSpecific: true,
-  },
-  {
-    title: "News Poster",
-    description: "Design a branded news poster with custom headline, subtitle and brand logo — powered by Fabric.js.",
-    gradient: "linear-gradient(135deg, #F0F4FF 0%, #EEF3FF 50%, #F5F8FF 100%)",
-    icon: IconNews,
-    iconColor: "#0055EE",
-    image: "/sports-engagement-post-card.png",
-    links: [
+    sharedLinks: [
       { label: "News Poster", path: "/engagement-posts/news-poster" },
-    ],
+    ] as { label: string; path: string }[],
+    brandSpecific: true,
   },
 ];
 
@@ -127,11 +118,12 @@ export function EngagementPostsLanding({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {TOOL_CARDS.map((card) => {
             const Icon = card.icon;
-            const links = card.brandSpecific
+            const brandLinks = card.brandSpecific
               ? isAdmin
                 ? Object.values(BRAND_CUSTOM_ENGAGEMENT).flat()
                 : (selectedBrand ? (BRAND_CUSTOM_ENGAGEMENT[selectedBrand] ?? []) : [])
               : card.links;
+            const links = [...(card.sharedLinks ?? []), ...brandLinks];
             return (
               <div
                 key={card.title}

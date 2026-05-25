@@ -3,7 +3,12 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "mcp__n8n-mcp__n8n_manage_credentials",
-      "mcp__n8n-mcp__n8n_manage_datatable"
+      "mcp__n8n-mcp__n8n_manage_datatable",
+      "Bash(git merge *)",
+      "Bash(git fetch *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/)",
+      "Bash(git checkout *)"
     ]
   },
   "enableAllProjectMcpServers": false,
