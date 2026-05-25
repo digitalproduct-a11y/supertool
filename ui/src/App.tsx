@@ -21,6 +21,7 @@ import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
 import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
+import { NewsPosterPage } from './pages/NewsPosterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { YouTubeDashboardPage } from './pages/YouTubeDashboardPage'
 import { ArticleToSocialPage } from './pages/ArticleToSocialPage'
@@ -81,6 +82,7 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/malay-entertainment': 'engagement-photos',
   '/engagement-posts/badminton': 'engagement-photos',
   '/engagement-posts/motogp': 'engagement-photos',
+  '/engagement-posts/news-poster': 'engagement-photos',
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
@@ -667,6 +669,7 @@ function App() {
           </Suspense>
         } />
         <Route path="engagement-posts/didyouknow" element={<DidYouKnowPage />} />
+        <Route path="engagement-posts/news-poster" element={<NewsPosterPage />} />
         <Route path="engagement-photos/prime-talk" element={<PrimeTalkPage />} />
         <Route path="shopee-top-products" element={<ShopeeTopProductsPage />} />
         <Route path="post-queue" element={<ZernioScheduledPostsPage />} />

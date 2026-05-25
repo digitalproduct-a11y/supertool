@@ -3,6 +3,7 @@ import {
   IconTrophy,
   IconTrendingUp,
   IconFlame,
+  IconNews,
 } from "@tabler/icons-react";
 import { useBrandNavigate } from "../hooks/useBrandNavigate";
 import { BackButton } from "../components/ds";
@@ -57,6 +58,17 @@ const TOOL_CARDS = [
     image: "/entertainment-post-card.png",
     links: [
       { label: "Malay Entertainment", path: "/engagement-posts/malay-entertainment" },
+    ],
+  },
+  {
+    title: "News Poster",
+    description: "Design a branded news poster with custom headline, subtitle and brand logo — powered by Fabric.js.",
+    gradient: "linear-gradient(135deg, #F0F4FF 0%, #EEF3FF 50%, #F5F8FF 100%)",
+    icon: IconNews,
+    iconColor: "#0055EE",
+    image: "/sports-engagement-post-card.png",
+    links: [
+      { label: "News Poster", path: "/engagement-posts/news-poster" },
     ],
   },
 ];
