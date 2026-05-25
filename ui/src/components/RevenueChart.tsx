@@ -14,7 +14,6 @@ import {
 import { IconAdjustmentsHorizontal, IconUpload } from '@tabler/icons-react'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { formatDateLabel } from '../utils/dashboardUtils'
-import { PasscodeModal } from './PasscodeModal'
 import { RevenueUploadModal } from './RevenueUploadModal'
 import { useBrand } from '../context/BrandContext'
 
@@ -51,7 +50,6 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
   const [active, setActive] = useState<Set<string>>(new Set(SERIES.map(s => s.key)))
   const [open, setOpen] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
-  const [passcodeModalOpen, setPasscodeModalOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const metricsRef = useRef<HTMLDivElement>(null)
 
@@ -74,12 +72,7 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
   }
 
   const handleUploadClick = () => {
-    const isAuthenticated = sessionStorage.getItem('uploadAuth') === 'true'
-    if (isAuthenticated) {
-      setUploadModalOpen(true)
-    } else {
-      setPasscodeModalOpen(true)
-    }
+    setUploadModalOpen(true)
   }
 
   if (data.length === 0) {
@@ -363,16 +356,6 @@ export function RevenueChart({ data, prevData = [], showComparison = false, targ
           </Bar>
         </ComposedChart>
       </ResponsiveContainer>
-
-      {passcodeModalOpen && (
-        <PasscodeModal
-          onSuccess={() => {
-            setPasscodeModalOpen(false)
-            setUploadModalOpen(true)
-          }}
-          onClose={() => setPasscodeModalOpen(false)}
-        />
-      )}
 
       {uploadModalOpen && (
         <RevenueUploadModal
