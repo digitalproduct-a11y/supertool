@@ -6,6 +6,16 @@ const CLIENT_ID = process.env.AZURE_CLIENT_ID!
 const ALLOWED_DOMAIN = process.env.AZURE_ALLOWED_DOMAIN ?? 'astro.com.my'
 const N8N_HOST = 'astroproduct.app.n8n.cloud'
 
+// Per-webhook tokens. Keyed by path prefix on the n8n host.
+// The n8n Webhook node must be configured with Header Auth using the same value.
+const WEBHOOK_TOKENS: Array<{ match: (path: string) => boolean; token: string | undefined; header: string }> = [
+  {
+    match: (path) => path.startsWith('/webhook/dashboard') || path.startsWith('/webhook-test/dashboard'),
+    token: process.env.DASHBOARD_WEBHOOK_TOKEN,
+    header: 'dashboard-webhook-token',
+  },
+]
+
 // Lazily initialised so the module loads even if env vars are set after cold start
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null
 function getJwks() {
@@ -60,10 +70,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Target host not allowed' })
   }
 
+  const forwardHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+  const tokenRule = WEBHOOK_TOKENS.find((rule) => rule.match(targetUrl.pathname))
+  if (tokenRule?.token) {
+    forwardHeaders[tokenRule.header] = tokenRule.token
+  }
+
   try {
     const n8nRes = await fetch(targetUrl.toString(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: forwardHeaders,
       body: JSON.stringify(workflowPayload),
       signal: AbortSignal.timeout(120_000),
     })

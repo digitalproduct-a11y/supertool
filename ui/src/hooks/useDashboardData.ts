@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useMsal } from '@azure/msal-react'
+import { InteractionRequiredAuthError } from '@azure/msal-browser'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { normalizeN8NBrand } from '../constants/brands'
+import { loginRequest } from '../auth/msalConfig'
 
 
 export interface TargetRow {
@@ -29,6 +32,7 @@ interface CachedData {
 const STORAGE_KEY = 'engagement_dashboard_data_v2'
 
 export function useDashboardData() {
+  const { instance } = useMsal()
   const [data, setData] = useState<DashboardRow[]>(() => {
     try {
       const cached = localStorage.getItem(STORAGE_KEY)
@@ -109,7 +113,32 @@ export function useDashboardData() {
         throw new Error('Webhook URL not configured')
       }
 
-      const response = await fetch(webhookUrl)
+      // In prod: POST through /api/n8n-proxy so the webhook token stays server-side.
+      // In dev: hit n8n directly (no token — set the n8n webhook to allow unauth for dev,
+      // or run `vercel dev` to use the proxy locally).
+      let fetchUrl = webhookUrl
+      const fetchHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+      let fetchMethod: 'GET' | 'POST' = 'GET'
+      let fetchBody: string | undefined
+
+      if (import.meta.env.PROD) {
+        const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
+        try {
+          const tokenResult = await instance.acquireTokenSilent({ ...loginRequest, account })
+          fetchHeaders['Authorization'] = `Bearer ${tokenResult.idToken}`
+        } catch (err) {
+          if (err instanceof InteractionRequiredAuthError) {
+            await instance.loginRedirect(loginRequest)
+            return
+          }
+          throw err
+        }
+        fetchUrl = '/api/n8n-proxy'
+        fetchMethod = 'POST'
+        fetchBody = JSON.stringify({ n8nUrl: webhookUrl })
+      }
+
+      const response = await fetch(fetchUrl, { method: fetchMethod, headers: fetchHeaders, body: fetchBody })
       console.log('Webhook response status:', response.status)
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
