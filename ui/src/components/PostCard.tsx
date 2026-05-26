@@ -5,25 +5,12 @@ import { useBrandPath } from '../hooks/useBrandNavigate'
 import { IconUpload, IconDownload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
-import { updateTitleInImageUrl } from '../utils/cloudinary'
+import { updateTitleInImageUrl, uploadToCloudinary } from '../utils/cloudinary'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { trackButtonClick } from '../utils/analytics'
 import type { ScheduledPost, SchedulePostPayload } from '../types'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
-
-async function uploadToCloudinary(file: File): Promise<string> {
-  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim()
-  const uploadPreset = (import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined)?.trim()
-  if (!cloudName || !uploadPreset) throw new Error('Cloudinary configuration missing')
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('upload_preset', uploadPreset)
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: formData })
-  if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
-  const data = await res.json() as { public_id: string }
-  return data.public_id
-}
 
 // ─── Status badge ──────────────────────────────────────────────────────────────
 

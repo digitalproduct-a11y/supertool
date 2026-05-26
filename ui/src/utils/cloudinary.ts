@@ -177,37 +177,86 @@ export function withSubjectAwareCrop(
   return url.replace("/image/upload/", `/image/upload/${transform}/`);
 }
 
-/**
- * Uploads an image file to Cloudinary using unsigned upload.
- * Returns the public_id on success.
- */
-export async function uploadToCloudinary(file: File): Promise<string> {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as
-    | string
-    | undefined;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as
-    | string
-    | undefined;
+interface CloudinarySignature {
+  signature: string;
+  api_key: string;
+  timestamp: number;
+  cloud_name: string;
+}
 
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinary configuration missing");
+interface CloudinaryUploadResponse {
+  public_id: string;
+  secure_url: string;
+  [key: string]: unknown;
+}
+
+// Fetches a fresh upload signature from the n8n signing webhook.
+// Webhook holds CLOUDINARY_API_SECRET as an n8n credential — never reaches the browser.
+async function getUploadSignature(
+  uploadPreset: string,
+): Promise<CloudinarySignature> {
+  const signWebhookUrl = (
+    import.meta.env.VITE_CLOUDINARY_SIGN_WEBHOOK_URL as string | undefined
+  )?.trim();
+  if (!signWebhookUrl) {
+    throw new Error("Cloudinary sign webhook not configured");
   }
 
+  const res = await fetch(signWebhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ upload_preset: uploadPreset }),
+  });
+  if (!res.ok) throw new Error(`Signature request failed: ${res.status}`);
+  return (await res.json()) as CloudinarySignature;
+}
+
+/**
+ * Signed upload to Cloudinary. Fetches a signature from the n8n signing webhook,
+ * then uploads the file/URL directly to Cloudinary with the signed params.
+ * The API secret never leaves n8n.
+ */
+export async function signedUploadToCloudinary(
+  fileOrUrl: File | string,
+  uploadPreset?: string,
+): Promise<CloudinaryUploadResponse> {
+  const preset =
+    uploadPreset ??
+    ((import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as
+      | string
+      | undefined)?.trim() ||
+      "temp_uploads");
+
+  const { signature, api_key, timestamp, cloud_name } =
+    await getUploadSignature(preset);
+
   const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
+  formData.append("file", fileOrUrl);
+  formData.append("upload_preset", preset);
+  formData.append("api_key", api_key);
+  formData.append("timestamp", String(timestamp));
+  formData.append("signature", signature);
 
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
     { method: "POST", body: formData },
   );
 
   if (!res.ok) {
-    throw new Error(`Upload failed: ${res.status}`);
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Upload failed: ${res.status} ${errText}`);
   }
 
-  const data = await res.json();
-  return data.public_id as string;
+  return (await res.json()) as CloudinaryUploadResponse;
+}
+
+/**
+ * Uploads an image file to Cloudinary using signed upload.
+ * Returns the public_id on success.
+ */
+export async function uploadToCloudinary(file: File): Promise<string> {
+  const { public_id } = await signedUploadToCloudinary(file);
+  return public_id;
 }
 
 /**
@@ -276,33 +325,13 @@ export function extractBaseImageUrl(cloudinaryUrl: string): string | null {
 }
 
 /**
- * Uploads an image from a URL to Cloudinary using the temp uploads preset.
+ * Uploads an image from a URL to Cloudinary using signed upload.
  * Cloudinary fetches the URL server-side (avoids browser CORS issues).
  * Returns the public_id on success.
  */
 export async function uploadUrlToCloudinary(url: string): Promise<string> {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error('Cloudinary configuration missing')
-  }
-
-  const formData = new FormData()
-  formData.append('file', url)          // Cloudinary accepts a URL string as the file param
-  formData.append('upload_preset', uploadPreset)
-
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    { method: 'POST', body: formData }
-  )
-
-  if (!res.ok) {
-    throw new Error(`Upload failed: ${res.status}`)
-  }
-
-  const data = await res.json()
-  return data.public_id as string
+  const { public_id } = await signedUploadToCloudinary(url)
+  return public_id
 }
 
 /**

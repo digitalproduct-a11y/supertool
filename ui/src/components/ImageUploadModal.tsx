@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { signedUploadToCloudinary } from '../utils/cloudinary'
 
 interface ImageUploadModalProps {
   onSelect: (photo: { url: string; publicId: string }) => void
@@ -62,27 +63,7 @@ export default function ImageUploadModal({ onSelect, onClose }: ImageUploadModal
     setUploadError(null)
 
     try {
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
-      const uploadPreset = import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined
-
-      if (!cloudName || !uploadPreset) {
-        throw new Error('Cloudinary configuration missing')
-      }
-
-      const formData = new FormData()
-      formData.append('file', uploadFile)
-      formData.append('upload_preset', uploadPreset)
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: 'POST', body: formData }
-      )
-
-      if (!res.ok) {
-        throw new Error(`Upload failed: ${res.status}`)
-      }
-
-      const data = await res.json()
+      const data = await signedUploadToCloudinary(uploadFile)
       onSelect({ url: data.secure_url, publicId: data.public_id })
       handleClose()
     } catch (err) {

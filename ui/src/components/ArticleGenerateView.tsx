@@ -6,23 +6,10 @@ import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { trackButtonClick, trackToolSubmit } from '../utils/analytics'
 import { COMPETITOR_BRANDS } from '../constants/rssFeedsByBrand'
-import { updateTitleInImageUrl } from '../utils/cloudinary'
+import { updateTitleInImageUrl, uploadToCloudinary } from '../utils/cloudinary'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
-
-async function uploadToCloudinary(file: File): Promise<string> {
-  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim()
-  const uploadPreset = (import.meta.env.VITE_CLOUDINARY_TEMP_UPLOADS_PRESET as string | undefined)?.trim()
-  if (!cloudName || !uploadPreset) throw new Error('Cloudinary configuration missing')
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('upload_preset', uploadPreset)
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: formData })
-  if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
-  const data = await res.json() as { public_id: string }
-  return data.public_id
-}
 
 type GenerateState = 'idle' | 'generating' | 'done' | 'error'
 type ScheduleState = 'idle' | 'posting' | 'done' | 'error'
