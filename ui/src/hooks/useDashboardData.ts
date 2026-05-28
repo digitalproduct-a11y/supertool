@@ -127,11 +127,19 @@ export function useDashboardData() {
           const tokenResult = await instance.acquireTokenSilent({ ...loginRequest, account })
           fetchHeaders['Authorization'] = `Bearer ${tokenResult.idToken}`
         } catch (err) {
+          // Silent failed — either the session needs user interaction (expired/changed)
+          // or the iframe round-trip timed out (slow Vercel preview, blocked 3rd-party
+          // cookies, etc.). Both are recoverable via a popup-based acquisition.
           if (err instanceof InteractionRequiredAuthError) {
             await instance.loginRedirect(loginRequest)
             return
           }
-          throw err
+          try {
+            const tokenResult = await instance.acquireTokenPopup(loginRequest)
+            fetchHeaders['Authorization'] = `Bearer ${tokenResult.idToken}`
+          } catch {
+            throw err
+          }
         }
         fetchUrl = '/api/n8n-proxy'
         fetchMethod = 'POST'
