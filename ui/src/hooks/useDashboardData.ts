@@ -113,15 +113,15 @@ export function useDashboardData() {
         throw new Error('Webhook URL not configured')
       }
 
-      // In prod: POST through /api/n8n-proxy so the webhook token stays server-side.
-      // In dev: hit n8n directly (no token — set the n8n webhook to allow unauth for dev,
-      // or run `vercel dev` to use the proxy locally).
+      // Route through /api/n8n-proxy when running in prod OR when VITE_USE_PROXY=true
+      // (set the flag in .env.local + run `vercel dev` to test the token path locally).
       let fetchUrl = webhookUrl
       const fetchHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
       let fetchMethod: 'GET' | 'POST' = 'GET'
       let fetchBody: string | undefined
 
-      if (import.meta.env.PROD) {
+      const useProxy = import.meta.env.PROD || import.meta.env.VITE_USE_PROXY === 'true'
+      if (useProxy) {
         const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
         try {
           const tokenResult = await instance.acquireTokenSilent({ ...loginRequest, account })

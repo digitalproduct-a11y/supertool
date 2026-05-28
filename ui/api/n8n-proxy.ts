@@ -6,13 +6,20 @@ const CLIENT_ID = process.env.AZURE_CLIENT_ID!
 const ALLOWED_DOMAIN = process.env.AZURE_ALLOWED_DOMAIN ?? 'astro.com.my'
 const N8N_HOST = 'astroproduct.app.n8n.cloud'
 
-// Per-webhook tokens. Keyed by path prefix on the n8n host.
+// Per-webhook tokens + forwarding method. Keyed by path prefix on the n8n host.
 // The n8n Webhook node must be configured with Header Auth using the same value.
-const WEBHOOK_TOKENS: Array<{ match: (path: string) => boolean; token: string | undefined; header: string }> = [
+type WebhookRule = {
+  match: (path: string) => boolean
+  token: string | undefined
+  header: string
+  method: 'GET' | 'POST'
+}
+const WEBHOOK_TOKENS: WebhookRule[] = [
   {
     match: (path) => path.startsWith('/webhook/dashboard') || path.startsWith('/webhook-test/dashboard'),
     token: process.env.DASHBOARD_WEBHOOK_TOKEN,
     header: 'dashboard-webhook-token',
+    method: 'GET',
   },
 ]
 
@@ -75,12 +82,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (tokenRule?.token) {
     forwardHeaders[tokenRule.header] = tokenRule.token
   }
+  const forwardMethod: 'GET' | 'POST' = tokenRule?.method ?? 'POST'
 
   try {
     const n8nRes = await fetch(targetUrl.toString(), {
-      method: 'POST',
+      method: forwardMethod,
       headers: forwardHeaders,
-      body: JSON.stringify(workflowPayload),
+      body: forwardMethod === 'POST' ? JSON.stringify(workflowPayload) : undefined,
       signal: AbortSignal.timeout(120_000),
     })
     const data = await n8nRes.json()
