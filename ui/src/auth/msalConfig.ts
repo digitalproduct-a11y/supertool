@@ -10,10 +10,9 @@ export const msalConfig: Configuration = {
     cacheLocation: 'localStorage',
   },
   system: {
-    // Default is 6s; raise to 15s so slower iframe boots on Vercel preview
-    // deployments don't time out before the silent token round-trip completes.
-    iframeHashTimeout: 15000,
-    loadFrameTimeout: 15000,
+    // MSAL v5 default iframe timeout is 10s; raise to 20s so slower iframe boots
+    // on Vercel preview deployments don't time out before silent token completes.
+    iframeBridgeTimeout: 20000,
     loggerOptions: {
       loggerCallback: (_level, message, containsPii) => {
         if (containsPii || import.meta.env.PROD) return
