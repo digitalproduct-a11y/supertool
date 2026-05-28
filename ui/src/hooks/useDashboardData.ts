@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useMsal } from '@azure/msal-react'
-import { InteractionRequiredAuthError } from '@azure/msal-browser'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { normalizeN8NBrand } from '../constants/brands'
 import { loginRequest } from '../auth/msalConfig'
@@ -126,20 +125,13 @@ export function useDashboardData() {
         try {
           const tokenResult = await instance.acquireTokenSilent({ ...loginRequest, account })
           fetchHeaders['Authorization'] = `Bearer ${tokenResult.idToken}`
-        } catch (err) {
-          // Silent failed — either the session needs user interaction (expired/changed)
-          // or the iframe round-trip timed out (slow Vercel preview, blocked 3rd-party
-          // cookies, etc.). Both are recoverable via a popup-based acquisition.
-          if (err instanceof InteractionRequiredAuthError) {
-            await instance.loginRedirect(loginRequest)
-            return
-          }
-          try {
-            const tokenResult = await instance.acquireTokenPopup(loginRequest)
-            fetchHeaders['Authorization'] = `Bearer ${tokenResult.idToken}`
-          } catch {
-            throw err
-          }
+        } catch {
+          // Silent failed for any reason (interaction needed, iframe timeout,
+          // 3rd-party cookies blocked). Redirect is the only reliable fallback —
+          // popup gets blocked by Chrome once the user-gesture stack is gone
+          // after a multi-second silent await.
+          await instance.loginRedirect(loginRequest)
+          return
         }
         fetchUrl = '/api/n8n-proxy'
         fetchMethod = 'POST'
