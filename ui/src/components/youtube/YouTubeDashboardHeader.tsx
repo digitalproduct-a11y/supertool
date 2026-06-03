@@ -1,4 +1,28 @@
 import { useRef, useState, useEffect } from 'react'
+import { IconCheck } from '@tabler/icons-react'
+
+const BUSINESS_UNIT_LABELS: Record<string, string> = {
+  'AASB': 'Astro',
+  'MBNS': 'Astro',
+  'ARSB': 'Astro Radio',
+  'NISB': 'Nu Ideaktiv',
+}
+
+const BRAND_ENTITY_OVERRIDES: Record<string, string> = {
+  'Astro Radio News': 'Astro Radio',
+  'Era': 'Astro Radio',
+  'Hitz': 'Astro Radio',
+  'Lite': 'Astro Radio',
+  'Mix': 'Astro Radio',
+  'Sinar': 'Astro Radio',
+  'Zayan My': 'Astro Radio',
+  'Melody': 'Astro Radio',
+  'BorakSeeni': 'Nu Ideaktiv',
+  'Keluarga': 'Nu Ideaktiv',
+  'Maskulin': 'Nu Ideaktiv',
+  'Pa&Ma': 'Nu Ideaktiv',
+  'Remaja': 'Nu Ideaktiv',
+}
 
 interface YouTubeDashboardHeaderProps {
   brand: string
@@ -173,17 +197,52 @@ export function YouTubeDashboardHeader({
               <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          {brandDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-[180px]">
-              {brands.map(({ brand: b }) => (
-                <button
-                  key={b}
-                  onClick={() => { onBrandChange(b); setBrandDropdownOpen(false) }}
-                  className={`w-full px-3 py-2 text-xs hover:bg-neutral-50 transition text-left ${brand === b ? 'bg-neutral-100' : ''}`}
-                >{b}</button>
-              ))}
-            </div>
-          )}
+          {brandDropdownOpen && (() => {
+            const groupedByEntity: Record<string, typeof brands> = {}
+            const knownOrder = ['Astro', 'Astro Radio', 'Nu Ideaktiv']
+
+            brands.forEach(item => {
+              const label = BRAND_ENTITY_OVERRIDES[item.brand] || BUSINESS_UNIT_LABELS[item.bu] || 'Astro'
+              if (!groupedByEntity[label]) groupedByEntity[label] = []
+              groupedByEntity[label].push(item)
+            })
+
+            Object.values(groupedByEntity).forEach(list => list.sort((a, b) => a.brand.localeCompare(b.brand)))
+            const entityOrder = knownOrder.filter(k => groupedByEntity[k]?.length)
+
+            return (
+              <div className="absolute top-full left-0 mt-3 z-20 bg-white border border-neutral-200 rounded-lg shadow-xl p-6" style={{ width: '700px' }}>
+                <div className="grid grid-cols-3 gap-8">
+                  {entityOrder.map(entity => (
+                    <div key={entity}>
+                      <h3 className="text-xs font-semibold text-neutral-600 uppercase tracking-widest pb-2 border-b border-neutral-200 mb-3">
+                        {entity}
+                      </h3>
+                      <div className="space-y-1">
+                        {(groupedByEntity[entity] || []).map(({ brand: b }) => (
+                          <button
+                            key={b}
+                            onClick={() => {
+                              onBrandChange(b)
+                              setBrandDropdownOpen(false)
+                            }}
+                            className={`w-full px-2 py-1.5 text-xs text-left rounded transition flex items-center justify-between ${
+                              brand === b
+                                ? 'text-neutral-950 font-medium bg-neutral-100'
+                                : 'text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950'
+                            }`}
+                          >
+                            {b}
+                            {brand === b && <IconCheck className="w-4 h-4 flex-shrink-0" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         <div className="flex flex-wrap gap-3 items-center">

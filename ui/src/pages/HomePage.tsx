@@ -10,6 +10,8 @@ import {
 } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
+import { useYouTubeDashboardData } from '../hooks/useYouTubeDashboardData'
+import { filterYouTubeData } from '../utils/youtubeDashboardUtils'
 import { useBrand } from '../context/BrandContext'
 import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import { ArticleGenerateView } from '../components/ArticleGenerateView'
@@ -175,6 +177,12 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
   const { selectedBrand, isAdmin } = useBrand()
   const brandNavigate = useBrandNavigate()
   const { data, targets, loading, lastUpdated } = useDashboardData()
+  const {
+    data: ytData,
+    targets: ytTargets,
+    loading: ytLoading,
+    lastUpdated: ytLastUpdated,
+  } = useYouTubeDashboardData()
 
   // Use the latest date in the dataset as the window end (falls back to today)
   const latestDate = data.length > 0
@@ -285,6 +293,114 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
       color: '#0055EE',
     },
   ]
+
+  // ── YouTube metric cards ────────────────────────────────────────────────
+  const normalizeBrand = (s: string) => s.trim().toLowerCase().replace(/^astro\s+/, '')
+
+  // YouTube uses its OWN 30-day window anchored to YT's latest data date —
+  // Meta and YT refresh on different cadences, so reusing Meta's window
+  // would silently drop brands whose latest YT row sits outside it.
+  const ytLatestDateStr = ytData.length > 0
+    ? ytData.reduce((max, r) => (r.date > max ? r.date : max), ytData[0].date)
+    : null
+  const ytEndDate = ytLatestDateStr ? new Date(ytLatestDateStr) : new Date()
+  ytEndDate.setHours(23, 59, 59, 999)
+  const ytStartDate = new Date(ytEndDate)
+  ytStartDate.setDate(ytStartDate.getDate() - 30)
+  ytStartDate.setHours(0, 0, 0, 0)
+  const ytPrevEndDate = new Date(ytStartDate)
+  ytPrevEndDate.setDate(ytPrevEndDate.getDate() - 1)
+  ytPrevEndDate.setHours(23, 59, 59, 999)
+  const ytPrevStartDate = new Date(ytPrevEndDate)
+  ytPrevStartDate.setDate(ytPrevStartDate.getDate() - 30)
+  ytPrevStartDate.setHours(0, 0, 0, 0)
+  const ytDateRangeLabel = `${fmtDate(ytStartDate)} – ${fmtDate(ytEndDate)}`
+
+  const ytBrandRow = !isAdmin && selectedBrand
+    ? ytData.find(r => normalizeBrand(r.brand) === normalizeBrand(selectedBrand))
+    : null
+  const ytSelectedBrand = ytBrandRow?.brand ?? null
+  const ytBu = ytBrandRow?.business_unit ?? ''
+
+  const ytFiltered = isAdmin
+    ? ytData.filter(row => {
+        const d = new Date(row.date)
+        return d >= ytStartDate && d <= ytEndDate
+      })
+    : ytSelectedBrand
+      ? filterYouTubeData(ytData, ytSelectedBrand, ytStartDate, ytEndDate, ytBu)
+      : []
+
+  const ytPrevFiltered = isAdmin
+    ? ytData.filter(row => {
+        const d = new Date(row.date)
+        return d >= ytPrevStartDate && d <= ytPrevEndDate
+      })
+    : ytSelectedBrand
+      ? filterYouTubeData(ytData, ytSelectedBrand, ytPrevStartDate, ytPrevEndDate, ytBu)
+      : []
+
+  const ytSparkByDate = ytFiltered.reduce<Record<string, { watch_time: number; revenue: number }>>((acc, r) => {
+    const day = r.date.split('T')[0]
+    if (!acc[day]) acc[day] = { watch_time: 0, revenue: 0 }
+    acc[day].watch_time += Number(r.watch_time) || 0
+    acc[day].revenue += Number(r.revenue) || 0
+    return acc
+  }, {})
+  const ytSparkRows = Object.entries(ytSparkByDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, v]) => v)
+
+  const totalWatch = ytFiltered.reduce((s, r) => s + (Number(r.watch_time) || 0), 0)
+  const totalYtRevenue = ytFiltered.reduce((s, r) => s + (Number(r.revenue) || 0), 0)
+  const prevWatch = ytPrevFiltered.reduce((s, r) => s + (Number(r.watch_time) || 0), 0)
+  const prevYtRevenue = ytPrevFiltered.reduce((s, r) => s + (Number(r.revenue) || 0), 0)
+
+  const ytBrandTarget = !isAdmin && selectedBrand
+    ? ytTargets.find(t => normalizeBrand(String(t.Brand ?? '')) === normalizeBrand(selectedBrand))
+    : null
+  const watchHoursTarget = ytBrandTarget && Number(ytBrandTarget['Daily Avg Watch Hour']) > 0
+    ? Number(ytBrandTarget['Daily Avg Watch Hour']) * 30
+    : null
+  const ytRevenueTarget = ytBrandTarget && Number(ytBrandTarget['Annual Revenue Target (USD)']) > 0
+    ? (Number(ytBrandTarget['Annual Revenue Target (USD)']) / 365) * 30
+    : null
+
+  const ytAdminBrandCount = isAdmin ? new Set(ytFiltered.map(r => r.brand)).size : 0
+  const ytAdminBuCount = isAdmin ? new Set(ytFiltered.map(r => r.business_unit).filter(Boolean)).size : 0
+
+  const ytMetricCards = [
+    {
+      label: 'Watch Hours',
+      value: Math.round(totalWatch).toLocaleString(),
+      target: watchHoursTarget,
+      actual: totalWatch,
+      growth: calcGrowth(totalWatch, prevWatch),
+      footer: dataFooter,
+      footerWarning: false,
+      sparkData: toSparkData(ytSparkRows.map(r => ({ v: r.watch_time }))),
+      color: '#FF0000',
+    },
+    {
+      label: 'Revenue (USD)',
+      value: `$${totalYtRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      target: ytRevenueTarget,
+      actual: totalYtRevenue,
+      growth: calcGrowth(totalYtRevenue, prevYtRevenue),
+      footer: dataFooter,
+      footerWarning: false,
+      sparkData: toSparkData(ytSparkRows.map(r => ({ v: r.revenue }))),
+      color: '#FF0000',
+    },
+  ]
+
+  const ytHasData = ytData.length > 0
+
+  // Latest of Meta and YouTube refresh timestamps for the section footer
+  const _stamps = [lastUpdated, ytLastUpdated].filter((d): d is Date => d instanceof Date)
+  const displayUpdated: Date | null = _stamps.length
+    ? _stamps.reduce((a, b) => (a.getTime() >= b.getTime() ? a : b))
+    : null
 
   // Generate post view
   const [generateTarget, setGenerateTarget] = useState<ArticleWithBrand | null>(null)
@@ -470,7 +586,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
               {/* ── YouTube (right) ─────────────────────────────────────────── */}
               <div className="flex flex-col">
                 <div className="flex items-baseline justify-between">
-                  <h3 className="text-base font-semibold text-neutral-950">YouTube</h3>
+                  <h3 className="text-base font-semibold text-neutral-950">{isAdmin ? 'YouTube · All Brands' : 'YouTube'}</h3>
                   <button
                     onClick={() => brandNavigate('/youtube-dashboard')}
                     className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
@@ -481,48 +597,115 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                     </svg>
                   </button>
                 </div>
-                <p className="text-xs text-neutral-400 mt-0.5 mb-4">Coming soon</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                  {[
-                    { label: 'Watch Time', color: '#FF0000' },
-                    { label: 'Revenue (USD)', color: '#FF0000' },
-                  ].map(card => (
-                    <div key={card.label} className="relative rounded-xl bg-white flex flex-col overflow-hidden">
-                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
-                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mb-2">
-                          <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
+                <p className="text-xs text-neutral-400 mt-0.5 mb-4">
+                  {isAdmin
+                    ? `${ytAdminBrandCount} brands · ${ytAdminBuCount} BUs · Last 30 days`
+                    : 'Last 30 days'}
+                  {ytLatestDateStr && <span> · {ytDateRangeLabel}</span>}
+                </p>
+                {ytLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    {[0, 1].map(i => (
+                      <div key={i} className="rounded-xl bg-white">
+                        <div className="h-2 w-20 bg-neutral-100 rounded-full animate-pulse mb-3" />
+                        <div className="h-7 w-24 bg-neutral-100 rounded-lg animate-pulse mb-1" />
+                        <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse mb-4" />
+                        <div className="h-10 bg-neutral-100 rounded animate-pulse mb-3" />
+                        <div className="h-1 w-full bg-neutral-100 rounded-full animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                ) : !ytHasData ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    {[
+                      { label: 'Watch Hours', color: '#FF0000' },
+                      { label: 'Revenue (USD)', color: '#FF0000' },
+                    ].map(card => (
+                      <div key={card.label} className="relative rounded-xl bg-white flex flex-col overflow-hidden">
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mb-2">
+                            <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <p className="text-xs font-semibold text-neutral-500">Coming Soon</p>
                         </div>
-                        <p className="text-xs font-semibold text-neutral-500">Coming Soon</p>
-                      </div>
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
-                      <p className="font-display text-2xl font-bold text-neutral-950">—</p>
-                      <p className="text-[10px] text-neutral-300 mt-0.5 mb-2">No target set</p>
-                      <div className="h-10 flex-1 min-h-[40px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={FLAT_LINE}>
-                            <Line type="monotone" dataKey="v" stroke={card.color} dot={false} strokeWidth={1.5} isAnimationActive={false} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="mt-2">
-                        <div className="w-full bg-neutral-100 rounded-full h-1">
-                          <div className="h-1 rounded-full" style={{ width: '0%', backgroundColor: card.color }} />
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
+                        <p className="font-display text-2xl font-bold text-neutral-950">—</p>
+                        <p className="text-[10px] text-neutral-300 mt-0.5 mb-2">No target set</p>
+                        <div className="h-10 flex-1 min-h-[40px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={FLAT_LINE}>
+                              <Line type="monotone" dataKey="v" stroke={card.color} dot={false} strokeWidth={1.5} isAnimationActive={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
                         </div>
-                        <p className="text-[10px] text-neutral-400 mt-1">&nbsp;</p>
+                        <div className="mt-2">
+                          <div className="w-full bg-neutral-100 rounded-full h-1">
+                            <div className="h-1 rounded-full" style={{ width: '0%', backgroundColor: card.color }} />
+                          </div>
+                          <p className="text-[10px] text-neutral-400 mt-1">&nbsp;</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    {ytMetricCards.map(card => {
+                      const pct = card.target && card.target > 0
+                        ? Math.min(100, (card.actual / card.target) * 100)
+                        : null
+                      return (
+                        <div key={card.label} className="rounded-xl bg-white flex flex-col">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-1">{card.label}</p>
+                          <div className="flex items-baseline gap-2">
+                            <p className="font-display text-2xl font-bold text-neutral-950">{card.value}</p>
+                            {card.growth !== null && (
+                              <span className={`text-[11px] font-semibold ${card.growth >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                {card.growth >= 0 ? '▲' : '▼'} {Math.abs(card.growth).toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                          {card.target !== null && card.target > 0 ? (
+                            <p className="text-[10px] text-neutral-400 mt-0.5 mb-2">
+                              Monthly Target: {card.label === 'Revenue (USD)'
+                                ? `$${Math.round(card.target).toLocaleString()}`
+                                : Math.round(card.target).toLocaleString()}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-neutral-300 mt-0.5 mb-2">No target set</p>
+                          )}
+                          <div className="h-10 flex-1 min-h-[40px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={card.sparkData}>
+                                <Line type="monotone" dataKey="v" stroke={card.color} dot={false} strokeWidth={1.5} isAnimationActive={false} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                          {pct !== null && (
+                            <div className="mt-2">
+                              <div className="w-full bg-neutral-100 rounded-full h-1">
+                                <div
+                                  className="h-1 rounded-full transition-all duration-700"
+                                  style={{ width: `${pct.toFixed(1)}%`, backgroundColor: card.color }}
+                                />
+                              </div>
+                              <p className="text-[10px] text-neutral-400 mt-1">{pct.toFixed(0)}% of target</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
             </div>
 
             {/* ── Footer: Updated on ─────────────────────────────────────── */}
             <p className="text-[10px] text-neutral-400 mt-4">
-              {lastUpdated
-                ? `Updated on ${lastUpdated.toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}`
+              {displayUpdated
+                ? `Updated on ${displayUpdated.toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}`
                 : '\u00A0'}
             </p>
           </div>
