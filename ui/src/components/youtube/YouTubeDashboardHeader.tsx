@@ -27,7 +27,7 @@ const BRAND_ENTITY_OVERRIDES: Record<string, string> = {
 interface YouTubeDashboardHeaderProps {
   brand: string
   businessUnit: string
-  brands: { brand: string; bu: string }[]
+  brands: { brand: string; bu: string; label: string }[]
   onBrandChange: (brand: string) => void
   startDate: Date
   endDate: Date
@@ -202,12 +202,12 @@ export function YouTubeDashboardHeader({
             const knownOrder = ['Astro', 'Astro Radio', 'Nu Ideaktiv']
 
             brands.forEach(item => {
-              const label = BRAND_ENTITY_OVERRIDES[item.brand] || BUSINESS_UNIT_LABELS[item.bu] || 'Astro'
-              if (!groupedByEntity[label]) groupedByEntity[label] = []
-              groupedByEntity[label].push(item)
+              const entityLabel = BRAND_ENTITY_OVERRIDES[item.label] || BRAND_ENTITY_OVERRIDES[item.brand] || BUSINESS_UNIT_LABELS[item.bu] || 'Astro'
+              if (!groupedByEntity[entityLabel]) groupedByEntity[entityLabel] = []
+              groupedByEntity[entityLabel].push(item)
             })
 
-            Object.values(groupedByEntity).forEach(list => list.sort((a, b) => a.brand.localeCompare(b.brand)))
+            Object.values(groupedByEntity).forEach(list => list.sort((a, b) => a.label.localeCompare(b.label)))
             const entityOrder = knownOrder.filter(k => groupedByEntity[k]?.length)
 
             return (
@@ -219,7 +219,7 @@ export function YouTubeDashboardHeader({
                         {entity}
                       </h3>
                       <div className="space-y-1">
-                        {(groupedByEntity[entity] || []).map(({ brand: b }) => (
+                        {(groupedByEntity[entity] || []).map(({ brand: b, label: l }) => (
                           <button
                             key={b}
                             onClick={() => {
@@ -227,13 +227,13 @@ export function YouTubeDashboardHeader({
                               setBrandDropdownOpen(false)
                             }}
                             className={`w-full px-2 py-1.5 text-xs text-left rounded transition flex items-center justify-between ${
-                              brand === b
+                              brand === l
                                 ? 'text-neutral-950 font-medium bg-neutral-100'
                                 : 'text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950'
                             }`}
                           >
-                            {b}
-                            {brand === b && <IconCheck className="w-4 h-4 flex-shrink-0" />}
+                            {l}
+                            {brand === l && <IconCheck className="w-4 h-4 flex-shrink-0" />}
                           </button>
                         ))}
                       </div>

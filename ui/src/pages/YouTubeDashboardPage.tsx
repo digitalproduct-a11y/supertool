@@ -12,9 +12,12 @@ import {
 } from '../utils/youtubeDashboardUtils'
 import type { YouTubeDashboardRow } from '../utils/youtubeDashboardUtils'
 import { BackButton } from '../components/ds'
+import { useBrand } from '../context/BrandContext'
+import { BRANDS, N8N_TO_CANONICAL_BRAND, YT_BRAND_ALIASES } from '../constants/brands'
 
 export function YouTubeDashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useYouTubeDashboardData()
+  const { selectedBrand: globalBrand } = useBrand()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 31); d.setHours(0,0,0,0); return d
@@ -29,22 +32,40 @@ export function YouTubeDashboardPage() {
   const [monthsPage, setMonthsPage] = useState(0)
 
   const brands = useMemo(() => {
+    const stripAstro = (s: string) => s.toLowerCase().replace(/^astro\s+/, '').trim()
     const seen = new Set<string>()
-    const list: { brand: string; bu: string }[] = []
+    const list: { brand: string; bu: string; label: string }[] = []
     data.forEach(row => {
       if (!seen.has(row.brand)) {
         seen.add(row.brand)
-        list.push({ brand: row.brand, bu: row.business_unit })
+        const norm = stripAstro(row.brand)
+        const aliased = YT_BRAND_ALIASES[row.brand]
+        const canonical = aliased ?? BRANDS.find(b => stripAstro(b) === norm)
+        list.push({ brand: row.brand, bu: row.business_unit, label: canonical ?? row.brand })
       }
     })
-    return list.sort((a, b) => a.brand.localeCompare(b.brand))
+    return list.sort((a, b) => a.label.localeCompare(b.label))
   }, [data])
 
   useEffect(() => {
-    if (brands.length > 0 && selectedBrand === null) {
-      setSelectedBrand(brands[0].brand)
+    if (brands.length === 0) return
+    if (globalBrand && globalBrand !== 'Admin') {
+      const stripAstro = (s: string) => s.toLowerCase().replace(/^astro\s+/, '').trim()
+      const globalNorm = stripAstro(globalBrand)
+      const match = brands.find(
+        b =>
+          b.brand.toLowerCase() === globalBrand.toLowerCase() ||
+          stripAstro(b.brand) === globalNorm ||
+          N8N_TO_CANONICAL_BRAND[b.brand.toUpperCase()] === globalBrand ||
+          YT_BRAND_ALIASES[b.brand] === globalBrand
+      )
+      if (match) {
+        if (match.brand !== selectedBrand) setSelectedBrand(match.brand)
+        return
+      }
     }
-  }, [brands, selectedBrand])
+    if (selectedBrand === null) setSelectedBrand(brands[0].brand)
+  }, [brands, globalBrand, selectedBrand])
 
   const selectedBrandInfo = brands.find(b => b.brand === selectedBrand)
 
@@ -193,7 +214,7 @@ export function YouTubeDashboardPage() {
         {selectedBrand ? (
           <>
             <YouTubeDashboardHeader
-              brand={selectedBrand}
+              brand={selectedBrandInfo?.label ?? selectedBrand}
               businessUnit={selectedBrandInfo?.bu || ''}
               brands={brands}
               onBrandChange={setSelectedBrand}

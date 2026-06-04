@@ -369,15 +369,20 @@ export const BRAND_LOGO_IDS: Record<BrandName, string> = {
 };
 
 export const BRAND_LOGO_URLS: Record<BrandName, string> = {
-  "Astro Awani": "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_awani_logo",
-  "Astro Arena": "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_arena_logo",
+  "Astro Awani":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_awani_logo",
+  "Astro Arena":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_arena_logo",
   "Astro Radio News": "",
   "Astro Radio Traffic": "",
-  "Astro Ulagam": "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_ulagam_logo",
+  "Astro Ulagam":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_ulagam_logo",
   "Bintang Kecil": "",
   Era: "https://res.cloudinary.com/dymmqtqyg/image/upload/era_logo",
-  "Era Sabah": "https://res.cloudinary.com/dymmqtqyg/image/upload/era_sabah_logo",
-  "Era Sarawak": "https://res.cloudinary.com/dymmqtqyg/image/upload/era_sarawak_logo",
+  "Era Sabah":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/era_sabah_logo",
+  "Era Sarawak":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/era_sarawak_logo",
   Gegar: "https://res.cloudinary.com/dymmqtqyg/image/upload/gegar_logo",
   Gempak: "https://res.cloudinary.com/dymmqtqyg/image/upload/gempak_logo",
   Goxuan: "https://res.cloudinary.com/dymmqtqyg/image/upload/goxuan_logo",
@@ -390,10 +395,12 @@ export const BRAND_LOGO_URLS: Record<BrandName, string> = {
   Libur: "",
   Lite: "https://res.cloudinary.com/dymmqtqyg/image/upload/lite_logo",
   Maskulin: "https://res.cloudinary.com/dymmqtqyg/image/upload/maskulin_logo",
-  "Media Hiburan": "https://res.cloudinary.com/dymmqtqyg/image/upload/media_hiburan_logo",
+  "Media Hiburan":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/media_hiburan_logo",
   Meletop: "https://res.cloudinary.com/dymmqtqyg/image/upload/meletop_logo",
   Melody: "https://res.cloudinary.com/dymmqtqyg/image/upload/melody_logo",
-  "Mingguan Wanita": "https://res.cloudinary.com/dymmqtqyg/image/upload/mingguan_wanita_logo",
+  "Mingguan Wanita":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/mingguan_wanita_logo",
   Mix: "https://res.cloudinary.com/dymmqtqyg/image/upload/mix_logo",
   MY: "https://res.cloudinary.com/dymmqtqyg/image/upload/my_logo",
   Nona: "https://res.cloudinary.com/dymmqtqyg/image/upload/nona_logo",
@@ -402,10 +409,13 @@ export const BRAND_LOGO_URLS: Record<BrandName, string> = {
   Rapi: "",
   Rasa: "https://res.cloudinary.com/dymmqtqyg/image/upload/rasa_logo",
   Remaja: "https://res.cloudinary.com/dymmqtqyg/image/upload/remaja_logo",
-  "Roda Panas": "https://res.cloudinary.com/dymmqtqyg/image/upload/roda_panas_logo",
-  "Rojak Daily": "https://res.cloudinary.com/dymmqtqyg/image/upload/rojak_daily_logo",
+  "Roda Panas":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/roda_panas_logo",
+  "Rojak Daily":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/rojak_daily_logo",
   Sinar: "https://res.cloudinary.com/dymmqtqyg/image/upload/sinar_logo",
-  "Stadium Astro": "https://res.cloudinary.com/dymmqtqyg/image/upload/stadium_astro_logo",
+  "Stadium Astro":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/stadium_astro_logo",
   "SYOK BM": "",
   "SYOK CHI": "",
   "SYOK EN": "",
@@ -440,15 +450,15 @@ export function needsDarkBg(brand: string): boolean {
 }
 
 export const ENTITY_LABELS: Record<BrandEntity, string> = {
-  'AASB': 'Astro',
-  'MBNS': 'Astro',
-  'ARSB': 'Astro Radio',
-  'NISB': 'Nu Ideaktiv',
+  AASB: "Astro",
+  MBNS: "Astro",
+  ARSB: "Astro Radio",
+  NISB: "Nu Ideaktiv",
 };
 
 export function getEntityLabel(brand: string): string {
   const entity = (BRAND_ENTITY as Record<string, BrandEntity>)[brand];
-  return ENTITY_LABELS[entity] ?? '—';
+  return ENTITY_LABELS[entity] ?? "—";
 }
 
 export type BrandEntity = "AASB" | "MBNS" | "ARSB" | "NISB";
@@ -503,42 +513,46 @@ export function getBrandEntity(brand: string): BrandEntity {
   return (BRAND_ENTITY as Record<string, BrandEntity>)[brand] ?? "NISB";
 }
 
+export const YT_BRAND_ALIASES: Record<string, string> = {
+  "Zayan My": "Zayan",
+};
+
 // Normalize brand names from n8n data to canonical BRANDS list
 export const N8N_TO_CANONICAL_BRAND: Record<string, string> = {
-  'ASTRO AWANI': 'Astro Awani',
-  'ASTRO ARENA': 'Astro Arena',
-  'ASTRO ULAGAM': 'Astro Ulagam',
-  'ERA': 'Era',
-  'ERA SABAH': 'Era Sabah',
-  'ERA SARAWAK': 'Era Sarawak',
-  'GEGAR': 'Gegar',
-  'ASTRO GEMPAK': 'Gempak',
-  'GOXUAN': 'Goxuan',
-  'HITZ': 'Hitz',
-  '热点 HOTSPOT': 'Hotspot',
-  'IMPIANA': 'Impiana',
-  'KELUARGA': 'Keluarga',
-  'LITE': 'Lite',
-  'MASKULIN': 'Maskulin',
-  'MEDIA HIBURAN': 'Media Hiburan',
-  'MELETOP': 'Meletop',
-  'MELODY': 'Melody',
-  'MINGGUAN WANITA': 'Mingguan Wanita',
-  'MIX': 'Mix',
-  'MY (MALAYSIA)': 'MY',
-  'NONA': 'Nona',
-  'PA&MA': 'Pa&Ma',
-  'RAAGA': 'Raaga',
-  'RASA': 'Rasa',
-  'REMAJA': 'Remaja',
-  'RODA PANAS': 'Roda Panas',
-  'ROJAK DAILY': 'Rojak Daily',
-  'SINAR': 'Sinar',
-  'STADIUM ASTRO': 'Stadium Astro',
-  'XUAN': 'XUAN',
-  'ZAYAN': 'Zayan',
-  'ASTRO AEC 新闻报报看': 'ASTRO AEC 新闻报报看',
-  'Astro AEC 新闻报报看': 'ASTRO AEC 新闻报报看',
+  "ASTRO AWANI": "Astro Awani",
+  "ASTRO ARENA": "Astro Arena",
+  "ASTRO ULAGAM": "Astro Ulagam",
+  ERA: "Era",
+  "ERA SABAH": "Era Sabah",
+  "ERA SARAWAK": "Era Sarawak",
+  GEGAR: "Gegar",
+  "ASTRO GEMPAK": "Gempak",
+  GOXUAN: "Goxuan",
+  HITZ: "Hitz",
+  "热点 HOTSPOT": "Hotspot",
+  IMPIANA: "Impiana",
+  KELUARGA: "Keluarga",
+  LITE: "Lite",
+  MASKULIN: "Maskulin",
+  "MEDIA HIBURAN": "Media Hiburan",
+  MELETOP: "Meletop",
+  MELODY: "Melody",
+  "MINGGUAN WANITA": "Mingguan Wanita",
+  MIX: "Mix",
+  "MY (MALAYSIA)": "MY",
+  NONA: "Nona",
+  "PA&MA": "Pa&Ma",
+  RAAGA: "Raaga",
+  RASA: "Rasa",
+  REMAJA: "Remaja",
+  "RODA PANAS": "Roda Panas",
+  "ROJAK DAILY": "Rojak Daily",
+  SINAR: "Sinar",
+  "STADIUM ASTRO": "Stadium Astro",
+  XUAN: "XUAN",
+  ZAYAN: "Zayan",
+  "ASTRO AEC 新闻报报看": "ASTRO AEC 新闻报报看",
+  "Astro AEC 新闻报报看": "ASTRO AEC 新闻报报看",
 };
 
 export function normalizeN8NBrand(n8nBrand: string): string | null {
