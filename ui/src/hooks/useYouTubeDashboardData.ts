@@ -40,9 +40,27 @@ export function useYouTubeDashboardData() {
     } catch { /* ignore */ }
     return []
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachedData
+        if (Array.isArray(parsed.data) && parsed.data.length > 0) return false
+      }
+    } catch { /* ignore */ }
+    return true
+  })
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(() => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachedData
+        if (parsed.lastUpdated) return new Date(parsed.lastUpdated)
+      }
+    } catch { /* ignore */ }
+    return null
+  })
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -96,8 +114,16 @@ export function useYouTubeDashboardData() {
   }, [])
 
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachedData
+        if (Array.isArray(parsed.data) && parsed.data.length > 0) return
+      }
+    } catch { /* ignore */ }
     fetchData()
-  }, [fetchData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return { data, targets, loading, error, lastUpdated, refetch: fetchData }
 }
