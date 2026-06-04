@@ -8,6 +8,8 @@ export function RouteTracker() {
 
   useEffect(() => {
     trackPageView(location.pathname, brandSlug ?? 'unknown');
+    window.scrollTo(0, 0);
+    document.querySelectorAll('main').forEach(el => el.scrollTo(0, 0));
   }, [location.pathname, brandSlug]);
 
   return null;
