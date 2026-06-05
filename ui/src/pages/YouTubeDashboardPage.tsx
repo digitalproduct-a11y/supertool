@@ -60,12 +60,12 @@ export function YouTubeDashboardPage() {
           YT_BRAND_ALIASES[b.brand] === globalBrand
       )
       if (match) {
-        if (match.brand !== selectedBrand) setSelectedBrand(match.brand)
+        setSelectedBrand(match.brand)
         return
       }
     }
-    if (selectedBrand === null) setSelectedBrand(brands[0].brand)
-  }, [brands, globalBrand, selectedBrand])
+    setSelectedBrand(prev => prev ?? brands[0].brand)
+  }, [brands, globalBrand])
 
   const selectedBrandInfo = brands.find(b => b.brand === selectedBrand)
 
