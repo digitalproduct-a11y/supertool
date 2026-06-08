@@ -16,6 +16,7 @@ import {
   IconCalendarClock,
   IconBrandThreads,
   IconBrandShopee,
+  IconBuildingStore,
   IconChartBar,
   IconSwitchHorizontal,
   IconLogout,
@@ -32,6 +33,7 @@ export type ToolId =
   | 'trending-news'
   | 'spike-news'
   | 'affiliate-links'
+  | 'chinesean-feed'
   | 'article-generator'
   | 'engagement-posts'
   | 'engagement-photos'
@@ -87,6 +89,11 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
         icon: IconLink,
       },
       {
+        id: "chinesean-feed",
+        label: "ChineseAN feed",
+        icon: IconBuildingStore,
+      },
+      {
         id: "article-generator",
         label: "Affiliate article editor",
         icon: IconFileText,
@@ -120,6 +127,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'trending-news': 'Trending News',
   'spike-news': 'Spike News',
   'affiliate-links': 'Shopee Affiliate Links',
+  'chinesean-feed': 'ChineseAN Product Feed',
   'article-generator': 'Affiliate Article Editor',
   'engagement-posts': 'Engagement posts',
   'engagement-photos': 'English Premier League',
