@@ -32,6 +32,34 @@ export interface WeatherPost {
   caption: string;
 }
 
+// ─── Gegar (district-level, East Coast) ──────────────────────────────────────
+// Gegar routes to its own workflow (VITE_WEATHER_GEGAR_WEBHOOK_URL) which returns
+// district forecasts grouped by state (Pahang / Kelantan / Terengganu) instead
+// of the 16-state `posts`. The combined poster is rendered client-side from
+// `regions` by GegarWeatherPosterCanvas.
+export interface GegarDistrict {
+  name: string;
+  summary_forecast: string;
+  summary_when: string;
+  icon_key: "sun" | "rain" | "thunder" | "haze";
+  min_temp: number;
+  max_temp: number;
+  avg_temp: number;
+}
+
+export interface GegarRegion {
+  state: string;
+  hero: {
+    headline: string;
+    caption: string;
+    hero_icon_key: "sun" | "rain" | "thunder" | "haze";
+    min: number;
+    max: number;
+    avg: number;
+  };
+  districts: GegarDistrict[];
+}
+
 interface WeatherResponse {
   success: true;
   posts: WeatherPost[];
@@ -42,6 +70,8 @@ interface WeatherResponse {
   // Optional national summary surfaced by the n8n workflow for the Single Post
   // hero block. Absent during initial rollout — adapter has a derived fallback.
   national_summary?: NationalSummary;
+  // Gegar only — district forecasts grouped by state for the combined poster.
+  regions?: GegarRegion[];
 }
 
 interface WeatherError {
@@ -58,6 +88,7 @@ let cachedResult: {
   fontUse: string | null;
   brandColor: string | null;
   nationalSummary: NationalSummary | null;
+  regions: GegarRegion[] | null;
 } | null = null;
 
 function getTodayMYT(brand: string): { date: string; day: string } {
@@ -83,14 +114,21 @@ export function useWeatherMalaysia() {
   const [nationalSummary, setNationalSummary] = useState<NationalSummary | null>(
     cachedResult?.nationalSummary ?? null,
   );
+  const [regions, setRegions] = useState<GegarRegion[] | null>(
+    cachedResult?.regions ?? null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
   const generate = useCallback(async (brand: string, mode: "grouped" | "individual" | "single" = "grouped"): Promise<WeatherPost[]> => {
-    const webhookUrl = import.meta.env.VITE_WEATHER_WEBHOOK_URL as
-      | string
-      | undefined;
+    // Gegar uses a dedicated district-level workflow; every other brand uses the
+    // shared 16-state weather workflow. Same request/response contract.
+    const webhookUrl = (
+      brand === "Gegar"
+        ? import.meta.env.VITE_WEATHER_GEGAR_WEBHOOK_URL
+        : import.meta.env.VITE_WEATHER_WEBHOOK_URL
+    ) as string | undefined;
     if (!webhookUrl) {
       setError("Weather webhook URL not configured.");
       return [];
@@ -104,6 +142,7 @@ export function useWeatherMalaysia() {
       setFontUse(cachedResult.fontUse);
       setBrandColor(cachedResult.brandColor);
       setNationalSummary(cachedResult.nationalSummary);
+      setRegions(cachedResult.regions);
       return cachedResult.posts;
     }
 
@@ -170,17 +209,20 @@ export function useWeatherMalaysia() {
         const resolvedFontUse = data.font_use || getBrandFontUse(brand);
         const resolvedBrandColor = data.brand_color || null;
         const resolvedNational = data.national_summary ?? null;
+        const resolvedRegions = data.regions ?? null;
         cachedResult = {
           key: cacheKey,
           posts: postsWithCaptions,
           fontUse: resolvedFontUse,
           brandColor: resolvedBrandColor,
           nationalSummary: resolvedNational,
+          regions: resolvedRegions,
         };
         setPosts(postsWithCaptions);
         setFontUse(resolvedFontUse);
         setBrandColor(resolvedBrandColor);
         setNationalSummary(resolvedNational);
+        setRegions(resolvedRegions);
         return postsWithCaptions;
       } else {
         setError(data.message || "Failed to generate weather posts.");
@@ -207,6 +249,7 @@ export function useWeatherMalaysia() {
     fontUse,
     brandColor,
     nationalSummary,
+    regions,
     isLoading,
     error,
     generate,
