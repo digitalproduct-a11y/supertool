@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import LZString from 'lz-string'
 import type { YouTubeDashboardRow } from '../utils/youtubeDashboardUtils'
 
 export interface YouTubeTargetRow {
@@ -15,51 +16,46 @@ interface CachedData {
   lastUpdated: string
 }
 
-const STORAGE_KEY = 'youtube_dashboard_data'
+const STORAGE_KEY = 'youtube_dashboard_data_v2'
+
+// The Meta dashboard cache (~4.4MB) nearly fills the ~5MB localStorage quota,
+// so an uncompressed YT write throws QuotaExceededError and never persists —
+// forcing a loading skeleton on every remount. Compressing the YT payload
+// (~0.3MB → ~40KB) lets it fit in the leftover space. Reads stay synchronous,
+// preserving instant render-on-mount from cache.
+function readCache(): CachedData | null {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (!raw) return null
+  try {
+    const json = LZString.decompressFromUTF16(raw)
+    if (json) return JSON.parse(json) as CachedData
+  } catch { /* fall through to legacy uncompressed */ }
+  try { return JSON.parse(raw) as CachedData } catch { return null }
+}
+
+function writeCache(value: CachedData): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, LZString.compressToUTF16(JSON.stringify(value)))
+  } catch { /* quota/serialize failure — skip cache; data still lives in state */ }
+}
 
 export function useYouTubeDashboardData() {
   const [data, setData] = useState<YouTubeDashboardRow[]>(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached) {
-        const parsed = JSON.parse(cached) as CachedData
-        if (Array.isArray(parsed.data)) return parsed.data
-      }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY)
-    }
-    return []
+    const parsed = readCache()
+    return parsed && Array.isArray(parsed.data) ? parsed.data : []
   })
   const [targets, setTargets] = useState<YouTubeTargetRow[]>(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached) {
-        const parsed = JSON.parse(cached) as CachedData
-        if (Array.isArray(parsed.targets)) return parsed.targets
-      }
-    } catch { /* ignore */ }
-    return []
+    const parsed = readCache()
+    return parsed && Array.isArray(parsed.targets) ? parsed.targets : []
   })
   const [loading, setLoading] = useState(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached) {
-        const parsed = JSON.parse(cached) as CachedData
-        if (Array.isArray(parsed.data) && parsed.data.length > 0) return false
-      }
-    } catch { /* ignore */ }
-    return true
+    const parsed = readCache()
+    return !(parsed && Array.isArray(parsed.data) && parsed.data.length > 0)
   })
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached) {
-        const parsed = JSON.parse(cached) as CachedData
-        if (parsed.lastUpdated) return new Date(parsed.lastUpdated)
-      }
-    } catch { /* ignore */ }
-    return null
+    const parsed = readCache()
+    return parsed?.lastUpdated ? new Date(parsed.lastUpdated) : null
   })
 
   const fetchData = useCallback(async () => {
@@ -99,11 +95,11 @@ export function useYouTubeDashboardData() {
       setTargets(targetsArray)
       const updated = new Date()
       setLastUpdated(updated)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      writeCache({
         data: dataArray,
         targets: targetsArray,
         lastUpdated: updated.toISOString(),
-      }))
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       console.error('YT dashboard fetch error:', message)
@@ -114,13 +110,8 @@ export function useYouTubeDashboardData() {
   }, [])
 
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY)
-      if (cached) {
-        const parsed = JSON.parse(cached) as CachedData
-        if (Array.isArray(parsed.data) && parsed.data.length > 0) return
-      }
-    } catch { /* ignore */ }
+    const parsed = readCache()
+    if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) return
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
