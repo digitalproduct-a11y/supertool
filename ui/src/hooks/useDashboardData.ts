@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useMsal } from '@azure/msal-react'
+import { InteractionRequiredAuthError } from '@azure/msal-browser'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { normalizeN8NBrand } from '../constants/brands'
 import { loginRequest } from '../auth/msalConfig'
@@ -125,13 +126,16 @@ export function useDashboardData() {
         try {
           const tokenResult = await instance.acquireTokenSilent({ ...loginRequest, account })
           fetchHeaders['Authorization'] = `Bearer ${tokenResult.idToken}`
-        } catch {
-          // Silent failed for any reason (interaction needed, iframe timeout,
-          // 3rd-party cookies blocked). Redirect is the only reliable fallback —
-          // popup gets blocked by Chrome once the user-gesture stack is gone
-          // after a multi-second silent await.
-          await instance.loginRedirect(loginRequest)
-          return
+        } catch (err) {
+          // Only redirect when MSAL explicitly says interaction is required.
+          // Iframe timeouts, network blips, and 3rd-party-cookie issues used to
+          // also trigger loginRedirect here — that bounced users through `/`,
+          // which wiped their brand passcode session.
+          if (err instanceof InteractionRequiredAuthError) {
+            await instance.loginRedirect(loginRequest)
+            return
+          }
+          throw err
         }
         fetchUrl = '/api/n8n-proxy'
         fetchMethod = 'POST'

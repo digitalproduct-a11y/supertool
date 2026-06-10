@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
 import { useMsal } from '@azure/msal-react'
@@ -6,7 +6,6 @@ import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type B
 import { brandToSlug } from '../utils/brandSlug'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
 import { BrandPasscodeModal } from '../components/BrandPasscodeModal'
-import { clearAdminToken } from '../utils/adminAuth'
 
 // A brand is treated as "coming soon" while it has no Cloudinary logo URL.
 // Filling in BRAND_LOGO_URLS for a brand automatically activates it.
@@ -84,7 +83,7 @@ function BrandCard({
 }
 
 export function BrandSelectionPage() {
-  const { selectedBrand, setSelectedBrand, clearBrand } = useBrand()
+  const { setSelectedBrand } = useBrand()
   const navigate = useNavigate()
   const { instance } = useMsal()
   const [showAdminModal, setShowAdminModal] = useState(false)
@@ -98,14 +97,9 @@ export function BrandSelectionPage() {
   const userDisplayName = account?.name ?? userEmail.split('@')[0]
   const userInitials = userDisplayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
 
-  // Clear brand context and all auth tokens when returning to the picker
-  useEffect(() => {
-    if (selectedBrand) clearBrand()
-    clearAdminToken()
-    Object.keys(sessionStorage)
-      .filter(k => k.startsWith('kult_brand_auth_'))
-      .forEach(k => sessionStorage.removeItem(k))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Brand auth/context is wiped by the "Switch brand" button in Sidebar — not
+  // here. Landing at `/` can also happen via MSAL redirect or guard bounces,
+  // and those must not invalidate an existing passcode session.
 
   // Group brands by entity
   const brandsByEntity: Record<BrandEntity, string[]> = {
