@@ -72,7 +72,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'article-to-social', label: 'Article to Social Post', icon: IconStack2 },
       { id: 'latest-news', label: 'News Feed', icon: IconNews },
-      { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
+      { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
     ],
   },
   {
@@ -80,12 +80,12 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       {
         id: "shopee-top-products",
-        label: "Shopee top products",
+        label: "Shopee Top Products",
         icon: IconBrandShopee,
       },
       {
         id: "affiliate-links",
-        label: "Shopee affiliate links",
+        label: "Shopee Affiliate Links",
         icon: IconLink,
       },
       {
@@ -95,12 +95,12 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
       },
       {
         id: "article-generator",
-        label: "Affiliate article editor",
+        label: "Affiliate Article Editor",
         icon: IconFileText,
       },
       {
         id: "social-affiliate-posting",
-        label: "Social affiliate post",
+        label: "Social Affiliate Post",
         icon: IconBrandThreads,
       },
     ],
@@ -110,7 +110,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
       { id: 'youtube-dashboard', label: 'YouTube Dashboard', icon: IconChartBar },
-      { id: 'post-queue', label: 'Scheduled queue', icon: IconCalendarClock },
+      { id: 'post-queue', label: 'Scheduled Queue', icon: IconCalendarClock },
     ],
   },
 ];
