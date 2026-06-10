@@ -4,7 +4,7 @@ import { trackPostScheduled } from './utils/analytics'
 import './index.css'
 import { HomePage } from './pages/HomePage'
 import { AffiliateLinksPage } from './pages/AffiliateLinksPage'
-import { ChineseANPage } from './pages/ChineseANPage'
+import { ProductFeedGeneratorPage } from './pages/ProductFeedGeneratorPage'
 import { ArticleGeneratorPage } from './pages/ArticleGeneratorPage'
 import { LatestNewsPage } from './pages/LatestNewsPage'
 import { TrendingSpikePage } from './pages/TrendingSpikePage'
@@ -69,7 +69,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'chinesean-feed' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard' | 'youtube-dashboard' | 'diagnosis'
+type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard' | 'youtube-dashboard' | 'diagnosis'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -80,7 +80,7 @@ const pathToTool: Record<string, ToolId> = {
   '/trending-news': 'trending-news',
   '/spike-news': 'spike-news',
   '/affiliate-links': 'affiliate-links',
-  '/chinesean': 'chinesean-feed',
+  '/product-feed-generator': 'product-feed-generator',
   '/affiliate-article-editor': 'article-generator',
   '/engagement-posts': 'engagement-posts',
   '/engagement-posts/epl': 'engagement-photos',
@@ -130,7 +130,7 @@ const toolToPath: Record<ToolId, string> = {
   'trending-news': '/trending-news',
   'spike-news': '/spike-news',
   'affiliate-links': '/affiliate-links',
-  'chinesean-feed': '/chinesean',
+  'product-feed-generator': '/product-feed-generator',
   'article-generator': '/affiliate-article-editor',
   'engagement-posts': '/engagement-posts',
   'engagement-photos': '/engagement-posts/epl',
@@ -654,7 +654,7 @@ function App() {
         <Route path="trending-news" element={<TrendingSpikePage />} />
         <Route path="spike-news" element={<SpikeNewsPage onMarkRead={markSpikeRead} />} />
         <Route path="affiliate-links" element={<AffiliateLinksPage />} />
-        <Route path="chinesean" element={<ChineseANPage />} />
+        <Route path="product-feed-generator" element={<ProductFeedGeneratorPage />} />
         <Route path="affiliate-article-editor" element={<ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />} />
         <Route path="engagement-posts" element={<EngagementPostsLanding onSelectTopic={() => {}} />} />
         <Route path="engagement-posts/epl" element={<EngagementPhotosPage topic="epl" />} />

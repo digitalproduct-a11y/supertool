@@ -33,7 +33,7 @@ export type ToolId =
   | 'trending-news'
   | 'spike-news'
   | 'affiliate-links'
-  | 'chinesean-feed'
+  | 'product-feed-generator'
   | 'article-generator'
   | 'engagement-posts'
   | 'engagement-photos'
@@ -89,8 +89,8 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
         icon: IconLink,
       },
       {
-        id: "chinesean-feed",
-        label: "ChineseAN feed",
+        id: "product-feed-generator",
+        label: "Product Feed Generator",
         icon: IconBuildingStore,
       },
       {
@@ -127,7 +127,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'trending-news': 'Trending News',
   'spike-news': 'Spike News',
   'affiliate-links': 'Shopee Affiliate Links',
-  'chinesean-feed': 'ChineseAN Product Feed',
+  'product-feed-generator': 'Product Feed Generator',
   'article-generator': 'Affiliate Article Editor',
   'engagement-posts': 'Engagement posts',
   'engagement-photos': 'English Premier League',
