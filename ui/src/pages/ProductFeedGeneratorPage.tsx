@@ -8,13 +8,7 @@ import {
   useFeedHistory,
   type FeedHistoryItem,
 } from "../utils/productFeedHistory";
-import {
-  PARTNERS,
-  COUNT_PRESETS,
-  DEFAULT_COUNT,
-  MAX_PER_MERCHANT,
-  COMBINED_MAX,
-} from "../constants/productFeedPartners";
+import { PARTNERS, COMBINED_TOTAL } from "../constants/productFeedPartners";
 
 const selectClass =
   "w-full px-3 py-2 pr-9 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer";
@@ -35,6 +29,13 @@ function shortTime(ts: number) {
   });
 }
 
+function countsLabel(counts?: Record<string, number>): string {
+  if (!counts) return "";
+  return Object.entries(counts)
+    .map(([brand, n]) => `${brand} ${n}`)
+    .join(" · ");
+}
+
 export function ProductFeedGeneratorPage() {
   const { run, isLoading } = useProductFeed();
   const history = useFeedHistory();
@@ -45,22 +46,25 @@ export function ProductFeedGeneratorPage() {
     [partnerId],
   );
 
-  // merchant -> selected count (presence in the map = selected)
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  // Selected merchants (brand selection is the only knob — the file is always
+  // up to COMBINED_TOTAL rows, fairly split across whatever is selected).
+  const [selected, setSelected] = useState<string[]>([]);
 
-  // Simulated progress (the webhook is a single synchronous call, so we ease a
-  // bar toward an estimate based on the workload and snap to 100% on completion).
+  // Simulated progress. The job runs async server-side (~5-6 min for a full
+  // pull), so we ease a bar toward an estimate and snap to 100% on completion.
   const [progress, setProgress] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const estimateRef = useRef(20);
+  const estimateRef = useRef(330); // seconds — a full pull is typically ~5-6 min
 
   // Id of the file from the most recent successful generate (drives the green
   // "finished" highlight on its entry in the Files card).
   const [justDoneId, setJustDoneId] = useState<string | null>(null);
 
-  const selectedMerchants = partner.merchants.filter((m) => m in counts);
-  const total = selectedMerchants.reduce((sum, m) => sum + (counts[m] || 0), 0);
-  const overCap = total > COMBINED_MAX;
+  const selectedMerchants = partner.merchants.filter((m) => selected.includes(m));
+  const perBrand =
+    selectedMerchants.length > 0
+      ? Math.floor(COMBINED_TOTAL / selectedMerchants.length)
+      : 0;
 
   useEffect(() => {
     if (!isLoading) return;
@@ -72,44 +76,36 @@ export function ProductFeedGeneratorPage() {
       setElapsed(secs);
       // ease toward 95% over the estimate, never quite reaching 100 until done
       setProgress(Math.min(95, (secs / estimateRef.current) * 95));
-    }, 150);
+    }, 200);
     return () => window.clearInterval(id);
   }, [isLoading]);
 
   const toggleMerchant = (merchant: string) => {
-    setCounts((prev) => {
-      const next = { ...prev };
-      if (merchant in next) delete next[merchant];
-      else next[merchant] = DEFAULT_COUNT;
-      return next;
-    });
-  };
-
-  const setCount = (merchant: string, value: number) => {
-    setCounts((prev) => ({ ...prev, [merchant]: value }));
+    setSelected((prev) =>
+      prev.includes(merchant)
+        ? prev.filter((m) => m !== merchant)
+        : [...prev, merchant],
+    );
   };
 
   const handleGenerate = async () => {
-    estimateRef.current = Math.max(12, Math.round(8 + total * 0.12));
     setJustDoneId(null);
 
-    const selections = selectedMerchants.map((m) => ({
-      merchant: m,
-      limit: Math.min(
-        Math.max(counts[m] || DEFAULT_COUNT, 1),
-        MAX_PER_MERCHANT,
-      ),
-    }));
+    const selections = selectedMerchants.map((m) => ({ merchant: m }));
     const res = await run(partner.id, selections);
 
     if (res.success && res.url && res.filename) {
       setProgress(100);
+      const total = res.counts
+        ? Object.values(res.counts).reduce((s, n) => s + n, 0)
+        : 0;
       const id = addFeedFile({
         filename: res.filename,
         url: res.url,
         partner: partner.label,
         merchants: [...selectedMerchants],
         total,
+        counts: res.counts,
       });
       setJustDoneId(id);
       triggerDownload(res.filename, res.url); // auto-download once; it also stays in the list below
@@ -144,23 +140,26 @@ export function ProductFeedGeneratorPage() {
                     (ChineseAN for now).
                   </li>
                   <li>
-                    Tick the <span className="font-semibold">merchants</span>{" "}
+                    Tick the <span className="font-semibold">brands</span>{" "}
                     you want — you can select several.
                   </li>
                   <li>
-                    For each merchant, choose how many products to pull
-                    (50/100/150/200 or a custom number).
+                    Click <span className="font-semibold">Generate Excel</span>.
+                    The file always holds up to{" "}
+                    <span className="font-semibold">{COMBINED_TOTAL}</span>{" "}
+                    products, split evenly across the brands you picked.
                   </li>
                   <li>
-                    Click <span className="font-semibold">Generate Excel</span>{" "}
-                    — all merchants come back in one file, each row with the
-                    product, affiliate link, price, and CMS tags.
+                    Need a brand's full feed? Select{" "}
+                    <span className="font-semibold">just that one brand</span> —
+                    it then gets the full {COMBINED_TOTAL}.
                   </li>
                 </ol>
                 <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
                   <p className="text-xs text-neutral-600">
-                    Tip: keep the combined total at or below {COMBINED_MAX}{" "}
-                    products so the file generates before the request times out.
+                    Generating runs in the background and can take a few minutes
+                    — keep this tab open; the file downloads automatically when
+                    it's ready.
                   </p>
                 </div>
               </div>
@@ -176,7 +175,7 @@ export function ProductFeedGeneratorPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Left: partner → merchants → generate */}
+          {/* Left: partner → brands → generate */}
           <div className="lg:col-span-2 glass-card rounded-2xl">
           {/* Partner */}
           <div className="p-6">
@@ -188,7 +187,7 @@ export function ProductFeedGeneratorPage() {
                 value={partnerId}
                 onChange={(e) => {
                   setPartnerId(e.target.value);
-                  setCounts({});
+                  setSelected([]);
                 }}
                 className={selectClass}
               >
@@ -214,98 +213,54 @@ export function ProductFeedGeneratorPage() {
             </div>
           </div>
 
-          {/* Merchants + per-merchant count */}
+          {/* Brands */}
           <div className="p-6 pt-0">
             <div className="flex items-baseline justify-between mb-4">
-              <h2 className="text-sm font-semibold text-neutral-950">
-                Merchants
-              </h2>
+              <h2 className="text-sm font-semibold text-neutral-950">Brands</h2>
               <span className="text-xs text-neutral-500">
-                {selectedMerchants.length} selected · {total} products
+                {selectedMerchants.length > 0
+                  ? `${selectedMerchants.length} selected · ~${perBrand} each (${COMBINED_TOTAL} total)`
+                  : "none selected"}
               </span>
             </div>
 
             <div className="space-y-3">
               {partner.merchants.map((merchant) => {
-                const isSelected = merchant in counts;
+                const isSelected = selected.includes(merchant);
                 return (
-                  <div
+                  <label
                     key={merchant}
-                    className={`rounded-xl border transition-colors ${
+                    className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border cursor-pointer select-none transition-colors ${
                       isSelected
                         ? "border-neutral-300 bg-white"
-                        : "border-neutral-200 bg-neutral-50/50"
+                        : "border-neutral-200 bg-neutral-50/50 hover:border-neutral-300"
                     }`}
                   >
-                    <label className="flex items-center gap-2.5 px-4 py-3 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleMerchant(merchant)}
-                        className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
-                      />
-                      <span className="text-sm font-medium text-neutral-800">
-                        {merchant}
-                      </span>
-                    </label>
-
-                    {isSelected && (
-                      <div className="px-4 pb-4 pt-1">
-                        <p className="text-xs text-neutral-500 mb-2">
-                          Number of products
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {COUNT_PRESETS.map((preset) => (
-                            <button
-                              key={preset}
-                              type="button"
-                              onClick={() => setCount(merchant, preset)}
-                              className={`px-4 py-2 rounded-lg border text-sm font-semibold transition ${
-                                counts[merchant] === preset
-                                  ? "border-neutral-950 bg-neutral-950 text-white"
-                                  : "border-neutral-200 text-neutral-700 hover:border-neutral-400"
-                              }`}
-                            >
-                              {preset}
-                            </button>
-                          ))}
-                          <input
-                            type="number"
-                            min={1}
-                            max={MAX_PER_MERCHANT}
-                            value={counts[merchant]}
-                            onChange={(e) =>
-                              setCount(
-                                merchant,
-                                Math.max(0, parseInt(e.target.value, 10) || 0),
-                              )
-                            }
-                            placeholder="Custom"
-                            className="w-24 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleMerchant(merchant)}
+                      className="w-4 h-4 rounded border-neutral-300 accent-neutral-950 cursor-pointer"
+                    />
+                    <span className="text-sm font-medium text-neutral-800">
+                      {merchant}
+                    </span>
+                  </label>
                 );
               })}
             </div>
           </div>
 
-          {/* Footer: warning + generate + progress */}
+          {/* Footer: info + generate + progress */}
           <div className="p-6 space-y-4">
-            {overCap && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs font-semibold text-yellow-800">
-                  Large pull
-                </p>
-                <p className="text-xs text-yellow-700 mt-1">
-                  {total} products is above the recommended {COMBINED_MAX}. The
-                  feed may time out before the file is ready — consider lowering
-                  the counts.
-                </p>
-              </div>
-            )}
+            <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+              <p className="text-xs text-neutral-600">
+                The Excel always holds up to{" "}
+                <span className="font-semibold">{COMBINED_TOTAL}</span>{" "}
+                products, split evenly across the selected brands. Pick a single
+                brand to get its full feed.
+              </p>
+            </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <button
@@ -320,7 +275,7 @@ export function ProductFeedGeneratorPage() {
                 <div className="flex-1 min-w-0">
                   <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full transition-[width] duration-150 ease-out"
+                      className="h-full rounded-full transition-[width] duration-200 ease-out"
                       style={{
                         width: `${progress}%`,
                         background:
@@ -329,7 +284,7 @@ export function ProductFeedGeneratorPage() {
                     />
                   </div>
                   <div className="flex items-center justify-between text-xs text-neutral-500 mt-1.5">
-                    <span>Pulling &amp; tagging products…</span>
+                    <span>Pulling &amp; tagging products… this can take a few minutes</span>
                     <span>
                       {Math.round(progress)}% · {Math.round(elapsed)}s
                     </span>
@@ -369,6 +324,7 @@ export function ProductFeedGeneratorPage() {
               <div className="space-y-2.5">
                 {history.map((item: FeedHistoryItem) => {
                   const success = item.id === justDoneId;
+                  const breakdown = countsLabel(item.counts);
                   return (
                     <div
                       key={item.id}
@@ -431,6 +387,16 @@ export function ProductFeedGeneratorPage() {
                               ? item.filename
                               : `${shortTime(item.createdAt)} · ${item.total} products`}
                           </p>
+                          {breakdown && (
+                            <p
+                              className={`text-xs mt-0.5 truncate ${
+                                success ? "text-green-700" : "text-neutral-400"
+                              }`}
+                              title={breakdown}
+                            >
+                              {breakdown}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <button

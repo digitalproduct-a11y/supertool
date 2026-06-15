@@ -15,9 +15,7 @@ export const PARTNERS: FeedPartner[] = [
   },
 ]
 
-export const COUNT_PRESETS = [50, 100, 150, 200] as const
-export const DEFAULT_COUNT = 100
-export const MAX_PER_MERCHANT = 1000
-// Combined product cap across all selected merchants. Keeps the synchronous
-// webhook response under the ~100s platform timeout (mirrors COMBINED_MAX in n8n).
-export const COMBINED_MAX = 600
+// The combined Excel is always capped at this many rows, fairly (round-robin)
+// split across the selected brands. One brand selected = its full 1000.
+// Editors get a brand's complete feed by selecting just that brand.
+export const COMBINED_TOTAL = 1000

@@ -12,6 +12,7 @@ export interface FeedHistoryItem {
   partner: string
   merchants: string[]
   total: number
+  counts?: Record<string, number>
   createdAt: number
 }
 
