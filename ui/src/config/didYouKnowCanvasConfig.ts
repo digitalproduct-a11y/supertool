@@ -110,7 +110,7 @@ export const DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG: DidYouKnowCanvasConfig = {
     fontFamily: 'Montserrat',
     fontSize: 48,
     fontWeight: '900',
-    fill: '#f0b812',
+    fill: '#ffffff',
     lineHeight: 0.98,
     charSpacing: -43,
     maxWidth: 1000,
