@@ -48,13 +48,6 @@ export const DidYouKnowCanvas = forwardRef<
   const fabricRef = useRef<StaticCanvas | null>(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [hmrTick, setHmrTick] = useState(0)
-
-  useEffect(() => {
-    const handler = () => setHmrTick(t => t + 1)
-    window.addEventListener('didyouknow-canvas-hmr', handler)
-    return () => window.removeEventListener('didyouknow-canvas-hmr', handler)
-  }, [])
 
   const CANVAS_WIDTH = 1080
   const CANVAS_HEIGHT = 1350
@@ -120,8 +113,8 @@ export const DidYouKnowCanvas = forwardRef<
       tempCanvas.height = h
       const ctx = tempCanvas.getContext('2d')!
       const grad = ctx.createLinearGradient(0, h, 0, h * 0.2)
-      grad.addColorStop(0, 'rgba(10, 10, 46, 1)')
-      grad.addColorStop(1, 'rgba(10, 10, 46, 0)')
+      grad.addColorStop(0, 'rgba(0, 0, 0, 1)')
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, w, h)
 
@@ -301,7 +294,7 @@ export const DidYouKnowCanvas = forwardRef<
       setReady(true)
       setError(null)
     },
-    [idea, imageUrl, brandLogoPublicId, translatedEdition, hmrTick],
+    [idea, imageUrl, brandLogoPublicId, translatedEdition],
   )
 
   // Render directly to visible canvas
@@ -427,8 +420,3 @@ export const DidYouKnowCanvas = forwardRef<
   )
 })
 
-if (import.meta.hot) {
-  import.meta.hot.accept(() => {
-    window.dispatchEvent(new CustomEvent('didyouknow-canvas-hmr'))
-  })
-}
