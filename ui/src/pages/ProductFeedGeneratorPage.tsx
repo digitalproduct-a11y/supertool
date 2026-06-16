@@ -8,7 +8,7 @@ import {
   useFeedHistory,
   type FeedHistoryItem,
 } from "../utils/productFeedHistory";
-import { PARTNERS, COMBINED_TOTAL } from "../constants/productFeedPartners";
+import { PARTNERS } from "../constants/productFeedPartners";
 
 const selectClass =
   "w-full px-3 py-2 pr-9 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white appearance-none cursor-pointer";
@@ -46,8 +46,8 @@ export function ProductFeedGeneratorPage() {
     [partnerId],
   );
 
-  // Selected merchants (brand selection is the only knob — the file is always
-  // up to COMBINED_TOTAL rows, fairly split across whatever is selected).
+  // Selected merchants. Each selected brand contributes its own feed (one pull
+  // per brand) into a single combined Excel — no fixed total, no split.
   const [selected, setSelected] = useState<string[]>([]);
 
   // Simulated progress. The job runs async server-side (~5-6 min for a full
@@ -61,10 +61,6 @@ export function ProductFeedGeneratorPage() {
   const [justDoneId, setJustDoneId] = useState<string | null>(null);
 
   const selectedMerchants = partner.merchants.filter((m) => selected.includes(m));
-  const perBrand =
-    selectedMerchants.length > 0
-      ? Math.floor(COMBINED_TOTAL / selectedMerchants.length)
-      : 0;
 
   useEffect(() => {
     if (!isLoading) return;
@@ -145,14 +141,9 @@ export function ProductFeedGeneratorPage() {
                   </li>
                   <li>
                     Click <span className="font-semibold">Generate Excel</span>.
-                    The file always holds up to{" "}
-                    <span className="font-semibold">{COMBINED_TOTAL}</span>{" "}
-                    products, split evenly across the brands you picked.
-                  </li>
-                  <li>
-                    Need a brand's full feed? Select{" "}
-                    <span className="font-semibold">just that one brand</span> —
-                    it then gets the full {COMBINED_TOTAL}.
+                    Each brand you tick is pulled and CMS-tagged into{" "}
+                    <span className="font-semibold">one combined Excel</span> —
+                    select more brands to include more products.
                   </li>
                 </ol>
                 <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
@@ -219,7 +210,7 @@ export function ProductFeedGeneratorPage() {
               <h2 className="text-sm font-semibold text-neutral-950">Brands</h2>
               <span className="text-xs text-neutral-500">
                 {selectedMerchants.length > 0
-                  ? `${selectedMerchants.length} selected · ~${perBrand} each (${COMBINED_TOTAL} total)`
+                  ? `${selectedMerchants.length} selected · one feed each`
                   : "none selected"}
               </span>
             </div>
@@ -255,10 +246,8 @@ export function ProductFeedGeneratorPage() {
           <div className="p-6 space-y-4">
             <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
               <p className="text-xs text-neutral-600">
-                The Excel always holds up to{" "}
-                <span className="font-semibold">{COMBINED_TOTAL}</span>{" "}
-                products, split evenly across the selected brands. Pick a single
-                brand to get its full feed.
+                Each selected brand contributes its own product feed, combined
+                into a single CMS-tagged Excel. Tick more brands to include more.
               </p>
             </div>
 
