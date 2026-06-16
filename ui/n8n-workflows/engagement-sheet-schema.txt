@@ -1,0 +1,5 @@
+ENGAGEMENT_SHEET_ID=14OBwoScwf813sXMlU_6r8GlPp4nrBLzj3LJEji-xIug
+  brand_config gid=831600972 | post_log gid=1102384048
+brand_config cols: brand,feed_urls,language,formats_enabled,posts_per_run,zernio_account,passcode,brand_color,font_public_id,logo_public_id,default_bg_public_id,telegram_channel,report_email,go_live
+post_log cols: timestamp,session_id,brand,url,post_type,headline,caption,image_url,scheduled_for,status,zernio_post_id,error_message
+provision_workflow=4XnP85qsLoR2GFSy (ran once, DONE)
