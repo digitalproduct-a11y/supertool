@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useMsal } from '@azure/msal-react'
 import { InteractionRequiredAuthError } from '@azure/msal-browser'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { normalizeN8NBrand } from '../constants/brands'
 import { loginRequest } from '../auth/msalConfig'
+
+// True when `ts` falls on a different local calendar day than right now.
+// Null (no prior fetch) counts as stale so a fresh open always fetches.
+const isFromPreviousDay = (ts: Date | null): boolean => {
+  if (!ts) return true
+  return ts.toDateString() !== new Date().toDateString()
+}
 
 
 export interface TargetRow {
@@ -121,6 +128,18 @@ export function useDashboardData() {
       let fetchBody: string | undefined
 
       const useProxy = import.meta.env.PROD || import.meta.env.VITE_USE_PROXY === 'true'
+      if (!useProxy) {
+        // Local dev: route through vite's dev proxy (see vite.config.ts) so the
+        // dashboard-webhook-token is injected server-side and stays out of the
+        // client bundle. Calling the absolute n8n URL would bypass the proxy
+        // and 403 on the Header Auth check.
+        try {
+          const u = new URL(webhookUrl)
+          fetchUrl = u.pathname + u.search
+        } catch {
+          // fall through to absolute URL
+        }
+      }
       if (useProxy) {
         const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
         try {
@@ -221,21 +240,49 @@ export function useDashboardData() {
   }, [])
 
   useEffect(() => {
-    // Only fetch on mount if there is no cached data — navigation and profile
-    // switches reuse the cache. Use refetch() or the Refresh button for a forced reload.
+    // Stale-while-revalidate on mount: cached data renders instantly from the
+    // useState initializers above; here we trigger a background refetch when
+    // there's no cache OR the cache was last refreshed on a previous local
+    // calendar day. Otherwise navigation and brand switches keep reusing the
+    // cache without re-hitting n8n.
     try {
       const cached = localStorage.getItem(STORAGE_KEY)
       if (cached) {
         const parsed = JSON.parse(cached) as CachedData
         if (Array.isArray(parsed.data) && parsed.data.length > 0) {
-          console.log('useDashboardData useEffect - cache hit, skipping fetch')
-          return
+          const cachedAt = parsed.lastUpdated ? new Date(parsed.lastUpdated) : null
+          if (!isFromPreviousDay(cachedAt)) {
+            console.log('useDashboardData useEffect - cache hit (same day), skipping fetch')
+            return
+          }
+          console.log('useDashboardData useEffect - cache is from a previous day, refetching')
         }
       }
     } catch { /* fall through to fetch */ }
-    console.log('useDashboardData useEffect - no cache, fetching')
     fetchData()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refetch when the tab becomes visible (or the window regains focus) on a
+  // new calendar day. Catches the "laptop closed for days with tab still open"
+  // case so users see today's data without manually clicking Refresh.
+  const lastUpdatedRef = useRef(lastUpdated)
+  useEffect(() => { lastUpdatedRef.current = lastUpdated }, [lastUpdated])
+
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState !== 'visible') return
+      if (isFromPreviousDay(lastUpdatedRef.current)) {
+        console.log('useDashboardData visibility - new day, refetching')
+        fetchData()
+      }
+    }
+    document.addEventListener('visibilitychange', handler)
+    window.addEventListener('focus', handler)
+    return () => {
+      document.removeEventListener('visibilitychange', handler)
+      window.removeEventListener('focus', handler)
+    }
+  }, [fetchData])
 
   return {
     data,

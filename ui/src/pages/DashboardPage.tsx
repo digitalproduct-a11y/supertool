@@ -30,6 +30,18 @@ export function DashboardPage() {
   const [showMonthsModal, setShowMonthsModal] = useState(false)
   const [monthsPage, setMonthsPage] = useState(0)
   const [selectedBonusIndex, setSelectedBonusIndex] = useState(0)
+  const [dateRangeCustomized, setDateRangeCustomized] = useState(false)
+
+  // When fresh data arrives (refetch updates lastUpdated), advance the default
+  // date window to today so a long-lived tab doesn't keep filtering against a
+  // stale "yesterday". Skipped if the user has manually picked a custom range.
+  useEffect(() => {
+    if (!lastUpdated || dateRangeCustomized) return
+    const newStart = new Date(); newStart.setDate(newStart.getDate() - 31); newStart.setHours(0, 0, 0, 0)
+    const newEnd = new Date(); newEnd.setDate(newEnd.getDate() - 1); newEnd.setHours(23, 59, 59, 999)
+    setStartDate(prev => prev.getTime() === newStart.getTime() ? prev : newStart)
+    setEndDate(prev => prev.getTime() === newEnd.getTime() ? prev : newEnd)
+  }, [lastUpdated, dateRangeCustomized])
 
   // Extract unique brands from data (preserving order of first appearance)
   const brands = useMemo(() => {
@@ -248,6 +260,7 @@ export function DashboardPage() {
                   onDateRangeChange={(start, end) => {
                     setStartDate(start)
                     setEndDate(end)
+                    setDateRangeCustomized(true)
                   }}
                   onRefresh={refetch}
                   loading={loading}

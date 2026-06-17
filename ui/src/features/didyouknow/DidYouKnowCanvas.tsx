@@ -112,8 +112,8 @@ export const DidYouKnowCanvas = forwardRef<
       tempCanvas.width = w
       tempCanvas.height = h
       const ctx = tempCanvas.getContext('2d')!
-      const grad = ctx.createLinearGradient(0, h, 0, 0)
-      grad.addColorStop(0, 'rgba(0, 0.8, 1, 1)')
+      const grad = ctx.createLinearGradient(0, h, 0, h * 0.2)
+      grad.addColorStop(0, 'rgba(0, 0, 0, 1)')
       grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, w, h)
@@ -419,3 +419,4 @@ export const DidYouKnowCanvas = forwardRef<
     </div>
   )
 })
+
