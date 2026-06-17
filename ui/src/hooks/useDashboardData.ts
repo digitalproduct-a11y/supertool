@@ -133,6 +133,73 @@ export function useDashboardData() {
       let fetchMethod: 'GET' | 'POST' = 'GET'
       let fetchBody: string | undefined
 
+      // Snapshot path (feature-flagged) — reads from /api/dashboard-snapshot which
+      // hits Vercel KV. Session cookie attached automatically (credentials: include).
+      // This path stays out of MSAL silent-renewal entirely after the cookie is minted.
+      const useSnapshot = import.meta.env.VITE_USE_DASHBOARD_SNAPSHOT === 'true'
+      if (useSnapshot) {
+        let resp = await fetch('/api/dashboard-snapshot?type=meta', { credentials: 'include' })
+
+        // Cookie expired? Re-mint once via /api/auth/session, then retry.
+        if (resp.status === 401) {
+          const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
+          try {
+            const tokenResult = await instance.acquireTokenSilent({ ...loginRequest, account })
+            await fetch('/api/auth/session', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${tokenResult.idToken}` },
+              credentials: 'include',
+            })
+          } catch (err) {
+            if (err instanceof InteractionRequiredAuthError) {
+              await instance.loginRedirect(loginRequest)
+              return
+            }
+            throw err
+          }
+          resp = await fetch('/api/dashboard-snapshot?type=meta', { credentials: 'include' })
+        }
+
+        if (resp.status === 404) {
+          throw new Error('Snapshot not ready yet — please try again in a few minutes')
+        }
+        if (!resp.ok) {
+          throw new Error(`Snapshot read failed: HTTP ${resp.status}`)
+        }
+
+        const responseItem = await resp.json() as any
+        let dataArray: DashboardRow[] = []
+        const targetsArray: TargetRow[] = Array.isArray(responseItem.targets) ? responseItem.targets : []
+        const bonusesData: Record<string, BonusRow[]> = {}
+
+        if (Array.isArray(responseItem.data)) {
+          dataArray = (responseItem.data as any[]).map((row: any) => ({
+            ...row,
+            brand: normalizeN8NBrand(row.brand) || row.brand,
+          })) as DashboardRow[]
+        }
+        if (responseItem.bonuses && typeof responseItem.bonuses === 'object') {
+          Object.entries(responseItem.bonuses as Record<string, BonusRow[]>).forEach(([brandName, bonuses]) => {
+            const canonicalBrand = normalizeN8NBrand(brandName) || brandName
+            bonusesData[canonicalBrand] = bonuses
+          })
+        }
+
+        setData(dataArray)
+        const normalizedTargets = targetsArray.map(t => {
+          const canonicalBrand = normalizeN8NBrand(t.Brand) || t.Brand
+          return { ...t, Brand: canonicalBrand }
+        })
+        setTargets(normalizedTargets)
+        setBonuses(bonusesData)
+        const updated = new Date()
+        setLastUpdated(updated)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          data: dataArray, targets: normalizedTargets, bonuses: bonusesData, lastUpdated: updated.toISOString(),
+        }))
+        return
+      }
+
       const useProxy = import.meta.env.PROD || import.meta.env.VITE_USE_PROXY === 'true'
       if (!useProxy) {
         // Local dev: route through vite's dev proxy (see vite.config.ts) so the
