@@ -1,9 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { verifyMsalIdToken } from './_lib/verifyMsalIdToken'
 
-const TENANT_ID = process.env.AZURE_TENANT_ID!
-const CLIENT_ID = process.env.AZURE_CLIENT_ID!
-const ALLOWED_DOMAIN = process.env.AZURE_ALLOWED_DOMAIN ?? 'astro.com.my'
 const N8N_HOST = 'astroproduct.app.n8n.cloud'
 
 // Per-webhook tokens + forwarding method. Keyed by path prefix on the n8n host.
@@ -23,40 +20,17 @@ const WEBHOOK_TOKENS: WebhookRule[] = [
   },
 ]
 
-// Lazily initialised so the module loads even if env vars are set after cold start
-let jwks: ReturnType<typeof createRemoteJWKSet> | null = null
-function getJwks() {
-  if (!jwks) {
-    jwks = createRemoteJWKSet(
-      new URL(`https://login.microsoftonline.com/${TENANT_ID}/discovery/v2.0/keys`)
-    )
-  }
-  return jwks
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // --- Token validation ---
-  const authHeader = req.headers.authorization ?? ''
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
   try {
-    const { payload } = await jwtVerify(token, getJwks(), {
-      issuer: `https://login.microsoftonline.com/${TENANT_ID}/v2.0`,
-      audience: CLIENT_ID,
-    })
-    const email = (payload.preferred_username as string) ?? ''
-    if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-      return res.status(403).json({ error: 'Forbidden: not an authorised domain' })
-    }
-  } catch {
-    return res.status(401).json({ error: 'Invalid or expired token' })
+    await verifyMsalIdToken(req.headers.authorization)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'AUTH_ERROR'
+    if (msg === 'FORBIDDEN_DOMAIN') return res.status(403).json({ error: 'Forbidden: not an authorised domain' })
+    return res.status(401).json({ error: 'Unauthorized' })
   }
 
   // --- Forward to n8n ---
