@@ -75,11 +75,30 @@ export default defineConfig(({ mode }) => {
           target: 'https://astroproduct.app.n8n.cloud',
           changeOrigin: true,
           secure: true,
+          configure: (proxy) => {
+            // Mirrors WEBHOOK_TOKENS in api/n8n-proxy.ts so dashboard-gated
+            // webhooks work under `vite dev` without exposing the token to
+            // the client bundle.
+            proxy.on('proxyReq', (proxyReq, req) => {
+              const url = req.url || ''
+              if (env.DASHBOARD_WEBHOOK_TOKEN && url.startsWith('/webhook/dashboard')) {
+                proxyReq.setHeader('dashboard-webhook-token', env.DASHBOARD_WEBHOOK_TOKEN)
+              }
+            })
+          },
         },
         '/webhook-test': {
           target: 'https://astroproduct.app.n8n.cloud',
           changeOrigin: true,
           secure: true,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq, req) => {
+              const url = req.url || ''
+              if (env.DASHBOARD_WEBHOOK_TOKEN && url.startsWith('/webhook-test/dashboard')) {
+                proxyReq.setHeader('dashboard-webhook-token', env.DASHBOARD_WEBHOOK_TOKEN)
+              }
+            })
+          },
         },
         // Mirror api/zernio.ts (Vercel serverless) for local dev: rewrite
         // /api/zernio/:path* → https://zernio.com/api/v1/:path* and inject the
