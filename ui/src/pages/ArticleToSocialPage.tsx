@@ -167,7 +167,9 @@ async function generatePhoto(
       signal: controller.signal,
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json() as Record<string, unknown>
+    const text = await res.text()
+    if (!text.trim()) throw new Error('Empty response from server — the photo workflow may have errored or be misconfigured. Check n8n executions.')
+    const data = JSON.parse(text) as Record<string, unknown>
     if (data.success === false) throw new Error((data.message as string) ?? 'Generation failed')
     return {
       imageUrl: (data.imageUrl as string) ?? '',
