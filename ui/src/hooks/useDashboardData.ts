@@ -121,6 +121,18 @@ export function useDashboardData() {
       let fetchBody: string | undefined
 
       const useProxy = import.meta.env.PROD || import.meta.env.VITE_USE_PROXY === 'true'
+      if (!useProxy) {
+        // Local dev: route through vite's dev proxy (see vite.config.ts) so the
+        // dashboard-webhook-token is injected server-side and stays out of the
+        // client bundle. Calling the absolute n8n URL would bypass the proxy
+        // and 403 on the Header Auth check.
+        try {
+          const u = new URL(webhookUrl)
+          fetchUrl = u.pathname + u.search
+        } catch {
+          // fall through to absolute URL
+        }
+      }
       if (useProxy) {
         const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
         try {
