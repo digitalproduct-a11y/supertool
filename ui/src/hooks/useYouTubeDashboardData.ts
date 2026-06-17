@@ -77,6 +77,32 @@ export function useYouTubeDashboardData() {
     setLoading(true)
     setError(null)
     try {
+      const useSnapshot = import.meta.env.VITE_USE_DASHBOARD_SNAPSHOT === 'true'
+      if (useSnapshot) {
+        const resp = await fetch('/api/dashboard-snapshot?type=youtube', { credentials: 'include' })
+        if (resp.status === 401) {
+          // Session-mint retry — this hook doesn't have direct MSAL access; rely on
+          // AuthGate having minted the cookie. If it's truly stale, surface the
+          // failure and let AuthGate's session-mint gate handle re-auth on reload.
+          throw new Error('Session expired — reload to re-authenticate')
+        }
+        if (resp.status === 404) {
+          throw new Error('Snapshot not ready yet — please try again in a few minutes')
+        }
+        if (!resp.ok) {
+          throw new Error(`Snapshot read failed: HTTP ${resp.status}`)
+        }
+        const responseItem = await resp.json() as any
+        const dataArray: YouTubeDashboardRow[] = Array.isArray(responseItem.data) ? responseItem.data : []
+        const targetsArray: YouTubeTargetRow[] = Array.isArray(responseItem.targets) ? responseItem.targets : []
+        setData(dataArray)
+        setTargets(targetsArray)
+        const updated = new Date()
+        setLastUpdated(updated)
+        writeCache({ data: dataArray, targets: targetsArray, lastUpdated: updated.toISOString() })
+        return
+      }
+
       const webhookUrl = import.meta.env.VITE_YT_DASHBOARD_WEBHOOK_URL as string | undefined
       if (!webhookUrl) throw new Error('VITE_YT_DASHBOARD_WEBHOOK_URL not configured')
 
