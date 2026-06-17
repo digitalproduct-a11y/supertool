@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useMsal } from '@azure/msal-react'
 import { InteractionRequiredAuthError } from '@azure/msal-browser'
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { normalizeN8NBrand } from '../constants/brands'
 import { loginRequest } from '../auth/msalConfig'
+
+// True when `ts` falls on a different local calendar day than right now.
+// Null (no prior fetch) counts as stale so a fresh open always fetches.
+const isFromPreviousDay = (ts: Date | null): boolean => {
+  if (!ts) return true
+  return ts.toDateString() !== new Date().toDateString()
+}
 
 
 export interface TargetRow {
@@ -233,21 +240,49 @@ export function useDashboardData() {
   }, [])
 
   useEffect(() => {
-    // Only fetch on mount if there is no cached data — navigation and profile
-    // switches reuse the cache. Use refetch() or the Refresh button for a forced reload.
+    // Stale-while-revalidate on mount: cached data renders instantly from the
+    // useState initializers above; here we trigger a background refetch when
+    // there's no cache OR the cache was last refreshed on a previous local
+    // calendar day. Otherwise navigation and brand switches keep reusing the
+    // cache without re-hitting n8n.
     try {
       const cached = localStorage.getItem(STORAGE_KEY)
       if (cached) {
         const parsed = JSON.parse(cached) as CachedData
         if (Array.isArray(parsed.data) && parsed.data.length > 0) {
-          console.log('useDashboardData useEffect - cache hit, skipping fetch')
-          return
+          const cachedAt = parsed.lastUpdated ? new Date(parsed.lastUpdated) : null
+          if (!isFromPreviousDay(cachedAt)) {
+            console.log('useDashboardData useEffect - cache hit (same day), skipping fetch')
+            return
+          }
+          console.log('useDashboardData useEffect - cache is from a previous day, refetching')
         }
       }
     } catch { /* fall through to fetch */ }
-    console.log('useDashboardData useEffect - no cache, fetching')
     fetchData()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refetch when the tab becomes visible (or the window regains focus) on a
+  // new calendar day. Catches the "laptop closed for days with tab still open"
+  // case so users see today's data without manually clicking Refresh.
+  const lastUpdatedRef = useRef(lastUpdated)
+  useEffect(() => { lastUpdatedRef.current = lastUpdated }, [lastUpdated])
+
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState !== 'visible') return
+      if (isFromPreviousDay(lastUpdatedRef.current)) {
+        console.log('useDashboardData visibility - new day, refetching')
+        fetchData()
+      }
+    }
+    document.addEventListener('visibilitychange', handler)
+    window.addEventListener('focus', handler)
+    return () => {
+      document.removeEventListener('visibilitychange', handler)
+      window.removeEventListener('focus', handler)
+    }
+  }, [fetchData])
 
   return {
     data,
