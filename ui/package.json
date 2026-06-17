@@ -16,6 +16,7 @@
     "@imgly/background-removal": "^1.7.0",
     "@tabler/icons-react": "^3.40.0",
     "@types/fabric": "^5.3.11",
+    "@vercel/kv": "^3.0.0",
     "@vercel/speed-insights": "^2.0.0",
     "fabric": "^6.9.1",
     "html2canvas": "^1.4.1",
