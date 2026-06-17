@@ -1,6 +1,7 @@
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { InteractionStatus } from '@azure/msal-browser'
 import { loginRequest } from '../auth/msalConfig'
+import { useSession } from '../hooks/useSession'
 
 const ALLOWED_DOMAIN = import.meta.env.VITE_AZURE_ALLOWED_DOMAIN ?? 'astro.com.my'
 
@@ -63,6 +64,38 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             className="w-full bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg px-4 py-3 transition-colors"
           >
             Sign out and try again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const { state: sessionState, mint } = useSession()
+
+  if (sessionState === 'idle' || sessionState === 'minting') {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-400 text-sm">Preparing your session…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (sessionState === 'failed') {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-sm flex flex-col items-center gap-6">
+          <span className="text-xl font-semibold text-white">Session error</span>
+          <p className="text-gray-400 text-sm text-center">
+            We couldn't establish your session. Click to retry.
+          </p>
+          <button
+            onClick={() => mint()}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg px-4 py-3 transition-colors"
+          >
+            Retry
           </button>
         </div>
       </div>
