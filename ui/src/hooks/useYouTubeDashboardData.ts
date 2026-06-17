@@ -65,7 +65,13 @@ export function useYouTubeDashboardData() {
     return parsed?.lastUpdated ? new Date(parsed.lastUpdated) : null
   })
 
+  // In-flight guard so rapid double-triggers (mount + visibilitychange, or
+  // double-clicked Refresh) collapse to a single network call.
+  const inFlightRef = useRef<boolean>(false)
+
   const fetchData = useCallback(async () => {
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setLoading(true)
     setError(null)
     try {
@@ -113,6 +119,7 @@ export function useYouTubeDashboardData() {
       setError(message)
     } finally {
       setLoading(false)
+      inFlightRef.current = false
     }
   }, [])
 
@@ -125,27 +132,40 @@ export function useYouTubeDashboardData() {
       const cachedAt = parsed.lastUpdated ? new Date(parsed.lastUpdated) : null
       if (!isFromPreviousDay(cachedAt)) return
     }
+    lastAutoAttemptDateRef.current = new Date().toDateString()
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Refetch when the tab regains visibility/focus on a new calendar day so
-  // long-lived tabs don't keep showing yesterday's numbers.
+  // Refetch when the tab becomes visible on a new calendar day so long-lived
+  // tabs don't keep showing yesterday's numbers.
+  //
+  // Once-per-day cooldown via lastAutoAttemptDateRef: after a single auto
+  // attempt today (success or failure), skip further automatic attempts
+  // until the local day rolls over. Prevents a failing fetch from being
+  // retried on every focus/visibility flip. Manual Refresh still bypasses
+  // this since it calls fetchData() directly via the returned `refetch`.
+  //
+  // Only `visibilitychange` is bound — `focus` covers the same cases and
+  // binding both would double-trigger the handler.
   const lastUpdatedRef = useRef(lastUpdated)
   useEffect(() => { lastUpdatedRef.current = lastUpdated }, [lastUpdated])
+  const lastAutoAttemptDateRef = useRef<string | null>(null)
 
   useEffect(() => {
     const handler = () => {
       if (document.visibilityState !== 'visible') return
+      if (inFlightRef.current) return
+      const today = new Date().toDateString()
+      if (lastAutoAttemptDateRef.current === today) return
       if (isFromPreviousDay(lastUpdatedRef.current)) {
+        lastAutoAttemptDateRef.current = today
         fetchData()
       }
     }
     document.addEventListener('visibilitychange', handler)
-    window.addEventListener('focus', handler)
     return () => {
       document.removeEventListener('visibilitychange', handler)
-      window.removeEventListener('focus', handler)
     }
   }, [fetchData])
 

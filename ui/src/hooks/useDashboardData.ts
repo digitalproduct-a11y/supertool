@@ -109,7 +109,13 @@ export function useDashboardData() {
     return null
   })
 
+  // In-flight guard so rapid double-triggers (mount + visibilitychange, or
+  // double-clicked Refresh button) collapse to a single network call.
+  const inFlightRef = useRef<boolean>(false)
+
   const fetchData = useCallback(async () => {
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setLoading(true)
     setError(null)
 
@@ -236,6 +242,7 @@ export function useDashboardData() {
       setError(message)
     } finally {
       setLoading(false)
+      inFlightRef.current = false
     }
   }, [])
 
@@ -259,28 +266,43 @@ export function useDashboardData() {
         }
       }
     } catch { /* fall through to fetch */ }
+    lastAutoAttemptDateRef.current = new Date().toDateString()
     fetchData()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refetch when the tab becomes visible (or the window regains focus) on a
-  // new calendar day. Catches the "laptop closed for days with tab still open"
-  // case so users see today's data without manually clicking Refresh.
+  // Refetch when the tab becomes visible on a new calendar day. Catches the
+  // "laptop closed for days with tab still open" case so users see today's
+  // data without manually clicking Refresh.
+  //
+  // Once-per-day cooldown: after a single auto-attempt (success OR failure),
+  // skip further automatic attempts for the rest of the local day. Stops the
+  // runaway-loop case where a failing fetch (e.g. MSAL silent-renewal timeout)
+  // would otherwise retry on every focus/visibility flip and burn n8n
+  // executions. The manual Refresh button still bypasses this throttle since
+  // it calls fetchData() directly via the returned `refetch`.
+  //
+  // Only `visibilitychange` is bound — `focus` fires alongside it on every
+  // major browser for the cases we care about (tab switch, app switch,
+  // laptop reopen) and binding both would double-trigger the handler.
   const lastUpdatedRef = useRef(lastUpdated)
   useEffect(() => { lastUpdatedRef.current = lastUpdated }, [lastUpdated])
+  const lastAutoAttemptDateRef = useRef<string | null>(null)
 
   useEffect(() => {
     const handler = () => {
       if (document.visibilityState !== 'visible') return
+      if (inFlightRef.current) return
+      const today = new Date().toDateString()
+      if (lastAutoAttemptDateRef.current === today) return
       if (isFromPreviousDay(lastUpdatedRef.current)) {
+        lastAutoAttemptDateRef.current = today
         console.log('useDashboardData visibility - new day, refetching')
         fetchData()
       }
     }
     document.addEventListener('visibilitychange', handler)
-    window.addEventListener('focus', handler)
     return () => {
       document.removeEventListener('visibilitychange', handler)
-      window.removeEventListener('focus', handler)
     }
   }, [fetchData])
 
