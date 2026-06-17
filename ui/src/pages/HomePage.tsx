@@ -497,7 +497,14 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
               {/* ── Meta (left) ─────────────────────────────────────────────── */}
               <div className="flex flex-col">
                 <div className="flex items-baseline justify-between">
-                  <h3 className="text-base font-semibold text-neutral-950">{isAdmin ? 'Meta · All Profiles' : 'Meta'}</h3>
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="text-base font-semibold text-neutral-950">{isAdmin ? 'Meta · All Profiles' : 'Meta'}</h3>
+                    {!isAdmin && selectedBrand && !loading && filtered.length === 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+                        Data not available yet
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => brandNavigate('/dashboard')}
                     className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
@@ -586,7 +593,14 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
               {/* ── YouTube (right) ─────────────────────────────────────────── */}
               <div className="flex flex-col">
                 <div className="flex items-baseline justify-between">
-                  <h3 className="text-base font-semibold text-neutral-950">{isAdmin ? 'YouTube · All Brands' : 'YouTube'}</h3>
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="text-base font-semibold text-neutral-950">{isAdmin ? 'YouTube · All Brands' : 'YouTube'}</h3>
+                    {!isAdmin && selectedBrand && !ytLoading && ytHasData && ytFiltered.length === 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+                        Data not available yet
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => brandNavigate('/youtube-dashboard')}
                     className="text-[12px] text-neutral-500 hover:text-neutral-950 transition-colors flex items-center gap-1"
