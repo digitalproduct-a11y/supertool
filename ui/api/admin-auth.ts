@@ -1,13 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createHmac, timingSafeEqual } from 'crypto'
-
-const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours
-
-function generateToken(secret: string): string {
-  const expiresAt = String(Date.now() + TOKEN_TTL_MS)
-  const sig = createHmac('sha256', secret).update(expiresAt).digest('hex')
-  return `${expiresAt}.${sig}`
-}
+import { timingSafeEqual } from 'crypto'
+import { generateAdminToken } from './_lib/verifyAdminToken'
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -24,7 +17,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Passcode required' })
   }
 
-  // Timing-safe comparison prevents brute-force timing attacks
   let match = false
   try {
     const a = Buffer.from(passcode)
@@ -38,5 +30,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Incorrect passcode' })
   }
 
-  return res.status(200).json({ token: generateToken(secret) })
+  return res.status(200).json({ token: generateAdminToken(secret) })
 }
