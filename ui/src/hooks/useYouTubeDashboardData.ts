@@ -1,6 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import LZString from 'lz-string'
 import type { YouTubeDashboardRow } from '../utils/youtubeDashboardUtils'
+
+// True when `ts` falls on a different local calendar day than right now.
+// Null (no prior fetch) counts as stale so a fresh open always fetches.
+const isFromPreviousDay = (ts: Date | null): boolean => {
+  if (!ts) return true
+  return ts.toDateString() !== new Date().toDateString()
+}
 
 export interface YouTubeTargetRow {
   Brand: string
@@ -110,11 +117,37 @@ export function useYouTubeDashboardData() {
   }, [])
 
   useEffect(() => {
+    // Stale-while-revalidate: render cached rows instantly but refetch if the
+    // cache is from a previous local day (or missing). Same-day cache hits
+    // skip the network round-trip.
     const parsed = readCache()
-    if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) return
+    if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) {
+      const cachedAt = parsed.lastUpdated ? new Date(parsed.lastUpdated) : null
+      if (!isFromPreviousDay(cachedAt)) return
+    }
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Refetch when the tab regains visibility/focus on a new calendar day so
+  // long-lived tabs don't keep showing yesterday's numbers.
+  const lastUpdatedRef = useRef(lastUpdated)
+  useEffect(() => { lastUpdatedRef.current = lastUpdated }, [lastUpdated])
+
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState !== 'visible') return
+      if (isFromPreviousDay(lastUpdatedRef.current)) {
+        fetchData()
+      }
+    }
+    document.addEventListener('visibilitychange', handler)
+    window.addEventListener('focus', handler)
+    return () => {
+      document.removeEventListener('visibilitychange', handler)
+      window.removeEventListener('focus', handler)
+    }
+  }, [fetchData])
 
   return { data, targets, loading, error, lastUpdated, refetch: fetchData }
 }
