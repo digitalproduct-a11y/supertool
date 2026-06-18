@@ -5,6 +5,7 @@ import { useBrand } from '../context/BrandContext'
 import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import {
   IconChevronLeft,
+  IconChevronRight,
   IconCloudRain,
   IconDownload,
   IconX,
@@ -12,6 +13,7 @@ import {
 import { useWeatherMalaysia } from "../hooks/useWeatherMalaysia";
 import { WeatherCanvas, type WeatherCanvasHandle } from "../features/weather/WeatherCanvas";
 import { WeatherSinglePostCanvas, type WeatherSinglePostCanvasHandle } from "../features/weather/WeatherSinglePostCanvas";
+import { GegarRegionPosterCanvas } from "../features/weather/GegarRegionPosterCanvas";
 import { ScheduleModal } from "../components/ScheduleModal";
 import { Spinner } from "../components/ds/Spinner";
 import { getCredentials } from "../utils/fbCredentials";
@@ -196,8 +198,11 @@ export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
   const brandNavigate = useBrandNavigate()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
-  const { posts, fontUse: rawFontUse, brandColor, nationalSummary, isLoading, error, generate } = useWeatherMalaysia();
+  const { posts, fontUse: rawFontUse, brandColor, nationalSummary, regions, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState((!isAdmin && globalBrand) ? globalBrand : "");
+  // Gegar has a single bespoke output (the combined East Coast poster), so it
+  // always runs in single-post mode regardless of the mode toggle.
+  const isGegar = brand === "Gegar";
   // Brands that should render the weather post in the canvas-default Inter
   // face rather than their usual brand font.
   const WEATHER_INTER_BRANDS = new Set(["Sinar", "Era"]);
@@ -207,8 +212,25 @@ export function WeatherMalaysiaPage() {
     posts.length > 0 ? "review" : "intro",
   );
 
+  // Lock Gegar to single-post mode (its only output is the combined poster).
+  useEffect(() => {
+    if (isGegar) setMode("single");
+  }, [isGegar]);
+
+  // Reset the Gegar gallery to the first creative whenever a new set arrives.
+  useEffect(() => {
+    setGegarSelected(0);
+  }, [regions]);
+
   const [sharedCaption, setSharedCaption] = useState("");
   const groupedCanvasRefs = useRef<Map<string, WeatherCanvasHandle>>(new Map());
+  // Gegar renders one poster per state (Pahang / Kelantan / Terengganu); keep a
+  // handle per state, keyed by region.state — mirrors groupedCanvasRefs.
+  // Gegar gallery: the 3 thumbnail canvases (source of truth for scheduling /
+  // download-all) + the large main-preview canvas for the selected state.
+  const gegarCanvasRefs = useRef<Map<string, WeatherSinglePostCanvasHandle>>(new Map());
+  const gegarMainRef = useRef<WeatherSinglePostCanvasHandle>(null);
+  const [gegarSelected, setGegarSelected] = useState(0);
   const singleCanvasRef = useRef<WeatherSinglePostCanvasHandle>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -295,7 +317,31 @@ export function WeatherMalaysiaPage() {
       // imageUrls from the n8n response.
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
       let imageUrls: string[];
-      if (mode === "grouped") {
+      if (isGegar) {
+        // Gegar = 3 per-state posters → upload each → carousel_images carries
+        // all 3, which the FB publisher treats as a carousel post.
+        const orderedStates = (regions ?? []).map((r) => r.state);
+        const dataUrls = orderedStates.map(
+          (state) => gegarCanvasRefs.current.get(state)?.getDataUrl() ?? null,
+        );
+        if (dataUrls.length === 0 || dataUrls.some((u) => !u)) {
+          toast.error("Some images aren't ready yet.");
+          setIsScheduling(false);
+          return;
+        }
+        imageUrls = await Promise.all(
+          (dataUrls as string[]).map(async (dataUrl, i) => {
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File(
+              [blob],
+              `weather-gegar-${orderedStates[i].toLowerCase()}-${Date.now()}.png`,
+              { type: "image/png" },
+            );
+            const publicId = await uploadToCloudinary(file);
+            return `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`;
+          }),
+        );
+      } else if (mode === "grouped") {
         const groups = groupPostsByWeather(posts);
         const dataUrls = groups.map((g) => {
           const handle = groupedCanvasRefs.current.get(g.backgroundId);
@@ -513,11 +559,17 @@ export function WeatherMalaysiaPage() {
                     <>
                       <div className="flex gap-3">
                         <button
-                          onClick={() => singleCanvasRef.current?.downloadAsPng()}
+                          onClick={() => {
+                            if (isGegar) {
+                              gegarCanvasRefs.current.forEach((h) => h.downloadAsPng());
+                            } else {
+                              singleCanvasRef.current?.downloadAsPng();
+                            }
+                          }}
                           className="flex-1 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
                         >
                           <IconDownload className="w-4 h-4" />
-                          Download image
+                          {isGegar ? "Download all (3)" : "Download image"}
                         </button>
                         <button
                           onClick={() => setShowScheduleModal(true)}
@@ -595,19 +647,123 @@ export function WeatherMalaysiaPage() {
               )}
 
               {!isLoading && !error && posts.length > 0 && (
-                <div className="flex flex-col items-center p-4">
-                  <WeatherSinglePostCanvas
-                    ref={singleCanvasRef}
-                    posts={posts}
-                    brand={brand}
-                    fontUse={fontUse}
-                    brandColor={brandColor}
-                    nationalSummary={nationalSummary}
-                    onClick={() => {
-                      const url = singleCanvasRef.current?.getDataUrl();
-                      if (url) setLightboxUrl(url);
-                    }}
-                  />
+                <div className="p-4">
+                  {isGegar && regions && regions.length > 0 ? (
+                    (() => {
+                      const count = regions.length;
+                      const current = regions[Math.min(gegarSelected, count - 1)];
+                      const go = (delta: number) =>
+                        setGegarSelected((i) => (i + delta + count) % count);
+                      return (
+                        <div className="flex flex-col items-center gap-4">
+                          {/* Main preview — the selected state's live canvas */}
+                          <div className="w-full flex flex-col items-center gap-2">
+                            <h3 className="text-sm font-semibold text-neutral-800">
+                              {current.state}{" "}
+                              <span className="font-normal text-neutral-500">
+                                ({current.districts.length} daerah)
+                              </span>
+                            </h3>
+                            <div className="relative w-full" style={{ maxWidth: 380 }}>
+                              <GegarRegionPosterCanvas
+                                key={current.state}
+                                ref={gegarMainRef}
+                                region={current}
+                                brand={brand}
+                                date={posts[0]?.date}
+                                day={posts[0]?.day}
+                                fontUse={fontUse}
+                                brandColor={brandColor}
+                                onClick={() => {
+                                  const url = gegarMainRef.current?.getDataUrl();
+                                  if (url) setLightboxUrl(url);
+                                }}
+                              />
+                              {count > 1 && (
+                                <>
+                                  <button
+                                    onClick={() => go(-1)}
+                                    aria-label="Previous"
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 shadow hover:bg-white text-neutral-800 transition active:scale-95"
+                                  >
+                                    <IconChevronLeft className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => go(1)}
+                                    aria-label="Next"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 shadow hover:bg-white text-neutral-800 transition active:scale-95"
+                                  >
+                                    <IconChevronRight className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => gegarMainRef.current?.downloadAsPng()}
+                              className="flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg border border-neutral-200 hover:bg-neutral-50 text-neutral-950 transition active:scale-[0.98]"
+                            >
+                              <IconDownload className="w-3.5 h-3.5" />
+                              Download {current.state}
+                            </button>
+                          </div>
+
+                          {/* Thumbnails — live mini canvases; also the ref source
+                              for scheduling + download-all. */}
+                          <div className="flex items-center justify-center gap-3">
+                            {regions.map((region, idx) => {
+                              const active = idx === Math.min(gegarSelected, count - 1);
+                              return (
+                                <button
+                                  key={region.state}
+                                  onClick={() => setGegarSelected(idx)}
+                                  aria-label={region.state}
+                                  className={`rounded-lg overflow-hidden border transition ${
+                                    active
+                                      ? "ring-2 ring-neutral-900 border-neutral-900"
+                                      : "border-neutral-200 hover:border-neutral-400 opacity-80 hover:opacity-100"
+                                  }`}
+                                  style={{ width: 72 }}
+                                >
+                                  <div className="pointer-events-none">
+                                    <GegarRegionPosterCanvas
+                                      ref={(handle) => {
+                                        if (handle) {
+                                          gegarCanvasRefs.current.set(region.state, handle);
+                                        } else {
+                                          gegarCanvasRefs.current.delete(region.state);
+                                        }
+                                      }}
+                                      region={region}
+                                      brand={brand}
+                                      date={posts[0]?.date}
+                                      day={posts[0]?.day}
+                                      fontUse={fontUse}
+                                      brandColor={brandColor}
+                                    />
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <WeatherSinglePostCanvas
+                        ref={singleCanvasRef}
+                        posts={posts}
+                        brand={brand}
+                        fontUse={fontUse}
+                        brandColor={brandColor}
+                        nationalSummary={nationalSummary}
+                        onClick={() => {
+                          const url = singleCanvasRef.current?.getDataUrl();
+                          if (url) setLightboxUrl(url);
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

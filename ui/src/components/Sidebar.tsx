@@ -17,6 +17,7 @@ import {
   IconCalendarClock,
   IconBrandThreads,
   IconBrandShopee,
+  IconBuildingStore,
   IconChartBar,
   IconSwitchHorizontal,
   IconLogout,
@@ -33,6 +34,7 @@ export type ToolId =
   | 'trending-news'
   | 'spike-news'
   | 'affiliate-links'
+  | 'product-feed-generator'
   | 'article-generator'
   | 'engagement-posts'
   | 'engagement-photos'
@@ -71,7 +73,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'article-to-social', label: 'Article to Social Post', icon: IconStack2 },
       { id: 'latest-news', label: 'News Feed', icon: IconNews },
-      { id: 'engagement-posts', label: 'Engagement posts', icon: IconHeart },
+      { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
     ],
   },
   {
@@ -79,22 +81,27 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       {
         id: "shopee-top-products",
-        label: "Shopee top products",
+        label: "Shopee Top Products",
         icon: IconBrandShopee,
       },
       {
         id: "affiliate-links",
-        label: "Shopee affiliate links",
+        label: "Shopee Affiliate Links",
         icon: IconLink,
       },
       {
+        id: "product-feed-generator",
+        label: "Product Feed Generator",
+        icon: IconBuildingStore,
+      },
+      {
         id: "article-generator",
-        label: "Affiliate article editor",
+        label: "Affiliate Article Editor",
         icon: IconFileText,
       },
       {
         id: "social-affiliate-posting",
-        label: "Social affiliate post",
+        label: "Social Affiliate Post",
         icon: IconBrandThreads,
       },
     ],
@@ -104,7 +111,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     items: [
       { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
       { id: 'youtube-dashboard', label: 'YouTube Dashboard', icon: IconChartBar },
-      { id: 'post-queue', label: 'Scheduled queue', icon: IconCalendarClock },
+      { id: 'post-queue', label: 'Scheduled Queue', icon: IconCalendarClock },
     ],
   },
 ];
@@ -121,6 +128,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'trending-news': 'Trending News',
   'spike-news': 'Spike News',
   'affiliate-links': 'Shopee Affiliate Links',
+  'product-feed-generator': 'Product Feed Generator',
   'article-generator': 'Affiliate Article Editor',
   'engagement-posts': 'Engagement posts',
   'engagement-photos': 'English Premier League',
