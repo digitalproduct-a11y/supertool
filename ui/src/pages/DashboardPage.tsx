@@ -11,11 +11,15 @@ import { filterDashboardData, aggregateByWeek, aggregateByMonth } from '../utils
 import type { DashboardRow } from '../utils/dashboardUtils'
 import { BackButton } from '../components/ds'
 import { useBrandNavigate } from '../hooks/useBrandNavigate'
+import { SnapshotControl } from '../components/SnapshotControl'
+import { SnapshotStaleBanner } from '../components/SnapshotStaleBanner'
+import { getAdminToken } from '../utils/adminAuth'
 
 export function DashboardPage() {
   const { data, targets, bonuses, loading, lastUpdated, refetch } = useDashboardData()
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const brandNavigate = useBrandNavigate()
+  const adminToken = isAdmin ? getAdminToken() : ''
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 31); d.setHours(0,0,0,0); return d
@@ -206,6 +210,7 @@ export function DashboardPage() {
 
   return (
     <main className="pb-8">
+      {isAdmin && adminToken && <SnapshotStaleBanner adminToken={adminToken} />}
       {/* Sticky header */}
       <div className="sticky top-0 z-40 bg-[#f7f7f6]">
         <div className="pt-20 md:pt-10 px-4 md:px-8">
@@ -226,6 +231,9 @@ export function DashboardPage() {
                 </div>
                 {isAdmin && (
                   <div className="flex gap-2">
+                    {adminToken && (
+                      <SnapshotControl adminToken={adminToken} onRefreshed={() => refetch()} />
+                    )}
                     <button
                       onClick={() => brandNavigate('/diagnosis')}
                       className="px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap"

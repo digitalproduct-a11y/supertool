@@ -8,6 +8,10 @@ export function clearAdminToken(): void {
   sessionStorage.removeItem(SESSION_KEY)
 }
 
+export function getAdminToken(): string {
+  return sessionStorage.getItem(SESSION_KEY) ?? ''
+}
+
 /** Returns true if a valid, non-expired token is present */
 export function isAdminAuthed(): boolean {
   const token = sessionStorage.getItem(SESSION_KEY)
