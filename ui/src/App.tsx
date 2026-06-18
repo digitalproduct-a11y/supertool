@@ -27,6 +27,8 @@ import { NewsPosterPage } from './pages/NewsPosterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { YouTubeDashboardPage } from './pages/YouTubeDashboardPage'
 import { WeeklyReportPage } from './pages/WeeklyReportPage'
+import { YouTubeWeeklyReportPage } from './pages/YouTubeWeeklyReportPage'
+import { YouTubeTargetPacingPage } from './pages/YouTubeTargetPacingPage'
 import { DiagnosisPage } from './pages/DiagnosisPage'
 import { ArticleToSocialPage } from './pages/ArticleToSocialPage'
 const OnThisDayPage = lazy(() =>
@@ -692,6 +694,8 @@ function App() {
         <Route path="weekly-report" element={<WeeklyReportPage />} />
         <Route path="diagnosis" element={<DiagnosisPage />} />
         <Route path="youtube-dashboard" element={<YouTubeDashboardPage />} />
+        <Route path="youtube-weekly-report" element={<YouTubeWeeklyReportPage />} />
+        <Route path="youtube-pacing" element={<YouTubeTargetPacingPage />} />
       </Route>
 
       {/* Catch-all: old bookmarks or invalid paths → brand picker */}

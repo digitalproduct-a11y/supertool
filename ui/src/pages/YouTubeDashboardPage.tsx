@@ -9,15 +9,18 @@ import {
   filterYouTubeData,
   aggregateByWeek,
   aggregateByMonth,
+  normalizeBrand,
 } from '../utils/youtubeDashboardUtils'
 import type { YouTubeDashboardRow } from '../utils/youtubeDashboardUtils'
 import { BackButton } from '../components/ds'
 import { useBrand } from '../context/BrandContext'
+import { useBrandNavigate } from '../hooks/useBrandNavigate'
 import { BRANDS, N8N_TO_CANONICAL_BRAND, YT_BRAND_ALIASES } from '../constants/brands'
 
 export function YouTubeDashboardPage() {
   const { data, targets, loading, lastUpdated, refetch } = useYouTubeDashboardData()
-  const { selectedBrand: globalBrand } = useBrand()
+  const { selectedBrand: globalBrand, isAdmin } = useBrand()
+  const brandNavigate = useBrandNavigate()
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 31); d.setHours(0,0,0,0); return d
@@ -36,8 +39,9 @@ export function YouTubeDashboardPage() {
     const seen = new Set<string>()
     const list: { brand: string; bu: string; label: string }[] = []
     data.forEach(row => {
-      if (!seen.has(row.brand)) {
-        seen.add(row.brand)
+      const key = normalizeBrand(row.brand)
+      if (!seen.has(key)) {
+        seen.add(key)
         const norm = stripAstro(row.brand)
         const aliased = YT_BRAND_ALIASES[row.brand]
         const canonical = aliased ?? BRANDS.find(b => stripAstro(b) === norm)
@@ -99,7 +103,7 @@ export function YouTubeDashboardPage() {
 
     const annualRevenue = Number(brandTarget['Annual Revenue Target (USD)']) || 0
     const dailyRevenue = annualRevenue / 365
-    const dailyVideos = Number(brandTarget['Avg Vids Per Day']) || 0
+    const dailyVideos = Number(brandTarget['Avg Vids Per Day\n2026 Target']) || 0
     const dailyWatchHours = Number(brandTarget['Daily Avg Watch Hour']) || 0
 
     const multiplier = viewMode === 'weekly' ? 7 : viewMode === 'monthly' ? 30 : 1
@@ -195,6 +199,22 @@ export function YouTubeDashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-2 pt-1 shrink-0">
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => brandNavigate('/youtube-weekly-report')}
+                    className="px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap"
+                  >
+                    Weekly Analysis
+                  </button>
+                  <button
+                    onClick={() => brandNavigate('/youtube-pacing')}
+                    className="px-3 py-1.5 bg-neutral-950 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap"
+                  >
+                    Target Pacing
+                  </button>
+                </>
+              )}
               <button
                 onClick={refetch}
                 disabled={loading}

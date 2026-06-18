@@ -11,9 +11,11 @@ const isFromPreviousDay = (ts: Date | null): boolean => {
 
 export interface YouTubeTargetRow {
   Brand: string
-  'Annual Revenue Target (USD)'?: number
-  'Avg Vids Per Day'?: number
-  'Daily Avg Watch Hour'?: number
+  // NOTE: these cells can be blank or free text in the sheet, so values may be string.
+  // The videos column header literally contains a newline ("Avg Vids Per Day\n2026 Target").
+  'Annual Revenue Target (USD)'?: number | string
+  'Avg Vids Per Day\n2026 Target'?: number | string
+  'Daily Avg Watch Hour'?: number | string
   [key: string]: unknown
 }
 

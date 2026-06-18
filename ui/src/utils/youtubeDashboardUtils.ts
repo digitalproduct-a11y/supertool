@@ -16,6 +16,12 @@ export interface YouTubeAggregated extends Omit<YouTubeDashboardRow, 'date' | 'd
   weekRange?: string
 }
 
+// The YT_Data sheet holds whitespace/casing/"Astro " variants of the same channel
+// (e.g. "热点 Hotspot" with single vs double space). Normalize before comparing so
+// variants merge into one brand instead of splitting into duplicates.
+export const normalizeBrand = (s: string) =>
+  s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/^astro\s+/, '')
+
 export function filterYouTubeData(
   data: YouTubeDashboardRow[],
   brand: string,
@@ -25,7 +31,7 @@ export function filterYouTubeData(
 ): YouTubeDashboardRow[] {
   return data.filter(row => {
     const rowDate = new Date(row.date)
-    const isBrandMatch = row.brand === brand
+    const isBrandMatch = normalizeBrand(row.brand) === normalizeBrand(brand)
     const isBUMatch = !businessUnit || row.business_unit === businessUnit
     const isDateMatch = rowDate >= startDate && rowDate <= endDate
     return isBrandMatch && isBUMatch && isDateMatch
@@ -114,6 +120,18 @@ export function aggregateByWeek(data: YouTubeDashboardRow[]): YouTubeAggregated[
       weekRange,
     }
   })
+}
+
+// Day-of-year (1-based) for a "YYYY-MM-DD" string. Jan 1 → 1.
+export function dayOfYear(yyyyMMdd: string): number {
+  const [y, m, d] = yyyyMMdd.split('-').map(Number)
+  const start = Date.UTC(y, 0, 1)
+  const current = Date.UTC(y, m - 1, d)
+  return Math.floor((current - start) / 86400000) + 1
+}
+
+export function daysInYear(year: number): number {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 366 : 365
 }
 
 export function formatDateLabel(value: string): string {
