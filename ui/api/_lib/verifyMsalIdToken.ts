@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose'
 
-const TENANT_ID = process.env.AZURE_TENANT_ID!
-const CLIENT_ID = process.env.AZURE_CLIENT_ID!
+const TENANT_ID = (process.env.AZURE_TENANT_ID ?? process.env.VITE_AZURE_TENANT_ID)!
+const CLIENT_ID = (process.env.AZURE_CLIENT_ID ?? process.env.VITE_AZURE_CLIENT_ID)!
 const ALLOWED_DOMAIN = process.env.AZURE_ALLOWED_DOMAIN ?? 'astro.com.my'
 
 // Lazily initialised so the module loads even if env vars are set after cold start.
