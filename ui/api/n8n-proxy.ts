@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyMsalIdToken } from './_lib/verifyMsalIdToken'
+import { verifyMsalIdToken } from '../lib/verifyMsalIdToken'
 
 const N8N_HOST = 'astroproduct.app.n8n.cloud'
 

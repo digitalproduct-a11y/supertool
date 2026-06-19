@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyMsalIdToken } from '../_lib/verifyMsalIdToken'
-import { signSession, sessionCookieHeader } from '../_lib/jwtSession'
+import { verifyMsalIdToken } from '../../lib/verifyMsalIdToken'
+import { signSession, sessionCookieHeader } from '../../lib/jwtSession'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

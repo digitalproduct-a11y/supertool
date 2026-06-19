@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { extractSessionCookie, verifySession } from '../_lib/jwtSession'
-import { verifyAdminToken } from '../_lib/verifyAdminToken'
+import { extractSessionCookie, verifySession } from '../../lib/jwtSession'
+import { verifyAdminToken } from '../../lib/verifyAdminToken'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

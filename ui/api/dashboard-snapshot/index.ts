@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { extractSessionCookie, verifySession } from '../_lib/jwtSession'
-import { verifyAdminToken } from '../_lib/verifyAdminToken'
-import { readSnapshot, readSnapshotStatus, type SnapshotType } from '../_lib/kv'
+import { extractSessionCookie, verifySession } from '../../lib/jwtSession'
+import { verifyAdminToken } from '../../lib/verifyAdminToken'
+import { readSnapshot, readSnapshotStatus, type SnapshotType } from '../../lib/kv'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
