@@ -44,6 +44,10 @@ export function useSession(): { state: SessionState; mint: () => Promise<void> }
   useEffect(() => {
     if (startedRef.current) return
     startedRef.current = true
+    if (import.meta.env.VITE_USE_DASHBOARD_SNAPSHOT !== 'true') {
+      setState('ready')
+      return
+    }
     void mint()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
