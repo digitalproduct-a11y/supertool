@@ -1,6 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { timingSafeEqual } from 'crypto'
-import { generateAdminToken } from './_lib/verifyAdminToken'
+import { createHmac, timingSafeEqual } from 'crypto'
+
+const TOKEN_TTL_MS = 8 * 60 * 60 * 1000
+
+function generateAdminToken(secret: string): string {
+  const expiresAt = String(Date.now() + TOKEN_TTL_MS)
+  const sig = createHmac('sha256', secret).update(expiresAt).digest('hex')
+  return `${expiresAt}.${sig}`
+}
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
