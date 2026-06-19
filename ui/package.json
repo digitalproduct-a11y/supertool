@@ -20,7 +20,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "fabric": "^6.9.1",
     "html2canvas": "^1.4.1",
-    "jose": "^6.2.3",
+    "jose": "^4.15.9",
     "jszip": "^3.10.1",
     "lz-string": "^1.5.0",
     "react": "^19.2.4",
