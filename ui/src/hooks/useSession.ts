@@ -5,12 +5,13 @@ import { loginRequest } from '../auth/msalConfig'
 
 type SessionState = 'idle' | 'minting' | 'ready' | 'failed'
 
-// Mints the astro_session cookie once per app load. Returns the current state so
-// AuthGate can hold the UI until the cookie is in place before rendering protected
-// routes. Idempotent — subsequent renders no-op when the cookie has been minted.
-export function useSession(): { state: SessionState; mint: () => Promise<void> } {
+const SNAPSHOT_ENABLED = import.meta.env.VITE_USE_DASHBOARD_SNAPSHOT === 'true'
+
+// Mints the astro_session cookie once MSAL is ready. Pass enabled=true only after
+// isAuthenticated && inProgress === InteractionStatus.None so getAllAccounts() is populated.
+export function useSession(enabled = false): { state: SessionState; mint: () => Promise<void> } {
   const { instance } = useMsal()
-  const [state, setState] = useState<SessionState>('idle')
+  const [state, setState] = useState<SessionState>(SNAPSHOT_ENABLED ? 'idle' : 'ready')
   const startedRef = useRef(false)
 
   const mint = async () => {
@@ -42,15 +43,13 @@ export function useSession(): { state: SessionState; mint: () => Promise<void> }
   }
 
   useEffect(() => {
+    if (!enabled) return
+    if (!SNAPSHOT_ENABLED) return
     if (startedRef.current) return
     startedRef.current = true
-    if (import.meta.env.VITE_USE_DASHBOARD_SNAPSHOT !== 'true') {
-      setState('ready')
-      return
-    }
     void mint()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [enabled])
 
   return { state, mint }
 }

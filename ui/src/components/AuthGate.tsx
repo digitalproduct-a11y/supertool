@@ -8,7 +8,9 @@ const ALLOWED_DOMAIN = import.meta.env.VITE_AZURE_ALLOWED_DOMAIN ?? 'astro.com.m
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { instance, inProgress } = useMsal()
   const isAuthenticated = useIsAuthenticated()
-  const { state: sessionState, mint } = useSession()
+  const { state: sessionState, mint } = useSession(
+    isAuthenticated && inProgress === InteractionStatus.None
+  )
 
   // MSAL is initializing or handling the redirect callback
   if (inProgress !== InteractionStatus.None) {
