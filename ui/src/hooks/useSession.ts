@@ -21,10 +21,12 @@ export function useSession(account: AccountInfo | null): { state: SessionState; 
   if (account !== null) lastAccountRef.current = account
 
   const mint = async () => {
+    console.log('[useSession] mint()', { lastAccount: lastAccountRef.current?.username ?? null, allAccounts: instance.getAllAccounts().length })
     setState('minting')
     try {
       const acc = lastAccountRef.current
       if (!acc) {
+        console.log('[useSession] no account → failed')
         setState('failed')
         return
       }
@@ -50,6 +52,7 @@ export function useSession(account: AccountInfo | null): { state: SessionState; 
 
   const hasAccount = account !== null
   useEffect(() => {
+    console.log('[useSession] effect', { hasAccount, started: startedRef.current, lastAccount: lastAccountRef.current?.username ?? null })
     if (!hasAccount) return
     if (!SNAPSHOT_ENABLED) return
     if (startedRef.current) return
