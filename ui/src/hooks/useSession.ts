@@ -8,9 +8,9 @@ type SessionState = 'idle' | 'minting' | 'ready' | 'failed'
 const SNAPSHOT_ENABLED = import.meta.env.VITE_USE_DASHBOARD_SNAPSHOT === 'true'
 
 // account: pass the MSAL AccountInfo when MSAL is ready, null otherwise.
-// Minting fires once when account transitions null → non-null. The last
-// non-null account is preserved in a ref so mint() never re-queries
-// getAllAccounts() (which can be briefly empty during MSAL cache hydration).
+// On mount, first checks GET /api/auth/session — if the existing cookie is
+// still valid the user skips acquireTokenSilent entirely (avoids iframe silent
+// auth failures from third-party cookie restrictions in modern browsers).
 export function useSession(account: AccountInfo | null): { state: SessionState; mint: () => Promise<void> } {
   const { instance } = useMsal()
   const [state, setState] = useState<SessionState>(SNAPSHOT_ENABLED ? 'idle' : 'ready')
@@ -21,12 +21,22 @@ export function useSession(account: AccountInfo | null): { state: SessionState; 
   if (account !== null) lastAccountRef.current = account
 
   const mint = async () => {
-    console.log('[useSession] mint()', { lastAccount: lastAccountRef.current?.username ?? null, allAccounts: instance.getAllAccounts().length })
     setState('minting')
+    try {
+      // Fast path: existing session cookie is still valid — skip MSAL entirely.
+      const check = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' })
+      if (check.ok) {
+        setState('ready')
+        return
+      }
+    } catch {
+      // Network error — fall through to full mint
+    }
+
+    // Cookie missing or expired — acquire a fresh MSAL id_token and mint.
     try {
       const acc = lastAccountRef.current
       if (!acc) {
-        console.log('[useSession] no account → failed')
         setState('failed')
         return
       }
@@ -52,7 +62,6 @@ export function useSession(account: AccountInfo | null): { state: SessionState; 
 
   const hasAccount = account !== null
   useEffect(() => {
-    console.log('[useSession] effect', { hasAccount, started: startedRef.current, lastAccount: lastAccountRef.current?.username ?? null })
     if (!hasAccount) return
     if (!SNAPSHOT_ENABLED) return
     if (startedRef.current) return

@@ -85,6 +85,18 @@ async function verifyMsalIdToken(authHeader: string | undefined): Promise<{ emai
 
 // --- Handler ---
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // GET — check whether the existing session cookie is still valid
+  if (req.method === 'GET') {
+    const cookie = extractSessionCookie(req.headers.cookie)
+    if (!cookie) return res.status(401).json({ error: 'no_session' })
+    try {
+      await verifySession(cookie)
+      return res.status(200).json({ ok: true })
+    } catch {
+      return res.status(401).json({ error: 'session_invalid' })
+    }
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
