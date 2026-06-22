@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMsal } from '@azure/msal-react'
-import { InteractionRequiredAuthError, type AccountInfo } from '@azure/msal-browser'
+import { type AccountInfo } from '@azure/msal-browser'
 import { loginRequest } from '../auth/msalConfig'
 
 type SessionState = 'idle' | 'minting' | 'ready' | 'failed'
@@ -51,10 +51,13 @@ export function useSession(account: AccountInfo | null): { state: SessionState; 
       } else {
         setState('failed')
       }
-    } catch (err) {
-      if (err instanceof InteractionRequiredAuthError) {
+    } catch {
+      // Silent acquisition failed (expired refresh token, iframe blocked by
+      // third-party cookie policy, etc.). Redirect to Microsoft — the user is
+      // already signed in so the redirect comes back instantly with fresh tokens.
+      try {
         await instance.loginRedirect(loginRequest)
-      } else {
+      } catch {
         setState('failed')
       }
     }
