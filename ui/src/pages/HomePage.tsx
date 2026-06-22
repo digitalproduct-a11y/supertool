@@ -7,6 +7,7 @@ import {
   IconFlame,
   IconTrophy,
   IconTrendingUp,
+  IconChartPie,
 } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
@@ -132,6 +133,16 @@ const TOOL_CARDS = [
       { label: 'Champions League', path: '/engagement-posts/ucl' },
       { label: 'Badminton', path: '/engagement-posts/badminton' },
       { label: 'MotoGP', path: '/engagement-posts/motogp' },
+    ],
+  },
+  {
+    title: 'Election Results',
+    gradient: 'linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 50%, #FAF5FF 100%)',
+    icon: IconChartPie,
+    iconColor: '#4F46E5',
+    image: '',
+    links: [
+      { label: 'Live State Results', path: '/election-results' },
     ],
   },
   {

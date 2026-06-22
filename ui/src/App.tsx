@@ -46,6 +46,11 @@ const QuotePage = lazy(() =>
     default: m.QuotePage,
   })),
 )
+const ElectionResultsPage = lazy(() =>
+  import('./pages/ElectionResultsPage').then((m) => ({
+    default: m.ElectionResultsPage,
+  })),
+)
 import { InputForm } from './features/article/InputForm'
 import { PreviewPanel } from './features/article/PreviewPanel'
 import { CarouselPreviewPanel } from './features/carousel/CarouselPreviewPanel'
@@ -71,7 +76,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'dashboard' | 'youtube-dashboard' | 'diagnosis'
+type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -98,6 +103,7 @@ const pathToTool: Record<string, ToolId> = {
   '/engagement-posts/on-this-day-malaysia': 'on-this-day',
   '/engagement-posts/weather-malaysia': 'weather-malaysia',
   '/engagement-posts/quote': 'quote',
+  '/election-results': 'election-results',
   '/dashboard': 'dashboard',
   '/youtube-dashboard': 'youtube-dashboard',
   '/diagnosis': 'diagnosis',
@@ -145,6 +151,7 @@ const toolToPath: Record<ToolId, string> = {
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
   'quote': '/engagement-posts/quote',
+  'election-results': '/election-results',
   'dashboard': '/dashboard',
   'youtube-dashboard': '/youtube-dashboard',
   'diagnosis': '/diagnosis',
@@ -681,6 +688,11 @@ function App() {
         <Route path="engagement-posts/quote" element={
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <QuotePage />
+          </Suspense>
+        } />
+        <Route path="election-results" element={
+          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <ElectionResultsPage />
           </Suspense>
         } />
         <Route path="engagement-posts/didyouknow" element={<DidYouKnowPage />} />
