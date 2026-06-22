@@ -19,6 +19,7 @@ import {
   IconBrandShopee,
   IconBuildingStore,
   IconChartBar,
+  IconChartPie,
   IconSwitchHorizontal,
   IconLogout,
 } from "@tabler/icons-react";
@@ -48,6 +49,7 @@ export type ToolId =
   | 'on-this-day'
   | 'weather-malaysia'
   | 'quote'
+  | 'election-results'
 
 interface NavItem {
   id: ToolId | string;
@@ -74,6 +76,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
       { id: 'article-to-social', label: 'Article to Social Post', icon: IconStack2 },
       { id: 'latest-news', label: 'News Feed', icon: IconNews },
       { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
+      { id: 'election-results', label: 'Election Results', icon: IconChartPie },
     ],
   },
   {
@@ -141,6 +144,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'on-this-day': 'On This Day',
   'weather-malaysia': 'Weather Malaysia',
   'quote': 'Quote',
+  'election-results': 'Election Results',
 }
 
 const floatingBtnClass =
