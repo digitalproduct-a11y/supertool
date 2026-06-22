@@ -9,7 +9,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { instance, inProgress } = useMsal()
   const isAuthenticated = useIsAuthenticated()
   const { state: sessionState, mint } = useSession(
-    isAuthenticated && inProgress === InteractionStatus.None
+    isAuthenticated && inProgress === InteractionStatus.None && instance.getAllAccounts().length > 0
   )
 
   // MSAL is initializing or handling the redirect callback
