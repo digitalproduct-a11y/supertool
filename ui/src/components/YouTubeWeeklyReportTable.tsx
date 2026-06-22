@@ -198,10 +198,15 @@ export function YouTubeWeeklyReportTable({ data, prevWeekData, targets, sortBy }
     return 'text-neutral-600'
   }
 
-  const formatWoW = (value: number, amount?: number, prefix?: string) => {
+  const formatWoW = (value: number, amount?: number, prefix?: string, formatAmount?: (n: number) => string) => {
     const arrow = value > 0 ? '↑' : value < 0 ? '↓' : '→'
     const percent = Math.abs(value).toFixed(1)
     if (amount !== undefined) {
+      // Custom formatter (e.g. watch-hours with K/M suffix) takes precedence; sign is rendered
+      // separately so the suffix logic only ever sees a positive magnitude.
+      if (formatAmount) {
+        return `${arrow}${percent}% (${amount >= 0 ? '+' : '-'}${formatAmount(Math.abs(amount))})`
+      }
       const p = prefix ? prefix : ''
       return `${arrow}${percent}% (${amount >= 0 ? '+' : ''}${p}${amount.toLocaleString()})`
     }
@@ -292,7 +297,7 @@ export function YouTubeWeeklyReportTable({ data, prevWeekData, targets, sortBy }
               {formatHours(m.watchActual)}h / {formatHours(m.watchTarget)}h
             </p>
             <span className={`text-[10px] font-medium ${getWoWColor(m.watchWoW)}`}>
-              {formatWoW(m.watchWoW)}
+              {formatWoW(m.watchWoW, m.watchChange, undefined, (n) => `${formatHours(n)}h`)}
             </span>
           </div>
         </div>

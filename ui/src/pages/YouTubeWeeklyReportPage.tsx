@@ -184,7 +184,7 @@ export function YouTubeWeeklyReportPage() {
               <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-6 py-4">
                 <p className="text-xs text-neutral-500 uppercase font-medium mb-3">Revenue</p>
                 <div className="flex items-baseline gap-2 mb-4">
-                  <p className="text-2xl font-semibold text-neutral-950">${(summaryMetrics.current.revenue / 1000).toFixed(1)}K</p>
+                  <p className="text-2xl font-semibold text-neutral-950">${summaryMetrics.current.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   <span className={`text-sm font-medium ${summaryMetrics.revenueWoW >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {summaryMetrics.revenueWoW >= 0 ? '↑' : '↓'}{Math.abs(summaryMetrics.revenueWoW).toFixed(1)}%
                   </span>
@@ -200,7 +200,7 @@ export function YouTubeWeeklyReportPage() {
                       style={{ width: `${totalTargets.revenue > 0 ? Math.min(100, (summaryMetrics.current.revenue / totalTargets.revenue) * 100) : 0}%` }}
                     />
                   </div>
-                  <p className="text-xs text-neutral-500">Target: ${(totalTargets.revenue / 1000).toFixed(0)}K</p>
+                  <p className="text-xs text-neutral-500">Target: ${totalTargets.revenue.toLocaleString()}</p>
                 </div>
               </div>
 
