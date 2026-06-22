@@ -32,6 +32,25 @@ function sessionCookieHeader(jwt: string): string {
   ].join('; ')
 }
 
+function extractSessionCookie(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader) return null
+  const match = cookieHeader.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]+)`))
+  return match ? match[1] : null
+}
+
+async function verifySession(token: string): Promise<void> {
+  const secret = getSecret()
+  const parts = token.split('.')
+  if (parts.length !== 3) throw new Error('Invalid token')
+  const [h, p, sig] = parts
+  const expected = Buffer.from(createHmac('sha256', secret).update(`${h}.${p}`).digest()).toString('base64url')
+  const a = Buffer.from(sig, 'base64url')
+  const b = Buffer.from(expected, 'base64url')
+  if (a.length !== b.length || !timingSafeEqual(a, b)) throw new Error('Invalid signature')
+  const data = JSON.parse(Buffer.from(p, 'base64url').toString()) as { exp: number }
+  if (data.exp < Math.floor(Date.now() / 1000)) throw new Error('Token expired')
+}
+
 // --- MSAL id_token verification (RS256, crypto.subtle) ---
 const TENANT_ID = (process.env.AZURE_TENANT_ID ?? process.env.VITE_AZURE_TENANT_ID)!
 const CLIENT_ID = (process.env.AZURE_CLIENT_ID ?? process.env.VITE_AZURE_CLIENT_ID)!
