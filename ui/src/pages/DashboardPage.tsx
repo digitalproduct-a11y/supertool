@@ -217,7 +217,7 @@ export function DashboardPage() {
           <div className="max-w-7xl mx-auto">
             {/* Page header */}
             <div className="mb-6">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <BackButton />
                   <div>
@@ -230,7 +230,7 @@ export function DashboardPage() {
                   </div>
                 </div>
                 {isAdmin && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {adminToken && (
                       <SnapshotControl adminToken={adminToken} onRefreshed={() => refetch()} />
                     )}

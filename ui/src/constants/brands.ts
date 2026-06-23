@@ -155,7 +155,7 @@ export function detectBrandInfoFromUrl(
 export const BRAND_HEX: Record<BrandName, string> = {
   "Astro Awani": "#ff4500",
   "Astro Arena": "#1473e6",
-  "Astro Radio News": "#000000",
+  "Astro Radio News": "#8B2ABF",
   "Astro Radio Traffic": "#000000",
   "Astro Ulagam": "#7B2CBF",
   "Bintang Kecil": "#000000",
@@ -325,7 +325,7 @@ export function getBrandLanguage(brand: string): BrandLanguage {
 export const BRAND_LOGO_IDS: Record<BrandName, string> = {
   "Astro Awani": "astro_awani_logo",
   "Astro Arena": "astro_arena_logo",
-  "Astro Radio News": "",
+  "Astro Radio News": "astro_radio_news_logo",
   "Astro Radio Traffic": "",
   "Astro Ulagam": "astro_ulagam_logo",
   "Bintang Kecil": "",
@@ -373,7 +373,8 @@ export const BRAND_LOGO_URLS: Record<BrandName, string> = {
     "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_awani_logo",
   "Astro Arena":
     "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_arena_logo",
-  "Astro Radio News": "",
+  "Astro Radio News":
+    "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_radio_news_logo",
   "Astro Radio Traffic": "",
   "Astro Ulagam":
     "https://res.cloudinary.com/dymmqtqyg/image/upload/astro_ulagam_logo",
@@ -429,6 +430,7 @@ export function getBrandLogoUrl(brand: string): string {
 }
 
 export const BRANDS_WITH_DARK_BG = new Set<BrandName>([
+  "Astro Radio News",
   "Astro Ulagam",
   "Rojak Daily",
   "Stadium Astro",

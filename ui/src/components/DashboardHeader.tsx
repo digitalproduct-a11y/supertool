@@ -90,7 +90,7 @@ export function DashboardHeader({
   const maxSelectableDate = daysAgo(2)
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2 flex gap-3 items-center justify-between">
+    <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] px-5 py-4 mb-2 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
       {/* Left section: Brand dropdown */}
       <div className="flex gap-3 items-center">
           {/* Brand dropdown */}
@@ -151,7 +151,7 @@ export function DashboardHeader({
         </div>
 
         {/* Right section: Refresh, Data availability, View mode, Calendar picker */}
-        <div className="flex gap-3 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           {/* Refresh button */}
           {onRefresh && (
             <button
@@ -189,7 +189,7 @@ export function DashboardHeader({
           </button>
 
           {showViewOptions && (
-            <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4" style={{ width: '280px', right: 0 }}>
+            <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4 right-0 w-[280px] max-w-[calc(100vw-2rem)]">
               {/* View mode */}
               <div className="mb-4">
                 <p className="text-xs font-semibold text-neutral-600 uppercase tracking-widest mb-2">View Mode</p>
@@ -247,7 +247,7 @@ export function DashboardHeader({
             </button>
 
             {pickerOpen && (
-              <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4" style={{ right: 0, width: '520px' }}>
+              <div className="absolute top-full mt-2 z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4 right-0 w-[520px] max-w-[calc(100vw-2rem)]">
                 <RangeCalendarPicker
                   startDate={tempStart}
                   endDate={tempEnd}
