@@ -1,16 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconChevronLeft, IconDownload, IconX } from "@tabler/icons-react";
 import { useBrand } from "../context/BrandContext";
 import { useBrandNavigate } from "../hooks/useBrandNavigate";
 import { BRANDS } from "../constants/brands";
-import { trackButtonClick, trackToolSubmit } from "../utils/analytics";
-import { toast } from "../hooks/useToast";
-import { getCredentials } from "../utils/fbCredentials";
-import { ScheduleModal } from "../components/ScheduleModal";
+import { trackButtonClick } from "../utils/analytics";
 import { Spinner } from "../components/ds/Spinner";
 import { useElectionResults } from "../hooks/useElectionResults";
-import { useBlobUpload } from "../hooks/useBlobUpload";
 import { ElectionDashboard } from "../features/election/ElectionDashboard";
 import { SeatResultCanvas } from "../features/election/SeatResultCanvas";
 import { ScoreboardCanvas } from "../features/election/ScoreboardCanvas";
@@ -34,35 +30,32 @@ export function ElectionResultsPage() {
   const [brand, setBrand] = useState<string>(!isAdmin && globalBrand ? globalBrand : DEFAULT_BRAND);
 
   const { seats, lastUpdated, isLive, isLoading, error, refresh } = useElectionResults();
-  const { upload } = useBlobUpload();
 
   const [composer, setComposer] = useState<Composer | null>(null);
   const [caption, setCaption] = useState("");
   const canvasRef = useRef<ElectionCanvasHandle>(null);
 
-  const [showSchedule, setShowSchedule] = useState(false);
-  const [isPosting, setIsPosting] = useState(false);
-  const [postStatus, setPostStatus] = useState<"idle" | "done" | "error">("idle");
+  // Election Results is restricted to admin users or the Astro Awani brand.
+  const allowed = isAdmin || globalBrand === "Astro Awani";
+  useEffect(() => {
+    if (!allowed) brandNavigate("/home", { replace: true });
+  }, [allowed, brandNavigate]);
 
   function openSeat(seat: SeatResult) {
     setComposer({ kind: "seat", seat });
     setCaption(seatCaption(seat));
-    setPostStatus("idle");
   }
   function openHeavyweight(seat: SeatResult) {
     setComposer({ kind: "heavyweight", seat });
     setCaption(heavyweightCaption(seat));
-    setPostStatus("idle");
   }
   function openScoreboard(state: string) {
     const summary = buildStateSummary(state, seats.filter((s) => s.state === state));
     setComposer({ kind: "scoreboard", summary });
     setCaption(scoreboardCaption(summary));
-    setPostStatus("idle");
   }
   function closeComposer() {
     setComposer(null);
-    setShowSchedule(false);
   }
 
   function filenameFor(c: Composer): string {
@@ -70,68 +63,12 @@ export function ElectionResultsPage() {
     return `prn-${c.kind === "heavyweight" ? "utama-" : ""}${c.seat.seat_id}-${c.seat.seat_name}`;
   }
 
-  async function handleSchedule(scheduledFor: string, passcode?: string) {
-    if (!composer) return;
-    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim();
-    if (!webhookUrl) {
-      toast.error("Webhook not configured.");
-      return;
-    }
-    const creds = passcode ? { passcode } : getCredentials(brand.toLowerCase());
-    if (!creds) {
-      toast.error("Passcode required.");
-      return;
-    }
-
-    const dataUrl = canvasRef.current?.getDataUrl() ?? null;
-    if (!dataUrl) {
-      toast.error("Image isn't ready yet.");
-      return;
-    }
-
-    setIsPosting(true);
-    try {
-      const [, brandSlug, ...toolParts] = window.location.pathname.split("/");
-      trackToolSubmit(toolParts.join("/") || "election-results", brandSlug ?? "unknown");
-
-      const imageUrl = await upload(dataUrl, filenameFor(composer).toLowerCase());
-
-      const res = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fb_ai_image_url: imageUrl,
-          fb_ai_caption: caption,
-          brand: brand.toLowerCase(),
-          scheduled_for: scheduledFor,
-          passcode: creds.passcode,
-        }),
-      });
-      const data = (await res.json()) as { success?: boolean; status?: string; message?: string };
-
-      if (data.status === "AUTH_ERROR") {
-        toast.error(data.message ?? "Invalid passcode.");
-        setPostStatus("error");
-      } else if (data.success === true || data.status === "SUCCESS" || data.status === "DRAFT_SAVED") {
-        toast.success("Election post scheduled!");
-        setPostStatus("done");
-      } else {
-        toast.error(data.message ?? "Something went wrong.");
-        setPostStatus("error");
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Network error. Please try again.");
-      setPostStatus("error");
-    } finally {
-      setIsPosting(false);
-      setShowSchedule(false);
-    }
-  }
-
   function handleBack() {
     if (window.history.length > 1) navigate(-1);
     else brandNavigate("/home");
   }
+
+  if (!allowed) return null;
 
   return (
     <main className="flex-1 pt-20 md:pt-10 px-4 md:px-8 pb-12 overflow-y-auto">
@@ -256,31 +193,11 @@ export function ElectionResultsPage() {
                     <IconDownload className="w-4 h-4" />
                     Download
                   </button>
-                  <button
-                    onClick={() => setShowSchedule(true)}
-                    disabled={isPosting || postStatus === "done"}
-                    className="flex-1 px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition active:scale-[0.98]"
-                  >
-                    {isPosting ? "Scheduling…" : postStatus === "done" ? "Scheduled!" : "Schedule on FB"}
-                  </button>
                 </div>
-                {postStatus === "error" && (
-                  <p className="text-xs text-red-500">Failed to schedule. Please try again.</p>
-                )}
               </div>
             </div>
           </div>
         </div>
-      )}
-
-      {showSchedule && composer && (
-        <ScheduleModal
-          brand={brand}
-          hasCredentials={!!getCredentials(brand.toLowerCase())}
-          isPosting={isPosting}
-          onConfirm={handleSchedule}
-          onClose={() => setShowSchedule(false)}
-        />
       )}
     </main>
   );

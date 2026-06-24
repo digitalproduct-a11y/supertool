@@ -90,35 +90,24 @@ export function listStates(seats: SeatResult[]): string[] {
   return Array.from(new Set(seats.map((s) => s.state))).sort((a, b) => a.localeCompare(b));
 }
 
-export type SeatStatusFilter = "all" | "won" | "leading" | "pending";
-
 export interface SeatFilter {
   state?: string;
-  status?: SeatStatusFilter;
+  /** true = official (Rasmi), false = unofficial (Tidak Rasmi). Omit for both. */
+  official?: boolean;
   heavyweight?: boolean;
   q?: string;
 }
 
 /**
- * Filter seats by state, declaration status, heavyweight flag and a free-text
+ * Filter seats by state, official-result flag, heavyweight flag and a free-text
  * query (matches seat id, seat name, parliament name, or candidate name).
- * "leading" = not yet declared but has at least one vote in.
  */
 export function filterSeats(seats: SeatResult[], f: SeatFilter): SeatResult[] {
   const q = f.q?.trim().toLowerCase();
   return seats.filter((seat) => {
     if (f.state && seat.state !== f.state) return false;
     if (f.heavyweight && seat.is_heavyweight !== 1) return false;
-
-    if (f.status && f.status !== "all") {
-      const declared = isDeclared(seat);
-      if (f.status === "won" && !declared) return false;
-      if (f.status === "pending" && declared) return false;
-      if (f.status === "leading") {
-        const hasVotes = seat.candidates.some((c) => c.vote > 0);
-        if (declared || !hasVotes) return false;
-      }
-    }
+    if (f.official !== undefined && seat.official_result !== f.official) return false;
 
     if (q) {
       const haystack = [
@@ -141,4 +130,37 @@ export function turnoutPct(seat: SeatResult): number | null {
   if (!seat.registered_voters) return null;
   const cast = seat.candidates.reduce((n, c) => n + c.vote, 0) + (seat.rejected_votes ?? 0);
   return Math.round((cast / seat.registered_voters) * 1000) / 10;
+}
+
+/** Total votes cast across all candidates (excludes rejected votes). */
+export function totalVotes(seat: SeatResult): number {
+  return seat.candidates.reduce((n, c) => n + c.vote, 0);
+}
+
+/** Current lead of the top candidate over the runner-up, from live votes. */
+export function liveMargin(seat: SeatResult): number {
+  const ranked = rankedCandidates(seat);
+  return (ranked[0]?.vote ?? 0) - (ranked[1]?.vote ?? 0);
+}
+
+/**
+ * Sort seats by momentum so the most relevant rows surface first.
+ * - Rasmi (official): biggest majority first.
+ * - Tidak Rasmi (unofficial): seats with votes in (leading) first, ordered by
+ *   current lead; seats with no votes yet ("Belum") last, ordered by seat id.
+ */
+export function sortSeatsByMomentum(seats: SeatResult[], official: boolean): SeatResult[] {
+  const sorted = [...seats];
+  if (official) {
+    sorted.sort((a, b) => (b.majority || liveMargin(b)) - (a.majority || liveMargin(a)));
+  } else {
+    sorted.sort((a, b) => {
+      const aHas = totalVotes(a) > 0 ? 1 : 0;
+      const bHas = totalVotes(b) > 0 ? 1 : 0;
+      if (aHas !== bHas) return bHas - aHas;
+      if (aHas === 1) return liveMargin(b) - liveMargin(a);
+      return a.seat_id.localeCompare(b.seat_id);
+    });
+  }
+  return sorted;
 }

@@ -6,10 +6,12 @@ import {
   filterSeats,
   listStates,
   rankedCandidates,
+  sortSeatsByMomentum,
   winnerOf,
-  type SeatStatusFilter,
 } from "./electionAggregate";
 import type { SeatResult } from "./types";
+
+type ResultFilter = "rasmi" | "tidakRasmi";
 
 interface Props {
   seats: SeatResult[];
@@ -21,12 +23,9 @@ interface Props {
   onGenerateHeavyweight: (seat: SeatResult) => void;
 }
 
-const STATUS_CHIPS: { id: SeatStatusFilter | "heavyweight"; label: string }[] = [
-  { id: "all", label: "Semua" },
-  { id: "won", label: "Menang" },
-  { id: "leading", label: "Mendahului" },
-  { id: "pending", label: "Belum" },
-  { id: "heavyweight", label: "★ Utama" },
+const STATUS_CHIPS: { id: ResultFilter; label: string }[] = [
+  { id: "tidakRasmi", label: "Tidak Rasmi" },
+  { id: "rasmi", label: "Rasmi" },
 ];
 
 function timeAgo(ts: number | null): string {
@@ -48,7 +47,7 @@ export function ElectionDashboard({
   const states = useMemo(() => listStates(seats), [seats]);
   const [state, setState] = useState<string>(states[0] ?? "");
   const effectiveState = states.includes(state) ? state : states[0] ?? "";
-  const [chip, setChip] = useState<SeatStatusFilter | "heavyweight">("all");
+  const [chip, setChip] = useState<ResultFilter>("tidakRasmi");
   const [q, setQ] = useState("");
 
   const stateSeats = useMemo(
@@ -59,15 +58,13 @@ export function ElectionDashboard({
     () => buildStateSummary(effectiveState, stateSeats),
     [effectiveState, stateSeats],
   );
-  const visibleSeats = useMemo(
-    () =>
-      filterSeats(stateSeats, {
-        status: chip === "heavyweight" ? "all" : chip,
-        heavyweight: chip === "heavyweight",
-        q,
-      }),
-    [stateSeats, chip, q],
-  );
+  const visibleSeats = useMemo(() => {
+    const official = chip === "rasmi";
+    return sortSeatsByMomentum(
+      filterSeats(stateSeats, { official, q }),
+      official,
+    );
+  }, [stateSeats, chip, q]);
 
   const maxSeats = Math.max(1, ...summary.tally.map((t) => t.seats));
 

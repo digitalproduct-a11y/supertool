@@ -52,11 +52,12 @@ function adminAuthDevPlugin(env: Record<string, string>): Plugin {
   }
 }
 
-// Mirrors ui/api/election-results.ts + ui/api/upload-to-blob.ts (Vercel
-// serverless) for local dev so the Election Results tool works under
-// `vite dev`. The election feed is CORS-locked to pru.astroawani.com, so the
-// browser must go through a same-origin proxy in every environment.
-function electionDevPlugin(env: Record<string, string>): Plugin {
+// Mirrors ui/api/election-results.ts (Vercel serverless) for local dev so the
+// Election Results tool works under `vite dev`. The election feed is CORS-locked
+// to pru.astroawani.com, so the browser must go through a same-origin proxy in
+// every environment. Image uploads go straight from the browser to Cloudinary
+// (signed via the n8n webhook), so no upload middleware is needed.
+function electionDevPlugin(): Plugin {
   const FEED_HOST = 'data.pru.astroawani.com'
   return {
     name: 'election-dev',
@@ -83,54 +84,6 @@ function electionDevPlugin(env: Record<string, string>): Plugin {
           res.end(JSON.stringify({ error: 'Failed to reach results feed' }))
         }
       })
-
-      server.middlewares.use('/api/upload-to-blob', async (req, res) => {
-        if (req.method !== 'POST') {
-          res.statusCode = 405
-          res.end()
-          return
-        }
-        res.setHeader('content-type', 'application/json')
-        const token = env.BLOB_READ_WRITE_TOKEN
-        if (!token) {
-          res.statusCode = 500
-          res.end(JSON.stringify({ error: 'Blob storage not configured (set BLOB_READ_WRITE_TOKEN in .env.local)' }))
-          return
-        }
-        let body = ''
-        for await (const chunk of req) body += chunk
-        let dataUrl = ''
-        let filename = 'election'
-        try {
-          const parsed = JSON.parse(body || '{}') as { dataUrl?: string; filename?: string }
-          dataUrl = parsed.dataUrl ?? ''
-          filename = parsed.filename ?? 'election'
-        } catch {
-          res.statusCode = 400
-          res.end(JSON.stringify({ error: 'Invalid body' }))
-          return
-        }
-        const match = /^data:([^;]+);base64,(.+)$/s.exec(dataUrl)
-        if (!match || !match[1].startsWith('image/')) {
-          res.statusCode = 400
-          res.end(JSON.stringify({ error: 'Invalid image data URL' }))
-          return
-        }
-        try {
-          const { put } = await import('@vercel/blob')
-          const ext = match[1].split('/')[1] || 'png'
-          const safeName = filename.replace(/[^a-z0-9._-]/gi, '-').slice(0, 80)
-          const blob = await put(`election/${safeName}-${Date.now()}.${ext}`, Buffer.from(match[2], 'base64'), {
-            access: 'public',
-            contentType: match[1],
-            token,
-          })
-          res.end(JSON.stringify({ url: blob.url }))
-        } catch {
-          res.statusCode = 502
-          res.end(JSON.stringify({ error: 'Upload failed' }))
-        }
-      })
     },
   }
 }
@@ -143,7 +96,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [react(), adminAuthDevPlugin(env), electionDevPlugin(env)],
+    plugins: [react(), adminAuthDevPlugin(env), electionDevPlugin()],
     server: {
       watch: {
         usePolling: true,
