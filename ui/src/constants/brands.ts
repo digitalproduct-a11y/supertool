@@ -555,6 +555,10 @@ export const N8N_TO_CANONICAL_BRAND: Record<string, string> = {
   ZAYAN: "Zayan",
   "ASTRO AEC 新闻报报看": "ASTRO AEC 新闻报报看",
   "Astro AEC 新闻报报看": "ASTRO AEC 新闻报报看",
+  "SYOK CHI": "SYOK CHI",
+  "SYOK ENG": "SYOK EN",
+  "SYOK BM": "SYOK BM",
+  "ASTRO RADIO NEWS": "Astro Radio News",
 };
 
 export function normalizeN8NBrand(n8nBrand: string): string | null {
