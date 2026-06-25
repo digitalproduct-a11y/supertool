@@ -38,8 +38,8 @@ export function HistoryPasscodeModal({ onSubmit, onClose }: HistoryPasscodeModal
         onClick={e => e.stopPropagation()} role="dialog" aria-labelledby="history-modal-title" aria-modal="true">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 id="history-modal-title" className="text-base font-semibold text-neutral-950">Download history log</h2>
-            <p className="text-sm text-neutral-500 mt-0.5">Enter the passcode to download</p>
+            <h2 id="history-modal-title" className="text-base font-semibold text-neutral-950">History Log</h2>
+            <p className="text-sm text-neutral-500 mt-0.5">Enter the passcode to view this brand's history</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close modal"
             className="text-neutral-400 hover:text-neutral-700 text-xl leading-none ml-4 transition-colors">×</button>
@@ -52,7 +52,7 @@ export function HistoryPasscodeModal({ onSubmit, onClose }: HistoryPasscodeModal
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button type="button" onClick={handleSubmit} disabled={!input || loading}
             className="w-full px-4 py-2 text-sm bg-neutral-950 text-white rounded-lg hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed font-medium">
-            {loading ? 'Downloading…' : 'Download →'}
+            {loading ? 'Checking…' : 'Unlock →'}
           </button>
         </div>
       </div>
