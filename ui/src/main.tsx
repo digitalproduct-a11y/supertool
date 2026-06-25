@@ -2,16 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { SpeedInsights } from '@vercel/speed-insights/react'
-import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { BrandProvider } from './context/BrandContext'
 import { AuthGate } from './components/AuthGate.tsx'
-import { msalConfig } from './auth/msalConfig.ts'
-
-const msalInstance = new PublicClientApplication(msalConfig)
+import { msalInstance } from './auth/msalConfig.ts'
 const router = createBrowserRouter([{ path: '*', element: <App /> }])
 
 // MSAL v3+ requires initialize() before any API call. Without it, silent
