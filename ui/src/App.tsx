@@ -31,6 +31,8 @@ import { YouTubeWeeklyReportPage } from './pages/YouTubeWeeklyReportPage'
 import { YouTubeTargetPacingPage } from './pages/YouTubeTargetPacingPage'
 import { DiagnosisPage } from './pages/DiagnosisPage'
 import { ArticleToSocialPage } from './pages/ArticleToSocialPage'
+import { CmsPostPage } from './pages/CmsPostPage'
+import { SimFeedPage } from './pages/SimFeedPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,
@@ -643,6 +645,11 @@ function App() {
     <Routes>
       <Route path="/" element={<BrandSelectionPage />} />
       <Route path="/start" element={<GetStartedPage />} />
+
+      {/* CMS post generation — standalone, NOT in sidebar.
+          /cms/post is the Drupal redirect target; /cms/simulator is the test harness. */}
+      <Route path="/cms/post" element={<CmsPostPage />} />
+      <Route path="/cms/simulator" element={<SimFeedPage />} />
 
       <Route path="/:brandSlug" element={
         <>
