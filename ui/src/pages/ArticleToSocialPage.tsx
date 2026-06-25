@@ -23,6 +23,7 @@ import { TABLOID_QUOTE_CANVAS_CONFIG } from '../config/quoteCanvasConfig'
 import type { QuickFactItem, CarouselResult, CarouselImage } from '../types'
 import { CarouselResultPreview } from '../features/carousel/CarouselResultPreview'
 import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
+import { logHistoryEvent } from '../services/historyLog'
 import {
   DEFAULT_PHOTO_TEMPLATE,
   getPhotoTemplatesForBrand,
@@ -31,18 +32,18 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type PostType = 'photo' | 'carousel' | 'quickfact' | 'quote'
+export type PostType = 'photo' | 'carousel' | 'quickfact' | 'quote'
 type TitleMode = 'original' | 'ai'
 type CaptionTitleMode = 'original' | 'ai'
 type Language = 'malay' | 'english'
 
-const POST_TYPE_LABELS: Record<PostType, string> = {
+export const POST_TYPE_LABELS: Record<PostType, string> = {
   photo: 'Photo Post',
   carousel: 'Carousel Post',
   quickfact: 'Quick Fact Post',
   quote: 'Quote Post',
 }
-const ALL_TYPES: PostType[] = ['photo', 'carousel', 'quickfact', 'quote']
+export const ALL_TYPES: PostType[] = ['photo', 'carousel', 'quickfact', 'quote']
 
 interface PhotoConfig    { titleMode: TitleMode; captionTitleMode: CaptionTitleMode; template: string }
 interface CarouselConfig { titleMode: TitleMode; captionTitleMode: CaptionTitleMode }
@@ -56,7 +57,7 @@ interface Configs {
   quote: QuoteConfig
 }
 
-interface ResultCard {
+export interface ResultCard {
   type: PostType
   status: 'generating' | 'done' | 'error'
   caption: string
@@ -265,8 +266,16 @@ async function generateQuote(
       body: JSON.stringify({ url, brand, caption_title_mode: cfg.captionTitleMode, language: cfg.language }),
       signal: controller.signal,
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`
+      try {
+        const errData = JSON.parse(text) as Record<string, unknown>
+        if (errData?.error === 'no_quote_found') message = 'No quote found for this article'
+        else if (typeof errData?.message === 'string') message = errData.message as string
+      } catch { /* non-JSON body (e.g. true 404) — keep HTTP status */ }
+      throw new Error(message)
+    }
     if (!text.trim()) throw new Error('Empty response from server')
     const data = JSON.parse(text) as Record<string, unknown>
     if (data.success === false) throw new Error((data.message as string) ?? 'Generation failed')
@@ -290,7 +299,7 @@ async function generateQuote(
 }
 
 
-function Spin({ className = 'w-4 h-4' }: { className?: string }) {
+export function Spin({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg className={`animate-spin ${className}`} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -549,22 +558,36 @@ export function ArticleToSocialPage() {
       const type = orderedTypes[i]
       if (result.status === 'fulfilled') {
         const val = result.value
+        let title = ''
         if (type === 'photo') {
           const v = val as Awaited<ReturnType<typeof generatePhoto>>
+          title = v.photoTitle
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, photoTitle: v.photoTitle, cloudinaryUrl: v.cloudinaryUrl })
         } else if (type === 'carousel') {
           const v = val as Awaited<ReturnType<typeof generateCarousel>>
+          title = v.carouselResult.title
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, carouselImages: v.carouselImages, caption: v.caption, carouselResult: v.carouselResult })
         } else if (type === 'quickfact') {
           const v = val as Awaited<ReturnType<typeof generateQuickFact>>
+          title = v.quickFactTitle
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl })
         } else if (type === 'quote') {
           const v = val as Awaited<ReturnType<typeof generateQuote>>
+          title = v.quoteData.quote_text
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quoteData: v.quoteData, quotePexelsUrls: v.quotePexelsUrls, quoteFontUse: v.quoteFontUse })
         }
+        const out = val as { caption?: string; imageUrl?: string }
+        logHistoryEvent({
+          eventType: 'generated', brand, toolPostType: type, sourcePage: 'article_to_social',
+          articleUrl: url, title, caption: out.caption ?? '', imageUrl: out.imageUrl ?? '', status: 'success',
+        })
       } else {
         const msg = result.reason instanceof Error ? result.reason.message : 'Generation failed'
         updateCard(type, { status: 'error', errorMessage: msg })
+        logHistoryEvent({
+          eventType: 'error', brand, toolPostType: type, sourcePage: 'article_to_social',
+          articleUrl: url, status: 'error', errorMessage: msg,
+        })
       }
     })
   }, [articleUrl, orderedTypes, effectiveBrand, configs, navigate])
@@ -816,7 +839,7 @@ export function ArticleToSocialPage() {
 // ── Photo Single View ─────────────────────────────────────────────────────────
 // Matches ArticleGenerateView: LEFT = article URL + title + caption + schedule, RIGHT = image + adjust + upload|download
 
-function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
+export function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const [localTitle, setLocalTitle] = useState(card.photoTitle ?? '')
@@ -948,7 +971,7 @@ function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
 // ── Quick Fact Single View ────────────────────────────────────────────────────
 // Matches QuickFactPage: LEFT = title + facts + key phrase + caption + schedule, RIGHT sticky = image + adjust + upload|download
 
-function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
+export function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const [localTitle, setLocalTitle] = useState(card.quickFactTitle ?? '')
@@ -1157,7 +1180,7 @@ function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
 const QUOTE_CANVAS_W = 1080
 const QUOTE_CANVAS_H = 1350
 
-function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
+export function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const canvasRef = useRef<QuoteCanvasHandle>(null)
@@ -1449,7 +1472,7 @@ function CarouselSingleView({ card, brand, articleUrl }: {
 // ── Bulk Result Card ──────────────────────────────────────────────────────────
 // Vertical PostCard-style card in grid grid-cols-1 md:grid-cols-2
 
-function BulkResultCard({ card, brand, articleUrl, onCaptionChange, onRetry }: {
+export function BulkResultCard({ card, brand, articleUrl, onCaptionChange, onRetry }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void; onRetry: () => void
 }) {
   return (
