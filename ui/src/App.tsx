@@ -33,6 +33,7 @@ import { DiagnosisPage } from './pages/DiagnosisPage'
 import { ArticleToSocialPage } from './pages/ArticleToSocialPage'
 import { CmsPostPage } from './pages/CmsPostPage'
 import { SimFeedPage } from './pages/SimFeedPage'
+import { HistoryLogPage } from './pages/HistoryLogPage'
 const OnThisDayPage = lazy(() =>
   import('./pages/OnThisDayPage').then((m) => ({
     default: m.OnThisDayPage,
@@ -78,7 +79,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis'
+type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis' | 'history-log'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -109,6 +110,7 @@ const pathToTool: Record<string, ToolId> = {
   '/dashboard': 'dashboard',
   '/youtube-dashboard': 'youtube-dashboard',
   '/diagnosis': 'diagnosis',
+  '/history-log': 'history-log',
 }
 
 // Map trending-news and news-bank subpages to scheduled-posts tool
@@ -157,6 +159,7 @@ const toolToPath: Record<ToolId, string> = {
   'dashboard': '/dashboard',
   'youtube-dashboard': '/youtube-dashboard',
   'diagnosis': '/diagnosis',
+  'history-log': '/history-log',
 }
 
 
@@ -707,6 +710,7 @@ function App() {
         <Route path="engagement-photos/prime-talk" element={<PrimeTalkPage />} />
         <Route path="shopee-top-products" element={<ShopeeTopProductsPage />} />
         <Route path="post-queue" element={<ZernioScheduledPostsPage />} />
+        <Route path="history-log" element={<HistoryLogPage />} />
         <Route path="social-affiliate-posting" element={<SocialAffiliatePostingPage />} />
         <Route path="quick-fact" element={<QuickFactPage />} />
         <Route path="dashboard" element={<DashboardPage />} />

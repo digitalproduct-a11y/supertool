@@ -22,6 +22,7 @@ import {
   IconChartPie,
   IconSwitchHorizontal,
   IconLogout,
+  IconHistory,
 } from "@tabler/icons-react";
 
 export type ToolId =
@@ -50,6 +51,7 @@ export type ToolId =
   | 'weather-malaysia'
   | 'quote'
   | 'election-results'
+  | 'history-log'
 
 interface NavItem {
   id: ToolId | string;
@@ -115,6 +117,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
       { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
       { id: 'youtube-dashboard', label: 'YouTube Dashboard', icon: IconChartBar },
       { id: 'post-queue', label: 'Scheduled Queue', icon: IconCalendarClock },
+      { id: 'history-log', label: 'History Log', icon: IconHistory },
     ],
   },
 ];
@@ -145,6 +148,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'weather-malaysia': 'Weather Malaysia',
   'quote': 'Quote',
   'election-results': 'Election Results',
+  'history-log': 'History Log',
 }
 
 const floatingBtnClass =
