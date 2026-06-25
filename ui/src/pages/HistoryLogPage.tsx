@@ -35,6 +35,21 @@ function readCachedPass(): string {
   try { return sessionStorage.getItem(PASS_KEY) ?? '' } catch { return '' }
 }
 
+// Timestamp columns are stored as ISO strings; render them readably (e.g. "25 Jun 2026, 18:42").
+const DATE_KEYS: (keyof HistoryRow)[] = ['server_time', 'scheduled_for']
+
+function formatTime(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+function cellValue(r: HistoryRow, key: keyof HistoryRow): string {
+  const raw = String(r[key] ?? '')
+  return DATE_KEYS.includes(key) ? formatTime(raw) : raw
+}
+
 // Bundles fetch params into one object so the effect dep is a stable reference; seq cancels stale responses.
 type FetchParams = { brand: string; from: string; to: string; passcode: string; isAdmin: boolean; seq: number }
 
@@ -115,7 +130,7 @@ export function HistoryLogPage() {
   function buildAndDownload(data: HistoryRow[]) {
     const aoa = [
       COLUMNS.map(c => c.label),
-      ...data.map(r => COLUMNS.map(c => r[c.key] ?? '')),
+      ...data.map(r => COLUMNS.map(c => cellValue(r, c.key))),
     ]
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.aoa_to_sheet(aoa)
@@ -226,7 +241,7 @@ export function HistoryLogPage() {
                     <tr><td colSpan={COLUMNS.length} className="px-3 py-8 text-center text-neutral-400">No activity in this range.</td></tr>
                   ) : rows.map(r => (
                     <tr key={r.event_id} className="border-t border-neutral-100">
-                      {COLUMNS.map(c => <td key={c.key} className="px-3 py-2 whitespace-nowrap max-w-[220px] truncate" title={String(r[c.key] ?? '')}>{String(r[c.key] ?? '')}</td>)}
+                      {COLUMNS.map(c => { const val = cellValue(r, c.key); return <td key={c.key} className="px-3 py-2 whitespace-nowrap max-w-[220px] truncate" title={val}>{val}</td> })}
                     </tr>
                   ))}
                 </tbody>
