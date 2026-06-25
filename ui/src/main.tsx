@@ -9,6 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { BrandProvider } from './context/BrandContext'
 import { AuthGate } from './components/AuthGate.tsx'
 import { msalInstance } from './auth/msalConfig.ts'
+
 const router = createBrowserRouter([{ path: '*', element: <App /> }])
 
 // MSAL v3+ requires initialize() before any API call. Without it, silent
