@@ -8,6 +8,7 @@
 // Example: /cms/post?site=awani&id=243169&types=photo,quickfact,quote&template=awani_v1
 
 import { useEffect, useRef, useState } from 'react'
+import { logHistoryEvent } from '../services/historyLog'
 import { useSearchParams } from 'react-router-dom'
 import { brandFromSite } from '../constants/brands'
 import {
@@ -76,14 +77,20 @@ export function CmsPostPage() {
   function runGenerator(type: CmsPostType, input: CmsGenInput) {
     switch (type) {
       case 'photo':
-        return generatePhotoFromCms(input).then(v =>
-          updateCard('photo', { status: 'done', imageUrl: v.imageUrl, caption: v.caption, photoTitle: v.photoTitle, cloudinaryUrl: v.cloudinaryUrl }))
+        return generatePhotoFromCms(input).then(v => {
+          updateCard('photo', { status: 'done', imageUrl: v.imageUrl, caption: v.caption, photoTitle: v.photoTitle, cloudinaryUrl: v.cloudinaryUrl })
+          logHistoryEvent({ eventType: 'generated', brand: input.brand, toolPostType: 'photo', sourcePage: 'cms', articleUrl: input.url, title: v.photoTitle, caption: v.caption, imageUrl: v.imageUrl, status: 'success' })
+        })
       case 'quickfact':
-        return generateQuickFactFromCms(input).then(v =>
-          updateCard('quickfact', { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl }))
+        return generateQuickFactFromCms(input).then(v => {
+          updateCard('quickfact', { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl })
+          logHistoryEvent({ eventType: 'generated', brand: input.brand, toolPostType: 'quickfact', sourcePage: 'cms', articleUrl: input.url, title: v.quickFactTitle, caption: v.caption, imageUrl: v.imageUrl, status: 'success' })
+        })
       case 'quote':
-        return generateQuoteFromCms(input).then(v =>
-          updateCard('quote', { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quoteData: v.quoteData, quotePexelsUrls: v.quotePexelsUrls, quoteFontUse: v.quoteFontUse }))
+        return generateQuoteFromCms(input).then(v => {
+          updateCard('quote', { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quoteData: v.quoteData, quotePexelsUrls: v.quotePexelsUrls, quoteFontUse: v.quoteFontUse })
+          logHistoryEvent({ eventType: 'generated', brand: input.brand, toolPostType: 'quote', sourcePage: 'cms', articleUrl: input.url, title: v.quoteData?.quote_author ?? '', caption: v.caption, imageUrl: v.imageUrl, status: 'success' })
+        })
     }
   }
 
@@ -133,6 +140,7 @@ export function CmsPostPage() {
         if (res.status === 'rejected') {
           const msg = res.reason instanceof Error ? res.reason.message : 'Generation failed'
           updateCard(types[i], { status: 'error', errorMessage: msg })
+          logHistoryEvent({ eventType: 'error', brand: input.brand, toolPostType: types[i], sourcePage: 'cms', articleUrl: input.url, status: 'error', errorMessage: msg })
         }
       })
     })()
@@ -146,6 +154,7 @@ export function CmsPostPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Generation failed'
       updateCard(type, { status: 'error', errorMessage: msg })
+      logHistoryEvent({ eventType: 'error', brand: brand ?? '', toolPostType: type, sourcePage: 'cms', articleUrl, status: 'error', errorMessage: msg })
     }
   }
 
