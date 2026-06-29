@@ -114,14 +114,20 @@ export function DiagnosisPage() {
       allRows.push(...chart.data)
     })
 
-    // Group by week/month/day and sum
+    // Group by week/month/day, keyed off the real date (not the text month
+    // label, which can vary — "Mar-26" vs "March-26"). For weekly/monthly the
+    // aggregators expose `_sortDate` (the bucket's earliest ISO date); we key by
+    // its YYYY-MM (+ week number) so label variants of the same period merge.
     const grouped = new Map<string, DashboardRow[]>()
     allRows.forEach(row => {
+      const sortDate = (row as any)._sortDate as string | undefined
       let key: string
       if (viewMode === 'weekly') {
-        key = `${row.month}|${row.week}`
+        const ym = sortDate ? sortDate.slice(0, 7) : row.month
+        const weekNum = (row.week || '').replace(/\D/g, '')
+        key = `${ym}|${weekNum}`
       } else if (viewMode === 'monthly') {
-        key = row.week
+        key = sortDate ? sortDate.slice(0, 7) : row.week
       } else {
         key = row.date
       }
@@ -129,23 +135,16 @@ export function DiagnosisPage() {
       grouped.get(key)!.push(row)
     })
 
-    // Sum across all brands for each period
-    const entries = Array.from(grouped.entries()).sort(([keyA], [keyB]) => {
-      if (viewMode === 'monthly') {
-        return keyA.localeCompare(keyB)
-      }
+    // Sum across all brands for each period, ordered by real calendar date.
+    const bucketDate = (rows: DashboardRow[]): string =>
+      rows.reduce((m, r) => {
+        const d = ((r as any)._sortDate as string | undefined) || r.date
+        return d < m ? d : m
+      }, ((rows[0] as any)._sortDate as string | undefined) || rows[0].date)
 
-      const [aMonthStr, aWeekStr] = keyA.split('|')
-      const [bMonthStr, bWeekStr] = keyB.split('|')
-
-      const aMonthNum = aMonthStr.includes('-') ? parseInt(aMonthStr.replace('-', ''), 10) : 0
-      const bMonthNum = bMonthStr.includes('-') ? parseInt(bMonthStr.replace('-', ''), 10) : 0
-      const aWeekNum = parseInt((aWeekStr || '').replace(/\D/g, ''), 10) || 0
-      const bWeekNum = parseInt((bWeekStr || '').replace(/\D/g, ''), 10) || 0
-
-      if (aMonthNum !== bMonthNum) return aMonthNum - bMonthNum
-      return aWeekNum - bWeekNum
-    })
+    const entries = Array.from(grouped.entries()).sort(([, rowsA], [, rowsB]) =>
+      bucketDate(rowsA).localeCompare(bucketDate(rowsB))
+    )
 
     return entries
       .map(([, rows]) => {
