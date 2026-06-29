@@ -114,20 +114,30 @@ export function DiagnosisPage() {
       allRows.push(...chart.data)
     })
 
-    // Group by week/month/day, keyed off the real date (not the text month
-    // label, which can vary — "Mar-26" vs "March-26"). For weekly/monthly the
-    // aggregators expose `_sortDate` (the bucket's earliest ISO date); we key by
-    // its YYYY-MM (+ week number) so label variants of the same period merge.
+    // Normalize a month label to "YYYY-MM" so spelling variants of the SAME
+    // month merge ("Mar-26" / "March-26" → "2026-03"), without letting a week
+    // that straddles a month boundary drift into the wrong month (which using
+    // the bucket's earliest date would do, double-counting boundary weeks).
+    const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    const normalizeYM = (label: string): string => {
+      if (/^\d{4}-\d{2}/.test(label)) return label.slice(0, 7)
+      const name = (label.match(/[A-Za-z]+/)?.[0] || '').toLowerCase()
+      const digits = label.match(/\d+/)?.[0] || ''
+      const mIdx = MONTH_NAMES.findIndex(m => name.startsWith(m))
+      if (mIdx < 0 || !digits) return label
+      const year = digits.length <= 2 ? 2000 + Number(digits) : Number(digits)
+      return `${year}-${String(mIdx + 1).padStart(2, '0')}`
+    }
+
+    // Group by week/month/day, keyed off the normalized month label.
     const grouped = new Map<string, DashboardRow[]>()
     allRows.forEach(row => {
-      const sortDate = (row as any)._sortDate as string | undefined
       let key: string
       if (viewMode === 'weekly') {
-        const ym = sortDate ? sortDate.slice(0, 7) : row.month
         const weekNum = (row.week || '').replace(/\D/g, '')
-        key = `${ym}|${weekNum}`
+        key = `${normalizeYM(row.month)}|${weekNum}`
       } else if (viewMode === 'monthly') {
-        key = sortDate ? sortDate.slice(0, 7) : row.week
+        key = normalizeYM(row.month)
       } else {
         key = row.date
       }
