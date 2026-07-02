@@ -20,9 +20,11 @@ import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { QuoteCanvas, type QuoteCanvasHandle, type QuoteData } from '../features/quote/QuoteCanvas'
 import { ImageCropAdjuster, type CropRegion } from '../features/quote/ImageCropAdjuster'
 import { TABLOID_QUOTE_CANVAS_CONFIG } from '../config/quoteCanvasConfig'
-import type { QuickFactItem, CarouselResult, CarouselImage } from '../types'
+import type { QuickFactItem, CarouselResult, CarouselImage, QuickFactData } from '../types'
 import { CarouselResultPreview } from '../features/carousel/CarouselResultPreview'
+import { QuickFactCarouselView } from '../features/quickfact/QuickFactCarouselView'
 import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
+import { logHistoryEvent } from '../services/historyLog'
 import {
   DEFAULT_PHOTO_TEMPLATE,
   getPhotoTemplatesForBrand,
@@ -31,18 +33,18 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type PostType = 'photo' | 'carousel' | 'quickfact' | 'quote'
+export type PostType = 'photo' | 'carousel' | 'quickfact' | 'quote'
 type TitleMode = 'original' | 'ai'
 type CaptionTitleMode = 'original' | 'ai'
 type Language = 'malay' | 'english'
 
-const POST_TYPE_LABELS: Record<PostType, string> = {
+export const POST_TYPE_LABELS: Record<PostType, string> = {
   photo: 'Photo Post',
   carousel: 'Carousel Post',
   quickfact: 'Quick Fact Post',
   quote: 'Quote Post',
 }
-const ALL_TYPES: PostType[] = ['photo', 'carousel', 'quickfact', 'quote']
+export const ALL_TYPES: PostType[] = ['photo', 'carousel', 'quickfact', 'quote']
 
 interface PhotoConfig    { titleMode: TitleMode; captionTitleMode: CaptionTitleMode; template: string }
 interface CarouselConfig { titleMode: TitleMode; captionTitleMode: CaptionTitleMode }
@@ -56,7 +58,7 @@ interface Configs {
   quote: QuoteConfig
 }
 
-interface ResultCard {
+export interface ResultCard {
   type: PostType
   status: 'generating' | 'done' | 'error'
   caption: string
@@ -70,6 +72,10 @@ interface ResultCard {
   quickFactTitle?: string
   quickFactFacts?: QuickFactItem[]
   quickFactKeyPhrase?: string
+  // Present only for the CMS Quick Fact carousel (workflow uYavn7y5GXBezjkw).
+  // When set, the Quick Fact views render the Fabric carousel instead of the
+  // legacy single composite image.
+  quickFactData?: QuickFactData
   quoteData?: QuoteData
   quotePexelsUrls?: string[]
   quoteFontUse?: string
@@ -88,12 +94,20 @@ function getScheduledSlots(count: number): string[] {
 
 // ── Post to Facebook ──────────────────────────────────────────────────────────
 
+interface ScheduleLogMeta {
+  toolPostType: string
+  articleUrl?: string
+  title?: string
+  editedFields?: string[]
+}
+
 async function postToFacebook(
   imageUrl: string,
   caption: string,
   brand: string,
   scheduledFor: string,
   passcode: string,
+  meta: ScheduleLogMeta,
 ): Promise<{ authError: boolean }> {
   const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
   if (!webhookUrl) throw new Error('Post webhook not configured')
@@ -111,12 +125,17 @@ async function postToFacebook(
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const json = await res.json() as { status?: string }
   if (json.status === 'AUTH_ERROR') return { authError: true }
+  logHistoryEvent({
+    eventType: 'scheduled', brand, toolPostType: meta.toolPostType, sourcePage: 'article_to_social',
+    articleUrl: meta.articleUrl, title: meta.title, caption, imageUrl,
+    scheduledFor, editedFields: meta.editedFields, status: 'success',
+  })
   return { authError: false }
 }
 
 async function scheduleCarousel(
   imageUrls: string[], caption: string, brand: string,
-  scheduledFor?: string, passcode?: string,
+  scheduledFor?: string, passcode?: string, meta?: ScheduleLogMeta,
 ): Promise<{ success: boolean; message: string; status?: string }> {
   const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
   if (!webhookUrl) return { success: false, message: 'Webhook not configured.' }
@@ -137,7 +156,14 @@ async function scheduleCarousel(
     })
     const data = await res.json() as { success?: boolean; status?: string; message?: string }
     if (data.status === 'AUTH_ERROR') return { success: false, message: data.message ?? 'Invalid passcode.', status: 'AUTH_ERROR' }
-    if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') return { success: true, message: 'Scheduled!' }
+    if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
+      logHistoryEvent({
+        eventType: 'scheduled', brand, toolPostType: 'carousel', sourcePage: 'article_to_social',
+        articleUrl: meta?.articleUrl, title: meta?.title, caption, imageUrl: imageUrls[0],
+        scheduledFor, editedFields: meta?.editedFields, status: 'success',
+      })
+      return { success: true, message: 'Scheduled!' }
+    }
     return { success: false, message: data.message ?? 'Something went wrong.' }
   } catch {
     return { success: false, message: 'Network error. Please try again.' }
@@ -265,8 +291,16 @@ async function generateQuote(
       body: JSON.stringify({ url, brand, caption_title_mode: cfg.captionTitleMode, language: cfg.language }),
       signal: controller.signal,
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`
+      try {
+        const errData = JSON.parse(text) as Record<string, unknown>
+        if (errData?.error === 'no_quote_found') message = 'No quote found for this article'
+        else if (typeof errData?.message === 'string') message = errData.message as string
+      } catch { /* non-JSON body (e.g. true 404) — keep HTTP status */ }
+      throw new Error(message)
+    }
     if (!text.trim()) throw new Error('Empty response from server')
     const data = JSON.parse(text) as Record<string, unknown>
     if (data.success === false) throw new Error((data.message as string) ?? 'Generation failed')
@@ -290,7 +324,7 @@ async function generateQuote(
 }
 
 
-function Spin({ className = 'w-4 h-4' }: { className?: string }) {
+export function Spin({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg className={`animate-spin ${className}`} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -549,22 +583,36 @@ export function ArticleToSocialPage() {
       const type = orderedTypes[i]
       if (result.status === 'fulfilled') {
         const val = result.value
+        let title = ''
         if (type === 'photo') {
           const v = val as Awaited<ReturnType<typeof generatePhoto>>
+          title = v.photoTitle
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, photoTitle: v.photoTitle, cloudinaryUrl: v.cloudinaryUrl })
         } else if (type === 'carousel') {
           const v = val as Awaited<ReturnType<typeof generateCarousel>>
+          title = v.carouselResult.title
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, carouselImages: v.carouselImages, caption: v.caption, carouselResult: v.carouselResult })
         } else if (type === 'quickfact') {
           const v = val as Awaited<ReturnType<typeof generateQuickFact>>
+          title = v.quickFactTitle
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl })
         } else if (type === 'quote') {
           const v = val as Awaited<ReturnType<typeof generateQuote>>
+          title = v.quoteData.quote_text
           updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quoteData: v.quoteData, quotePexelsUrls: v.quotePexelsUrls, quoteFontUse: v.quoteFontUse })
         }
+        const out = val as { caption?: string; imageUrl?: string }
+        logHistoryEvent({
+          eventType: 'generated', brand, toolPostType: type, sourcePage: 'article_to_social',
+          articleUrl: url, title, caption: out.caption ?? '', imageUrl: out.imageUrl ?? '', status: 'success',
+        })
       } else {
         const msg = result.reason instanceof Error ? result.reason.message : 'Generation failed'
         updateCard(type, { status: 'error', errorMessage: msg })
+        logHistoryEvent({
+          eventType: 'error', brand, toolPostType: type, sourcePage: 'article_to_social',
+          articleUrl: url, status: 'error', errorMessage: msg,
+        })
       }
     })
   }, [articleUrl, orderedTypes, effectiveBrand, configs, navigate])
@@ -816,7 +864,7 @@ export function ArticleToSocialPage() {
 // ── Photo Single View ─────────────────────────────────────────────────────────
 // Matches ArticleGenerateView: LEFT = article URL + title + caption + schedule, RIGHT = image + adjust + upload|download
 
-function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
+export function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const [localTitle, setLocalTitle] = useState(card.photoTitle ?? '')
@@ -832,6 +880,7 @@ function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
   const [postStatus, setPostStatus] = useState<'idle' | 'posted' | 'error'>('idle')
   const [postError, setPostError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const initialCaptionRef = useRef(card.caption)
 
   const baseImageUrl = uploadedPublicId
     ? buildCloudinaryUrl(uploadedPublicId, committedTitle, card.imageUrl)
@@ -865,7 +914,14 @@ function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
     const resolvedPasscode = passcode ?? getCredentials(brandLower)?.passcode ?? ''
     setIsPosting(true); setShowScheduleModal(false)
     try {
-      const { authError } = await postToFacebook(displayImageUrl, card.caption, brand, scheduledFor, resolvedPasscode)
+      const editedFields: string[] = []
+      if (card.caption !== initialCaptionRef.current) editedFields.push('caption')
+      if (committedTitle !== (card.photoTitle ?? '')) editedFields.push('title')
+      if (adjustedImageUrl || uploadedPublicId) editedFields.push('image')
+      const { authError } = await postToFacebook(
+        displayImageUrl, card.caption, brand, scheduledFor, resolvedPasscode,
+        { toolPostType: card.type, articleUrl, title: committedTitle, editedFields },
+      )
       if (authError) { clearCredentials(brandLower); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
       if (passcode) saveCredentials(brandLower, passcode)
       setIsPosting(false); setPostStatus('posted'); toast.success('Photo post scheduled!')
@@ -948,7 +1004,27 @@ function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
 // ── Quick Fact Single View ────────────────────────────────────────────────────
 // Matches QuickFactPage: LEFT = title + facts + key phrase + caption + schedule, RIGHT sticky = image + adjust + upload|download
 
-function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
+export function QuickFactSingleView(props: {
+  card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
+}) {
+  // CMS carousel path: render the Fabric multi-slide editor. The legacy
+  // single-image path (URL-based Quick Fact tool) falls through below.
+  if (props.card.quickFactData) {
+    return (
+      <QuickFactCarouselView
+        data={props.card.quickFactData}
+        brand={props.brand}
+        articleUrl={props.articleUrl}
+        caption={props.card.caption}
+        scheduledFor={props.card.scheduledFor}
+        onCaptionChange={props.onCaptionChange}
+      />
+    )
+  }
+  return <QuickFactSingleViewLegacy {...props} />
+}
+
+function QuickFactSingleViewLegacy({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const [localTitle, setLocalTitle] = useState(card.quickFactTitle ?? '')
@@ -970,6 +1046,7 @@ function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
   const [postStatus, setPostStatus] = useState<'idle' | 'posted' | 'error'>('idle')
   const [postError, setPostError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const initialCaptionRef = useRef(card.caption)
 
   const baseImageUrl = uploadedPublicId ? replaceBaseImage(card.imageUrl, uploadedPublicId) : card.imageUrl
   let previewImageUrl = updateTitleInImageUrl(baseImageUrl, card.quickFactTitle ?? '', committedTitle)
@@ -1024,7 +1101,14 @@ function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
     const resolvedPasscode = passcode ?? getCredentials(brandLower)?.passcode ?? ''
     setIsPosting(true); setShowScheduleModal(false)
     try {
-      const { authError } = await postToFacebook(displayImageUrl, card.caption, brand, scheduledFor, resolvedPasscode)
+      const editedFields: string[] = []
+      if (card.caption !== initialCaptionRef.current) editedFields.push('caption')
+      if (committedTitle !== (card.quickFactTitle ?? '')) editedFields.push('title')
+      if (adjustedImageUrl || uploadedPublicId) editedFields.push('image')
+      const { authError } = await postToFacebook(
+        displayImageUrl, card.caption, brand, scheduledFor, resolvedPasscode,
+        { toolPostType: card.type, articleUrl, title: committedTitle, editedFields },
+      )
       if (authError) { clearCredentials(brandLower); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
       if (passcode) saveCredentials(brandLower, passcode)
       setIsPosting(false); setPostStatus('posted'); toast.success('Quick Fact post scheduled!')
@@ -1157,12 +1241,13 @@ function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
 const QUOTE_CANVAS_W = 1080
 const QUOTE_CANVAS_H = 1350
 
-function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
+export function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const canvasRef = useRef<QuoteCanvasHandle>(null)
   const bgFileInputRef = useRef<HTMLInputElement>(null)
   const customCircleInputRef = useRef<HTMLInputElement>(null)
+  const initialCaptionRef = useRef(card.caption)
 
   const [quoteData, setQuoteData] = useState<QuoteData>(card.quoteData ?? {
     quote_text: '', quote_punch: '', quote_author: '', quote_author_title: '',
@@ -1195,8 +1280,6 @@ function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
   }
 
   async function handleSchedule(scheduledFor: string, passcode?: string) {
-    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
-    if (!webhookUrl) { toast.error('Webhook not configured.'); return }
     const dataUrl = canvasRef.current?.getDataUrl()
     if (!dataUrl) { toast.error('Image not ready.'); return }
     const brandLower = brand.toLowerCase()
@@ -1208,16 +1291,15 @@ function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
       const publicId = await uploadToCloudinary(file)
       const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined) ?? ''
       const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
-      const res = await fetch(webhookUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fb_ai_image_url: imageUrl, fb_ai_caption: card.caption, brand: brandLower, scheduled_for: scheduledFor, passcode: resolvedPasscode }),
-      })
-      const data = await res.json() as { status?: string; success?: boolean; message?: string }
-      if (data.status === 'AUTH_ERROR') { clearCredentials(brandLower); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
-      if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
-        if (passcode) saveCredentials(brandLower, passcode)
-        setIsPosting(false); setPostStatus('posted'); toast.success('Quote post scheduled!')
-      } else { throw new Error(data.message ?? 'Post failed') }
+      const editedFields: string[] = []
+      if (card.caption !== initialCaptionRef.current) editedFields.push('caption')
+      const { authError } = await postToFacebook(
+        imageUrl, card.caption, brand, scheduledFor, resolvedPasscode,
+        { toolPostType: 'quote', articleUrl, title: card.quoteData?.quote_author ?? '', editedFields },
+      )
+      if (authError) { clearCredentials(brandLower); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
+      if (passcode) saveCredentials(brandLower, passcode)
+      setIsPosting(false); setPostStatus('posted'); toast.success('Quote post scheduled!')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Post failed'
       setIsPosting(false); setPostStatus('error'); setPostError(msg); toast.error(msg)
@@ -1412,8 +1494,8 @@ function CarouselSingleView({ card, brand, articleUrl }: {
 }) {
   const onPostDraft = useCallback(
     (imageUrls: string[], caption: string, postBrand: string, scheduledFor?: string, passcode?: string) =>
-      scheduleCarousel(imageUrls, caption, postBrand, scheduledFor, passcode),
-    [],
+      scheduleCarousel(imageUrls, caption, postBrand, scheduledFor, passcode, { toolPostType: 'carousel', articleUrl, title: card.carouselResult?.title ?? '' }),
+    [articleUrl, card.carouselResult?.title],
   )
 
   if (!card.carouselResult) {
@@ -1449,7 +1531,7 @@ function CarouselSingleView({ card, brand, articleUrl }: {
 // ── Bulk Result Card ──────────────────────────────────────────────────────────
 // Vertical PostCard-style card in grid grid-cols-1 md:grid-cols-2
 
-function BulkResultCard({ card, brand, articleUrl, onCaptionChange, onRetry }: {
+export function BulkResultCard({ card, brand, articleUrl, onCaptionChange, onRetry }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void; onRetry: () => void
 }) {
   return (
@@ -1533,7 +1615,7 @@ function PhotoBulkContent({ card, brand, articleUrl, onCaptionChange }: {
     const bl = brand.toLowerCase(); const rp = passcode ?? getCredentials(bl)?.passcode ?? ''
     setIsPosting(true); setShowScheduleModal(false)
     try {
-      const { authError } = await postToFacebook(displayImageUrl, card.caption, brand, scheduledFor, rp)
+      const { authError } = await postToFacebook(displayImageUrl, card.caption, brand, scheduledFor, rp, { toolPostType: 'photo', articleUrl, title: committedTitle })
       if (authError) { clearCredentials(bl); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
       if (passcode) saveCredentials(bl, passcode)
       setIsPosting(false); setPostStatus('posted'); toast.success('Scheduled!')
@@ -1600,7 +1682,29 @@ function PhotoBulkContent({ card, brand, articleUrl, onCaptionChange }: {
 
 // ── Quick Fact Bulk Content ───────────────────────────────────────────────────
 
-function QuickFactBulkContent({ card, brand, articleUrl, onCaptionChange }: {
+function QuickFactBulkContent(props: {
+  card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
+}) {
+  // CMS carousel path: compact Fabric multi-slide editor inside the bulk card.
+  if (props.card.quickFactData) {
+    return (
+      <div className="px-4 pt-3 pb-4">
+        <QuickFactCarouselView
+          data={props.card.quickFactData}
+          brand={props.brand}
+          articleUrl={props.articleUrl}
+          caption={props.card.caption}
+          scheduledFor={props.card.scheduledFor}
+          onCaptionChange={props.onCaptionChange}
+          compact
+        />
+      </div>
+    )
+  }
+  return <QuickFactBulkContentLegacy {...props} />
+}
+
+function QuickFactBulkContentLegacy({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const [localTitle, setLocalTitle] = useState(card.quickFactTitle ?? '')
@@ -1661,7 +1765,7 @@ function QuickFactBulkContent({ card, brand, articleUrl, onCaptionChange }: {
     const bl = brand.toLowerCase(); const rp = passcode ?? getCredentials(bl)?.passcode ?? ''
     setIsPosting(true); setShowScheduleModal(false)
     try {
-      const { authError } = await postToFacebook(displayImageUrl, card.caption, brand, scheduledFor, rp)
+      const { authError } = await postToFacebook(displayImageUrl, card.caption, brand, scheduledFor, rp, { toolPostType: 'quickfact', articleUrl, title: committedTitle })
       if (authError) { clearCredentials(bl); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
       if (passcode) saveCredentials(bl, passcode)
       setIsPosting(false); setPostStatus('posted'); toast.success('Scheduled!')
@@ -1794,8 +1898,6 @@ function QuoteBulkContent({ card, brand, onCaptionChange }: {
   }
 
   async function handleSchedule(scheduledFor: string, passcode?: string) {
-    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim()
-    if (!webhookUrl) { toast.error('Webhook not configured.'); return }
     const dataUrl = canvasRef.current?.getDataUrl(); if (!dataUrl) { toast.error('Image not ready.'); return }
     const bl = brand.toLowerCase(); const rp = passcode ?? getCredentials(bl)?.passcode ?? ''
     setIsPosting(true); setShowScheduleModal(false)
@@ -1805,16 +1907,10 @@ function QuoteBulkContent({ card, brand, onCaptionChange }: {
       const publicId = await uploadToCloudinary(file)
       const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined) ?? ''
       const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
-      const res = await fetch(webhookUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fb_ai_image_url: imageUrl, fb_ai_caption: card.caption, brand: bl, scheduled_for: scheduledFor, passcode: rp }),
-      })
-      const data = await res.json() as { status?: string; success?: boolean; message?: string }
-      if (data.status === 'AUTH_ERROR') { clearCredentials(bl); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
-      if (data.success === true || data.status === 'SUCCESS' || data.status === 'DRAFT_SAVED') {
-        if (passcode) saveCredentials(bl, passcode)
-        setIsPosting(false); setPostStatus('posted'); toast.success('Scheduled!')
-      } else { throw new Error(data.message ?? 'Post failed') }
+      const { authError } = await postToFacebook(imageUrl, card.caption, brand, scheduledFor, rp, { toolPostType: 'quote', articleUrl: undefined, title: '' })
+      if (authError) { clearCredentials(bl); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
+      if (passcode) saveCredentials(bl, passcode)
+      setIsPosting(false); setPostStatus('posted'); toast.success('Scheduled!')
     } catch (err) { const m = err instanceof Error ? err.message : 'Post failed'; setIsPosting(false); setPostStatus('error'); setPostError(m); toast.error(m) }
   }
 
@@ -1926,8 +2022,8 @@ function CarouselBulkContent({ card, brand, articleUrl }: {
 }) {
   const onPostDraft = useCallback(
     (imageUrls: string[], caption: string, postBrand: string, scheduledFor?: string, passcode?: string) =>
-      scheduleCarousel(imageUrls, caption, postBrand, scheduledFor, passcode),
-    [],
+      scheduleCarousel(imageUrls, caption, postBrand, scheduledFor, passcode, { toolPostType: 'carousel', articleUrl, title: card.carouselResult?.title ?? '' }),
+    [articleUrl, card.carouselResult?.title],
   )
 
   if (!card.carouselResult) {

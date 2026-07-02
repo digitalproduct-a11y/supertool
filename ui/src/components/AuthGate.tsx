@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { InteractionStatus } from '@azure/msal-browser'
 import { loginRequest } from '../auth/msalConfig'
+import { clearAllBrandAuth } from '../utils/brandAuth'
 import { useSession } from '../hooks/useSession'
 
 const ALLOWED_DOMAIN = import.meta.env.VITE_AZURE_ALLOWED_DOMAIN ?? 'astro.com.my'
@@ -12,6 +14,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     ? (instance.getActiveAccount() ?? instance.getAllAccounts()[0] ?? null)
     : null
   const { state: sessionState, mint } = useSession(msalAccount)
+
+  // Once MSAL has settled and no one is signed in, wipe any brand unlock so a fresh
+  // Azure login re-requires the brand passcode. Gating on inProgress === None avoids the
+  // bootstrap race — a logged-in user's account is restored from cache before that, so a
+  // valid unlock is never cleared on a normal reload.
+  useEffect(() => {
+    if (inProgress === InteractionStatus.None && !isAuthenticated) {
+      clearAllBrandAuth()
+    }
+  }, [inProgress, isAuthenticated])
 
   // MSAL is initializing or handling the redirect callback
   if (inProgress !== InteractionStatus.None) {

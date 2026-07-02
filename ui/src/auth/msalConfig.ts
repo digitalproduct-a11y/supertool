@@ -1,4 +1,4 @@
-import { type Configuration, LogLevel } from '@azure/msal-browser'
+import { PublicClientApplication, type Configuration, LogLevel } from '@azure/msal-browser'
 
 export const msalConfig: Configuration = {
   auth: {
@@ -27,3 +27,10 @@ export const msalConfig: Configuration = {
 export const loginRequest = {
   scopes: ['openid', 'profile', 'email'],
 }
+
+// Single shared instance so non-React modules (e.g. services/historyLog.ts) can read the
+// signed-in account without the useMsal() hook. main.tsx initialize()s this same object.
+// IMPORTANT: this is constructed but NOT yet initialized. Callers must not invoke async
+// MSAL APIs until main.tsx has resolved initialize(). Synchronous reads such as
+// getActiveAccount()/getAllAccounts() are safe (they return empty before sign-in).
+export const msalInstance = new PublicClientApplication(msalConfig)
