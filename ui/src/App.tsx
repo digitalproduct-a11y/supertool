@@ -24,6 +24,7 @@ import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
 import { NewsPosterPage } from './pages/NewsPosterPage'
+import { ImageEditorPage } from './pages/ImageEditorPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { YouTubeDashboardPage } from './pages/YouTubeDashboardPage'
 import { WeeklyReportPage } from './pages/WeeklyReportPage'
@@ -697,6 +698,7 @@ function App() {
         } />
         <Route path="engagement-posts/didyouknow" element={<DidYouKnowPage />} />
         <Route path="engagement-posts/news-poster" element={<NewsPosterPage />} />
+        <Route path="engagement-posts/image-editor" element={<ImageEditorPage />} />
         <Route path="engagement-photos/prime-talk" element={<PrimeTalkPage />} />
         <Route path="shopee-top-products" element={<ShopeeTopProductsPage />} />
         <Route path="post-queue" element={<ZernioScheduledPostsPage />} />

@@ -20,7 +20,7 @@ type DragMode =
   | { kind: "resize"; corner: "nw" | "ne" | "sw" | "se"; startX: number; startY: number; orig: CropRegion }
   | null;
 
-const HANDLE_PX = 12;
+const HANDLE_PX = 22;
 const MIN_REGION_PX = 40;
 
 export function ImageCropAdjuster({
@@ -36,6 +36,13 @@ export function ImageCropAdjuster({
   const [displayScale, setDisplayScale] = useState(1);
   const [region, setRegion] = useState<CropRegion | null>(null);
   const dragRef = useRef<DragMode>(null);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
   // Default region: largest aspect-locked rect centered in the image.
   const defaultRegion = useCallback(
@@ -79,8 +86,15 @@ export function ImageCropAdjuster({
 
   const clampRegion = (r: CropRegion): CropRegion => {
     if (!naturalSize) return r;
-    const w = Math.max(MIN_REGION_PX, Math.min(r.width, naturalSize.w));
-    const h = Math.max(MIN_REGION_PX, Math.min(r.height, naturalSize.h));
+    let w = Math.max(MIN_REGION_PX, Math.min(r.width, naturalSize.w));
+    let h = Math.max(MIN_REGION_PX, Math.min(r.height, naturalSize.h));
+    // Re-enforce aspect ratio after clamping — derive the smaller dimension from the larger
+    const wFromH = h * aspectRatio;
+    if (wFromH <= naturalSize.w) {
+      w = Math.max(MIN_REGION_PX, wFromH);
+    } else {
+      h = Math.max(MIN_REGION_PX, w / aspectRatio);
+    }
     const x = Math.max(0, Math.min(r.x, naturalSize.w - w));
     const y = Math.max(0, Math.min(r.y, naturalSize.h - h));
     return { x, y, width: w, height: h };
@@ -157,6 +171,7 @@ export function ImageCropAdjuster({
   return (
     <div
       className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+      style={{ touchAction: 'none' }}
       onClick={onCancel}
     >
       <div
@@ -175,7 +190,10 @@ export function ImageCropAdjuster({
         <div
           ref={containerRef}
           className="bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center"
-          style={{ minHeight: 300 }}
+          style={{ minHeight: 300, touchAction: 'none' }}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
         >
           {/* Inner wrapper sized to the displayed image so the overlay aligns with it */}
           <div className="relative" style={{ display: 'inline-block' }}>
@@ -213,6 +231,7 @@ export function ImageCropAdjuster({
                     top: region.y * displayScale,
                     width: region.width * displayScale,
                     height: region.height * displayScale,
+                    touchAction: 'none',
                   }}
                   onPointerDown={onPointerDownMove}
                   onPointerMove={onPointerMove}
@@ -231,6 +250,7 @@ export function ImageCropAdjuster({
                         top: corner.startsWith("n") ? -HANDLE_PX / 2 : "auto",
                         bottom: corner.startsWith("s") ? -HANDLE_PX / 2 : "auto",
                         cursor: `${corner}-resize`,
+                        touchAction: 'none',
                       }}
                       onPointerDown={onPointerDownResize(corner)}
                       onPointerMove={onPointerMove}

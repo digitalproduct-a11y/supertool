@@ -177,6 +177,7 @@ const TOOL_CARDS = [
     links: [] as { label: string; path: string; state?: Record<string, unknown> }[],
     sharedLinks: [
       { label: 'News Poster', path: '/engagement-posts/news-poster' },
+      { label: 'Image Editor', path: '/engagement-posts/image-editor' },
     ] as { label: string; path: string }[],
     brandSpecific: true,
   },
