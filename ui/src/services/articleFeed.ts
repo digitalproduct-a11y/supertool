@@ -53,6 +53,12 @@ export function cleanBody(text: string): string {
     .trim()
 }
 
+/** First real text paragraph of an article (lede), HTML-stripped. '' if none. */
+export function firstParagraph(art: CmsArticle): string {
+  const raw = art.bodyParagraph?.find(p => p.type === 'paragraph')?.text ?? ''
+  return cleanBody(raw)
+}
+
 /** Build the public article URL from a feed `site` + `urlSlug`. */
 export function buildArticleUrl(site: string, urlSlug: string): string {
   const domain = SITE_TO_DOMAIN[site] ?? SITE_TO_DOMAIN.awani

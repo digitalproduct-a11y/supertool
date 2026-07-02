@@ -20,8 +20,9 @@ import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { QuoteCanvas, type QuoteCanvasHandle, type QuoteData } from '../features/quote/QuoteCanvas'
 import { ImageCropAdjuster, type CropRegion } from '../features/quote/ImageCropAdjuster'
 import { TABLOID_QUOTE_CANVAS_CONFIG } from '../config/quoteCanvasConfig'
-import type { QuickFactItem, CarouselResult, CarouselImage } from '../types'
+import type { QuickFactItem, CarouselResult, CarouselImage, QuickFactData } from '../types'
 import { CarouselResultPreview } from '../features/carousel/CarouselResultPreview'
+import { QuickFactCarouselView } from '../features/quickfact/QuickFactCarouselView'
 import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
 import { logHistoryEvent } from '../services/historyLog'
 import {
@@ -71,6 +72,10 @@ export interface ResultCard {
   quickFactTitle?: string
   quickFactFacts?: QuickFactItem[]
   quickFactKeyPhrase?: string
+  // Present only for the CMS Quick Fact carousel (workflow uYavn7y5GXBezjkw).
+  // When set, the Quick Fact views render the Fabric carousel instead of the
+  // legacy single composite image.
+  quickFactData?: QuickFactData
   quoteData?: QuoteData
   quotePexelsUrls?: string[]
   quoteFontUse?: string
@@ -999,7 +1004,27 @@ export function PhotoSingleView({ card, brand, articleUrl, onCaptionChange }: {
 // ── Quick Fact Single View ────────────────────────────────────────────────────
 // Matches QuickFactPage: LEFT = title + facts + key phrase + caption + schedule, RIGHT sticky = image + adjust + upload|download
 
-export function QuickFactSingleView({ card, brand, articleUrl, onCaptionChange }: {
+export function QuickFactSingleView(props: {
+  card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
+}) {
+  // CMS carousel path: render the Fabric multi-slide editor. The legacy
+  // single-image path (URL-based Quick Fact tool) falls through below.
+  if (props.card.quickFactData) {
+    return (
+      <QuickFactCarouselView
+        data={props.card.quickFactData}
+        brand={props.brand}
+        articleUrl={props.articleUrl}
+        caption={props.card.caption}
+        scheduledFor={props.card.scheduledFor}
+        onCaptionChange={props.onCaptionChange}
+      />
+    )
+  }
+  return <QuickFactSingleViewLegacy {...props} />
+}
+
+function QuickFactSingleViewLegacy({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const [localTitle, setLocalTitle] = useState(card.quickFactTitle ?? '')
@@ -1657,7 +1682,29 @@ function PhotoBulkContent({ card, brand, articleUrl, onCaptionChange }: {
 
 // ── Quick Fact Bulk Content ───────────────────────────────────────────────────
 
-function QuickFactBulkContent({ card, brand, articleUrl, onCaptionChange }: {
+function QuickFactBulkContent(props: {
+  card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
+}) {
+  // CMS carousel path: compact Fabric multi-slide editor inside the bulk card.
+  if (props.card.quickFactData) {
+    return (
+      <div className="px-4 pt-3 pb-4">
+        <QuickFactCarouselView
+          data={props.card.quickFactData}
+          brand={props.brand}
+          articleUrl={props.articleUrl}
+          caption={props.card.caption}
+          scheduledFor={props.card.scheduledFor}
+          onCaptionChange={props.onCaptionChange}
+          compact
+        />
+      </div>
+    )
+  }
+  return <QuickFactBulkContentLegacy {...props} />
+}
+
+function QuickFactBulkContentLegacy({ card, brand, articleUrl, onCaptionChange }: {
   card: ResultCard; brand: string; articleUrl: string; onCaptionChange: (v: string) => void
 }) {
   const [localTitle, setLocalTitle] = useState(card.quickFactTitle ?? '')

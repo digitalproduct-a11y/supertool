@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { getBrandLogoUrl, getBrandHex, needsDarkBg, getEntityLabel } from '../constants/brands'
 import { clearAdminToken } from '../utils/adminAuth'
+import { clearAllBrandAuth } from '../utils/brandAuth'
 import {
   IconHome,
   IconStack2,
@@ -336,9 +337,7 @@ export function Sidebar({
               onClick={() => {
                 clearBrand()
                 clearAdminToken()
-                Object.keys(sessionStorage)
-                  .filter(k => k.startsWith('kult_brand_auth_'))
-                  .forEach(k => sessionStorage.removeItem(k))
+                clearAllBrandAuth()
                 navigate('/')
               }}
               className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"

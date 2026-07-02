@@ -431,6 +431,29 @@ export interface QuickFactResult {
   cloudinary_url?: string
 }
 
+// CMS Quick Fact carousel (workflow uYavn7y5GXBezjkw). Unlike QuickFactResult
+// (the legacy single-image tool) the n8n workflow now returns DATA only — the
+// 4–6 slide carousel is rendered client-side with Fabric.js. `category` is the
+// brand's language family ('Chinese' | 'Malay' | 'English') and drives fonts +
+// date/source formatting; `heroPublicId` is a CORS-safe Cloudinary id used as
+// the cover hero so canvas export (toDataURL) isn't tainted.
+export interface QuickFactData {
+  title: string
+  sectionLabel: string
+  keyPhrase: string
+  caption: string
+  summary: string
+  facts: QuickFactItem[]
+  heroPublicId: string
+  heroUrl: string
+  brand: string
+  brandHex: string
+  logoPublicId: string
+  fontUse: string
+  category: string
+  language: string
+}
+
 export interface QuickFactError {
   success: false
   message: string

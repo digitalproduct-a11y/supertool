@@ -4,7 +4,7 @@
 // Response shapes are identical to the existing per-type generators in
 // ArticleToSocialPage so the same ResultCard rendering works unchanged.
 
-import type { QuickFactItem } from '../types'
+import type { QuickFactItem, QuickFactData } from '../types'
 import type { QuoteData } from '../features/quote/QuoteCanvas'
 
 export type CmsPostType = 'photo' | 'quickfact' | 'quote'
@@ -18,6 +18,9 @@ export interface CmsGenInput {
   summary?: string
   category?: string
   template: string
+  // Quick Fact only: 'carousel' = new multi-slide Fabric carousel (default),
+  // 'single' = legacy single composite image. Ignored by photo/quote.
+  quickFactTemplate?: 'carousel' | 'single'
   language: string
 }
 
@@ -70,16 +73,55 @@ export async function generatePhotoFromCms(
   }
 }
 
+// Quick Fact is now a client-rendered Fabric carousel: n8n returns DATA only
+// (facts + brand passthrough + a CORS-safe hero), and the browser composes the
+// cover + per-fact slides. Returns the structured QuickFactData (see types.ts).
 export async function generateQuickFactFromCms(
   input: CmsGenInput,
-): Promise<{ imageUrl: string; caption: string; quickFactTitle: string; quickFactFacts: QuickFactItem[]; quickFactKeyPhrase: string; cloudinaryUrl?: string }> {
+): Promise<QuickFactData> {
+  const data = await callCmsWebhook(input, 'quickfact')
+  return {
+    // Cover title follows the article (API) title, not the LLM-generated one.
+    title: input.title || (data.title as string) || '',
+    sectionLabel: (data.sectionLabel as string) ?? '',
+    keyPhrase: (data.keyPhrase as string) ?? '',
+    caption: (data.caption as string) ?? '',
+    summary: (data.summary as string) ?? input.summary ?? '',
+    facts: (data.facts as QuickFactItem[]) ?? [],
+    heroPublicId: (data.heroPublicId as string) ?? '',
+    heroUrl: (data.heroUrl as string) ?? '',
+    brand: (data.brand as string) ?? input.brand,
+    brandHex: (data.brandHex as string) ?? '',
+    logoPublicId: (data.logoPublicId as string) ?? '',
+    fontUse: (data.fontUse as string) ?? '',
+    category: (data.category as string) ?? '',
+    language: (data.language as string) ?? input.language,
+  }
+}
+
+// Legacy single-image Quick Fact, generated through the CMS webhook (body-based)
+// when the editor picks the "Single Image" template. The CMS workflow branches on
+// `quickFactTemplate: 'single'` and returns the same composite-image shape as the
+// standalone /quick-fact tool, so QuickFactSingleViewLegacy renders it unchanged.
+export interface CmsQuickFactSingle {
+  imageUrl: string
+  caption: string
+  title: string
+  facts: QuickFactItem[]
+  keyPhrase: string
+  cloudinaryUrl?: string
+}
+
+export async function generateQuickFactSingleFromCms(
+  input: CmsGenInput,
+): Promise<CmsQuickFactSingle> {
   const data = await callCmsWebhook(input, 'quickfact')
   return {
     imageUrl: (data.imageUrl as string) ?? '',
     caption: (data.caption as string) ?? '',
-    quickFactTitle: (data.title as string) ?? '',
-    quickFactFacts: (data.facts as QuickFactItem[]) ?? [],
-    quickFactKeyPhrase: (data.keyPhrase as string) ?? '',
+    title: (data.title as string) ?? '',
+    facts: (data.facts as QuickFactItem[]) ?? [],
+    keyPhrase: (data.keyPhrase as string) ?? '',
     cloudinaryUrl: (data.cloudinary_url as string | undefined),
   }
 }

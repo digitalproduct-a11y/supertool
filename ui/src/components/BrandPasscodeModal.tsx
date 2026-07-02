@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { getBrandLogoUrl, getBrandHex, needsDarkBg } from '../constants/brands'
 import type { BrandName } from '../constants/brands'
 import { brandToSlug } from '../utils/brandSlug'
+import { setBrandUnlocked } from '../utils/brandAuth'
 
 interface BrandPasscodeModalProps {
   brand: BrandName
@@ -34,7 +35,7 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
       })
       const data = await res.json() as { success?: boolean; message?: string }
       if (data.success) {
-        sessionStorage.setItem(`kult_brand_auth_${brandToSlug(brand)}`, '1')
+        setBrandUnlocked(brandToSlug(brand))
         onSuccess()
       } else {
         setError(data.message ?? 'Incorrect passcode.')

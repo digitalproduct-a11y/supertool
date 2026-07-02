@@ -1,34 +1,24 @@
 // CMS simulation harness (standalone, not in sidebar).
 //
-// Stands in for Drupal: lists the staging article feed, lets you pick post
-// type(s) + a photo template, then launches the exact /cms/post redirect the
-// real CMS will use. Testing only.
+// Stands in for Drupal: lists the staging article feed and launches the exact
+// /cms/post redirect the real CMS will use, passing only site + article id. The
+// post type(s) + photo template are then chosen on /cms/post. Testing only.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchArticleFeed, type FeedItem } from '../services/articleFeed'
-import { getPhotoTemplatesForBrand } from '../config/photoTemplates'
 import { brandFromSite } from '../constants/brands'
-import type { CmsPostType } from '../services/postGeneration'
 
 const SITE = 'awani'
 const PAGE_SIZE = 10
-const POST_TYPES: { id: CmsPostType; label: string }[] = [
-  { id: 'photo', label: 'Photo Post' },
-  { id: 'quickfact', label: 'Quick Fact Post' },
-  { id: 'quote', label: 'Quote Post' },
-]
 
 export function SimFeedPage() {
   const navigate = useNavigate()
   const brand = brandFromSite(SITE) ?? 'Astro Awani'
-  const templates = useMemo(() => getPhotoTemplatesForBrand(brand), [brand])
 
   const [feed, setFeed] = useState<FeedItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedTypes, setSelectedTypes] = useState<Set<CmsPostType>>(new Set(['photo']))
-  const [template, setTemplate] = useState(templates[0]?.id ?? 'awani_v1')
   const [page, setPage] = useState(1)
 
   const hasNext = feed.length === PAGE_SIZE
@@ -43,17 +33,8 @@ export function SimFeedPage() {
     return () => { active = false }
   }, [page])
 
-  function toggleType(t: CmsPostType) {
-    setSelectedTypes(prev => {
-      const next = new Set(prev)
-      if (next.has(t)) next.delete(t); else next.add(t)
-      return next.size ? next : prev // keep at least one
-    })
-  }
-
   function launch(item: FeedItem) {
-    const types = POST_TYPES.filter(t => selectedTypes.has(t.id)).map(t => t.id).join(',')
-    const qs = new URLSearchParams({ site: SITE, id: String(item.id), types, template })
+    const qs = new URLSearchParams({ site: SITE, id: String(item.id) })
     navigate(`/cms/post?${qs.toString()}`)
   }
 
@@ -63,48 +44,10 @@ export function SimFeedPage() {
         <div className="mb-6">
           <h1 className="font-display text-2xl font-semibold text-neutral-950 tracking-tight">CMS Simulation</h1>
           <p className="text-neutral-500 mt-1 text-sm">
-            Pick post types + a template, then generate from any article in the {brand} feed.
-            This mirrors the Drupal → Supertool redirect.
+            Pick an article from the {brand} feed to generate from — you'll choose the post
+            type(s) and photo template on the next screen. This mirrors the Drupal → Supertool redirect.
           </p>
           <div className="mt-6 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
-        </div>
-
-        {/* Selection controls */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.07)] p-5 mb-6 space-y-4 sticky top-4 z-10">
-          <div>
-            <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Post Types</label>
-            <div className="flex flex-wrap gap-2">
-              {POST_TYPES.map(t => {
-                const checked = selectedTypes.has(t.id)
-                return (
-                  <button key={t.id} type="button" onClick={() => toggleType(t.id)}
-                    className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
-                      checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
-                    }`}>
-                    {t.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          {selectedTypes.has('photo') && templates.length > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Photo Template</label>
-              <div className="flex flex-wrap gap-2">
-                {templates.map(t => {
-                  const checked = template === t.id
-                  return (
-                    <button key={t.id} type="button" onClick={() => setTemplate(t.id)}
-                      className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
-                        checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
-                      }`}>
-                      {t.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Feed list */}
