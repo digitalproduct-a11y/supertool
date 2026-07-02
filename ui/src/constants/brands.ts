@@ -149,6 +149,17 @@ export function detectBrandInfoFromUrl(
   return lookupByUrl(url);
 }
 
+// Maps an Astro data-feed `site` code to its canonical brand. Used by the CMS
+// post-generation flow (data feed identifies the source by `site`, not URL).
+// Extend alongside SITE_TO_DOMAIN in services/articleFeed.ts as more sites are added.
+export const SITE_TO_BRAND: Record<string, BrandName> = {
+  awani: "Astro Awani",
+};
+
+export function brandFromSite(site: string): BrandName | null {
+  return SITE_TO_BRAND[site.toLowerCase()] ?? null;
+}
+
 // Source of truth: https://astroproduct.app.n8n.cloud/projects/FAqnoIGG9IK6ZkDY/datatables/WrA94W8RTzSvEhyS
 // Re-pull via n8n MCP `n8n_manage_datatable` (tableId: WrA94W8RTzSvEhyS) when brands change.
 // Values mirror the data table — do not edit by hand without updating the table first.

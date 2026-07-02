@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useParams, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { slugToBrand } from '../utils/brandSlug'
+import { isBrandUnlocked } from '../utils/brandAuth'
 import { useBrand } from '../context/BrandContext'
 import { Sidebar } from './Sidebar'
 import type { ToolId } from './Sidebar'
@@ -43,8 +44,8 @@ export function BrandLayout({
     return <Navigate to="/" replace />
   }
 
-  // Brand passcode guard — redirect to picker if not authenticated this session
-  if (resolvedBrand !== 'Admin' && sessionStorage.getItem(`kult_brand_auth_${brandSlug}`) !== '1') {
+  // Brand passcode guard — redirect to picker if not unlocked (or unlock expired)
+  if (resolvedBrand !== 'Admin' && !isBrandUnlocked(brandSlug!)) {
     return <Navigate to="/" replace />
   }
 

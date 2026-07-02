@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { getBrandLogoUrl, getBrandHex, needsDarkBg, getEntityLabel } from '../constants/brands'
 import { clearAdminToken } from '../utils/adminAuth'
+import { clearAllBrandAuth } from '../utils/brandAuth'
 import {
   IconHome,
   IconStack2,
@@ -22,6 +23,7 @@ import {
   IconChartPie,
   IconSwitchHorizontal,
   IconLogout,
+  IconHistory,
 } from "@tabler/icons-react";
 
 export type ToolId =
@@ -50,6 +52,7 @@ export type ToolId =
   | 'weather-malaysia'
   | 'quote'
   | 'election-results'
+  | 'history-log'
 
 interface NavItem {
   id: ToolId | string;
@@ -115,6 +118,7 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
       { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
       { id: 'youtube-dashboard', label: 'YouTube Dashboard', icon: IconChartBar },
       { id: 'post-queue', label: 'Scheduled Queue', icon: IconCalendarClock },
+      { id: 'history-log', label: 'History Log', icon: IconHistory },
     ],
   },
 ];
@@ -145,6 +149,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'weather-malaysia': 'Weather Malaysia',
   'quote': 'Quote',
   'election-results': 'Election Results',
+  'history-log': 'History Log',
 }
 
 const floatingBtnClass =
@@ -332,9 +337,7 @@ export function Sidebar({
               onClick={() => {
                 clearBrand()
                 clearAdminToken()
-                Object.keys(sessionStorage)
-                  .filter(k => k.startsWith('kult_brand_auth_'))
-                  .forEach(k => sessionStorage.removeItem(k))
+                clearAllBrandAuth()
                 navigate('/')
               }}
               className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:bg-white/8 hover:text-white transition-colors flex items-center gap-2.5"

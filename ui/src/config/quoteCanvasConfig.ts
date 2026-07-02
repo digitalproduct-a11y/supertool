@@ -308,7 +308,7 @@ export const DEFAULT_QUOTE_CANVAS_CONFIG: QuoteCanvasConfig = {
     // mark is anchored relative to the intro line and excluded from the
     // vertical text stack height. Adjust gapBelow to control spacing.
     enabled: true,
-    text: "“",
+    text: "“”",
     style: {
       fontFamily: "Georgia",
       fontSize: 320, // ← bump freely; text below stays put
@@ -449,7 +449,7 @@ function makeTabloidDefaults(): TabloidConfig {
       sidePadding: 60,
       quoteMark: {
         enabled: true,
-        text: "“",
+        text: "“”",
         style: {
           fontFamily: "Georgia",
           fontSize: 220,

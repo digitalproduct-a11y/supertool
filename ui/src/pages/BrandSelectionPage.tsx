@@ -4,6 +4,7 @@ import { useBrand } from '../context/BrandContext'
 import { useMsal } from '@azure/msal-react'
 import { BRANDS, BRAND_ENTITY, getBrandLogoUrl, needsDarkBg, getBrandHex, type BrandEntity, type BrandName } from '../constants/brands'
 import { brandToSlug } from '../utils/brandSlug'
+import { setBrandUnlocked } from '../utils/brandAuth'
 import { AdminPasscodeModal } from '../components/AdminPasscodeModal'
 import { BrandPasscodeModal } from '../components/BrandPasscodeModal'
 
@@ -128,7 +129,7 @@ export function BrandSelectionPage() {
       })
       const data = await res.json() as { success?: boolean; requires_passcode?: boolean }
       if (data.success && !data.requires_passcode) {
-        sessionStorage.setItem(`kult_brand_auth_${brandToSlug(brand)}`, '1')
+        setBrandUnlocked(brandToSlug(brand))
         setSelectedBrand(brand)
         navigate(`/${brandToSlug(brand)}/home`)
       } else {
@@ -272,7 +273,7 @@ export function BrandSelectionPage() {
         <BrandPasscodeModal
           brand={pendingBrand}
           onSuccess={() => {
-            sessionStorage.setItem(`kult_brand_auth_${brandToSlug(pendingBrand)}`, '1')
+            setBrandUnlocked(brandToSlug(pendingBrand))
             setSelectedBrand(pendingBrand)
             navigate(`/${brandToSlug(pendingBrand)}/home`)
             setPendingBrand(null)
