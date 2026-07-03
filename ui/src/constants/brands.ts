@@ -231,8 +231,8 @@ export function getBrandHex(brand: string): string {
 export const BRAND_FONT_USE: Record<BrandName, string | null> = {
   "Astro Awani": null,
   "Astro Arena": "Montserrat",
-  "Astro Radio News": null,
-  "Astro Radio Traffic": null,
+  "Astro Radio News": "Montserrat",
+  "Astro Radio Traffic": "Montserrat",
   "Astro Ulagam": "fonts:leaguespartan.ttf",
   "Bintang Kecil": null,
   Era: "Fonts:LeagueSpartan-Bold.ttf",
