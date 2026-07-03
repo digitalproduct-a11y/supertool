@@ -26,6 +26,7 @@ export interface WeeklyAggregated extends Omit<DashboardRow, 'date' | 'day'> {
   date: string
   daysInfo?: string   // e.g. "3/7 days" — set when period is incomplete
   weekRange?: string  // e.g. "2 Feb – 8 Feb" — set for weekly aggregation only
+  _sortDate?: string  // earliest ISO date in the bucket — for date-based sorting/grouping
 }
 
 // Filter data by brand, date range, and business unit
@@ -36,13 +37,17 @@ export function filterDashboardData(
   endDate: Date,
   businessUnit?: string
 ): DashboardRow[] {
-  return data.filter(row => {
-    const rowDate = new Date(row.date)
-    const isBrandMatch = row.brand === brand
-    const isBUMatch = !businessUnit || row.business_unit === businessUnit
-    const isDateMatch = rowDate >= startDate && rowDate <= endDate
-    return isBrandMatch && isBUMatch && isDateMatch
-  })
+  return data
+    .filter(row => {
+      const rowDate = new Date(row.date)
+      const isBrandMatch = row.brand === brand
+      const isBUMatch = !businessUnit || row.business_unit === businessUnit
+      const isDateMatch = rowDate >= startDate && rowDate <= endDate
+      return isBrandMatch && isBUMatch && isDateMatch
+    })
+    // Order by date so the daily chart follows the calendar regardless of the
+    // row order coming from the sheet (newly appended rows land out of order).
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -76,6 +81,7 @@ export function aggregateByMonth(data: DashboardRow[]): WeeklyAggregated[] {
       ...rows[0],
       date: monthDisplayLabel(month),
       week: month,
+      _sortDate: rows.reduce((m, r) => (r.date < m ? r.date : m), rows[0].date),
       daysInfo: isPartial ? `${rows.length}/${totalDays} days` : undefined,
       total_posts: rows.reduce((s, r) => s + r.total_posts, 0),
       photo_posts: rows.reduce((s, r) => s + r.photo_posts, 0),
@@ -127,6 +133,7 @@ export function aggregateByWeek(data: DashboardRow[]): WeeklyAggregated[] {
       ...row0,
       week: row0.week,
       date: `${monthLabel} ${row0.week}`,
+      _sortDate: dates[0],
       daysInfo: isPartial ? `${rows.length}/7 days` : undefined,
       weekRange,
       total_posts: rows.reduce((sum, r) => sum + r.total_posts, 0),

@@ -114,14 +114,30 @@ export function DiagnosisPage() {
       allRows.push(...chart.data)
     })
 
-    // Group by week/month/day and sum
+    // Normalize a month label to "YYYY-MM" so spelling variants of the SAME
+    // month merge ("Mar-26" / "March-26" → "2026-03"), without letting a week
+    // that straddles a month boundary drift into the wrong month (which using
+    // the bucket's earliest date would do, double-counting boundary weeks).
+    const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    const normalizeYM = (label: string): string => {
+      if (/^\d{4}-\d{2}/.test(label)) return label.slice(0, 7)
+      const name = (label.match(/[A-Za-z]+/)?.[0] || '').toLowerCase()
+      const digits = label.match(/\d+/)?.[0] || ''
+      const mIdx = MONTH_NAMES.findIndex(m => name.startsWith(m))
+      if (mIdx < 0 || !digits) return label
+      const year = digits.length <= 2 ? 2000 + Number(digits) : Number(digits)
+      return `${year}-${String(mIdx + 1).padStart(2, '0')}`
+    }
+
+    // Group by week/month/day, keyed off the normalized month label.
     const grouped = new Map<string, DashboardRow[]>()
     allRows.forEach(row => {
       let key: string
       if (viewMode === 'weekly') {
-        key = `${row.month}|${row.week}`
+        const weekNum = (row.week || '').replace(/\D/g, '')
+        key = `${normalizeYM(row.month)}|${weekNum}`
       } else if (viewMode === 'monthly') {
-        key = row.week
+        key = normalizeYM(row.month)
       } else {
         key = row.date
       }
@@ -129,23 +145,16 @@ export function DiagnosisPage() {
       grouped.get(key)!.push(row)
     })
 
-    // Sum across all brands for each period
-    const entries = Array.from(grouped.entries()).sort(([keyA], [keyB]) => {
-      if (viewMode === 'monthly') {
-        return keyA.localeCompare(keyB)
-      }
+    // Sum across all brands for each period, ordered by real calendar date.
+    const bucketDate = (rows: DashboardRow[]): string =>
+      rows.reduce((m, r) => {
+        const d = ((r as any)._sortDate as string | undefined) || r.date
+        return d < m ? d : m
+      }, ((rows[0] as any)._sortDate as string | undefined) || rows[0].date)
 
-      const [aMonthStr, aWeekStr] = keyA.split('|')
-      const [bMonthStr, bWeekStr] = keyB.split('|')
-
-      const aMonthNum = aMonthStr.includes('-') ? parseInt(aMonthStr.replace('-', ''), 10) : 0
-      const bMonthNum = bMonthStr.includes('-') ? parseInt(bMonthStr.replace('-', ''), 10) : 0
-      const aWeekNum = parseInt((aWeekStr || '').replace(/\D/g, ''), 10) || 0
-      const bWeekNum = parseInt((bWeekStr || '').replace(/\D/g, ''), 10) || 0
-
-      if (aMonthNum !== bMonthNum) return aMonthNum - bMonthNum
-      return aWeekNum - bWeekNum
-    })
+    const entries = Array.from(grouped.entries()).sort(([, rowsA], [, rowsB]) =>
+      bucketDate(rowsA).localeCompare(bucketDate(rowsB))
+    )
 
     return entries
       .map(([, rows]) => {
