@@ -10,7 +10,6 @@ import {
   ELECTION_FOOTER,
   ELECTION_HEADER,
   ELECTION_RULE,
-  ELECTION_TEMPLATE,
   MEMILIH_BADGE_URL,
 } from "../../config/electionCanvasConfig";
 
@@ -31,9 +30,18 @@ export function loadHTMLImage(src: string): Promise<HTMLImageElement> {
 
 // Force the browser to load the Inter weights/sizes we draw before Fabric
 // measures glyphs — without this, unloaded weights collapse to zero width and
-// text renders invisibly on the canvas.
+// text renders invisibly on the canvas. Also loads Noto Sans SC, the CJK
+// fallback used by Chinese-language brands (e.g. Hotspot) — see text().
 export async function preloadInter(): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return;
+  if (!document.getElementById("election-noto-sc")) {
+    const link = document.createElement("link");
+    link.id = "election-noto-sc";
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap";
+    document.head.appendChild(link);
+  }
   try {
     await Promise.all([
       document.fonts.load("400 16px Inter"),
@@ -42,6 +50,11 @@ export async function preloadInter(): Promise<void> {
       document.fonts.load("700 28px Inter"),
       document.fonts.load("800 64px Inter"),
       document.fonts.load("900 120px Inter"),
+      document.fonts.load('400 24px "Noto Sans SC"'),
+      document.fonts.load('500 24px "Noto Sans SC"'),
+      document.fonts.load('700 40px "Noto Sans SC"'),
+      document.fonts.load('800 64px "Noto Sans SC"'),
+      document.fonts.load('900 96px "Noto Sans SC"'),
     ]);
   } catch {
     // proceed — Fabric falls back to the next font in the chain
@@ -67,7 +80,9 @@ export function text(content: string, o: TextOpts): Text {
   return new Text(o.uppercase ? content.toUpperCase() : content, {
     left: o.left,
     top: o.top,
-    fontFamily: ELECTION_CANVAS.font,
+    // Latin/digits resolve to Inter (metrics unchanged for existing brands);
+    // any CJK glyph falls through to Noto Sans SC (Chinese brands e.g. Hotspot).
+    fontFamily: `${ELECTION_CANVAS.font}, "Noto Sans SC"`,
     fontSize: size,
     fontWeight: String(weight),
     fill: o.fill ?? ELECTION_CANVAS.text,
@@ -155,17 +170,17 @@ export async function drawHeader(canvas: StaticCanvas, brand: string): Promise<n
   const x = ELECTION_CANVAS.paddingX;
   const y = ELECTION_HEADER.paddingTop;
 
-  const templateUrl = ELECTION_BG_TEMPLATES[brand];
-  if (templateUrl) {
+  const tpl = ELECTION_BG_TEMPLATES[brand];
+  if (tpl) {
     try {
-      const bg = await FabricImage.fromURL(templateUrl, { crossOrigin: "anonymous" });
+      const bg = await FabricImage.fromURL(tpl.url, { crossOrigin: "anonymous" });
       bg.scaleToWidth(ELECTION_CANVAS.width);
       bg.set({ left: 0, top: 0, originX: "left", originY: "top", selectable: false, evented: false });
       canvas.backgroundImage = bg;
     } catch {
       // proceed without background — content still draws on white
     }
-    return ELECTION_TEMPLATE.contentTop;
+    return tpl.contentTop;
   }
 
   let logoBottom = y + 40;
@@ -212,14 +227,12 @@ export async function drawHeader(canvas: StaticCanvas, brand: string): Promise<n
  *  into the background, so the rule is skipped and the stamp/stats sit just
  *  above the baked footer band. */
 export function drawFooter(canvas: StaticCanvas, rightText: string, leftText = "", brand = ""): void {
-  const templated = Boolean(ELECTION_BG_TEMPLATES[brand]);
-  if (!templated) {
+  const tpl = ELECTION_BG_TEMPLATES[brand];
+  if (!tpl) {
     const ruleY = ELECTION_CANVAS.height - ELECTION_FOOTER.bottomOffset - 44;
     drawRule(canvas, ruleY);
   }
-  const y = templated
-    ? ELECTION_TEMPLATE.footerY
-    : ELECTION_CANVAS.height - ELECTION_FOOTER.bottomOffset;
+  const y = tpl ? tpl.footerY : ELECTION_CANVAS.height - ELECTION_FOOTER.bottomOffset;
   if (leftText) {
     canvas.add(
       text(leftText, {
@@ -257,6 +270,21 @@ export function formatStamp(iso: string | null): string {
     const myt = new Date(d.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }));
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${pad(myt.getDate())}/${pad(myt.getMonth() + 1)} ${pad(myt.getHours())}:${pad(myt.getMinutes())}`;
+  } catch {
+    return "";
+  }
+}
+
+/** 12-hour Malaysia-time clock, no date, e.g. "5:50PM". */
+export function formatTime(iso: string | null): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const myt = new Date(d.toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }));
+    let h = myt.getHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${h}:${String(myt.getMinutes()).padStart(2, "0")}${ampm}`;
   } catch {
     return "";
   }

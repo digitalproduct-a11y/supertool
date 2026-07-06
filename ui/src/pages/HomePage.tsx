@@ -747,8 +747,8 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TOOL_CARDS.filter(card =>
-                // Election Results: only Astro Awani brand or Admin
-                card.title !== 'Election Results' || isAdmin || selectedBrand === 'Astro Awani'
+                // Election Results: only Astro Awani / Hotspot brands or Admin
+                card.title !== 'Election Results' || isAdmin || selectedBrand === 'Astro Awani' || selectedBrand === 'Hotspot'
               ).map(card => {
                 const Icon = card.icon
                 const brandLinks = ('brandSpecific' in card && card.brandSpecific)

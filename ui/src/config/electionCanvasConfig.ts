@@ -24,20 +24,32 @@ export const ELECTION_RULE = "#1a1a1a"; // black header/footer rule
 export const MEMILIH_BADGE_URL = "/prn2026-johor-memilih.png";
 
 // Full-canvas background templates (1080×1350) keyed by brand. A brand with a
-// template swaps the white backdrop for baked-in chrome (banner, badge, footer,
-// logo), so the drawn header/footer chrome is skipped for it.
-export const ELECTION_BG_TEMPLATES: Partial<Record<string, string>> = {
-  "Astro Awani": "/prn2026-johor-bg.png",
-};
+// template swaps the white backdrop for baked-in chrome (banner/header/footer),
+// so the drawn header/footer chrome is skipped and content lives in the empty
+// band between contentTop and the baked footer. Geometry is per-brand because
+// each artwork's baked header/footer sit at different heights (fine-tune against
+// the rendered image during verification).
+export interface ElectionTemplate {
+  url: string;
+  contentTop: number; // content-start y, below the baked header
+  contentBottom: number; // last usable y before the baked footer band
+  footerY: number; // baseline for the drawn stats/stamp, above the baked footer
+}
 
-// For templated brands, drawn content lives in the empty band between the baked
-// header banner and the baked footer. Values are starting points — fine-tune
-// against the rendered image during verification.
-export const ELECTION_TEMPLATE = {
-  contentTop: 384, // content-start y, below the baked banner + flag/pole (bottom ≈348)
-  contentBottom: 1150, // last usable y before the baked footer band
-  footerY: 1180, // baseline for the repositioned live stamp/stats
-} as const;
+export const ELECTION_BG_TEMPLATES: Partial<Record<string, ElectionTemplate>> = {
+  "Astro Awani": {
+    url: "https://res.cloudinary.com/dymmqtqyg/image/upload/prn2026_johor_bg",
+    contentTop: 384,
+    contentBottom: 1150,
+    footerY: 1180,
+  },
+  Hotspot: {
+    url: "https://res.cloudinary.com/dymmqtqyg/image/upload/prn2026_johor_hotspot_bg",
+    contentTop: 264,
+    contentBottom: 1000,
+    footerY: 1120,
+  },
+};
 
 export const ELECTION_HEADER = {
   paddingTop: 64,

@@ -1,0 +1,1681 @@
+{
+"N1": {
+"seatZh": "巫罗加什",
+"candidates": [
+{
+"ms": [
+"Zahari Sarip"
+],
+"zh": "扎哈里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Rozy Razit"
+],
+"zh": "诺拉兹雅",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+}
+]
+},
+"N2": {
+"seatZh": "利民达",
+"candidates": [
+{
+"ms": [
+"See Ann Giap"
+],
+"zh": "徐安岄",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Ng Kor Sim"
+],
+"zh": "黄炣卿",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Saifullah Wahab"
+],
+"zh": "赛依夫拉",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+}
+]
+},
+"N3": {
+"seatZh": "柏玛尼斯",
+"candidates": [
+{
+"ms": [
+"Anuar Abd Manap"
+],
+"zh": "安努亚",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Jalex Lee"
+],
+"zh": "李恩祥",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Arvind"
+],
+"zh": "艾文",
+"coalitionZh": "国盟",
+"partyZh": "大马印度人民党"
+}
+]
+},
+"N4": {
+"seatZh": "哥美拉",
+"candidates": [
+{
+"ms": [
+"Raven Kumar Krishnasamy"
+],
+"zh": "拉文古马",
+"coalitionZh": "国阵",
+"partyZh": "国大党"
+},
+{
+"ms": [
+"Afif Hamid"
+],
+"zh": "莫哈末阿菲阿都哈密",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Uzzair Ismail"
+],
+"zh": "乌兹扎依尔",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N5": {
+"seatZh": "丁能",
+"candidates": [
+{
+"ms": [
+"Mohd Azahar Ibrahim"
+],
+"zh": "阿查哈",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Elia Nadira"
+],
+"zh": "依丽雅娜蒂拉",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Cikgu Mala",
+"Normala Sudirman"
+],
+"zh": "诺玛拉",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+},
+{
+"ms": [
+"Siti Aisyah Zobir"
+],
+"zh": "西蒂艾莎",
+"coalitionZh": "独立",
+"partyZh": "独立"
+}
+]
+},
+"N6": {
+"seatZh": "彼咯",
+"candidates": [
+{
+"ms": [
+"Tan Chong"
+],
+"zh": "陈宗",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Tay Yok Jiuen"
+],
+"zh": "郑育娟",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+}
+]
+},
+"N7": {
+"seatZh": "武吉哈逢",
+"candidates": [
+{
+"ms": [
+"Ahmad Syar’e Yusof",
+"Ahmad Syarie Yusof"
+],
+"zh": "阿末沙礼",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Mani",
+"Subramani Chami"
+],
+"zh": "苏巴马尼",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Sahruddin Jamal"
+],
+"zh": "沙鲁丁嘉马",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N8": {
+"seatZh": "武吉巴西",
+"candidates": [
+{
+"ms": [
+"Fazli Salleh"
+],
+"zh": "莫哈末法兹里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Kapten Najib",
+"Najib Lep"
+],
+"zh": "莫哈末纳吉",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Idzhar Nasirruddin"
+],
+"zh": "依兹哈鲁丁",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N9": {
+"seatZh": "甘蜜",
+"candidates": [
+{
+"ms": [
+"Sahrihan Jani"
+],
+"zh": "沙里汉",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Mohd Nor Mohd Yusof"
+],
+"zh": "莫哈末诺",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Suraya Sulaiman"
+],
+"zh": "苏拉雅",
+"coalitionZh": "国盟",
+"partyZh": "斗士党"
+}
+]
+},
+"N10": {
+"seatZh": "东甲",
+"candidates": [
+{
+"ms": [
+"Haw Chin Teck"
+],
+"zh": "侯振德",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Ee Chin Li"
+],
+"zh": "黄俊历",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+}
+]
+},
+"N11": {
+"seatZh": "实廊",
+"candidates": [
+{
+"ms": [
+"Iqa Rahim",
+"Nadhirah Afiqah Abdull Rahim"
+],
+"zh": "娜蒂拉",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Ahmad Nazari Abd Hamid"
+],
+"zh": "阿末纳扎里",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Mahfidz Omar"
+],
+"zh": "马菲兹",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N12": {
+"seatZh": "文打烟",
+"candidates": [
+{
+"ms": [
+"Chua Lee Huat"
+],
+"zh": "蔡利发",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Ng Yak Howe"
+],
+"zh": "黄益豪",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+}
+]
+},
+"N13": {
+"seatZh": "新邦二南",
+"candidates": [
+{
+"ms": [
+"Azman Ismail"
+],
+"zh": "阿兹曼",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Ir.Ts.Haji Nazri",
+"Nazri Abd Rahman"
+],
+"zh": "纳兹里",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Awang",
+"Arsyed Yahya@Awang"
+],
+"zh": "阿尔希德",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+},
+{
+"ms": [
+"Anie Haziqah Shafii"
+],
+"zh": "艾妮哈兹卡",
+"coalitionZh": "MUDA",
+"partyZh": "MUDA"
+}
+]
+},
+"N14": {
+"seatZh": "武吉南宁",
+"candidates": [
+{
+"ms": [
+"Mohd Ghazali Sabari"
+],
+"zh": "莫哈末加扎里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Md Ysahrudin Kusni"
+],
+"zh": "亚斯鲁丁",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Mohd Radzi Md Amin"
+],
+"zh": "莫哈末拉兹",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+},
+{
+"ms": [
+"Iskandar Md Alias"
+],
+"zh": "依斯干达",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+},
+{
+"ms": [
+"Jeghanaathan Subramaniam"
+],
+"zh": "吉卡纳登",
+"coalitionZh": "独立",
+"partyZh": "独立"
+}
+]
+},
+"N15": {
+"seatZh": "马哈拉尼",
+"candidates": [
+{
+"ms": [
+"Ashari Md Sarip"
+],
+"zh": "阿沙里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Muhammad Taqiuddin Cheman"
+],
+"zh": "莫哈末塔奇鲁丁仄曼",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Mohamad Anuar Hayan"
+],
+"zh": "莫哈末安华",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+},
+{
+"ms": [
+"Amir Jack"
+],
+"zh": "阿米尔杰克",
+"coalitionZh": "MUDA",
+"partyZh": "MUDA"
+}
+]
+},
+"N16": {
+"seatZh": "双溪峇浪",
+"candidates": [
+{
+"ms": [
+"Selamat Takim"
+],
+"zh": "史拉末达金",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Soraya Badaruddin"
+],
+"zh": "艾娜苏拉雅",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Muhammad Amin Sailan"
+],
+"zh": "莫哈末阿敏",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+}
+]
+},
+"N17": {
+"seatZh": "圣模那",
+"candidates": [
+{
+"ms": [
+"Mohd Fared Mohd Khalid"
+],
+"zh": "莫哈末法立",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Mohd Khuzzan Abu Bakar"
+],
+"zh": "莫哈末库占",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Halim Kepol"
+],
+"zh": "哈林奥曼",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+}
+]
+},
+"N18": {
+"seatZh": "铁山",
+"candidates": [
+{
+"ms": [
+"Zulkurnain Kamisan"
+],
+"zh": "祖古纳因",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Hishamuddin Ishak"
+],
+"zh": "希山慕丁",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Ahmad Rosdi Bahari"
+],
+"zh": "阿末罗斯迪",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+}
+]
+},
+"N19": {
+"seatZh": "永平",
+"candidates": [
+{
+"ms": [
+"Ah Soon",
+"Lim Tian Soon"
+],
+"zh": "林添顺",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Yong Hui Yi"
+],
+"zh": "杨惠仪",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+}
+]
+},
+"N20": {
+"seatZh": "实马廊",
+"candidates": [
+{
+"ms": [
+"Samsolbari Jamali"
+],
+"zh": "山苏巴里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Ramli Abd Hamid"
+],
+"zh": "南利阿都哈密",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Syafiq Aziz"
+],
+"zh": "沙菲克阿兹",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N21": {
+"seatZh": "巴力安尼",
+"candidates": [
+{
+"ms": [
+"Mohamad Najib Samuri",
+"Najib Samuri"
+],
+"zh": "纳吉沙慕里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Md.Ezam Taslim"
+],
+"zh": "莫哈末依占",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+}
+]
+},
+"N22": {
+"seatZh": "巴力拉惹",
+"candidates": [
+{
+"ms": [
+"Nor Rashidah Ramli"
+],
+"zh": "诺拉西达",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Shazwan Zdainal Abidin"
+],
+"zh": "沙兹万",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Dr.Maliki",
+"Mohamed Maliki Mohamed Rapiee"
+],
+"zh": "莫哈末马利其",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N23": {
+"seatZh": "帆加兰",
+"candidates": [
+{
+"ms": [
+"CL Boo",
+"Boo Chin Leong"
+],
+"zh": "傅庆隆",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Felicia Poh Rui Ling"
+],
+"zh": "傅睿琳",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+}
+]
+},
+"N24": {
+"seatZh": "新加兰",
+"candidates": [
+{
+"ms": [
+"Mohd Yusla Ismail",
+"Yusla Ismail"
+],
+"zh": "莫哈末尤斯拉",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Onn Abu Bakar"
+],
+"zh": "翁阿布巴卡",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Mohd Rashid Hasnon"
+],
+"zh": "莫哈末拉昔",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N25": {
+"seatZh": "龙引",
+"candidates": [
+{
+"ms": [
+"Zaidi Japar"
+],
+"zh": "莫哈末再迪",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Mohamad Yazid Bakri"
+],
+"zh": "莫哈末亚兹",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Syed Mohamad Syed Alwi"
+],
+"zh": "赛莫哈末",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N26": {
+"seatZh": "吗什",
+"candidates": [
+{
+"ms": [
+"Onn Hafiz Ghazi"
+],
+"zh": "翁哈菲兹",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Nur Hafiz Roslan"
+],
+"zh": "诺哈菲兹",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+}
+]
+},
+"N27": {
+"seatZh": "拉央拉央",
+"candidates": [
+{
+"ms": [
+"Chua Jian Boon"
+],
+"zh": "蔡建文",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Guna Balakrishnan"
+],
+"zh": "古纳巴拉克里斯南",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Abd Mutalip Abd Rahim"
+],
+"zh": "阿都慕达立",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N28": {
+"seatZh": "明吉摩",
+"candidates": [
+{
+"ms": [
+"Warren Yap Zhi Peng"
+],
+"zh": "叶志鹏",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Chu Poh Yee"
+],
+"zh": "徐宝仪",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+}
+]
+},
+"N29": {
+"seatZh": "马哥打",
+"candidates": [
+{
+"ms": [
+"Syed Hussien Syed Abdullah"
+],
+"zh": "赛福星",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Zuhan Zain"
+],
+"zh": "莫哈末祖汉",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Abd Hamid Ali"
+],
+"zh": "阿都哈密",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N30": {
+"seatZh": "巴罗",
+"candidates": [
+{
+"ms": [
+"Lee Ting Han"
+],
+"zh": "李廷汉",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Ruban Arumugam"
+],
+"zh": "鲁本",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"D.S.Jeevan",
+"Jeevakumar Dhayalan"
+],
+"zh": "吉华古马",
+"coalitionZh": "国盟",
+"partyZh": "国盟"
+},
+{
+"ms": [
+"Kamaleswaren Ganabathi"
+],
+"zh": "卡马瓦兰",
+"coalitionZh": "独立",
+"partyZh": "独立"
+}
+]
+},
+"N31": {
+"seatZh": "加亨",
+"candidates": [
+{
+"ms": [
+"V.Rugendren",
+"Rugendran Vellayan"
+],
+"zh": "鲁根德兰",
+"coalitionZh": "国阵",
+"partyZh": "国大党"
+},
+{
+"ms": [
+"Imam Sabri",
+"Mohd Sabri Abd Kadir"
+],
+"zh": "莫哈末沙比里",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Mazlan Bujang"
+],
+"zh": "马兹兰",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+}
+]
+},
+"N32": {
+"seatZh": "兴楼",
+"candidates": [
+{
+"ms": [
+"Kak Awi",
+"Alwiyah Talib"
+],
+"zh": "艾薇雅",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Saiful Nizam Samat"
+],
+"zh": "赛夫尼占",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Ustaz Hakimi",
+"Hasnul Hakimi Hussien"
+],
+"zh": "哈斯努哈吉米",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+},
+{
+"ms": [
+"Jati Awang"
+],
+"zh": "再迪阿旺",
+"coalitionZh": "大马原住民党",
+"partyZh": "大马原住民党"
+}
+]
+},
+"N33": {
+"seatZh": "丁加洛",
+"candidates": [
+{
+"ms": [
+"Mohd Youzaimi Yusof"
+],
+"zh": "莫哈末尤再米",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Md Yusof Dawam"
+],
+"zh": "莫哈末尤索夫",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Muhamad Amerul Muhamad"
+],
+"zh": "莫哈末阿米鲁",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N34": {
+"seatZh": "班底",
+"candidates": [
+{
+"ms": [
+"Naqib Ghazali"
+],
+"zh": "莫哈末纳杰",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Ahmad Daniel Shahrudin"
+],
+"zh": "阿末丹尼尔",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Mohamad Alias Rasman"
+],
+"zh": "莫哈末阿利亚斯",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N35": {
+"seatZh": "巴西拉惹",
+"candidates": [
+{
+"ms": [
+"Adham Baba"
+],
+"zh": "阿汉巴巴",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Fakharuddin Moslim"
+],
+"zh": "莫哈末法哈鲁丁",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Yuhanita Yunan"
+],
+"zh": "尤哈妮达",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+}
+]
+},
+"N36": {
+"seatZh": "素里里",
+"candidates": [
+{
+"ms": [
+"Muszaide Makmor"
+],
+"zh": "慕斯再迪",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Amirul Huzni Onn"
+],
+"zh": "阿米鲁胡斯尼翁",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Rasman Ithnain"
+],
+"zh": "拉斯曼",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N37": {
+"seatZh": "旧柔佛",
+"candidates": [
+{
+"ms": [
+"Norlizah Noh"
+],
+"zh": "诺丽扎",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Danish Rahman"
+],
+"zh": "丹尼斯霍斯曼",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Aisah Esa"
+],
+"zh": "艾莎依沙",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N38": {
+"seatZh": "本那哇",
+"candidates": [
+{
+"ms": [
+"Fauziah Misri"
+],
+"zh": "法乌扎",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Sawaludin",
+"Mohd Sawaludin Salleh"
+],
+"zh": "沙瓦鲁丁",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Cikgu Nizar",
+"Fairulnizar Rahmat@Cikgu Imam Nizar"
+],
+"zh": "法依鲁尼扎",
+"coalitionZh": "国盟",
+"partyZh": "土团党"
+}
+]
+},
+"N39": {
+"seatZh": "丹绒苏腊",
+"candidates": [
+{
+"ms": [
+"Aznan Tamin"
+],
+"zh": "阿兹南达敏",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Faizul Abdul Ghani"
+],
+"zh": "法依祖",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+}
+]
+},
+"N40": {
+"seatZh": "地南",
+"candidates": [
+{
+"ms": [
+"Abdul Halim Suleiman"
+],
+"zh": "阿都哈林",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Nor Zulaila Abd Ghani"
+],
+"zh": "颜丽丽",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Ustaz Khir",
+"Khirul Muntanazar Ismail"
+],
+"zh": "凯希鲁慕塔那扎",
+"coalitionZh": "国盟",
+"partyZh": "伊党"
+},
+{
+"ms": [
+"Harith Fakhrudin"
+],
+"zh": "哈里德",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N41": {
+"seatZh": "优景镇",
+"candidates": [
+{
+"ms": [
+"Teow Chia Ling"
+],
+"zh": "张孳璘",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Maszlee Malik"
+],
+"zh": "马智礼",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Nicholas Paul Vincent"
+],
+"zh": "尼古拉斯",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+},
+{
+"ms": [
+"Rashifa Aljunied"
+],
+"zh": "拉菲雅",
+"coalitionZh": "MUDA",
+"partyZh": "MUDA"
+},
+{
+"ms": [
+"Wang Wee Siong"
+],
+"zh": "王伟祥",
+"coalitionZh": "独立",
+"partyZh": "独立"
+}
+]
+},
+"N42": {
+"seatZh": "柔佛再也",
+"candidates": [
+{
+"ms": [
+"Chan San San"
+],
+"zh": "陈珊珊",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Lee Wern Yiing"
+],
+"zh": "李汶颖",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Lau Yi Leong"
+],
+"zh": "刘毅龙",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+},
+{
+"ms": [
+"Hp Lim",
+"Lim Hun Peaw@HP Lim"
+],
+"zh": "林昀标",
+"coalitionZh": "独立",
+"partyZh": "独立"
+}
+]
+},
+"N43": {
+"seatZh": "百万镇",
+"candidates": [
+{
+"ms": [
+"Baharudin Mohamed Taib"
+],
+"zh": "巴哈鲁丁",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Sharon Teo Siew Hui"
+],
+"zh": "张宸祎",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Vela Tebakumaran"
+],
+"zh": "维拉",
+"coalitionZh": "国盟",
+"partyZh": "大马印度人民党"
+},
+{
+"ms": [
+"Zamil Najwah Arbain"
+],
+"zh": "扎米尔",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N44": {
+"seatZh": "拉庆",
+"candidates": [
+{
+"ms": [
+"Mohd Hairi Mad Shah"
+],
+"zh": "莫哈末海里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Suhaizan Kayat"
+],
+"zh": "苏海山",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Norsinah Abu"
+],
+"zh": "罗思娜",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N45": {
+"seatZh": "士都兰",
+"candidates": [
+{
+"ms": [
+"Bong Seng Heng"
+],
+"zh": "黄成兴",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Andrew Chen Kah Eng"
+],
+"zh": "曾笳恩",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Lim Chin Eng"
+],
+"zh": "林振荣",
+"coalitionZh": "国盟",
+"partyZh": "国盟"
+},
+{
+"ms": [
+"Stanley Tan"
+],
+"zh": "陈玟辛",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N46": {
+"seatZh": "柏伶",
+"candidates": [
+{
+"ms": [
+"Pannir Selvam Paliksina"
+],
+"zh": "帕尼希瓦",
+"coalitionZh": "国阵",
+"partyZh": "国大党"
+},
+{
+"ms": [
+"Alan Tee Boon Tsong"
+],
+"zh": "郑凯聪",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Boo Wei Han"
+],
+"zh": "巫伟汉",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N47": {
+"seatZh": "甘拔士",
+"candidates": [
+{
+"ms": [
+"Ramlee Bohani"
+],
+"zh": "南利",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Faezuddin Puad"
+],
+"zh": "莫哈末法依祖丁",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Salamahafifi Mohd Yusnaieny"
+],
+"zh": "莎拉玛哈菲菲",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N48": {
+"seatZh": "士姑来",
+"candidates": [
+{
+"ms": [
+"Nicol @ Ah Kee",
+"Tan Hiang Kee"
+],
+"zh": "陈贤绮",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Kartiyaini Jeyapalan"
+],
+"zh": "佳蒂",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Eugene Chua Meng Chong"
+],
+"zh": "蔡明忠",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+},
+{
+"ms": [
+"Amir Syafiq Ameer Soekre"
+],
+"zh": "谢艾明",
+"coalitionZh": "社会主义党",
+"partyZh": "社会主义党"
+}
+]
+},
+"N49": {
+"seatZh": "依斯干达城",
+"candidates": [
+{
+"ms": [
+"Pandak Ahmad"
+],
+"zh": "班达阿末",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Dzulkefly Ahmad"
+],
+"zh": "祖基菲里",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+},
+{
+"ms": [
+"Anna Pravina"
+],
+"zh": "安娜帕拉维娜",
+"coalitionZh": "国盟",
+"partyZh": "大马印度人民党"
+},
+{
+"ms": [
+"Sahrudin Omar"
+],
+"zh": "",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N50": {
+"seatZh": "武吉柏迈",
+"candidates": [
+{
+"ms": [
+"Mohd Jafni Md Shukor"
+],
+"zh": "莫哈末嘉福尼",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Mohamad Shafwan Ani"
+],
+"zh": "莫哈末沙福万",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Lina Manoh Manogaran"
+],
+"zh": "丽娜",
+"coalitionZh": "国盟",
+"partyZh": "大马印度人民党"
+},
+{
+"ms": [
+"Muhammad Aidil Riduan Mohd Yusof"
+],
+"zh": "艾迪",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N51": {
+"seatZh": "武吉峇都",
+"candidates": [
+{
+"ms": [
+"Kumaran Ramakrishnan"
+],
+"zh": "古马兰",
+"coalitionZh": "国阵",
+"partyZh": "国大党"
+},
+{
+"ms": [
+"Arthur Chiong Sen Sern"
+],
+"zh": "张善深",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+},
+{
+"ms": [
+"Tamili Gopalakrishnan"
+],
+"zh": "妲密丽",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+},
+{
+"ms": [
+"Premanand Maniam"
+],
+"zh": "普雷马南德",
+"coalitionZh": "MUDA",
+"partyZh": "MUDA"
+},
+{
+"ms": [
+"Kamaruzaman Ali"
+],
+"zh": "卡马鲁扎曼",
+"coalitionZh": "独立",
+"partyZh": "独立"
+}
+]
+},
+"N52": {
+"seatZh": "士乃",
+"candidates": [
+{
+"ms": [
+"Kiki Tai"
+],
+"zh": "戴琦琦",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Wong Bor Yang"
+],
+"zh": "黄勃扬",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+},
+{
+"ms": [
+"Tew Chian How"
+],
+"zh": "张健豪",
+"coalitionZh": "同心党",
+"partyZh": "同心党"
+}
+]
+},
+"N53": {
+"seatZh": "文律",
+"candidates": [
+{
+"ms": [
+"Mohd Sumali Reduan"
+],
+"zh": "莫哈末苏马里",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Razak Ismail"
+],
+"zh": "阿都拉萨伊斯迈",
+"coalitionZh": "希盟",
+"partyZh": "诚信党"
+}
+]
+},
+"N54": {
+"seatZh": "埔莱士峇当",
+"candidates": [
+{
+"ms": [
+"Hasrunizah Hassan"
+],
+"zh": "哈丝鲁妮扎",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Haniff Hosman",
+"Haniff Ghazali Hosman"
+],
+"zh": "哈尼夫霍斯曼",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+}
+]
+},
+"N55": {
+"seatZh": "北干那那",
+"candidates": [
+{
+"ms": [
+"Tan Eng Meng"
+],
+"zh": "陈勇鸣",
+"coalitionZh": "国阵",
+"partyZh": "马华"
+},
+{
+"ms": [
+"Yeo Tung Siong"
+],
+"zh": "杨敦祥",
+"coalitionZh": "希盟",
+"partyZh": "行动党"
+}
+]
+},
+"N56": {
+"seatZh": "龟咯",
+"candidates": [
+{
+"ms": [
+"Md Israk Abdullah"
+],
+"zh": "莫哈末依斯拉",
+"coalitionZh": "国阵",
+"partyZh": "巫统"
+},
+{
+"ms": [
+"Cheah Chee Hong"
+],
+"zh": "谢梓慷",
+"coalitionZh": "希盟",
+"partyZh": "公正党"
+}
+]
+}
+}

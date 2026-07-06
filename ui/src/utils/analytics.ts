@@ -35,7 +35,7 @@ export function trackPostScheduled(toolName: string, brandSlug: string) {
   });
 }
 
-export function trackButtonClick(action: 'adjust_image' | 'download_image' | 'upload_custom_image' | 'caption_copied') {
+export function trackButtonClick(action: 'adjust_image' | 'download_image' | 'upload_custom_image' | 'caption_copied' | 'election_schedule_fb') {
   if (typeof gtag === 'undefined') return;
   const [, brandSlug, ...toolParts] = window.location.pathname.split('/');
   gtag('event', 'button_click', {

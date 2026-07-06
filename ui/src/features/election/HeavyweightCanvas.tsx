@@ -5,6 +5,9 @@ import { ELECTION_ACCENT, ELECTION_CANVAS as C } from "../../config/electionCanv
 import { ElectionCanvasBase } from "./ElectionCanvasBase";
 import { drawFooter, drawHeader, drawProgressBar, formatStamp, text, type ElectionCanvasHandle } from "./canvasShared";
 import { rankedCandidates, winnerOf } from "./electionAggregate";
+import { electionLabels, isHotspot } from "./electionLabels";
+import { zhCandidate, zhSeatName, zhState } from "./hotspotNames";
+import { partyZh } from "./partyZh";
 import type { Candidate, SeatResult } from "./types";
 
 interface Props {
@@ -20,6 +23,8 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
         const x = C.paddingX;
         const rowW = C.width - x * 2;
         const top = await drawHeader(canvas, brand);
+        const L = electionLabels(brand);
+        const zh = isHotspot(brand);
         const winner = winnerOf(seat);
         const ranked = rankedCandidates(seat);
         const [a, b] = ranked;
@@ -27,7 +32,7 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
         const maxVote = Math.max(0, ...ranked.map((c) => c.vote));
 
         canvas.add(
-          text("Kerusi Utama", {
+          text(L.kerusiUtama, {
             left: x,
             top,
             size: 24,
@@ -37,9 +42,11 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
             spacing: 3,
           }),
         );
-        canvas.add(text(seat.seat_name, { left: x, top: top + 40, size: 84, weight: 800 }));
+        const seatName = zh ? zhSeatName(seat.seat_id) ?? seat.seat_name : seat.seat_name;
+        canvas.add(text(seatName, { left: x, top: top + 40, size: 84, weight: 800 }));
+        const stateName = zh ? zhState(seat.state) ?? seat.state : seat.state;
         canvas.add(
-          text(`${seat.seat_id} · ${seat.state}`, {
+          text(`${seat.seat_id} · ${stateName}`, {
             left: x,
             top: top + 148,
             size: 24,
@@ -57,6 +64,18 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
           const color = safePartyColor(party.color);
           const isWin = winner != null && cand.id === winner.id;
           const pct = ((cand.vote / totalVotes) * 100).toFixed(1);
+          const zc = zh ? zhCandidate(seat.seat_id, cand.name) : null;
+          const displayName = zc?.zh ?? cand.name;
+          let partyLine: string;
+          if (zh) {
+            partyLine = zc
+              ? zc.coalitionZh === zc.partyZh
+                ? zc.coalitionZh
+                : `${zc.coalitionZh} · ${zc.partyZh}`
+              : partyZh(cand.party) ?? party.name;
+          } else {
+            partyLine = `${party.abbreviation} · ${party.name}`;
+          }
 
           canvas.add(
             new Circle({
@@ -70,9 +89,9 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
               evented: false,
             }),
           );
-          canvas.add(text(cand.name, { left: x + 44, top: top0, size: 46, weight: 800 }));
+          canvas.add(text(displayName, { left: x + 44, top: top0, size: 46, weight: 800 }));
           canvas.add(
-            text(`${party.abbreviation} · ${party.name}`, {
+            text(partyLine, {
               left: x + 44,
               top: top0 + 60,
               size: 24,
@@ -92,7 +111,7 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
             }),
           );
           canvas.add(
-            text(`${pct}% undi${isWin ? "  ·  ★ Menang" : ""}`, {
+            text(`${pct}% ${L.undiSuffix}${isWin ? `  ·  ★ ${L.menang}` : ""}`, {
               left: x + rowW,
               top: top0 + 68,
               size: 24,
@@ -108,7 +127,7 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
         const blockTop = top + 230;
         drawContender(a, blockTop);
         canvas.add(
-          text("lawan", {
+          text(L.lawan, {
             left: C.width / 2,
             top: blockTop + 170,
             size: 26,
@@ -123,8 +142,11 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
         drawContender(b, blockTop + 230);
 
         if (winner) {
+          const majLine = zh
+            ? `${L.majoriti} ${seat.majority.toLocaleString("en-MY")}`
+            : `Majoriti ${seat.majority.toLocaleString("en-MY")} undi`;
           canvas.add(
-            text(`Majoriti ${seat.majority.toLocaleString("en-MY")} undi`, {
+            text(majLine, {
               left: x,
               top: blockTop + 400,
               size: 28,

@@ -178,8 +178,8 @@ export function Sidebar({
       items: group.items.filter(item => {
         // PrimeTalk: only Hotspot brand or Admin
         if (item.id === 'prime-talk') return selectedBrand === 'Hotspot' || isAdmin
-        // Election Results: only Astro Awani brand or Admin
-        if (item.id === 'election-results') return selectedBrand === 'Astro Awani' || isAdmin
+        // Election Results: only Astro Awani / Hotspot brands or Admin
+        if (item.id === 'election-results') return selectedBrand === 'Astro Awani' || selectedBrand === 'Hotspot' || isAdmin
         return true
       })
     }))

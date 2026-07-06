@@ -1,18 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IconChevronLeft, IconDownload, IconX } from "@tabler/icons-react";
+import { IconBrandFacebook, IconChevronLeft, IconDownload, IconX } from "@tabler/icons-react";
 import { useBrand } from "../context/BrandContext";
 import { useBrandNavigate } from "../hooks/useBrandNavigate";
 import { BRANDS } from "../constants/brands";
 import { trackButtonClick } from "../utils/analytics";
+import { toast } from "../hooks/useToast";
 import { Spinner } from "../components/ds/Spinner";
+import { ScheduleModal } from "../components/ScheduleModal";
+import { clearCredentials, getCredentials, saveCredentials } from "../utils/fbCredentials";
 import { useElectionResults } from "../hooks/useElectionResults";
+import { useElectionImageUpload } from "../hooks/useElectionImageUpload";
 import { ElectionDashboard } from "../features/election/ElectionDashboard";
 import { SeatResultCanvas } from "../features/election/SeatResultCanvas";
 import { ScoreboardCanvas } from "../features/election/ScoreboardCanvas";
 import { HeavyweightCanvas } from "../features/election/HeavyweightCanvas";
 import { buildStateSummary, type StateSummary } from "../features/election/electionAggregate";
 import { heavyweightCaption, scoreboardCaption, seatCaption } from "../features/election/captions";
+import { isHotspot } from "../features/election/electionLabels";
 import type { ElectionCanvasHandle } from "../features/election/canvasShared";
 import type { SeatResult } from "../features/election/types";
 
@@ -34,28 +39,97 @@ export function ElectionResultsPage() {
   const [composer, setComposer] = useState<Composer | null>(null);
   const [caption, setCaption] = useState("");
   const canvasRef = useRef<ElectionCanvasHandle>(null);
+  const { upload: uploadCanvas } = useElectionImageUpload();
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduled, setScheduled] = useState(false);
 
-  // Election Results is restricted to admin users or the Astro Awani brand.
-  const allowed = isAdmin || globalBrand === "Astro Awani";
+  // Election Results is restricted to admin users or the Astro Awani / Hotspot brands.
+  const allowed = isAdmin || globalBrand === "Astro Awani" || globalBrand === "Hotspot";
   useEffect(() => {
     if (!allowed) brandNavigate("/home", { replace: true });
   }, [allowed, brandNavigate]);
 
   function openSeat(seat: SeatResult) {
+    setScheduled(false);
     setComposer({ kind: "seat", seat });
-    setCaption(seatCaption(seat));
+    setCaption(seatCaption(seat, brand));
   }
   function openHeavyweight(seat: SeatResult) {
+    setScheduled(false);
     setComposer({ kind: "heavyweight", seat });
-    setCaption(heavyweightCaption(seat));
+    setCaption(heavyweightCaption(seat, brand));
   }
   function openScoreboard(state: string) {
+    setScheduled(false);
     const summary = buildStateSummary(state, seats.filter((s) => s.state === state));
     setComposer({ kind: "scoreboard", summary });
-    setCaption(scoreboardCaption(summary));
+    setCaption(scoreboardCaption(summary, brand));
   }
   function closeComposer() {
     setComposer(null);
+  }
+
+  // Upload the rendered card to Cloudinary, then POST to the FB draft/schedule
+  // webhook (same flow as Did You Know). Mirrors payload shape used app-wide.
+  async function handleScheduleOnFB(scheduledFor: string, passcode?: string) {
+    const dataUrl = canvasRef.current?.getDataUrl();
+    if (!dataUrl) {
+      toast.error("Preview not ready");
+      return;
+    }
+    const webhookUrl = (import.meta.env.VITE_POST_DRAFT_WEBHOOK_URL as string | undefined)?.trim();
+    if (!webhookUrl) {
+      toast.error("Schedule webhook not configured");
+      return;
+    }
+    const brandLower = brand.toLowerCase();
+    const resolvedPasscode = passcode ?? getCredentials(brandLower)?.passcode;
+    if (!resolvedPasscode) {
+      toast.error("Passcode required");
+      setShowScheduleModal(true);
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      const imageUrl = await uploadCanvas(dataUrl);
+      const payload = {
+        fb_ai_image_url: imageUrl,
+        fb_ai_caption: caption,
+        brand: brandLower,
+        passcode: resolvedPasscode,
+        scheduled_for: scheduledFor,
+      };
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (data.status === "AUTH_ERROR") {
+        clearCredentials(brandLower);
+        toast.error("Authentication failed. Please try again.");
+        setShowScheduleModal(true);
+        return;
+      }
+      if (data.status === "BRAND_ERROR") {
+        toast.error(data.message || "Brand not permitted.");
+        return;
+      }
+      if (data.success || data.status === "SUCCESS" || data.status === "DRAFT_SAVED") {
+        saveCredentials(brandLower, resolvedPasscode);
+        toast.success("Scheduled on Facebook!");
+        setScheduled(true);
+        return;
+      }
+      toast.error(data.message || "Failed to schedule post");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to schedule post");
+    } finally {
+      setIsScheduling(false);
+    }
   }
 
   function filenameFor(c: Composer): string {
@@ -182,22 +256,65 @@ export function ElectionResultsPage() {
                     className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 resize-none"
                   />
                 </div>
-                <div className="flex gap-3">
+                <div className="space-y-3">
                   <button
                     onClick={() => {
                       trackButtonClick("download_image");
                       canvasRef.current?.downloadAsPng(filenameFor(composer).toLowerCase());
                     }}
-                    className="flex-1 px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 active:scale-[0.98]"
+                    className="w-full px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 active:scale-[0.98]"
                   >
                     <IconDownload className="w-4 h-4" />
                     Download
                   </button>
+
+                  {isHotspot(brand) && (
+                    <>
+                      <button
+                        onClick={() => {
+                          trackButtonClick("election_schedule_fb");
+                          setShowScheduleModal(true);
+                        }}
+                        disabled={isScheduling}
+                        className="w-full px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 active:scale-[0.98]"
+                      >
+                        {isScheduling ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <>
+                            <IconBrandFacebook className="w-4 h-4" />
+                            Schedule on FB
+                          </>
+                        )}
+                      </button>
+                      {scheduled && (
+                        <p className="text-xs font-medium text-green-600 text-center">
+                          Scheduled on Facebook!{" "}
+                          <a href="/post-queue" className="underline hover:text-green-700">
+                            View queue
+                          </a>
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {showScheduleModal && (
+        <ScheduleModal
+          brand={brand}
+          hasCredentials={!!getCredentials(brand.toLowerCase())}
+          isPosting={isScheduling}
+          onClose={() => setShowScheduleModal(false)}
+          onConfirm={async (scheduledFor, passcode) => {
+            setShowScheduleModal(false);
+            await handleScheduleOnFB(scheduledFor, passcode);
+          }}
+        />
       )}
     </main>
   );

@@ -5,10 +5,12 @@ import {
   ELECTION_ACCENT,
   ELECTION_BG_TEMPLATES,
   ELECTION_CANVAS as C,
-  ELECTION_TEMPLATE,
 } from "../../config/electionCanvasConfig";
 import { ElectionCanvasBase } from "./ElectionCanvasBase";
 import { drawFooter, drawHeader, drawRule, formatStamp, text, type ElectionCanvasHandle } from "./canvasShared";
+import { electionLabels, isHotspot } from "./electionLabels";
+import { zhState } from "./hotspotNames";
+import { partyZh } from "./partyZh";
 import type { StateSummary } from "./electionAggregate";
 
 interface Props {
@@ -24,14 +26,16 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
       async (canvas: StaticCanvas) => {
         const x = C.paddingX;
         const top = await drawHeader(canvas, brand);
+        const L = electionLabels(brand);
+        const zh = isHotspot(brand);
         // For a templated brand the baked footer eats the bottom band, so cap
         // the row-break + callout floor to the template's usable area.
-        const templated = Boolean(ELECTION_BG_TEMPLATES[brand]);
-        const breakY = templated ? ELECTION_TEMPLATE.contentBottom - 120 : C.height - 320;
-        const calloutFloor = templated ? ELECTION_TEMPLATE.contentBottom - 150 : C.height - 300;
+        const tpl = ELECTION_BG_TEMPLATES[brand];
+        const breakY = tpl ? tpl.contentBottom - 120 : C.height - 320;
+        const calloutFloor = tpl ? tpl.contentBottom - 150 : C.height - 300;
 
         canvas.add(
-          text("Keputusan Terkini", {
+          text(L.keputusanTerkini, {
             left: x,
             top,
             size: 24,
@@ -41,11 +45,12 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
             spacing: 3,
           }),
         );
-        canvas.add(text(`DUN ${summary.state}`, { left: x, top: top + 40, size: 84, weight: 800, uppercase: true }));
+        const stateTitle = zh ? `${zhState(summary.state) ?? summary.state}州议席` : `DUN ${summary.state}`;
+        canvas.add(text(stateTitle, { left: x, top: top + 40, size: 84, weight: 800, uppercase: true }));
         const declaredLine =
           summary.totalSeats != null
-            ? `${summary.declared} / ${summary.totalSeats} kerusi diisytihar`
-            : `${summary.declared} kerusi diisytihar`;
+            ? `${summary.declared} / ${summary.totalSeats} ${L.diisytihar}`
+            : `${summary.declared} ${L.diisytihar}`;
         canvas.add(
           text(declaredLine, { left: x, top: top + 148, size: 26, weight: 600, fill: C.textMuted }),
         );
@@ -60,8 +65,9 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         const rowH = 96;
         for (const t of bars) {
           const color = safePartyColor(t.party.color);
+          const barLabel = zh ? partyZh(t.partyId) ?? t.party.abbreviation : t.party.abbreviation;
           canvas.add(
-            text(t.party.abbreviation, {
+            text(barLabel, {
               left: x,
               top: rowY + 20,
               size: 30,
@@ -115,8 +121,11 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         let calloutY = Math.max(rowY + 20, calloutFloor);
         if (summary.toGovern != null) {
           drawRule(canvas, calloutY, C.stroke, 1);
+          const toGovernLine = zh
+            ? `${L.toGovern} ${summary.toGovern} 席`
+            : `${summary.toGovern} ${L.toGovern}`;
           canvas.add(
-            text(`${summary.toGovern} kerusi diperlukan untuk membentuk kerajaan`, {
+            text(toGovernLine, {
               left: x,
               top: calloutY + 22,
               size: 24,
@@ -127,8 +136,11 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
           calloutY += 70;
         }
         if (summary.leader) {
+          const leaderLabel = zh
+            ? partyZh(summary.leader.partyId) ?? summary.leader.party.abbreviation
+            : summary.leader.party.abbreviation;
           canvas.add(
-            text(`${summary.leader.party.abbreviation} MENDAHULUI`, {
+            text(`${leaderLabel} ${L.mendahului}`, {
               left: x,
               top: calloutY + 10,
               size: 44,
