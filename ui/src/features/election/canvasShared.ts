@@ -2,9 +2,17 @@
 // image loading, text factory, brand logo + eyebrow header, footer, and the
 // imperative handle shape. Keeps the three card components lean.
 
-import { FabricImage, StaticCanvas, Text } from "fabric";
+import { FabricImage, Rect, StaticCanvas, Text } from "fabric";
 import { BRAND_LOGO_URLS } from "../../constants/brands";
-import { ELECTION_CANVAS, ELECTION_FOOTER, ELECTION_HEADER } from "../../config/electionCanvasConfig";
+import {
+  ELECTION_BG_TEMPLATES,
+  ELECTION_CANVAS,
+  ELECTION_FOOTER,
+  ELECTION_HEADER,
+  ELECTION_RULE,
+  ELECTION_TEMPLATE,
+  MEMILIH_BADGE_URL,
+} from "../../config/electionCanvasConfig";
 
 export interface ElectionCanvasHandle {
   downloadAsPng: (filename?: string) => void;
@@ -72,16 +80,94 @@ export function text(content: string, o: TextOpts): Text {
   });
 }
 
-/** Draws the brand logo (left) + eyebrow label (right of logo). Returns the
- *  y-coordinate just below the header band. */
-export async function drawHeader(
+/** Draws a thin horizontal rule spanning the padded content width. */
+export function drawRule(
   canvas: StaticCanvas,
-  brand: string,
-  eyebrow: string,
-  accent: string,
-): Promise<number> {
+  y: number,
+  color: string = ELECTION_RULE,
+  thickness = 3,
+): void {
+  const x = ELECTION_CANVAS.paddingX;
+  canvas.add(
+    new Rect({
+      left: x,
+      top: y,
+      width: ELECTION_CANVAS.width - x * 2,
+      height: thickness,
+      fill: color,
+      selectable: false,
+      evented: false,
+    }),
+  );
+}
+
+/** Draws a rounded progress bar: a full-width track with a proportional fill.
+ *  `frac` is clamped to [0,1]; frac <= 0 renders the empty track only. */
+export function drawProgressBar(
+  canvas: StaticCanvas,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  frac: number,
+  fillColor: string,
+  trackColor: string = ELECTION_CANVAS.surface,
+): void {
+  const r = height / 2;
+  canvas.add(
+    new Rect({
+      left: x,
+      top: y,
+      width,
+      height,
+      rx: r,
+      ry: r,
+      fill: trackColor,
+      selectable: false,
+      evented: false,
+    }),
+  );
+  const clamped = Math.max(0, Math.min(1, frac));
+  if (clamped > 0) {
+    canvas.add(
+      new Rect({
+        left: x,
+        top: y,
+        width: Math.max(height, clamped * width),
+        height,
+        rx: r,
+        ry: r,
+        fill: fillColor,
+        selectable: false,
+        evented: false,
+      }),
+    );
+  }
+}
+
+/** Draws the brand logo (left) + JOHOR MEMILIH badge (right) and a black rule
+ *  beneath. Returns the y-coordinate just below the header rule.
+ *
+ *  When the brand has a full-canvas background template, that image already
+ *  bakes in the banner/badge/logo, so this sets it as the canvas background and
+ *  returns the templated content-start y — skipping the drawn chrome entirely. */
+export async function drawHeader(canvas: StaticCanvas, brand: string): Promise<number> {
   const x = ELECTION_CANVAS.paddingX;
   const y = ELECTION_HEADER.paddingTop;
+
+  const templateUrl = ELECTION_BG_TEMPLATES[brand];
+  if (templateUrl) {
+    try {
+      const bg = await FabricImage.fromURL(templateUrl, { crossOrigin: "anonymous" });
+      bg.scaleToWidth(ELECTION_CANVAS.width);
+      bg.set({ left: 0, top: 0, originX: "left", originY: "top", selectable: false, evented: false });
+      canvas.backgroundImage = bg;
+    } catch {
+      // proceed without background — content still draws on white
+    }
+    return ELECTION_TEMPLATE.contentTop;
+  }
+
   let logoBottom = y + 40;
 
   const logoUrl = (BRAND_LOGO_URLS as Record<string, string>)[brand] ?? "";
@@ -97,25 +183,57 @@ export async function drawHeader(
     }
   }
 
-  // Eyebrow label, right-aligned, with an accent dot.
-  canvas.add(
-    text(eyebrow, {
-      left: ELECTION_CANVAS.width - ELECTION_CANVAS.paddingX,
-      top: y + 6,
-      size: ELECTION_HEADER.eyebrowSize,
-      weight: 700,
-      fill: accent,
+  // JOHOR MEMILIH campaign badge, top-right (same-origin asset from /public).
+  let badgeBottom = y + 40;
+  try {
+    const badge = await FabricImage.fromURL(MEMILIH_BADGE_URL, { crossOrigin: "anonymous" });
+    badge.scaleToWidth(ELECTION_HEADER.badgeWidth);
+    badge.set({
+      left: ELECTION_CANVAS.width - x,
+      top: y,
       originX: "right",
-      spacing: ELECTION_HEADER.eyebrowSpacing,
-      uppercase: true,
-    }),
-  );
+      originY: "top",
+      selectable: false,
+      evented: false,
+    });
+    canvas.add(badge);
+    badgeBottom = y + badge.getScaledHeight();
+  } catch {
+    // proceed without badge
+  }
 
-  return Math.max(logoBottom, y + 40) + 28;
+  const ruleY = Math.max(logoBottom, badgeBottom, y + 40) + 24;
+  drawRule(canvas, ruleY);
+  return ruleY + 40;
 }
 
-export function drawFooter(canvas: StaticCanvas, rightText: string): void {
-  const y = ELECTION_CANVAS.height - ELECTION_FOOTER.bottomOffset;
+/** Draws the footer black rule plus a right-aligned stamp (and optional
+ *  left-aligned stats line). For a templated brand the footer chrome is baked
+ *  into the background, so the rule is skipped and the stamp/stats sit just
+ *  above the baked footer band. */
+export function drawFooter(canvas: StaticCanvas, rightText: string, leftText = "", brand = ""): void {
+  const templated = Boolean(ELECTION_BG_TEMPLATES[brand]);
+  if (!templated) {
+    const ruleY = ELECTION_CANVAS.height - ELECTION_FOOTER.bottomOffset - 44;
+    drawRule(canvas, ruleY);
+  }
+  const y = templated
+    ? ELECTION_TEMPLATE.footerY
+    : ELECTION_CANVAS.height - ELECTION_FOOTER.bottomOffset;
+  if (leftText) {
+    canvas.add(
+      text(leftText, {
+        left: ELECTION_CANVAS.paddingX,
+        top: y,
+        size: ELECTION_FOOTER.size,
+        weight: 600,
+        fill: ELECTION_CANVAS.textMuted,
+        originY: "bottom",
+        uppercase: true,
+        spacing: 1,
+      }),
+    );
+  }
   if (rightText) {
     canvas.add(
       text(rightText, {

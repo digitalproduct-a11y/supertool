@@ -1,10 +1,14 @@
 import { forwardRef, useCallback } from "react";
 import { Rect, type StaticCanvas } from "fabric";
-import { getBrandHex } from "../../constants/brands";
 import { safePartyColor } from "../../constants/parties";
-import { ELECTION_CANVAS as C } from "../../config/electionCanvasConfig";
+import {
+  ELECTION_ACCENT,
+  ELECTION_BG_TEMPLATES,
+  ELECTION_CANVAS as C,
+  ELECTION_TEMPLATE,
+} from "../../config/electionCanvasConfig";
 import { ElectionCanvasBase } from "./ElectionCanvasBase";
-import { drawFooter, drawHeader, formatStamp, text, type ElectionCanvasHandle } from "./canvasShared";
+import { drawFooter, drawHeader, drawRule, formatStamp, text, type ElectionCanvasHandle } from "./canvasShared";
 import type { StateSummary } from "./electionAggregate";
 
 interface Props {
@@ -16,20 +20,34 @@ interface Props {
 
 export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
   function ScoreboardCanvas({ summary, brand, lastUpdated, onClick }, ref) {
-    const accent = getBrandHex(brand);
-
     const render = useCallback(
       async (canvas: StaticCanvas) => {
         const x = C.paddingX;
-        const top = await drawHeader(canvas, brand, "Keputusan Terkini", accent);
+        const top = await drawHeader(canvas, brand);
+        // For a templated brand the baked footer eats the bottom band, so cap
+        // the row-break + callout floor to the template's usable area.
+        const templated = Boolean(ELECTION_BG_TEMPLATES[brand]);
+        const breakY = templated ? ELECTION_TEMPLATE.contentBottom - 120 : C.height - 320;
+        const calloutFloor = templated ? ELECTION_TEMPLATE.contentBottom - 150 : C.height - 300;
 
-        canvas.add(text(`DUN ${summary.state}`, { left: x, top, size: 64, weight: 800, uppercase: true }));
+        canvas.add(
+          text("Keputusan Terkini", {
+            left: x,
+            top,
+            size: 24,
+            weight: 700,
+            fill: ELECTION_ACCENT,
+            uppercase: true,
+            spacing: 3,
+          }),
+        );
+        canvas.add(text(`DUN ${summary.state}`, { left: x, top: top + 40, size: 84, weight: 800, uppercase: true }));
         const declaredLine =
           summary.totalSeats != null
             ? `${summary.declared} / ${summary.totalSeats} kerusi diisytihar`
             : `${summary.declared} kerusi diisytihar`;
         canvas.add(
-          text(declaredLine, { left: x, top: top + 80, size: 26, weight: 600, fill: C.textMuted }),
+          text(declaredLine, { left: x, top: top + 148, size: 26, weight: 600, fill: C.textMuted }),
         );
 
         // Tally bars
@@ -38,7 +56,7 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         const barAreaW = C.width - x * 2;
         const labelW = 150;
         const barMaxW = barAreaW - labelW - 120;
-        let rowY = top + 150;
+        let rowY = top + 220;
         const rowH = 96;
         for (const t of bars) {
           const color = safePartyColor(t.party.color);
@@ -90,23 +108,13 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
             }),
           );
           rowY += rowH;
-          if (rowY > C.height - 320) break;
+          if (rowY > breakY) break;
         }
 
         // Seats-to-govern + leader callout
-        let calloutY = Math.max(rowY + 20, C.height - 300);
+        let calloutY = Math.max(rowY + 20, calloutFloor);
         if (summary.toGovern != null) {
-          canvas.add(
-            new Rect({
-              left: x,
-              top: calloutY,
-              width: C.width - x * 2,
-              height: 2,
-              fill: C.stroke,
-              selectable: false,
-              evented: false,
-            }),
-          );
+          drawRule(canvas, calloutY, C.stroke, 1);
           canvas.add(
             text(`${summary.toGovern} kerusi diperlukan untuk membentuk kerajaan`, {
               left: x,
@@ -125,23 +133,28 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
               top: calloutY + 10,
               size: 44,
               weight: 800,
-              fill: C.win,
+              fill: ELECTION_ACCENT,
               uppercase: true,
               spacing: 1,
             }),
           );
         }
 
-        drawFooter(canvas, lastUpdated ? `LIVE · ${formatStamp(new Date(lastUpdated).toISOString())}` : "LIVE");
+        drawFooter(
+          canvas,
+          lastUpdated ? `LIVE · ${formatStamp(new Date(lastUpdated).toISOString())}` : "LIVE",
+          "",
+          brand,
+        );
       },
-      [summary, brand, accent, lastUpdated],
+      [summary, brand, lastUpdated],
     );
 
     return (
       <ElectionCanvasBase
         ref={ref}
         render={render}
-        deps={[summary, brand, accent, lastUpdated]}
+        deps={[summary, brand, lastUpdated]}
         defaultFilename={`prn-scoreboard-${summary.state}`.toLowerCase()}
         onClick={onClick}
       />

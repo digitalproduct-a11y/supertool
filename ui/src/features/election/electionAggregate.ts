@@ -4,8 +4,10 @@
 import { getParty, getStateTotalSeats, seatsToGovern, type Party } from "../../constants/parties";
 import type { Candidate, SeatResult } from "./types";
 
-/** A seat is "declared" once one of its candidates is marked the winner. */
+/** A seat is "declared" only once the result is official AND one of its
+ *  candidates is marked the winner — no menang is declared until official. */
 export function winnerOf(seat: SeatResult): Candidate | null {
+  if (!seat.official_result) return null; // no menang until official
   return seat.candidates.find((c) => c.status === "win") ?? null;
 }
 
