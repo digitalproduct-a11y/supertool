@@ -67,16 +67,27 @@ const ROW_CENTER_Y = L.topRowY + L.logoMaxHeight / 2;
 // 2160×2700 and text/footer stay sharp on zoom). On-screen preview stays 1×.
 const EXPORT_SCALE = 2;
 
-// Resolve a hero source (public_id OR full Cloudinary URL) to a subject-aware
-// cropped upload URL sized for the hero box. Pass-through for anything that
-// isn't a Cloudinary reference.
+// Resolve a hero source to a subject-aware cropped, CORS-safe Cloudinary URL
+// sized for the hero box. Handles three shapes:
+//   1. An existing Cloudinary delivery URL (/image/upload/ or /image/fetch/) → used as-is
+//   2. A full remote URL (e.g. an article's raw OG image) → proxied through
+//      Cloudinary /image/fetch/ so canvas export (toDataURL) isn't tainted
+//   3. A bare Cloudinary public_id → resolved to an /image/upload/ URL
 function heroUrlFor(source: string, w: number, h: number): string {
   if (!source) return "";
-  const url = source.includes("/image/upload/")
-    ? source
-    : CLOUD_NAME
+  let url: string;
+  if (source.includes("/image/upload/") || source.includes("/image/fetch/")) {
+    url = source;
+  } else if (/^https?:\/\//i.test(source)) {
+    // Single-encode the remote URL (incl. any query string) for Cloudinary fetch.
+    url = CLOUD_NAME
+      ? `https://res.cloudinary.com/${CLOUD_NAME}/image/fetch/${encodeURIComponent(source)}`
+      : source;
+  } else {
+    url = CLOUD_NAME
       ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${source}`
       : source;
+  }
   return withSubjectAwareCrop(url, w, h);
 }
 

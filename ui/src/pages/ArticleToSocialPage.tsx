@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { BackButton } from '../components/ds'
 import { useBrand } from '../context/BrandContext'
-import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl } from '../constants/brands'
+import { BRANDS, DOMAIN_TO_BRAND, detectBrandFromUrl, getBrandHex, getBrandFontUse, getBrandLanguage, BRAND_LOGO_IDS, type BrandLanguage } from '../constants/brands'
 import { toast } from '../hooks/useToast'
 import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
@@ -48,7 +48,7 @@ export const ALL_TYPES: PostType[] = ['photo', 'carousel', 'quickfact', 'quote']
 
 interface PhotoConfig    { titleMode: TitleMode; captionTitleMode: CaptionTitleMode; template: string }
 interface CarouselConfig { titleMode: TitleMode; captionTitleMode: CaptionTitleMode }
-interface QuickFactConfig { /* no extra */ }
+interface QuickFactConfig { template: 'carousel' | 'single' }
 interface QuoteConfig   { captionTitleMode: CaptionTitleMode; language: Language }
 
 interface Configs {
@@ -245,9 +245,24 @@ async function generateCarousel(
   }
 }
 
+interface QuickFactResponse {
+  imageUrl: string
+  caption: string
+  quickFactTitle: string
+  quickFactFacts: QuickFactItem[]
+  quickFactKeyPhrase: string
+  cloudinaryUrl?: string
+  // Carousel-only extras (present once the URL workflow returns them). heroPublicId
+  // is the CORS-safe Cloudinary id for the raw hero; summary/sectionLabel are optional.
+  quickFactSummary?: string
+  heroPublicId?: string
+  heroUrl?: string
+  sectionLabel?: string
+}
+
 async function generateQuickFact(
   url: string, brand: string,
-): Promise<{ imageUrl: string; caption: string; quickFactTitle: string; quickFactFacts: QuickFactItem[]; quickFactKeyPhrase: string; cloudinaryUrl?: string }> {
+): Promise<QuickFactResponse> {
   const webhookUrl = (import.meta.env.VITE_QUICK_FACT_WEBHOOK_URL as string | undefined)?.trim()
   if (!webhookUrl) throw new Error('Quick Fact webhook not configured')
   const controller = new AbortController()
@@ -271,9 +286,45 @@ async function generateQuickFact(
       quickFactFacts: (data.facts as QuickFactItem[]) ?? [],
       quickFactKeyPhrase: (data.keyPhrase as string) ?? '',
       cloudinaryUrl: (data.cloudinary_url as string | undefined),
+      quickFactSummary: (data.summary as string | undefined),
+      heroPublicId: (data.heroPublicId as string | undefined),
+      heroUrl: (data.heroUrl as string | undefined),
+      sectionLabel: (data.sectionLabel as string | undefined),
     }
   } finally {
     clearTimeout(timeout)
+  }
+}
+
+// Cover-chip noun + date locale per brand language, used when the URL workflow
+// doesn't supply its own sectionLabel/category (the CMS workflow does).
+const QUICK_FACT_LANG_META: Record<BrandLanguage, { category: string; sectionLabel: string }> = {
+  BM: { category: 'Malay', sectionLabel: 'FAKTA RINGKAS' },
+  EN: { category: 'English', sectionLabel: 'QUICK FACTS' },
+  ZH: { category: 'Chinese', sectionLabel: '快速事实' },
+}
+
+// Assemble the QuickFactData the Fabric carousel needs from the URL webhook
+// response + client-side brand lookups. Brand tokens (hex/logo/font/language)
+// come from constants/brands.ts so the URL workflow stays minimal.
+function buildQuickFactData(brand: string, resp: QuickFactResponse): QuickFactData {
+  const lang = getBrandLanguage(brand)
+  const meta = QUICK_FACT_LANG_META[lang]
+  return {
+    title: resp.quickFactTitle,
+    sectionLabel: resp.sectionLabel || meta.sectionLabel,
+    keyPhrase: resp.quickFactKeyPhrase,
+    caption: resp.caption,
+    summary: resp.quickFactSummary ?? '',
+    facts: resp.quickFactFacts ?? [],
+    heroPublicId: resp.heroPublicId ?? '',
+    heroUrl: resp.heroUrl ?? '',
+    brand,
+    brandHex: getBrandHex(brand),
+    logoPublicId: (BRAND_LOGO_IDS as Record<string, string>)[brand] ?? '',
+    fontUse: getBrandFontUse(brand) ?? '',
+    category: meta.category,
+    language: lang,
   }
 }
 
@@ -492,7 +543,7 @@ export function ArticleToSocialPage() {
   const [configs, setConfigs] = useState<Configs>({
     photo:    { titleMode: 'original', captionTitleMode: 'original', template: DEFAULT_PHOTO_TEMPLATE },
     carousel: { titleMode: 'original', captionTitleMode: 'original' },
-    quickfact: {},
+    quickfact: { template: 'carousel' },
     quote:    { captionTitleMode: 'original', language: 'malay' },
   })
 
@@ -595,7 +646,8 @@ export function ArticleToSocialPage() {
         } else if (type === 'quickfact') {
           const v = val as Awaited<ReturnType<typeof generateQuickFact>>
           title = v.quickFactTitle
-          updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl })
+          const quickFactData = configs.quickfact.template === 'carousel' ? buildQuickFactData(brand, v) : undefined
+          updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl, quickFactData })
         } else if (type === 'quote') {
           const v = val as Awaited<ReturnType<typeof generateQuote>>
           title = v.quoteData.quote_text
@@ -635,7 +687,8 @@ export function ArticleToSocialPage() {
         }
         case 'quickfact': {
           const v = await generateQuickFact(url, brand)
-          updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl })
+          const quickFactData = configs.quickfact.template === 'carousel' ? buildQuickFactData(brand, v) : undefined
+          updateCard(type, { status: 'done', imageUrl: v.imageUrl, caption: v.caption, quickFactTitle: v.quickFactTitle, quickFactFacts: v.quickFactFacts, quickFactKeyPhrase: v.quickFactKeyPhrase, cloudinaryUrl: v.cloudinaryUrl, quickFactData })
           break
         }
         case 'quote': {
@@ -738,6 +791,30 @@ export function ArticleToSocialPage() {
                               {t.description}
                             </span>
                           )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Fact template picker — carousel (new) vs legacy single image */}
+              {selectedTypes.has('quickfact') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Quick Fact Template</label>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {([['carousel', 'Carousel'], ['single', 'Single Image']] as const).map(([value, label]) => {
+                      const checked = configs.quickfact.template === value
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setConfigs(prev => ({ ...prev, quickfact: { ...prev.quickfact, template: value } }))}
+                          className={`px-4 py-3 rounded-xl border text-left text-sm font-medium transition-colors ${
+                            checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
+                          }`}
+                        >
+                          {label}
                         </button>
                       )
                     })}

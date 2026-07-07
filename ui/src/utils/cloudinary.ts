@@ -164,7 +164,14 @@ export function withSubjectAwareCrop(
   height: number,
 ): string {
   if (!url) return "";
-  if (!url.includes("/image/upload/")) return url;
+  // Crop works on both delivery types: /image/upload/ (stored asset) and
+  // /image/fetch/ (remote URL proxied through Cloudinary, CORS-safe).
+  const marker = url.includes("/image/upload/")
+    ? "/image/upload/"
+    : url.includes("/image/fetch/")
+      ? "/image/fetch/"
+      : null;
+  if (!marker) return url;
   if (/\/(c_fill|g_auto)[,/]/.test(url)) return url;
 
   const w = Math.round(width);
@@ -174,7 +181,7 @@ export function withSubjectAwareCrop(
   const g = gcd(w, h);
   const transform = `c_fill,g_auto,ar_${w / g}:${h / g},w_${w},h_${h},f_auto,q_auto`;
 
-  return url.replace("/image/upload/", `/image/upload/${transform}/`);
+  return url.replace(marker, `${marker}${transform}/`);
 }
 
 interface CloudinarySignature {
