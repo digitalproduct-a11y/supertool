@@ -119,7 +119,7 @@ export const QuickFactSlideCanvas = forwardRef<
     ): Promise<boolean> => {
       try {
         canvas.clear();
-        const pal = paletteFor(brandHex);
+        const pal = paletteFor(brandHex, brand);
         const typo = typographyFor(category);
         const isCJK = category === "Chinese";
 

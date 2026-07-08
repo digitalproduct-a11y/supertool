@@ -100,20 +100,36 @@ export function readableOn(hex: string): string {
   return L > 0.5 ? "#0D0D0F" : "#FFFFFF";
 }
 
-export function paletteFor(brandHex: string): QuickFactPalette {
+// Per-brand palette overrides. Key = brand name as it arrives in QuickFactData.brand
+// (e.g. "Hotspot", "XUAN", "Astro Awani"). Any omitted field falls back to the
+// brand_hex-derived default in paletteFor. Leave empty for accent-only theming.
+// Matching is case-insensitive.
+export const QUICK_FACT_PALETTE_OVERRIDES: Record<string, Partial<QuickFactPalette>> = {
+  // Example — dark canvas for Hotspot:
+  // Hotspot: { bg: "#0D0D0F", textPrimary: "#FFFFFF", textMuted: "#9CA3AF" },
+};
+
+export function paletteFor(brandHex: string, brand?: string): QuickFactPalette {
   const accent =
     brandHex && /^#?[0-9a-fA-F]{6}$/.test(brandHex)
       ? brandHex.startsWith("#")
         ? brandHex
         : `#${brandHex}`
       : "#FFCC00";
-  return {
+  const base: QuickFactPalette = {
     bg: "#FBF4EF",
     accent,
     onAccent: readableOn(accent),
     textPrimary: "#0D0D0F",
     textMuted: "#6B7280",
   };
+  // Case-insensitive brand match so "hotspot"/"Hotspot" both resolve.
+  const key = brand
+    ? Object.keys(QUICK_FACT_PALETTE_OVERRIDES).find(
+        (k) => k.toLowerCase() === brand.toLowerCase(),
+      )
+    : undefined;
+  return key ? { ...base, ...QUICK_FACT_PALETTE_OVERRIDES[key] } : base;
 }
 
 // Shared spacing/geometry (px, in 1080×1350 space).
