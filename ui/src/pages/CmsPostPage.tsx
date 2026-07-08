@@ -117,7 +117,9 @@ export function CmsPostPage() {
   const isBulk = generatedTypes.length > 1
   const photoSelected = selectedTypes.has('photo')
   const quickFactSelected = selectedTypes.has('quickfact')
-  const canGenerate = !!article && selectedTypes.size > 0 && (!photoSelected || template !== '')
+  // Photo needs a template pick only when the brand actually offers templates.
+  // Template-less brands (e.g. Gempak) generate with getDefaultTemplateForBrand → "default".
+  const canGenerate = !!article && selectedTypes.size > 0 && (!photoSelected || templates.length === 0 || template !== '')
 
   function updateCard(type: PostType, patch: Partial<ResultCard>) {
     setResults(prev => prev.map(r => r.type === type ? { ...r, ...patch } : r))
@@ -188,8 +190,8 @@ export function CmsPostPage() {
       category: art.category?.[0]?.name,
       template: template || getDefaultTemplateForBrand(brand ?? ''),
       quickFactTemplate,
-      // Feed language codes: en = english, ms = malay. Trust the article's own value.
-      language: art.language === 'en' ? 'english' : 'malay',
+      // Feed language codes: en = english, zh-hans = chinese, ms = malay. Trust the article's value.
+      language: art.language === 'en' ? 'english' : art.language?.startsWith('zh') ? 'chinese' : 'malay',
     }
   }
 

@@ -8,6 +8,13 @@ const FEED_BASE = 'https://de-data-feed-stg.eco.astro.com.my/v1'
 // Extend alongside SITE_TO_BRAND in constants/brands.ts when more sites are supported.
 const SITE_TO_DOMAIN: Record<string, string> = {
   awani: 'https://www.astroawani.com',
+  gempak: 'https://gempak.com',
+  stadium: 'https://stadiumastro.com',
+  'stadium-en': 'https://english.stadiumastro.com',
+  ulagam: 'https://astroulagam.com.my',
+  // XUAN + Hotspot are both served under xuan.com.my (Hotspot slugs carry a /hotspot/ prefix).
+  xuan: 'https://xuan.com.my',
+  hotspot: 'https://xuan.com.my',
 }
 
 export interface FeedItem {

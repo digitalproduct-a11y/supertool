@@ -154,6 +154,12 @@ export function detectBrandInfoFromUrl(
 // Extend alongside SITE_TO_DOMAIN in services/articleFeed.ts as more sites are added.
 export const SITE_TO_BRAND: Record<string, BrandName> = {
   awani: "Astro Awani",
+  gempak: "Gempak",
+  "stadium-en": "Stadium Astro",
+  stadium: "Astro Arena",
+  ulagam: "Astro Ulagam",
+  xuan: "XUAN",
+  hotspot: "Hotspot",
 };
 
 export function brandFromSite(site: string): BrandName | null {

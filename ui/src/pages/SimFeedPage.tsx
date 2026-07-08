@@ -7,14 +7,21 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchArticleFeed, type FeedItem } from '../services/articleFeed'
-import { brandFromSite } from '../constants/brands'
+import { SITE_TO_BRAND, brandFromSite, getBrandLanguage } from '../constants/brands'
 
-const SITE = 'awani'
 const PAGE_SIZE = 10
+// Sites the simulator can browse — auto-extends as SITE_TO_BRAND grows.
+const SITES = Object.keys(SITE_TO_BRAND)
 
 export function SimFeedPage() {
   const navigate = useNavigate()
-  const brand = brandFromSite(SITE) ?? 'Astro Awani'
+
+  const [site, setSite] = useState(SITES[0] ?? 'awani')
+  const brand = brandFromSite(site) ?? site
+  // Feed language follows the brand: BM → 'ms', ZH (XUAN / Hotspot) → 'zh-hans',
+  // everything else → 'en'. The feed returns nothing under the wrong language code.
+  const brandLang = getBrandLanguage(brand)
+  const feedLang = brandLang === 'BM' ? 'ms' : brandLang === 'ZH' ? 'zh-hans' : 'en'
 
   const [feed, setFeed] = useState<FeedItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,15 +33,21 @@ export function SimFeedPage() {
   useEffect(() => {
     let active = true
     setLoading(true)
-    fetchArticleFeed(SITE, 'ms', page, PAGE_SIZE)
+    fetchArticleFeed(site, feedLang, page, PAGE_SIZE)
       .then(items => { if (active) { setFeed(items); setError(null); window.scrollTo({ top: 0 }) } })
       .catch(err => { if (active) setError(err instanceof Error ? err.message : 'Failed to load feed') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [page])
+  }, [site, feedLang, page])
+
+  function selectSite(next: string) {
+    if (next === site) return
+    setSite(next)
+    setPage(1)
+  }
 
   function launch(item: FeedItem) {
-    const qs = new URLSearchParams({ site: SITE, id: String(item.id) })
+    const qs = new URLSearchParams({ site, id: String(item.id) })
     navigate(`/cms/post?${qs.toString()}`)
   }
 
@@ -48,6 +61,21 @@ export function SimFeedPage() {
             type(s) and photo template on the next screen. This mirrors the Drupal → Supertool redirect.
           </p>
           <div className="mt-6 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
+        </div>
+
+        {/* Site selector — pick which brand's feed to browse. */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {SITES.map(s => {
+            const checked = s === site
+            return (
+              <button key={s} type="button" onClick={() => selectSite(s)}
+                className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                  checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
+                }`}>
+                {brandFromSite(s) ?? s}
+              </button>
+            )
+          })}
         </div>
 
         {/* Feed list */}
