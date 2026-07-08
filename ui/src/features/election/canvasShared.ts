@@ -12,6 +12,7 @@ import {
   ELECTION_RULE,
   MEMILIH_BADGE_URL,
 } from "../../config/electionCanvasConfig";
+import { isHotspot } from "./electionLabels";
 
 export interface ElectionCanvasHandle {
   downloadAsPng: (filename?: string) => void;
@@ -226,7 +227,14 @@ export async function drawHeader(canvas: StaticCanvas, brand: string): Promise<n
  *  left-aligned stats line). For a templated brand the footer chrome is baked
  *  into the background, so the rule is skipped and the stamp/stats sit just
  *  above the baked footer band. */
-export function drawFooter(canvas: StaticCanvas, rightText: string, leftText = "", brand = ""): void {
+export function drawFooter(
+  canvas: StaticCanvas,
+  rightText: string,
+  leftText = "",
+  brand = "",
+  stampSize?: number,
+  stampY?: number,
+): void {
   const tpl = ELECTION_BG_TEMPLATES[brand];
   if (!tpl) {
     const ruleY = ELECTION_CANVAS.height - ELECTION_FOOTER.bottomOffset - 44;
@@ -251,8 +259,8 @@ export function drawFooter(canvas: StaticCanvas, rightText: string, leftText = "
     canvas.add(
       text(rightText, {
         left: ELECTION_CANVAS.width - ELECTION_CANVAS.paddingX,
-        top: y,
-        size: ELECTION_FOOTER.size,
+        top: stampY ?? y,
+        size: stampSize ?? (isHotspot(brand) ? ELECTION_FOOTER.hotspotStampSize : ELECTION_FOOTER.size),
         weight: 500,
         fill: ELECTION_CANVAS.textFaint,
         originX: "right",
@@ -273,6 +281,16 @@ export function formatStamp(iso: string | null): string {
   } catch {
     return "";
   }
+}
+
+/** Standard live-result stamp text, bilingual: "成绩截至 5:50PM" (zh) /
+ *  "Keputusan setakat 5:50PM" (BM). Empty string when no timestamp is available.
+ *  Shared by the seat, heavyweight, and scoreboard cards so the copy + time
+ *  format stay identical across all three. */
+export function liveStampText(iso: string | null, zh: boolean): string {
+  const t = formatTime(iso);
+  if (!t) return "";
+  return zh ? `成绩截至 ${t}` : `Keputusan setakat ${t}`;
 }
 
 /** 12-hour Malaysia-time clock, no date, e.g. "5:50PM". */

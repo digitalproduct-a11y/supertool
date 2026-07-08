@@ -62,4 +62,9 @@ export const ELECTION_HEADER = {
 export const ELECTION_FOOTER = {
   bottomOffset: 64,
   size: 20,
+  hotspotStampSize: 38, // LIVE stamp size for the Hotspot cards
+  // Baseline for the Hotspot LIVE stamp — aligned with the baked footer note
+  // line ("**欲知…", glyphs ~1150–1170) so the stamp reads as its right-side
+  // counterpart instead of floating above the footer band.
+  hotspotStampY: 1185,
 } as const;

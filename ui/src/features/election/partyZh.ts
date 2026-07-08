@@ -7,7 +7,7 @@ export const PARTY_ZH: Record<number, string> = {
   1: "国阵", // BN
   42: "希盟", // PH
   55: "国盟", // PN
-  9: "独立", // BEBAS
+  9: "独立人士", // BEBAS
   65: "MUDA",
   21: "社会主义党", // PSM
   89: "同心党", // KDM
@@ -28,4 +28,10 @@ export const PARTY_ZH: Record<number, string> = {
 export function partyZh(partyId: number | null | undefined): string | null {
   if (partyId == null) return null;
   return PARTY_ZH[partyId] ?? null;
+}
+
+/** ZH row label keyed by party id, with a fallback for the BEBAS/independent
+ *  abbreviation (feed sometimes reports independents with an unmapped id). */
+export function partyZhLabel(partyId: number | null | undefined, abbreviation: string): string | null {
+  return partyZh(partyId) ?? (abbreviation === "BEBAS" ? "独立人士" : null);
 }

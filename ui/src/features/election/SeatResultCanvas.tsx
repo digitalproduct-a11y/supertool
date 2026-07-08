@@ -8,7 +8,7 @@ import {
   ELECTION_FOOTER,
 } from "../../config/electionCanvasConfig";
 import { ElectionCanvasBase } from "./ElectionCanvasBase";
-import { drawHeader, drawProgressBar, formatTime, text, type ElectionCanvasHandle } from "./canvasShared";
+import { drawHeader, drawProgressBar, liveStampText, text, type ElectionCanvasHandle } from "./canvasShared";
 import { rankedCandidates, winnerOf } from "./electionAggregate";
 import { electionLabels, isHotspot } from "./electionLabels";
 import { zhCandidate, zhSeatName } from "./hotspotNames";
@@ -261,13 +261,15 @@ export const SeatResultCanvas = forwardRef<ElectionCanvasHandle, Props>(
         // Timestamp — only for unofficial results ("Keputusan setakat 5:50PM").
         // Official results are final, so no "as of" time is shown.
         if (!official) {
-          const t = formatTime(seat.last_published_at);
-          if (t) {
+          const stamp = liveStampText(seat.last_published_at, zh);
+          if (stamp) {
             canvas.add(
-              text(zh ? `成绩截至 ${t}` : `Keputusan setakat ${t}`, {
+              text(stamp, {
                 left: x + rowW,
-                top: footerBaseY,
-                size: 20,
+                // Hotspot: enlarged + aligned with the baked footer note line, to
+                // match the scoreboard / utama stamps; BM keeps the small inline stamp.
+                top: zh ? ELECTION_FOOTER.hotspotStampY : footerBaseY,
+                size: zh ? ELECTION_FOOTER.hotspotStampSize : 20,
                 weight: 500,
                 fill: C.textFaint,
                 originX: "right",

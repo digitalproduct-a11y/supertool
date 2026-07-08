@@ -6,9 +6,11 @@ import {
   filterSeats,
   listStates,
   rankedCandidates,
-  sortSeatsByMomentum,
+  seatUpdatedAt,
+  sortSeatsByRecency,
   winnerOf,
 } from "./electionAggregate";
+import { formatTime } from "./canvasShared";
 import type { SeatResult } from "./types";
 
 type ResultFilter = "rasmi" | "tidakRasmi";
@@ -32,7 +34,9 @@ function timeAgo(ts: number | null): string {
   if (!ts) return "—";
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
   if (s < 60) return `${s}s lalu`;
-  return `${Math.round(s / 60)}m lalu`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m lalu`;
+  return `${Math.floor(m / 60)}h ${m % 60}m lalu`;
 }
 
 export function ElectionDashboard({
@@ -60,7 +64,7 @@ export function ElectionDashboard({
   );
   const visibleSeats = useMemo(() => {
     const official = chip === "rasmi";
-    return sortSeatsByMomentum(
+    return sortSeatsByRecency(
       filterSeats(stateSeats, { official, q }),
       official,
     );
@@ -87,7 +91,8 @@ export function ElectionDashboard({
             </select>
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500">
               <span className={`w-2 h-2 rounded-full ${isLive ? "bg-green-500 animate-pulse" : "bg-neutral-300"}`} />
-              {isLive ? "LIVE" : "Tiada sambungan"} · {timeAgo(lastUpdated)}
+              {isLive ? "LIVE" : "Tiada sambungan"}
+              {lastUpdated ? ` · ${formatTime(new Date(lastUpdated).toISOString())} · ${timeAgo(lastUpdated)}` : ""}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -180,6 +185,7 @@ export function ElectionDashboard({
           const shown = w ?? top;
           const party = shown ? getParty(shown.party) : null;
           const color = party ? safePartyColor(party.color) : "#9ca3af";
+          const updatedMs = seatUpdatedAt(seat);
           return (
             <div
               key={`${seat.state}-${seat.seat_id}`}
@@ -207,6 +213,11 @@ export function ElectionDashboard({
                     "Belum keputusan"
                   )}
                 </p>
+                {updatedMs > 0 && (
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    Kemas kini {formatTime(seat.last_published_at)} · {timeAgo(updatedMs)}
+                  </p>
+                )}
               </div>
               {seat.is_heavyweight === 1 && (
                 <button
