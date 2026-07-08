@@ -5,12 +5,12 @@ import {
   ELECTION_ACCENT,
   ELECTION_BG_TEMPLATES,
   ELECTION_CANVAS as C,
+  ELECTION_FOOTER,
 } from "../../config/electionCanvasConfig";
 import { ElectionCanvasBase } from "./ElectionCanvasBase";
-import { drawFooter, drawHeader, drawRule, formatStamp, text, type ElectionCanvasHandle } from "./canvasShared";
+import { drawFooter, drawHeader, drawRule, liveStampText, text, type ElectionCanvasHandle } from "./canvasShared";
 import { electionLabels, isHotspot } from "./electionLabels";
-import { zhState } from "./hotspotNames";
-import { partyZh } from "./partyZh";
+import { partyZhLabel } from "./partyZh";
 import type { StateSummary } from "./electionAggregate";
 
 interface Props {
@@ -45,7 +45,7 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
             spacing: 3,
           }),
         );
-        const stateTitle = zh ? `${zhState(summary.state) ?? summary.state}州议席` : `DUN ${summary.state}`;
+        const stateTitle = zh ? "各政党形势表" : `DUN ${summary.state}`;
         canvas.add(text(stateTitle, { left: x, top: top + 40, size: 84, weight: 800, uppercase: true }));
         const declaredLine =
           summary.totalSeats != null
@@ -65,7 +65,9 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         const rowH = 96;
         for (const t of bars) {
           const color = safePartyColor(t.party.color);
-          const barLabel = zh ? partyZh(t.partyId) ?? t.party.abbreviation : t.party.abbreviation;
+          const barLabel = zh
+            ? partyZhLabel(t.partyId, t.party.abbreviation) ?? t.party.abbreviation
+            : t.party.abbreviation;
           canvas.add(
             text(barLabel, {
               left: x,
@@ -122,7 +124,7 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         if (summary.toGovern != null) {
           drawRule(canvas, calloutY, C.stroke, 1);
           const toGovernLine = zh
-            ? `${L.toGovern} ${summary.toGovern} 席`
+            ? `${L.toGovern} ${summary.toGovern}席`
             : `${summary.toGovern} ${L.toGovern}`;
           canvas.add(
             text(toGovernLine, {
@@ -137,7 +139,8 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         }
         if (summary.leader) {
           const leaderLabel = zh
-            ? partyZh(summary.leader.partyId) ?? summary.leader.party.abbreviation
+            ? partyZhLabel(summary.leader.partyId, summary.leader.party.abbreviation) ??
+              summary.leader.party.abbreviation
             : summary.leader.party.abbreviation;
           canvas.add(
             text(`${leaderLabel} ${L.mendahului}`, {
@@ -152,12 +155,28 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
           );
         }
 
-        drawFooter(
-          canvas,
-          lastUpdated ? `LIVE · ${formatStamp(new Date(lastUpdated).toISOString())}` : "LIVE",
-          "",
-          brand,
-        );
+        const stamp = lastUpdated ? liveStampText(new Date(lastUpdated).toISOString(), zh) : "";
+        if (zh) {
+          // Hotspot: keep the stamp right-aligned, paired with the baked footer note.
+          drawFooter(canvas, stamp, "", brand, undefined, ELECTION_FOOTER.hotspotStampY);
+        } else {
+          // BM: stamp left-aligned under the leader callout so it doesn't float
+          // off-balance on the right.
+          drawFooter(canvas, "", "", brand);
+          if (stamp) {
+            const footerY = tpl ? tpl.footerY : C.height - ELECTION_FOOTER.bottomOffset;
+            canvas.add(
+              text(stamp, {
+                left: x,
+                top: footerY,
+                size: ELECTION_FOOTER.size,
+                weight: 500,
+                fill: C.textFaint,
+                originY: "bottom",
+              }),
+            );
+          }
+        }
       },
       [summary, brand, lastUpdated],
     );

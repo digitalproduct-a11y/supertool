@@ -1,12 +1,12 @@
 import { forwardRef, useCallback } from "react";
 import { Circle, type StaticCanvas } from "fabric";
 import { getParty, safePartyColor } from "../../constants/parties";
-import { ELECTION_ACCENT, ELECTION_CANVAS as C } from "../../config/electionCanvasConfig";
+import { ELECTION_ACCENT, ELECTION_CANVAS as C, ELECTION_FOOTER } from "../../config/electionCanvasConfig";
 import { ElectionCanvasBase } from "./ElectionCanvasBase";
-import { drawFooter, drawHeader, drawProgressBar, formatStamp, text, type ElectionCanvasHandle } from "./canvasShared";
+import { drawFooter, drawHeader, drawProgressBar, liveStampText, text, type ElectionCanvasHandle } from "./canvasShared";
 import { rankedCandidates, winnerOf } from "./electionAggregate";
 import { electionLabels, isHotspot } from "./electionLabels";
-import { zhCandidate, zhSeatName, zhState } from "./hotspotNames";
+import { zhCandidate, zhSeatName } from "./hotspotNames";
 import { partyZh } from "./partyZh";
 import type { Candidate, SeatResult } from "./types";
 
@@ -25,14 +25,18 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
         const top = await drawHeader(canvas, brand);
         const L = electionLabels(brand);
         const zh = isHotspot(brand);
+        const official = seat.official_result;
         const winner = winnerOf(seat);
         const ranked = rankedCandidates(seat);
         const [a, b] = ranked;
         const totalVotes = Math.max(1, ranked.reduce((sum, c) => sum + c.vote, 0));
         const maxVote = Math.max(0, ...ranked.map((c) => c.vote));
 
+        // Utama posts (rasmi + tidak rasmi) reuse the single-seat card's heading:
+        // "州议席" eyebrow, "{id} - {name}" headline (shrink to fit), parliament subline.
+        const seatName = zh ? zhSeatName(seat.seat_id) ?? seat.seat_name : seat.seat_name;
         canvas.add(
-          text(L.kerusiUtama, {
+          text(L.duNegeri, {
             left: x,
             top,
             size: 24,
@@ -42,13 +46,17 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
             spacing: 3,
           }),
         );
-        const seatName = zh ? zhSeatName(seat.seat_id) ?? seat.seat_name : seat.seat_name;
-        canvas.add(text(seatName, { left: x, top: top + 40, size: 84, weight: 800 }));
-        const stateName = zh ? zhState(seat.state) ?? seat.state : seat.state;
+        const title = `${seat.seat_id} - ${seatName}`;
+        let headline = text(title, { left: x, top: top + 40, size: 96, weight: 800 });
+        if (headline.width > rowW) {
+          const size = Math.max(48, Math.floor((96 * rowW) / headline.width));
+          headline = text(title, { left: x, top: top + 40, size, weight: 800 });
+        }
+        canvas.add(headline);
         canvas.add(
-          text(`${seat.seat_id} · ${stateName}`, {
+          text(`${L.parlimen} ${seat.parliament?.seat ?? ""} ${seat.parliament?.name ?? ""}`.trim(), {
             left: x,
-            top: top + 148,
+            top: top + 156,
             size: 24,
             weight: 500,
             fill: C.textMuted,
@@ -141,22 +149,39 @@ export const HeavyweightCanvas = forwardRef<ElectionCanvasHandle, Props>(
         );
         drawContender(b, blockTop + 230);
 
+        // Majoriti — muted uppercase label + number in the winner's party colour,
+        // right-aligned in place (standardized to match the single-seat card).
         if (winner) {
-          const majLine = zh
-            ? `${L.majoriti} ${seat.majority.toLocaleString("en-MY")}`
-            : `Majoriti ${seat.majority.toLocaleString("en-MY")} undi`;
+          const winColor = safePartyColor(getParty(winner.party).color);
+          const majNum = text(seat.majority.toLocaleString("en-MY"), {
+            left: x + rowW,
+            top: blockTop + 400,
+            size: 32,
+            weight: 800,
+            fill: winColor,
+            originX: "right",
+            originY: "center",
+          });
+          canvas.add(majNum);
           canvas.add(
-            text(majLine, {
-              left: x,
+            text(L.majoriti, {
+              left: x + rowW - majNum.width - 12,
               top: blockTop + 400,
-              size: 28,
-              weight: 700,
+              size: 24,
+              weight: 600,
               fill: C.textMuted,
+              originX: "right",
+              originY: "center",
+              uppercase: true,
+              spacing: 2,
             }),
           );
         }
 
-        drawFooter(canvas, formatStamp(seat.last_published_at), "", brand);
+        // Official (rasmi) results are final, so drop the LIVE stamp; unofficial
+        // (tidak rasmi) keeps it — smaller (38px) on the Hotspot card, footer-aligned.
+        const stamp = official ? "" : liveStampText(seat.last_published_at, zh);
+        drawFooter(canvas, stamp, "", brand, undefined, zh ? ELECTION_FOOTER.hotspotStampY : undefined);
       },
       [seat, brand],
     );

@@ -55,8 +55,8 @@ const ZH: ElectionLabels = {
   lawan: "对垒",
   menang: "胜",
   keputusanTerkini: "最新成绩",
-  diisytihar: "议席已宣布",
-  toGovern: "组阁所需议席",
+  diisytihar: "议席结果已官宣",
+  toGovern: "执政所需议席",
   mendahului: "领先",
 };
 

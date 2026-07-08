@@ -145,24 +145,43 @@ export function liveMargin(seat: SeatResult): number {
   return (ranked[0]?.vote ?? 0) - (ranked[1]?.vote ?? 0);
 }
 
+/** Epoch ms of a seat's last publish; 0 when missing/unparseable (sorts last). */
+export function seatUpdatedAt(seat: SeatResult): number {
+  const t = Date.parse(seat.last_published_at);
+  return Number.isNaN(t) ? 0 : t;
+}
+
 /**
- * Sort seats by momentum so the most relevant rows surface first.
+ * Momentum comparator — the most relevant row first.
  * - Rasmi (official): biggest majority first.
- * - Tidak Rasmi (unofficial): seats with votes in (leading) first, ordered by
+ * - Tidak Rasmi (unofficial): seats with votes (leading) first, ordered by
  *   current lead; seats with no votes yet ("Belum") last, ordered by seat id.
  */
-export function sortSeatsByMomentum(seats: SeatResult[], official: boolean): SeatResult[] {
-  const sorted = [...seats];
+function momentumCompare(a: SeatResult, b: SeatResult, official: boolean): number {
   if (official) {
-    sorted.sort((a, b) => (b.majority || liveMargin(b)) - (a.majority || liveMargin(a)));
-  } else {
-    sorted.sort((a, b) => {
-      const aHas = totalVotes(a) > 0 ? 1 : 0;
-      const bHas = totalVotes(b) > 0 ? 1 : 0;
-      if (aHas !== bHas) return bHas - aHas;
-      if (aHas === 1) return liveMargin(b) - liveMargin(a);
-      return a.seat_id.localeCompare(b.seat_id);
-    });
+    return (b.majority || liveMargin(b)) - (a.majority || liveMargin(a));
   }
-  return sorted;
+  const aHas = totalVotes(a) > 0 ? 1 : 0;
+  const bHas = totalVotes(b) > 0 ? 1 : 0;
+  if (aHas !== bHas) return bHas - aHas;
+  if (aHas === 1) return liveMargin(b) - liveMargin(a);
+  return a.seat_id.localeCompare(b.seat_id);
+}
+
+/** Sort seats by momentum (see {@link momentumCompare}). */
+export function sortSeatsByMomentum(seats: SeatResult[], official: boolean): SeatResult[] {
+  return [...seats].sort((a, b) => momentumCompare(a, b, official));
+}
+
+/**
+ * Sort seats freshest-updated first (by `last_published_at`), falling back to
+ * momentum ordering when two seats share the same publish time. Lets editors
+ * see which seats just moved during live counting.
+ */
+export function sortSeatsByRecency(seats: SeatResult[], official: boolean): SeatResult[] {
+  return [...seats].sort((a, b) => {
+    const d = seatUpdatedAt(b) - seatUpdatedAt(a);
+    if (d !== 0) return d;
+    return momentumCompare(a, b, official);
+  });
 }

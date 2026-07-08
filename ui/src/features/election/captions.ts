@@ -113,7 +113,7 @@ export function heavyweightCaption(seat: SeatResult, brand: string): string {
         return `${cc?.zh ?? c.name}（${cc?.partyZh ?? partyZh(c.party) ?? getParty(c.party).abbreviation}）`;
       })
       .join(" 对垒 ");
-    return withHub(`焦点议席 · ${state}\n\n${seat.seat_id} - ${seatName}：${pair}。`, true);
+    return withHub(`非正式成绩:\n\n${seat.seat_id} - ${seatName}：${pair}。`, true);
   }
 
   if (w) {
