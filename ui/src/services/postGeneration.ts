@@ -26,19 +26,31 @@ export interface CmsGenInput {
 
 const CMS_TIMEOUT_MS = 180_000
 
+// Each post type now calls its dedicated engine webhook directly (the old unified
+// `cms-article-to-post` router is retired). The engines are dual-mode: `articleAPI: true`
+// tells them to use the pre-fetched article we send instead of scraping the URL.
+const WEBHOOK_BY_TYPE: Record<CmsPostType, { url: string | undefined; envVar: string }> = {
+  photo: { url: import.meta.env.VITE_GENERATE_WEBHOOK_URL as string | undefined, envVar: 'VITE_GENERATE_WEBHOOK_URL' },
+  quickfact: { url: import.meta.env.VITE_QUICK_FACT_WEBHOOK_URL as string | undefined, envVar: 'VITE_QUICK_FACT_WEBHOOK_URL' },
+  quote: { url: import.meta.env.VITE_QUOTE_WEBHOOK_URL as string | undefined, envVar: 'VITE_QUOTE_WEBHOOK_URL' },
+}
+
 async function callCmsWebhook(
   input: CmsGenInput,
   postType: CmsPostType,
 ): Promise<Record<string, unknown>> {
-  const webhookUrl = (import.meta.env.VITE_CMS_POST_WEBHOOK_URL as string | undefined)?.trim()
-  if (!webhookUrl) throw new Error('CMS post webhook not configured (VITE_CMS_POST_WEBHOOK_URL)')
+  const { url, envVar } = WEBHOOK_BY_TYPE[postType]
+  const webhookUrl = url?.trim()
+  if (!webhookUrl) throw new Error(`${postType} webhook not configured (${envVar})`)
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), CMS_TIMEOUT_MS)
   try {
     const res = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...input, postType }),
+      // `articleAPI: true` → engines skip scraping and use the fields below.
+      // `caption_title_mode: 'ai'` preserves the old router's behaviour.
+      body: JSON.stringify({ ...input, articleAPI: true, caption_title_mode: 'ai', postType }),
       signal: controller.signal,
     })
     const text = await res.text()
@@ -81,8 +93,9 @@ export async function generateQuickFactFromCms(
 ): Promise<QuickFactData> {
   const data = await callCmsWebhook(input, 'quickfact')
   return {
-    // Cover title follows the article (API) title, not the LLM-generated one.
-    title: input.title || (data.title as string) || '',
+    // Title follows the brand rule applied server-side (Astro Awani → article title,
+    // all other brands → AI-generated), returned as data.title.
+    title: (data.title as string) || input.title || '',
     sectionLabel: (data.sectionLabel as string) ?? '',
     keyPhrase: (data.keyPhrase as string) ?? '',
     caption: (data.caption as string) ?? '',
