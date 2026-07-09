@@ -31,7 +31,6 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         // For a templated brand the baked footer eats the bottom band, so cap
         // the row-break + callout floor to the template's usable area.
         const tpl = ELECTION_BG_TEMPLATES[brand];
-        const breakY = tpl ? tpl.contentBottom - 120 : C.height - 320;
         const calloutFloor = tpl ? tpl.contentBottom - 150 : C.height - 300;
 
         canvas.add(
@@ -56,13 +55,18 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
         );
 
         // Tally bars
-        const bars = summary.tally.slice(0, 7);
+        const bars = summary.tally;
         const maxSeats = Math.max(1, ...bars.map((b) => b.seats));
         const barAreaW = C.width - x * 2;
-        const labelW = 150;
+        // Wide enough for the longest party abbreviation ("BERSAMA", 30px bold
+        // uppercase ≈ 147px) so the label never collides with the bar track.
+        const labelW = 200;
         const barMaxW = barAreaW - labelW - 120;
-        let rowY = top + 220;
-        const rowH = 96;
+        const barStart = top + 220;
+        // Size rows to fit every category above the callout band, so a full
+        // 6-row scorecard never clips the last row on either template.
+        const rowH = Math.max(56, Math.min(96, Math.floor((calloutFloor - barStart) / bars.length)));
+        let rowY = barStart;
         for (const t of bars) {
           const color = safePartyColor(t.party.color);
           const barLabel = zh
@@ -116,7 +120,6 @@ export const ScoreboardCanvas = forwardRef<ElectionCanvasHandle, Props>(
             }),
           );
           rowY += rowH;
-          if (rowY > breakY) break;
         }
 
         // Seats-to-govern + leader callout
