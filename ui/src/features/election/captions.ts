@@ -34,7 +34,7 @@ export function seatCaption(seat: SeatResult, brand: string): string {
       const tc = top ? zhCandidate(seat.seat_id, top.name) : null;
       const party = tc?.partyZh ?? (top ? partyZh(top.party) : null);
       const lead = top ? ` ${tc?.zh ?? top.name}（${party ?? getParty(top.party).abbreviation}）暂时领先。` : "";
-      return withHub(`${state}州选成绩：${seat.seat_id} - ${seatName} 州议席成绩尚未宣布。${lead}`, true);
+      return withHub(`${state}州选成绩：${seat.seat_id} - ${seatName} 州议席非正式成绩:${lead}`, true);
     }
     const wc = zhCandidate(seat.seat_id, w.name);
     const party = wc?.partyZh ?? partyZh(w.party) ?? getParty(w.party).abbreviation;

@@ -29,9 +29,17 @@ function norm(s: string): string {
     .trim();
 }
 
+/** Canonicalize a feed seat id to the JSON key form: strip zero-padding
+ *  ("N03" → "N3"); ids already unpadded ("N11") pass through unchanged. The
+ *  live feed pads to two digits (N01–N09) while the table is keyed N1–N9. */
+function seatKey(seatId: string): string {
+  const m = /^([A-Za-z]+)0*(\d+)$/.exec(seatId.trim());
+  return m ? `${m[1].toUpperCase()}${m[2]}` : seatId.trim();
+}
+
 /** Chinese seat name for a seat id, or null if unknown. */
 export function zhSeatName(seatId: string): string | null {
-  return DATA[seatId]?.seatZh || null;
+  return DATA[seatKey(seatId)]?.seatZh || null;
 }
 
 export interface ZhCandidate {
@@ -42,7 +50,7 @@ export interface ZhCandidate {
 
 /** Match a feed candidate (Malay name) to its Chinese entry within a seat. */
 export function zhCandidate(seatId: string, feedName: string): ZhCandidate | null {
-  const seat = DATA[seatId];
+  const seat = DATA[seatKey(seatId)];
   if (!seat) return null;
   const key = norm(feedName);
   if (!key) return null;
