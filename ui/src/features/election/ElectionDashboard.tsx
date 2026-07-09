@@ -22,7 +22,6 @@ interface Props {
   onRefresh: () => void;
   onGenerateScoreboard: (state: string) => void;
   onGenerateSeat: (seat: SeatResult) => void;
-  onGenerateHeavyweight: (seat: SeatResult) => void;
 }
 
 const STATUS_CHIPS: { id: ResultFilter; label: string }[] = [
@@ -46,7 +45,6 @@ export function ElectionDashboard({
   onRefresh,
   onGenerateScoreboard,
   onGenerateSeat,
-  onGenerateHeavyweight,
 }: Props) {
   const states = useMemo(() => listStates(seats), [seats]);
   const [state, setState] = useState<string>(states[0] ?? "");
@@ -114,7 +112,7 @@ export function ElectionDashboard({
 
         {/* Tally bars */}
         <div className="space-y-2">
-          {summary.tally.slice(0, 6).map((t) => {
+          {summary.tally.map((t) => {
             const color = safePartyColor(t.party.color);
             return (
               <div key={t.partyId} className="flex items-center gap-3">
@@ -219,14 +217,6 @@ export function ElectionDashboard({
                   </p>
                 )}
               </div>
-              {seat.is_heavyweight === 1 && (
-                <button
-                  onClick={() => onGenerateHeavyweight(seat)}
-                  className="shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 hover:bg-neutral-50 transition"
-                >
-                  Utama
-                </button>
-              )}
               <button
                 onClick={() => onGenerateSeat(seat)}
                 className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition active:scale-[0.98]"

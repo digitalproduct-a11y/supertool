@@ -97,12 +97,16 @@ export const PARTIES: Record<number, Party> = {
   103: { name: "PARTI RUMPUN SABAH", abbreviation: "RUMPUN", color: "#e888ed", type: "party" },
   105: { name: "PARTI GEMILANG ANAK SABAH", abbreviation: "GAS", color: "#0e6cbf", type: "party" },
   107: { name: "PERJUANGAN RAKYAT", abbreviation: "PR", color: "#5d3b1f", type: "party" },
-  109: { name: "PARTI BERSATU SASA MALAYSIA", abbreviation: "BERSAMA", color: "#636a3a", type: "party" },
+  109: { name: "PARTI BERSATU SASA MALAYSIA", abbreviation: "MUPP", color: "#636a3a", type: "party" },
+  110: { name: "PARTI BERSAMA MALAYSIA", abbreviation: "BERSAMA", color: "#eebd00", type: "party" },
+  112: { name: "PARTI ORANG ASLI MALAYSIA", abbreviation: "ASLI", color: "#ffffff", type: "party" },
 };
 
+// Fallback for a party id that isn't in the table (or is null). Kept neutral —
+// it must NOT masquerade as BEBAS (id 9); an unmapped id is just "lain-lain".
 const UNKNOWN_PARTY: Party = {
-  name: "BEBAS",
-  abbreviation: "BEBAS",
+  name: "LAIN-LAIN",
+  abbreviation: "DLL",
   color: "#9ca3af",
   type: "party",
 };

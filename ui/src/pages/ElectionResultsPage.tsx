@@ -16,7 +16,7 @@ import { SeatResultCanvas } from "../features/election/SeatResultCanvas";
 import { ScoreboardCanvas } from "../features/election/ScoreboardCanvas";
 import { HeavyweightCanvas } from "../features/election/HeavyweightCanvas";
 import { buildStateSummary, type StateSummary } from "../features/election/electionAggregate";
-import { heavyweightCaption, scoreboardCaption, seatCaption } from "../features/election/captions";
+import { scoreboardCaption, seatCaption } from "../features/election/captions";
 import { isHotspot } from "../features/election/electionLabels";
 import type { ElectionCanvasHandle } from "../features/election/canvasShared";
 import type { SeatResult } from "../features/election/types";
@@ -54,11 +54,6 @@ export function ElectionResultsPage() {
     setScheduled(false);
     setComposer({ kind: "seat", seat });
     setCaption(seatCaption(seat, brand));
-  }
-  function openHeavyweight(seat: SeatResult) {
-    setScheduled(false);
-    setComposer({ kind: "heavyweight", seat });
-    setCaption(heavyweightCaption(seat, brand));
   }
   function openScoreboard(state: string) {
     setScheduled(false);
@@ -211,7 +206,6 @@ export function ElectionResultsPage() {
             onRefresh={refresh}
             onGenerateScoreboard={openScoreboard}
             onGenerateSeat={openSeat}
-            onGenerateHeavyweight={openHeavyweight}
           />
         )}
       </div>

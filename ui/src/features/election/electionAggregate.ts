@@ -42,6 +42,38 @@ export function tallyByParty(seats: SeatResult[]): CoalitionTally[] {
     .sort((a, b) => b.seats - a.seats || a.partyId - b.partyId);
 }
 
+/** Named scorecard categories, in display order (BN, PH, PN, MUDA, BERSAMA).
+ *  Every other declared winner is folded into the DLL ("lain-lain") bucket.
+ *  Tuned for the Johor PRN race — revisit per season if the contenders differ. */
+const SCORECARD_PARTIES = [1, 42, 55, 65, 110] as const;
+const DLL_PARTY_ID = 61;
+
+/**
+ * Fixed 6-row scorecard tally: the named parties above (0 when they have no
+ * declared seats yet) plus a single DLL row summing every other declared
+ * winner. Order is fixed (not sorted by seat count).
+ */
+export function scorecardTally(seats: SeatResult[]): CoalitionTally[] {
+  const counts = new Map<number, number>();
+  let dll = 0;
+  for (const seat of seats) {
+    const w = winnerOf(seat);
+    if (!w) continue;
+    if ((SCORECARD_PARTIES as readonly number[]).includes(w.party)) {
+      counts.set(w.party, (counts.get(w.party) ?? 0) + 1);
+    } else {
+      dll += 1;
+    }
+  }
+  const rows: CoalitionTally[] = SCORECARD_PARTIES.map((partyId) => ({
+    partyId,
+    party: getParty(partyId),
+    seats: counts.get(partyId) ?? 0,
+  }));
+  rows.push({ partyId: DLL_PARTY_ID, party: getParty(DLL_PARTY_ID), seats: dll });
+  return rows;
+}
+
 export function declaredCount(seats: SeatResult[]): number {
   return seats.reduce((n, s) => n + (isDeclared(s) ? 1 : 0), 0);
 }
@@ -75,7 +107,9 @@ export function summarizeByState(seats: SeatResult[]): StateSummary[] {
 }
 
 export function buildStateSummary(state: string, seats: SeatResult[]): StateSummary {
-  const tally = tallyByParty(seats);
+  // Display uses the fixed scorecard layout; the leader is the true per-party
+  // front-runner (so "X mendahului" never reads as the DLL bucket).
+  const tally = scorecardTally(seats);
   const totalSeats = getStateTotalSeats(state);
   return {
     state,
@@ -84,7 +118,7 @@ export function buildStateSummary(state: string, seats: SeatResult[]): StateSumm
     declared: declaredCount(seats),
     totalSeats,
     toGovern: totalSeats != null ? seatsToGovern(totalSeats) : undefined,
-    leader: leader(tally),
+    leader: leader(tallyByParty(seats)),
   };
 }
 

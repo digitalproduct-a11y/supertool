@@ -8,10 +8,13 @@ export const PARTY_ZH: Record<number, string> = {
   42: "希盟", // PH
   55: "国盟", // PN
   9: "独立人士", // BEBAS
+  61: "其他", // DLL (lain-lain / others)
+  110: "同心党", // PARTI BERSAMA MALAYSIA
+  112: "原住民党", // ASLI (PARTI ORANG ASLI MALAYSIA)
   65: "MUDA",
   21: "社会主义党", // PSM
-  89: "同心党", // KDM
-  69: "民族党", // PBM
+  89: "社会民主和谐党", // KDM
+  69: "全民党", // PBM
   57: "斗士党", // PEJUANG
   // Component parties (in case the feed reports these instead of the coalition):
   43: "巫统", // UMNO
@@ -32,6 +35,9 @@ export function partyZh(partyId: number | null | undefined): string | null {
 
 /** ZH row label keyed by party id, with a fallback for the BEBAS/independent
  *  abbreviation (feed sometimes reports independents with an unmapped id). */
-export function partyZhLabel(partyId: number | null | undefined, abbreviation: string): string | null {
+export function partyZhLabel(
+  partyId: number | null | undefined,
+  abbreviation: string,
+): string | null {
   return partyZh(partyId) ?? (abbreviation === "BEBAS" ? "独立人士" : null);
 }

@@ -65,7 +65,7 @@ export function scoreboardCaption(summary: StateSummary, brand: string): string 
     const state = zhState(summary.state) ?? summary.state;
     const head = `${state}州选最新成绩`;
     const tallyLine = summary.tally
-      .slice(0, 5)
+      .filter((t) => t.seats > 0)
       .map((t) => `${partyZh(t.partyId) ?? t.party.abbreviation} ${t.seats}`)
       .join(" · ");
     const declared =
@@ -78,7 +78,7 @@ export function scoreboardCaption(summary: StateSummary, brand: string): string 
 
   const head = `KEPUTUSAN TERKINI PRN ${summary.state.toUpperCase()}`;
   const tallyLine = summary.tally
-    .slice(0, 5)
+    .filter((t) => t.seats > 0)
     .map((t) => `${t.party.abbreviation} ${t.seats}`)
     .join(" · ");
   const declared =
