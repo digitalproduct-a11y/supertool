@@ -25,3 +25,8 @@ dist-ssr
 .env*
 !.env.example
 .vercel
+
+# Claude Code / agent tooling
+.claude/
+.agents/
+skills-lock.json

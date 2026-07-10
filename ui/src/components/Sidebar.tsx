@@ -162,6 +162,9 @@ export function Sidebar({
   onCollapsedChange,
 }: SidebarProps) {
   const { selectedBrand, isAdmin, clearBrand } = useBrand()
+  // KULT is the internal toolkit profile: it gets the full Affiliate section
+  // (normally Admin-only) but is excluded from the Meta/YouTube dashboards.
+  const isKult = selectedBrand === 'KULT'
   const navigate = useNavigate()
   const { instance } = useMsal()
   const [isOpen, setIsOpen] = useState(false);
@@ -178,14 +181,16 @@ export function Sidebar({
       items: group.items.filter(item => {
         // PrimeTalk: only Hotspot brand or Admin
         if (item.id === 'prime-talk') return selectedBrand === 'Hotspot' || isAdmin
-        // Election Results: only Astro Awani / Hotspot brands or Admin
+        // Election Results: only Astro Awani / Hotspot brands or Admin (KULT excluded)
         if (item.id === 'election-results') return selectedBrand === 'Astro Awani' || selectedBrand === 'Hotspot' || isAdmin
+        // Meta / YouTube dashboards: excluded for the KULT profile
+        if (item.id === 'dashboard' || item.id === 'youtube-dashboard') return !isKult
         return true
       })
     }))
-    // Hide Affiliate section entirely for non-Admin
+    // Affiliate section: Admin and the KULT profile only
     .filter(group => {
-      if (group.section === 'Affiliate') return isAdmin
+      if (group.section === 'Affiliate') return isAdmin || isKult
       return true
     })
     // Remove sections with no items after filtering

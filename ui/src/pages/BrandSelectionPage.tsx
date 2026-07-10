@@ -41,7 +41,7 @@ function BrandCard({
       }`}
     >
       <div
-        className="w-16 h-16 flex-shrink-0 flex items-center justify-center"
+        className="w-16 min-h-[4rem] self-stretch flex-shrink-0 flex items-center justify-center"
         style={{
           backgroundColor: comingSoon
             ? '#E5E7EB'
@@ -108,6 +108,7 @@ export function BrandSelectionPage() {
     'MBNS': [],
     'ARSB': [],
     'NISB': [],
+    'KULT': [],
   }
 
   BRANDS.filter(brand => !isComingSoon(brand)).forEach(brand => {
@@ -239,8 +240,16 @@ export function BrandSelectionPage() {
           </div>
         </div>
 
-        {/* Admin card */}
-        <div className="mt-8 pt-8 border-t border-neutral-200">
+        {/* KULT profile + Admin — side by side at the bottom */}
+        <div className="mt-8 pt-8 border-t border-neutral-200 grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+          {brandsByEntity['KULT'].map(brand => (
+            <BrandCard
+              key={brand}
+              brand={brand as BrandName}
+              loadingBrand={loadingBrand}
+              onSelect={(b) => void handleSelectBrand(b)}
+            />
+          ))}
           <button
             onClick={() => setShowAdminModal(true)}
             className="w-full bg-neutral-900 hover:bg-neutral-800 rounded-xl px-4 py-6 transition-all duration-200 text-left group flex items-center gap-3 hover:shadow-[0_12px_40px_rgba(0,0,0,0.20)] hover:scale-[1.01]"

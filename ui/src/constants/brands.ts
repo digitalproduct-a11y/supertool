@@ -17,6 +17,7 @@ export const BRANDS = [
   "Impiana",
   "Kashoorga",
   "Keluarga",
+  "KULT",
   "Libur",
   "Lite",
   "Maskulin",
@@ -182,6 +183,7 @@ export const BRAND_HEX: Record<BrandName, string> = {
   Impiana: "#4A2859",
   Kashoorga: "#000000",
   Keluarga: "#5DADE2",
+  KULT: "#000000",
   Libur: "#000000",
   Lite: "#000000",
   Maskulin: "#1A1A1A",
@@ -247,6 +249,7 @@ export const BRAND_FONT_USE: Record<BrandName, string | null> = {
   Impiana: null,
   Kashoorga: null,
   Keluarga: null,
+  KULT: null,
   Libur: null,
   Lite: "Fonts:LeagueSpartan-Bold.ttf",
   Maskulin: null,
@@ -302,6 +305,7 @@ export const BRAND_LANGUAGE: Record<BrandName, BrandLanguage> = {
   Impiana: "BM",
   Kashoorga: "BM",
   Keluarga: "BM",
+  KULT: "EN",
   Libur: "BM",
   Lite: "EN",
   Maskulin: "BM",
@@ -352,6 +356,7 @@ export const BRAND_LOGO_IDS: Record<BrandName, string> = {
   Impiana: "impiana_logo",
   Kashoorga: "",
   Keluarga: "keluarga_logo",
+  KULT: "kult-logo",
   Libur: "",
   Lite: "lite_logo",
   Maskulin: "maskulin_logo",
@@ -404,6 +409,7 @@ export const BRAND_LOGO_URLS: Record<BrandName, string> = {
   Impiana: "https://res.cloudinary.com/dymmqtqyg/image/upload/impiana_logo",
   Kashoorga: "",
   Keluarga: "https://res.cloudinary.com/dymmqtqyg/image/upload/keluarga_logo",
+  KULT: "/kult-logo.png",
   Libur: "",
   Lite: "https://res.cloudinary.com/dymmqtqyg/image/upload/lite_logo",
   Maskulin: "https://res.cloudinary.com/dymmqtqyg/image/upload/maskulin_logo",
@@ -441,6 +447,7 @@ export function getBrandLogoUrl(brand: string): string {
 }
 
 export const BRANDS_WITH_DARK_BG = new Set<BrandName>([
+  "KULT",
   "Astro Radio News",
   "Astro Ulagam",
   "Rojak Daily",
@@ -467,6 +474,7 @@ export const ENTITY_LABELS: Record<BrandEntity, string> = {
   MBNS: "Astro",
   ARSB: "Astro Radio",
   NISB: "Nu Ideaktiv",
+  KULT: "KULT",
 };
 
 export function getEntityLabel(brand: string): string {
@@ -474,7 +482,10 @@ export function getEntityLabel(brand: string): string {
   return ENTITY_LABELS[entity] ?? "—";
 }
 
-export type BrandEntity = "AASB" | "MBNS" | "ARSB" | "NISB";
+// "KULT" is not a content entity — it's the internal toolkit profile, given its
+// own group so it renders as a dedicated card in the brand picker rather than
+// being listed among Astro's content brands.
+export type BrandEntity = "AASB" | "MBNS" | "ARSB" | "NISB" | "KULT";
 
 export const BRAND_ENTITY: Record<BrandName, BrandEntity> = {
   "Astro Awani": "AASB",
@@ -495,6 +506,7 @@ export const BRAND_ENTITY: Record<BrandName, BrandEntity> = {
   Impiana: "NISB",
   Kashoorga: "NISB",
   Keluarga: "NISB",
+  KULT: "KULT",
   Libur: "NISB",
   Lite: "ARSB",
   Maskulin: "NISB",
