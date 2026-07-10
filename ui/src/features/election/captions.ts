@@ -10,7 +10,7 @@ import { zhCandidate, zhSeatName, zhState } from "./hotspotNames";
 import { partyZh } from "./partyZh";
 import type { SeatResult } from "./types";
 
-const HUB_URL = "https://pru.astroawani.com/prn-johor-2026/hub";
+const HUB_URL = "pru.astroawani.com";
 
 function fmt(n: number): string {
   return n.toLocaleString("en-MY");
