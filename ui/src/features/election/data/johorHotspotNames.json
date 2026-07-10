@@ -333,7 +333,8 @@
 "candidates": [
 {
 "ms": [
-"Azman Ismail"
+"Azman Ismail",
+"Dato Azman Ismail"
 ],
 "zh": "阿兹曼",
 "coalitionZh": "国阵",
@@ -351,7 +352,8 @@
 {
 "ms": [
 "Awang",
-"Arsyed Yahya@Awang"
+"Arsyed Yahya@Awang",
+"Arsyed Yahya @ Awang"
 ],
 "zh": "阿尔希德",
 "coalitionZh": "国盟",
@@ -388,7 +390,8 @@
 },
 {
 "ms": [
-"Mohd Radzi Md Amin"
+"Mohd Radzi Md Amin",
+"Mohd Radzi Amin"
 ],
 "zh": "莫哈末拉兹",
 "coalitionZh": "国盟",
@@ -404,7 +407,8 @@
 },
 {
 "ms": [
-"Jeghanaathan Subramaniam"
+"Jeghanaathan Subramaniam",
+"Jeganathan Subramaniam"
 ],
 "zh": "吉卡纳登",
 "coalitionZh": "独立",
@@ -542,7 +546,8 @@
 {
 "ms": [
 "Ah Soon",
-"Lim Tian Soon"
+"Lim Tian Soon",
+"Ling Tian Soon"
 ],
 "zh": "林添顺",
 "coalitionZh": "国阵",
@@ -601,7 +606,8 @@
 },
 {
 "ms": [
-"Md.Ezam Taslim"
+"Md.Ezam Taslim",
+"Md. Ezam Taslim"
 ],
 "zh": "莫哈末依占",
 "coalitionZh": "希盟",
@@ -846,7 +852,7 @@
 ],
 "zh": "吉华古马",
 "coalitionZh": "国盟",
-"partyZh": "国盟"
+"partyZh": "大马印度人民党"
 },
 {
 "ms": [
@@ -970,7 +976,8 @@
 },
 {
 "ms": [
-"Ahmad Daniel Shahrudin"
+"Ahmad Daniel Shahrudin",
+"Ahmad Daniel Sharudin"
 ],
 "zh": "阿末丹尼尔",
 "coalitionZh": "希盟",
@@ -1238,7 +1245,8 @@
 {
 "ms": [
 "Hp Lim",
-"Lim Hun Peaw@HP Lim"
+"Lim Hun Peaw@HP Lim",
+"Lim Hun Peaw @ HP Lim"
 ],
 "zh": "林昀标",
 "coalitionZh": "独立",
@@ -1337,7 +1345,7 @@
 ],
 "zh": "林振荣",
 "coalitionZh": "国盟",
-"partyZh": "国盟"
+"partyZh": "土团党"
 },
 {
 "ms": [
@@ -1476,7 +1484,7 @@
 "ms": [
 "Sahrudin Omar"
 ],
-"zh": "",
+"zh": "沙鲁丁",
 "coalitionZh": "同心党",
 "partyZh": "同心党"
 }
@@ -1606,7 +1614,8 @@
 },
 {
 "ms": [
-"Razak Ismail"
+"Razak Ismail",
+"Abdul Razak Ismail"
 ],
 "zh": "阿都拉萨伊斯迈",
 "coalitionZh": "希盟",
