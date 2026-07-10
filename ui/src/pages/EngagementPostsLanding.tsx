@@ -51,6 +51,7 @@ const TOOL_CARDS = [
       { label: "Currency Rate", path: "/engagement-posts/latest-currency-rate" },
       { label: "Fuel Price", path: "/engagement-posts/latest-fuel-price" },
       { label: "Weather Malaysia", path: "/engagement-posts/weather-malaysia" },
+      { label: "Gold Rate", path: "/engagement-posts/gold-rate" },
     ],
   },
   {

@@ -13,6 +13,7 @@ import { EngagementPostsLanding } from './pages/EngagementPostsLanding'
 import { LatestCurrencyRatePage } from './pages/LatestCurrencyRatePage'
 import { LatestFuelPricePage } from './pages/LatestFuelPricePage'
 import { KLCIIndexPage } from './pages/KLCIIndexPage'
+import { GoldRatePage } from './pages/GoldRatePage'
 import { BrandLayout } from './components/BrandLayout'
 import { RouteTracker } from './components/RouteTracker'
 import { PageTitle } from './components/PageTitle'
@@ -686,6 +687,7 @@ function App() {
         <Route path="engagement-posts/latest-currency-rate" element={<LatestCurrencyRatePage />} />
         <Route path="engagement-posts/latest-fuel-price" element={<LatestFuelPricePage />} />
         <Route path="engagement-posts/klci-index" element={<KLCIIndexPage />} />
+        <Route path="engagement-posts/gold-rate" element={<GoldRatePage />} />
         <Route path="engagement-posts/on-this-day-malaysia" element={
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <OnThisDayPage />
