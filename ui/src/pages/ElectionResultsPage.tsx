@@ -5,6 +5,7 @@ import { useBrand } from "../context/BrandContext";
 import { useBrandNavigate } from "../hooks/useBrandNavigate";
 import { BRANDS } from "../constants/brands";
 import { trackButtonClick } from "../utils/analytics";
+import { logHistoryEvent } from "../services/historyLog";
 import { toast } from "../hooks/useToast";
 import { Spinner } from "../components/ds/Spinner";
 import { ScheduleModal } from "../components/ScheduleModal";
@@ -117,10 +118,32 @@ export function ElectionResultsPage() {
         saveCredentials(brandLower, resolvedPasscode);
         toast.success("Scheduled on Facebook!");
         setScheduled(true);
+        logHistoryEvent({
+          eventType: "scheduled",
+          brand,
+          toolPostType: "election",
+          sourcePage: "election",
+          title: composer ? titleFor(composer) : "",
+          caption,
+          imageUrl,
+          scheduledFor,
+          status: "success",
+        });
         return;
       }
       toast.error(data.message || "Failed to schedule post");
     } catch (err) {
+      logHistoryEvent({
+        eventType: "error",
+        brand,
+        toolPostType: "election",
+        sourcePage: "election",
+        title: composer ? titleFor(composer) : "",
+        caption,
+        scheduledFor,
+        status: "error",
+        errorMessage: err instanceof Error ? err.message : "Failed to schedule post",
+      });
       toast.error(err instanceof Error ? err.message : "Failed to schedule post");
     } finally {
       setIsScheduling(false);
@@ -130,6 +153,13 @@ export function ElectionResultsPage() {
   function filenameFor(c: Composer): string {
     if (c.kind === "scoreboard") return `prn-scoreboard-${c.summary.state}`;
     return `prn-${c.kind === "heavyweight" ? "utama-" : ""}${c.seat.seat_id}-${c.seat.seat_name}`;
+  }
+
+  // Human-readable descriptor for the History Log title column.
+  function titleFor(c: Composer): string {
+    if (c.kind === "scoreboard") return `Scoreboard — DUN ${c.summary.state}`;
+    const prefix = c.kind === "heavyweight" ? "Utama — " : "";
+    return `${prefix}${c.seat.seat_id} ${c.seat.seat_name}`;
   }
 
   function handleBack() {
@@ -255,6 +285,15 @@ export function ElectionResultsPage() {
                     onClick={() => {
                       trackButtonClick("download_image");
                       canvasRef.current?.downloadAsPng(filenameFor(composer).toLowerCase());
+                      logHistoryEvent({
+                        eventType: "downloaded",
+                        brand,
+                        toolPostType: "election",
+                        sourcePage: "election",
+                        title: titleFor(composer),
+                        caption,
+                        status: "success",
+                      });
                     }}
                     className="w-full px-4 py-3 border border-neutral-200 hover:bg-neutral-50 text-neutral-950 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 active:scale-[0.98]"
                   >

@@ -9,8 +9,8 @@ export type HistoryEventType = 'generated' | 'scheduled' | 'error' | 'downloaded
 export interface HistoryEventInput {
   eventType: HistoryEventType
   brand: string
-  toolPostType: string          // photo | carousel | quickfact | quote | cms | history_export
-  sourcePage: string            // article_to_social | cms | history_log
+  toolPostType: string          // photo | carousel | quickfact | quote | cms | history_export | election
+  sourcePage: string            // article_to_social | cms | history_log | election
   articleUrl?: string
   title?: string
   caption?: string
