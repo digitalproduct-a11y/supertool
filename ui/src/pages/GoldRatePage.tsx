@@ -146,9 +146,6 @@ export function GoldRatePage() {
                   <h2 className="font-display text-lg font-semibold text-neutral-950">Latest Gold Rate</h2>
                   <p className="text-sm text-neutral-500 mt-1">Get today's 916 gold price and generate a branded post ready for social media.</p>
                 </div>
-                <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
-                  <p className="text-xs text-amber-900">This post is generated for <span className="font-semibold">Astro Ulagam</span>.</p>
-                </div>
                 <button
                   onClick={() => { setStage('generate'); handleGenerate() }}
                   disabled={isLoading}
@@ -175,7 +172,7 @@ export function GoldRatePage() {
           <div className="mt-4 h-[3px] rounded-full animate-stripe-grow" style={{ background: 'linear-gradient(to right, #FF3FBF, #00E5D4, #0055EE, #F05A35)' }} />
         </div>
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-sm text-amber-900">916 gold price updates daily. Generated for Astro Ulagam.</p>
+          <p className="text-sm text-amber-900">916 gold price updates daily.</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-stretch">
           {/* Left: Controls */}

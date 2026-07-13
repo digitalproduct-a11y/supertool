@@ -156,6 +156,7 @@ const TOOL_CARDS = [
       { label: 'Currency Rate', path: '/engagement-posts/latest-currency-rate' },
       { label: 'Fuel Price', path: '/engagement-posts/latest-fuel-price' },
       { label: 'Weather Malaysia', path: '/engagement-posts/weather-malaysia' },
+      { label: 'Gold Rate', path: '/engagement-posts/gold-rate' },
     ],
   },
   {
@@ -757,6 +758,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                     : (selectedBrand ? (BRAND_CUSTOM_ENGAGEMENT[selectedBrand] ?? []) : [])
                   : card.links
                 const links = [...(('sharedLinks' in card && card.sharedLinks) ? card.sharedLinks : []), ...brandLinks]
+                  .filter(link => link.path !== '/engagement-posts/gold-rate' || isAdmin || selectedBrand === 'Astro Ulagam')
                 return (
                   <div key={card.title} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
                     {/* 16:9 illustration area */}
