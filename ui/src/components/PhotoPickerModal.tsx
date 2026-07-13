@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { TOPIC_CONFIGS } from '../constants/topics'
+import { signedUploadToCloudinary } from '../utils/cloudinary'
 
 interface PhotoPickerModalProps {
   playerName: string
@@ -92,21 +93,7 @@ export default function PhotoPickerModal({
     setUploadError(null)
 
     try {
-      const formData = new FormData()
-      formData.append('file', uploadFile)
-      formData.append('upload_preset', uploadPreset)
-      formData.append('tags', tags)
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: 'POST', body: formData },
-      )
-
-      if (!res.ok) {
-        throw new Error(`Upload failed: ${res.status}`)
-      }
-
-      const data = await res.json()
+      const data = await signedUploadToCloudinary(uploadFile, uploadPreset, { tags })
       onSelect({ url: data.secure_url, publicId: data.public_id })
     } catch (err) {
       setUploadError(
