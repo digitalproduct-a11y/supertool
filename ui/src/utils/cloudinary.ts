@@ -199,8 +199,11 @@ interface CloudinaryUploadResponse {
 
 // Fetches a fresh upload signature from the n8n signing webhook.
 // Webhook holds CLOUDINARY_API_SECRET as an n8n credential — never reaches the browser.
+// extraParams (e.g. tags) must be signed alongside upload_preset, so they're
+// forwarded to the webhook and must come back reflected in the same request body.
 async function getUploadSignature(
   uploadPreset: string,
+  extraParams?: Record<string, string>,
 ): Promise<CloudinarySignature> {
   const signWebhookUrl = (
     import.meta.env.VITE_CLOUDINARY_SIGN_WEBHOOK_URL as string | undefined
@@ -212,7 +215,7 @@ async function getUploadSignature(
   const res = await fetch(signWebhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ upload_preset: uploadPreset }),
+    body: JSON.stringify({ upload_preset: uploadPreset, ...extraParams }),
   });
   if (!res.ok) throw new Error(`Signature request failed: ${res.status}`);
   return (await res.json()) as CloudinarySignature;
@@ -224,8 +227,9 @@ async function getUploadSignature(
  * The API secret never leaves n8n.
  */
 export async function signedUploadToCloudinary(
-  fileOrUrl: File | string,
+  fileOrUrl: File | string | Blob,
   uploadPreset?: string,
+  extraParams?: Record<string, string>,
 ): Promise<CloudinaryUploadResponse> {
   const preset =
     uploadPreset ??
@@ -235,11 +239,16 @@ export async function signedUploadToCloudinary(
       "temp_uploads");
 
   const { signature, api_key, timestamp, cloud_name } =
-    await getUploadSignature(preset);
+    await getUploadSignature(preset, extraParams);
 
   const formData = new FormData();
   formData.append("file", fileOrUrl);
   formData.append("upload_preset", preset);
+  if (extraParams) {
+    for (const [key, value] of Object.entries(extraParams)) {
+      formData.append(key, value);
+    }
+  }
   formData.append("api_key", api_key);
   formData.append("timestamp", String(timestamp));
   formData.append("signature", signature);

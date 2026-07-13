@@ -5,6 +5,7 @@ import type { DidYouKnowIdea } from '../../hooks/useDidYouKnow'
 import { toast } from '../../hooks/useToast'
 import { ScheduleModal } from '../../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../../utils/fbCredentials'
+import { signedUploadToCloudinary } from '../../utils/cloudinary'
 import { EDITION_TRANSLATIONS } from './constants'
 
 interface DidYouKnowCardProps {
@@ -77,34 +78,18 @@ export function DidYouKnowCard({
   const uploadCanvasToCloudinary = async (dataUrl: string): Promise<string | null> => {
     try {
       const uploadPreset = (import.meta.env.VITE_CLOUDINARY_DIDYOUKNOW_UPLOAD_PRESET as string | undefined)?.trim()
-      const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim()
-
-      if (!uploadPreset || !cloudName) {
+      if (!uploadPreset) {
         console.error('Cloudinary config missing')
         return null
       }
 
-      // Convert data URL to blob
+      // Convert data URL to a file the signed upload flow can send
       const response = await fetch(dataUrl)
       const blob = await response.blob()
+      const file = new File([blob], 'didyouknow.png', { type: blob.type })
 
-      // Create FormData and upload
-      const formData = new FormData()
-      formData.append('file', blob)
-      formData.append('upload_preset', uploadPreset)
-
-      const uploadResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: 'POST', body: formData }
-      )
-
-      if (!uploadResponse.ok) {
-        console.error('Cloudinary upload failed:', uploadResponse.status)
-        return null
-      }
-
-      const data = await uploadResponse.json()
-      return data.secure_url || null
+      const { secure_url } = await signedUploadToCloudinary(file, uploadPreset)
+      return secure_url || null
     } catch (err) {
       console.error('Cloudinary upload error:', err)
       return null
