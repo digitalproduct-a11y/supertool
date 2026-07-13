@@ -125,7 +125,8 @@ export function EngagementPostsLanding({
                 ? Object.values(BRAND_CUSTOM_ENGAGEMENT).flat()
                 : (selectedBrand ? (BRAND_CUSTOM_ENGAGEMENT[selectedBrand] ?? []) : [])
               : card.links;
-            const links = [...(card.sharedLinks ?? []), ...brandLinks];
+            const links = [...(card.sharedLinks ?? []), ...brandLinks]
+              .filter((link) => link.path !== "/engagement-posts/gold-rate" || isAdmin || selectedBrand === "Astro Ulagam");
             return (
               <div
                 key={card.title}
