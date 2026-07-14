@@ -34,8 +34,6 @@ export type ToolId =
   | 'article-to-social'
   | 'fb-post'
   | 'latest-news'
-  | 'trending-news'
-  | 'spike-news'
   | 'affiliate-links'
   | 'product-feed-generator'
   | 'article-generator'
@@ -77,9 +75,16 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     section: "Tools",
     items: [
       { id: 'article-to-social', label: 'Article to Social Post', icon: IconStack2 },
-      { id: 'latest-news', label: 'News Feed', icon: IconNews },
       { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
+      { id: 'latest-news', label: 'News Feed', icon: IconNews },
       { id: 'election-results', label: 'Election Results', icon: IconChartPie },
+    ],
+  },
+  {
+    section: "Analysis",
+    items: [
+      { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
+      { id: 'youtube-dashboard', label: 'YouTube Dashboard', icon: IconChartBar },
     ],
   },
   {
@@ -115,8 +120,6 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
   {
     section: "Others",
     items: [
-      { id: 'dashboard', label: 'Meta Dashboard', icon: IconChartBar },
-      { id: 'youtube-dashboard', label: 'YouTube Dashboard', icon: IconChartBar },
       { id: 'post-queue', label: 'Scheduled Queue', icon: IconCalendarClock },
       { id: 'history-log', label: 'History Log', icon: IconHistory },
     ],
@@ -132,8 +135,6 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',
   'latest-news': 'News Feed',
-  'trending-news': 'Trending News',
-  'spike-news': 'Spike News',
   'affiliate-links': 'Shopee Affiliate Links',
   'product-feed-generator': 'Product Feed Generator',
   'article-generator': 'Affiliate Article Editor',
