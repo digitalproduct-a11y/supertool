@@ -7,7 +7,6 @@ import {
   IconFlame,
   IconTrophy,
   IconTrendingUp,
-  IconChartPie,
 } from '@tabler/icons-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { filterDashboardData } from '../utils/dashboardUtils'
@@ -136,16 +135,6 @@ const TOOL_CARDS = [
     ],
   },
   {
-    title: 'Election Results',
-    gradient: 'linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 50%, #FAF5FF 100%)',
-    icon: IconChartPie,
-    iconColor: '#4F46E5',
-    image: '',
-    links: [
-      { label: 'Live State Results', path: '/election-results' },
-    ],
-  },
-  {
     title: 'Information Post',
     gradient: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF9 50%, #F5FEFB 100%)',
     icon: IconTrendingUp,
@@ -179,6 +168,7 @@ const TOOL_CARDS = [
     sharedLinks: [
       { label: 'News Poster', path: '/engagement-posts/news-poster' },
       { label: 'Image Editor', path: '/engagement-posts/image-editor' },
+      { label: 'Election Results', path: '/election-results' },
     ] as { label: string; path: string }[],
     brandSpecific: true,
   },
@@ -747,10 +737,7 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
               <h2 className="text-lg font-bold text-neutral-950">Tools</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {TOOL_CARDS.filter(card =>
-                // Election Results: only Astro Awani / Hotspot brands or Admin
-                card.title !== 'Election Results' || isAdmin || selectedBrand === 'Astro Awani' || selectedBrand === 'Hotspot'
-              ).map(card => {
+              {TOOL_CARDS.map(card => {
                 const Icon = card.icon
                 const brandLinks = ('brandSpecific' in card && card.brandSpecific)
                   ? isAdmin
@@ -759,6 +746,8 @@ export function HomePage({ onToolSelect: _onToolSelect }: HomePageProps) {
                   : card.links
                 const links = [...(('sharedLinks' in card && card.sharedLinks) ? card.sharedLinks : []), ...brandLinks]
                   .filter(link => link.path !== '/engagement-posts/gold-rate' || isAdmin || selectedBrand === 'Astro Ulagam')
+                  // Election Results: only Astro Awani / Hotspot brands or Admin
+                  .filter(link => link.path !== '/election-results' || isAdmin || selectedBrand === 'Astro Awani' || selectedBrand === 'Hotspot')
                 return (
                   <div key={card.title} className="bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
                     {/* 16:9 illustration area */}
