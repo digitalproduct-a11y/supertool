@@ -7,7 +7,6 @@ import { AffiliateLinksPage } from './pages/AffiliateLinksPage'
 import { ProductFeedGeneratorPage } from './pages/ProductFeedGeneratorPage'
 import { ArticleGeneratorPage } from './pages/ArticleGeneratorPage'
 import { LatestNewsPage } from './pages/LatestNewsPage'
-import { TrendingSpikePage } from './pages/TrendingSpikePage'
 import { EngagementPhotosPage } from './pages/EngagementPhotosPage'
 import { EngagementPostsLanding } from './pages/EngagementPostsLanding'
 import { LatestCurrencyRatePage } from './pages/LatestCurrencyRatePage'
@@ -19,7 +18,6 @@ import { RouteTracker } from './components/RouteTracker'
 import { PageTitle } from './components/PageTitle'
 import { ShopeeTopProductsPage } from './pages/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './pages/ZernioScheduledPostsPage'
-import { SpikeNewsPage } from './pages/SpikeNewsPage'
 import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
 import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
@@ -81,7 +79,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'trending-news' | 'spike-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis' | 'history-log'
+type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis' | 'history-log'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -89,8 +87,6 @@ const pathToTool: Record<string, ToolId> = {
   '/article-to-fb': 'fb-post',
   '/article-to-carousel': 'photo-carousel',
   '/news-feed': 'latest-news',
-  '/trending-news': 'trending-news',
-  '/spike-news': 'spike-news',
   '/affiliate-links': 'affiliate-links',
   '/product-feed-generator': 'product-feed-generator',
   '/affiliate-article-editor': 'article-generator',
@@ -115,13 +111,9 @@ const pathToTool: Record<string, ToolId> = {
   '/history-log': 'history-log',
 }
 
-// Map trending-news and news-bank subpages to scheduled-posts tool
 function getActiveTool(pathname: string): ToolId {
   if (pathname.startsWith('/news-feed')) {
     return 'latest-news'
-  }
-  if (pathname.startsWith('/trending-news')) {
-    return 'trending-news'
   }
   if (pathname.startsWith('/youtube-dashboard')) {
     return 'youtube-dashboard'
@@ -141,8 +133,6 @@ const toolToPath: Record<ToolId, string> = {
   'fb-post': '/article-to-fb',
   'photo-carousel': '/article-to-carousel',
   'latest-news': '/news-feed',
-  'trending-news': '/trending-news',
-  'spike-news': '/spike-news',
   'affiliate-links': '/affiliate-links',
   'product-feed-generator': '/product-feed-generator',
   'article-generator': '/affiliate-article-editor',
@@ -164,14 +154,6 @@ const toolToPath: Record<ToolId, string> = {
   'history-log': '/history-log',
 }
 
-
-// ─── Spike inbox badge helpers ────────────────────────────────────────────────
-
-const SPIKE_SEEN_KEY = 'spike_seen_urls'
-
-function saveSpikeSeenUrls(urls: string[]): void {
-  localStorage.setItem(SPIKE_SEEN_KEY, JSON.stringify(urls))
-}
 
 // ─── Kult colours ─────────────────────────────────────────────────────────────
 
@@ -639,9 +621,6 @@ function CarouselPage() {
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  function markSpikeRead(urls: string[]) {
-    saveSpikeSeenUrls(urls)
-  }
 
   return (
     <>
@@ -672,8 +651,6 @@ function App() {
         <Route path="article-to-fb" element={<FbPostPage />} />
         <Route path="article-to-carousel" element={<CarouselPage />} />
         <Route path="news-feed" element={<LatestNewsPage />} />
-        <Route path="trending-news" element={<TrendingSpikePage />} />
-        <Route path="spike-news" element={<SpikeNewsPage onMarkRead={markSpikeRead} />} />
         <Route path="affiliate-links" element={<AffiliateLinksPage />} />
         <Route path="product-feed-generator" element={<ProductFeedGeneratorPage />} />
         <Route path="affiliate-article-editor" element={<ArticleGeneratorPage isSidebarCollapsed={isSidebarCollapsed} />} />
