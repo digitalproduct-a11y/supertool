@@ -543,7 +543,7 @@ export function ArticleToSocialPage() {
   const [configs, setConfigs] = useState<Configs>({
     photo:    { titleMode: 'original', captionTitleMode: 'original', template: DEFAULT_PHOTO_TEMPLATE },
     carousel: { titleMode: 'original', captionTitleMode: 'original' },
-    quickfact: { template: 'carousel' },
+    quickfact: { template: 'single' },
     quote:    { captionTitleMode: 'original', language: 'malay' },
   })
 
@@ -747,80 +747,94 @@ export function ArticleToSocialPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">Post Types</label>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-2.5">
                   {ALL_TYPES.map(type => {
                     const checked = selectedTypes.has(type)
+                    const photoTemplates = getPhotoTemplatesForBrand(effectiveBrand)
+                    const hasConfig = (type === 'photo' && photoTemplates.length > 1) || type === 'quickfact'
+                    const expanded = checked && hasConfig
                     return (
-                      <button key={type} type="button" onClick={() => toggleType(type)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-colors ${
-                          checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
-                        }`}>
-                        <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'bg-white border-white' : 'border-gray-300'}`}>
-                          {checked && (
-                            <svg className="w-2.5 h-2.5 text-neutral-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </span>
-                        {POST_TYPE_LABELS[type]}
-                      </button>
+                      <div
+                        key={type}
+                        className={`rounded-xl border overflow-hidden transition-colors ${
+                          checked ? 'border-zinc-900' : 'border-gray-200'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleType(type)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors ${
+                            checked ? 'bg-white text-neutral-950' : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                          }`}
+                        >
+                          <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'bg-zinc-900 border-zinc-900' : 'border-gray-300'}`}>
+                            {checked && (
+                              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </span>
+                          {POST_TYPE_LABELS[type]}
+                        </button>
+
+                        {expanded && (
+                          <div className="bg-white px-4 py-4 border-t border-neutral-100">
+                            {type === 'photo' && (
+                              <div>
+                                <label className="block text-xs font-medium text-neutral-500 mb-2">Photo Template</label>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                  {photoTemplates.map(t => {
+                                    const tChecked = configs.photo.template === t.id
+                                    return (
+                                      <button
+                                        key={t.id}
+                                        type="button"
+                                        onClick={() => setConfigs(prev => ({ ...prev, photo: { ...prev.photo, template: t.id } }))}
+                                        className={`flex flex-col items-start gap-0.5 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-colors ${
+                                          tChecked ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
+                                        }`}
+                                      >
+                                        <span>{t.label}</span>
+                                        {t.description && (
+                                          <span className={`text-[11px] font-normal ${tChecked ? 'text-neutral-300' : 'text-neutral-500'}`}>
+                                            {t.description}
+                                          </span>
+                                        )}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            {type === 'quickfact' && (
+                              <div>
+                                <label className="block text-xs font-medium text-neutral-500 mb-2">Quick Fact Template</label>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                  {([['single', 'Single Image'], ['carousel', 'Carousel']] as const).map(([value, label]) => {
+                                    const tChecked = configs.quickfact.template === value
+                                    return (
+                                      <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() => setConfigs(prev => ({ ...prev, quickfact: { ...prev.quickfact, template: value } }))}
+                                        className={`px-4 py-3 rounded-xl border text-left text-sm font-medium transition-colors ${
+                                          tChecked ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
+                                        }`}
+                                      >
+                                        {label}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
               </div>
-
-              {/* Photo template picker — only when Photo is selected and brand has multiple templates */}
-              {selectedTypes.has('photo') && getPhotoTemplatesForBrand(effectiveBrand).length > 1 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Photo Template</label>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {getPhotoTemplatesForBrand(effectiveBrand).map(t => {
-                      const checked = configs.photo.template === t.id
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setConfigs(prev => ({ ...prev, photo: { ...prev.photo, template: t.id } }))}
-                          className={`flex flex-col items-start gap-0.5 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-colors ${
-                            checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
-                          }`}
-                        >
-                          <span>{t.label}</span>
-                          {t.description && (
-                            <span className={`text-[11px] font-normal ${checked ? 'text-neutral-300' : 'text-neutral-500'}`}>
-                              {t.description}
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Fact template picker — carousel (new) vs legacy single image */}
-              {selectedTypes.has('quickfact') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Quick Fact Template</label>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {([['carousel', 'Carousel'], ['single', 'Single Image']] as const).map(([value, label]) => {
-                      const checked = configs.quickfact.template === value
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => setConfigs(prev => ({ ...prev, quickfact: { ...prev.quickfact, template: value } }))}
-                          className={`px-4 py-3 rounded-xl border text-left text-sm font-medium transition-colors ${
-                            checked ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-700 border-gray-200 hover:border-neutral-400'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
 
               <button onClick={handleGenerate} disabled={!articleUrl.trim() || orderedTypes.length === 0}
                 className="w-full py-3 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white rounded-xl text-sm font-semibold transition active:scale-[0.98]">
