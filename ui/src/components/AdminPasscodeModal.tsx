@@ -134,7 +134,7 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
           ) : null}
 
           {showCaptcha && !locked && (
-            <TurnstileWidget key={captchaNonce} onToken={setCaptchaToken} />
+            <TurnstileWidget resetSignal={captchaNonce} onToken={setCaptchaToken} />
           )}
 
           <button

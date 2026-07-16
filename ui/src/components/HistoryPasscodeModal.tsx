@@ -65,7 +65,7 @@ export function HistoryPasscodeModal({ onSubmit, onClose }: HistoryPasscodeModal
             onKeyDown={handleKeyDown} placeholder="Passcode"
             className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950/20 focus:border-neutral-400 transition" />
           {error && <p className="text-xs text-red-600">{error}</p>}
-          {showCaptcha && <TurnstileWidget key={captchaNonce} onToken={setCaptchaToken} />}
+          {showCaptcha && <TurnstileWidget resetSignal={captchaNonce} onToken={setCaptchaToken} />}
           <button type="button" onClick={handleSubmit} disabled={!input || loading || captchaBlocking}
             className="w-full px-4 py-2 text-sm bg-neutral-950 text-white rounded-lg hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed font-medium">
             {loading ? 'Checking…' : 'Unlock →'}

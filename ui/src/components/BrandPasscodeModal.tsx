@@ -141,7 +141,7 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
           ) : null}
 
           {showCaptcha && !locked && (
-            <TurnstileWidget key={captchaNonce} onToken={setCaptchaToken} />
+            <TurnstileWidget resetSignal={captchaNonce} onToken={setCaptchaToken} />
           )}
 
           <button

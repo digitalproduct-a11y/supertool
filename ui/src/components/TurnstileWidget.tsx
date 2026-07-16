@@ -39,19 +39,23 @@ function loadTurnstile(): Promise<void> {
 interface TurnstileWidgetProps {
   /** Called with the token on success, or '' when it expires/errors. */
   onToken: (token: string) => void
+  /** Bump this to reset the widget in place for a fresh (single-use) token. */
+  resetSignal?: number
 }
 
 /** Returns null (renders nothing) when no site key is configured. */
-export function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
+export function TurnstileWidget({ onToken, resetSignal = 0 }: TurnstileWidgetProps) {
   const ref = useRef<HTMLDivElement>(null)
   const widgetId = useRef<string | null>(null)
 
+  // Render exactly once. We never remount on failure (that caused Turnstile to
+  // spin) — instead the parent bumps resetSignal and we reset in place below.
   useEffect(() => {
     if (!SITE_KEY) return
     let cancelled = false
     loadTurnstile()
       .then(() => {
-        if (cancelled || !ref.current || !window.turnstile) return
+        if (cancelled || !ref.current || !window.turnstile || widgetId.current) return
         widgetId.current = window.turnstile.render(ref.current, {
           sitekey: SITE_KEY,
           callback: (token: string) => onToken(token),
@@ -64,12 +68,20 @@ export function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
       cancelled = true
       if (widgetId.current && window.turnstile) {
         try { window.turnstile.remove(widgetId.current) } catch { /* ignore */ }
+        widgetId.current = null
       }
     }
-    // onToken is stable enough for this one-shot render; deliberately run once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Reset in place for a fresh token (tokens are single-use).
+  useEffect(() => {
+    if (resetSignal > 0 && widgetId.current && window.turnstile) {
+      try { window.turnstile.reset(widgetId.current); onToken('') } catch { /* ignore */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal])
+
   if (!SITE_KEY) return null
-  return <div ref={ref} className="flex justify-center" />
+  return <div ref={ref} className="flex justify-center min-h-[70px]" />
 }
