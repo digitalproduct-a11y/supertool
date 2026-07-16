@@ -4,6 +4,10 @@ import { getBrandLogoUrl, getBrandHex, needsDarkBg } from '../constants/brands'
 import type { BrandName } from '../constants/brands'
 import { brandToSlug } from '../utils/brandSlug'
 import { setBrandUnlocked } from '../utils/brandAuth'
+import { TurnstileWidget } from './TurnstileWidget'
+import { turnstileEnabled } from '../utils/turnstile'
+
+const CAPTCHA_AFTER = 3
 
 interface BrandPasscodeModalProps {
   brand: BrandName
@@ -15,6 +19,10 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [cooldown, setCooldown] = useState(0) // seconds remaining after a 429
+  const [attempts, setAttempts] = useState(0)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaNonce, setCaptchaNonce] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const webhookUrl = (import.meta.env.VITE_BRAND_PASSCODE_WEBHOOK_URL as string | undefined)?.trim()
@@ -23,22 +31,41 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
     inputRef.current?.focus()
   }, [])
 
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setInterval(() => setCooldown(c => (c <= 1 ? 0 : c - 1)), 1000)
+    return () => clearInterval(t)
+  }, [cooldown])
+
+  const locked = cooldown > 0
+  const showCaptcha = turnstileEnabled && attempts >= CAPTCHA_AFTER
+  const captchaBlocking = showCaptcha && !captchaToken
+
   const handleSubmit = async () => {
-    if (!input.trim() || loading) return
+    if (!input.trim() || loading || locked || captchaBlocking) return
     setLoading(true)
     setError(null)
     try {
       const res = await fetch(webhookUrl ?? '', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brand, passcode: input.trim() }),
+        body: JSON.stringify({ brand, passcode: input.trim(), turnstileToken: captchaToken }),
       })
-      const data = await res.json() as { success?: boolean; message?: string }
-      if (data.success) {
+      const data = await res.json().catch(() => ({})) as { success?: boolean; message?: string; retryAfter?: number }
+      if (res.status === 429 || data.retryAfter) {
+        const retryAfter = data.retryAfter && data.retryAfter > 0
+          ? data.retryAfter
+          : Number(res.headers.get('retry-after')) || 60
+        setCooldown(retryAfter)
+        setInput('')
+      } else if (data.success) {
         setBrandUnlocked(brandToSlug(brand))
         onSuccess()
       } else {
         setError(data.message ?? 'Incorrect passcode.')
+        setAttempts(a => a + 1)
+        setCaptchaToken('')
+        setCaptchaNonce(n => n + 1)
         setInput('')
         setTimeout(() => inputRef.current?.focus(), 50)
       }
@@ -101,19 +128,27 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
             }}
             onKeyDown={handleKeyDown}
             placeholder="Passcode"
-            disabled={loading}
+            disabled={loading || locked}
             className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950/20 focus:border-neutral-400 transition disabled:opacity-50"
           />
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {locked ? (
+            <p className="text-xs text-red-600">Too many attempts. Try again in {cooldown}s.</p>
+          ) : error ? (
+            <p className="text-xs text-red-600">{error}</p>
+          ) : null}
+
+          {showCaptcha && !locked && (
+            <TurnstileWidget key={captchaNonce} onToken={setCaptchaToken} />
+          )}
 
           <button
             type="button"
             onClick={() => void handleSubmit()}
-            disabled={!input || loading}
+            disabled={!input || loading || locked || captchaBlocking}
             className="w-full px-4 py-2 text-sm bg-neutral-950 text-white rounded-lg hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {locked ? `Locked (${cooldown}s)` : loading ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
                 Verifying…

@@ -90,12 +90,18 @@ export interface FetchHistoryParams {
   to?: string          // yyyy-mm-dd
   passcode?: string
   isAdmin?: boolean
+  captchaToken?: string
 }
 
 export interface FetchHistoryResult {
-  status: 'OK' | 'AUTH_ERROR' | 'ERROR'
+  status: 'OK' | 'AUTH_ERROR' | 'RATE_LIMITED' | 'ERROR'
   rows: HistoryRow[]
   message?: string
+}
+
+function rateLimitMessage(retryAfter: number): string {
+  const secs = retryAfter > 0 ? retryAfter : 60
+  return `Too many attempts. Try again in ${secs}s.`
 }
 
 export async function fetchHistory(brand: string, params: FetchHistoryParams): Promise<FetchHistoryResult> {
@@ -111,11 +117,17 @@ export async function fetchHistory(brand: string, params: FetchHistoryParams): P
         to: params.to ?? '',
         passcode: params.passcode ?? '',
         is_admin: params.isAdmin ?? false,
+        turnstile_token: params.captchaToken ?? '',
       }),
     })
+    if (res.status === 429) {
+      const retryAfter = Number(res.headers.get('retry-after')) || 0
+      return { status: 'RATE_LIMITED', rows: [], message: rateLimitMessage(retryAfter) }
+    }
     if (!res.ok) return { status: 'ERROR', rows: [], message: `HTTP ${res.status}` }
-    const data = await res.json() as { status?: string; rows?: HistoryRow[]; message?: string }
+    const data = await res.json() as { status?: string; rows?: HistoryRow[]; message?: string; retryAfter?: number }
     if (data.status === 'AUTH_ERROR') return { status: 'AUTH_ERROR', rows: [], message: data.message ?? 'Invalid passcode.' }
+    if (data.status === 'RATE_LIMITED') return { status: 'RATE_LIMITED', rows: [], message: data.message ?? rateLimitMessage(data.retryAfter ?? 0) }
     return { status: 'OK', rows: data.rows ?? [], message: data.message }
   } catch {
     return { status: 'ERROR', rows: [], message: 'Network error. Please try again.' }

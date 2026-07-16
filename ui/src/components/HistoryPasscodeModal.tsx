@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { TurnstileWidget } from './TurnstileWidget'
+import { turnstileEnabled } from '../utils/turnstile'
+
+const CAPTCHA_AFTER = 3
 
 interface HistoryPasscodeModalProps {
-  onSubmit: (passcode: string) => Promise<{ ok: boolean; message?: string }>
+  onSubmit: (passcode: string, captchaToken?: string) => Promise<{ ok: boolean; message?: string }>
   onClose: () => void
 }
 
@@ -10,18 +14,27 @@ export function HistoryPasscodeModal({ onSubmit, onClose }: HistoryPasscodeModal
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [attempts, setAttempts] = useState(0)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaNonce, setCaptchaNonce] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
+  const showCaptcha = turnstileEnabled && attempts >= CAPTCHA_AFTER
+  const captchaBlocking = showCaptcha && !captchaToken
+
   const handleSubmit = async () => {
-    if (!input || loading) return
+    if (!input || loading || captchaBlocking) return
     setLoading(true)
     setError(null)
-    const res = await onSubmit(input)
+    const res = await onSubmit(input, captchaToken)
     setLoading(false)
     if (!res.ok) {
       setError(res.message ?? 'Incorrect passcode. Try again.')
+      setAttempts(a => a + 1)
+      setCaptchaToken('')
+      setCaptchaNonce(n => n + 1)
       setInput('')
       inputRef.current?.focus()
     }
@@ -50,7 +63,8 @@ export function HistoryPasscodeModal({ onSubmit, onClose }: HistoryPasscodeModal
             onKeyDown={handleKeyDown} placeholder="Passcode"
             className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950/20 focus:border-neutral-400 transition" />
           {error && <p className="text-xs text-red-600">{error}</p>}
-          <button type="button" onClick={handleSubmit} disabled={!input || loading}
+          {showCaptcha && <TurnstileWidget key={captchaNonce} onToken={setCaptchaToken} />}
+          <button type="button" onClick={handleSubmit} disabled={!input || loading || captchaBlocking}
             className="w-full px-4 py-2 text-sm bg-neutral-950 text-white rounded-lg hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed font-medium">
             {loading ? 'Checking…' : 'Unlock →'}
           </button>

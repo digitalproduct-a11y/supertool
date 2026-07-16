@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { saveAdminToken } from '../utils/adminAuth'
+import { TurnstileWidget } from './TurnstileWidget'
+import { turnstileEnabled } from '../utils/turnstile'
+
+const CAPTCHA_AFTER = 3 // show CAPTCHA once failed attempts reach this
 
 interface AdminPasscodeModalProps {
   onSuccess: () => void
@@ -11,29 +15,57 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [cooldown, setCooldown] = useState(0) // seconds remaining after a 429
+  const [attempts, setAttempts] = useState(0)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaNonce, setCaptchaNonce] = useState(0) // remount widget for a fresh token
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
+  // Tick down the lockout timer once per second.
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setInterval(() => setCooldown(c => (c <= 1 ? 0 : c - 1)), 1000)
+    return () => clearInterval(t)
+  }, [cooldown])
+
+  const locked = cooldown > 0
+  const showCaptcha = turnstileEnabled && attempts >= CAPTCHA_AFTER
+  const captchaBlocking = showCaptcha && !captchaToken
+
   const handleSubmit = async () => {
-    if (!input || loading) return
+    if (!input || loading || locked || captchaBlocking) return
     setLoading(true)
     setError(null)
     try {
       const res = await fetch('/api/admin-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passcode: input }),
+        body: JSON.stringify({ passcode: input, turnstileToken: captchaToken }),
       })
       if (res.ok) {
         const { token } = await res.json() as { token: string }
         saveAdminToken(token)
         onSuccess()
-      } else {
-        setError('Incorrect passcode. Try again.')
+      } else if (res.status === 429) {
+        const data = await res.json().catch(() => ({})) as { retryAfter?: number }
+        const retryAfter = data.retryAfter && data.retryAfter > 0
+          ? data.retryAfter
+          : Number(res.headers.get('retry-after')) || 60
+        setCooldown(retryAfter)
+        setError(null)
         setInput('')
+      } else {
+        const data = await res.json().catch(() => ({})) as { captchaRequired?: boolean }
+        setError(data.captchaRequired ? 'Please complete the verification below.' : 'Incorrect passcode. Try again.')
+        setAttempts(a => a + 1)
+        setInput('')
+        // Turnstile tokens are single-use — remount for a fresh one.
+        setCaptchaToken('')
+        setCaptchaNonce(n => n + 1)
         inputRef.current?.focus()
       }
     } catch {
@@ -87,20 +119,29 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
             }}
             onKeyDown={handleKeyDown}
             placeholder="Passcode"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950/20 focus:border-neutral-400 transition"
+            disabled={loading || locked}
+            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950/20 focus:border-neutral-400 transition disabled:opacity-50"
           />
 
-          {error && (
+          {locked ? (
+            <p className="text-xs text-red-600">
+              Too many attempts. Try again in {cooldown}s.
+            </p>
+          ) : error ? (
             <p className="text-xs text-red-600">{error}</p>
+          ) : null}
+
+          {showCaptcha && !locked && (
+            <TurnstileWidget key={captchaNonce} onToken={setCaptchaToken} />
           )}
 
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!input || loading}
+            disabled={!input || loading || locked || captchaBlocking}
             className="w-full px-4 py-2 text-sm bg-neutral-950 text-white rounded-lg hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed font-medium"
           >
-            {loading ? 'Checking…' : 'Continue →'}
+            {locked ? `Locked (${cooldown}s)` : loading ? 'Checking…' : 'Continue →'}
           </button>
         </div>
       </div>

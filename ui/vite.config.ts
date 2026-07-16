@@ -7,6 +7,19 @@ import { createHmac } from 'crypto'
 // client-side token verifier keeps working across envs.
 function adminAuthDevPlugin(env: Record<string, string>): Plugin {
   const TOKEN_TTL_MS = 8 * 60 * 60 * 1000
+  // In-memory mirror of api/admin-auth.ts's KV rate limiting, so brute-force
+  // lockout behaves the same under `vite dev` (single process, no KV needed).
+  const FAIL_THRESHOLD = 5
+  const BASE_LOCK_MS = 60 * 1000
+  const MAX_LOCK_LEVEL = 6
+  const attempts = new Map<string, { fails: number; level: number; lockUntil: number }>()
+
+  const clientIp = (req: { headers: Record<string, unknown>; socket?: { remoteAddress?: string } }): string => {
+    const xff = req.headers['x-forwarded-for']
+    if (typeof xff === 'string' && xff.trim()) return xff.split(',')[0].trim()
+    return req.socket?.remoteAddress ?? 'dev'
+  }
+
   return {
     name: 'admin-auth-dev',
     configureServer(server) {
@@ -24,11 +37,25 @@ function adminAuthDevPlugin(env: Record<string, string>): Plugin {
           res.end(JSON.stringify({ error: 'Server misconfigured' }))
           return
         }
+
+        const ip = clientIp(req as never)
+        const rec = attempts.get(ip)
+        if (rec && rec.lockUntil > Date.now()) {
+          const retryAfter = Math.ceil((rec.lockUntil - Date.now()) / 1000)
+          res.statusCode = 429
+          res.setHeader('retry-after', String(retryAfter))
+          res.end(JSON.stringify({ error: 'Too many failed attempts. Try again later.', retryAfter }))
+          return
+        }
+
         let body = ''
         for await (const chunk of req) body += chunk
         let passcode = ''
+        let turnstileToken = ''
         try {
-          passcode = (JSON.parse(body || '{}') as { passcode?: string }).passcode ?? ''
+          const parsed = JSON.parse(body || '{}') as { passcode?: string; turnstileToken?: string }
+          passcode = parsed.passcode ?? ''
+          turnstileToken = parsed.turnstileToken ?? ''
         } catch {
           res.statusCode = 400
           res.end(JSON.stringify({ error: 'Invalid body' }))
@@ -39,11 +66,53 @@ function adminAuthDevPlugin(env: Record<string, string>): Plugin {
           res.end(JSON.stringify({ error: 'Passcode required' }))
           return
         }
+
+        // CAPTCHA after repeated failures (mirrors api/admin-auth.ts)
+        const captchaSecret = env.TURNSTILE_SECRET_KEY
+        const prior = attempts.get(ip)
+        if (captchaSecret && prior && prior.fails >= 3) {
+          let captchaOk = false
+          if (turnstileToken) {
+            try {
+              const params = new URLSearchParams({ secret: captchaSecret, response: turnstileToken })
+              const vr = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                method: 'POST',
+                headers: { 'content-type': 'application/x-www-form-urlencoded' },
+                body: params,
+              })
+              captchaOk = ((await vr.json()) as { success?: boolean }).success === true
+            } catch {
+              captchaOk = false
+            }
+          }
+          if (!captchaOk) {
+            res.statusCode = 401
+            res.end(JSON.stringify({ error: 'Please complete the verification.', captchaRequired: true }))
+            return
+          }
+        }
+
         if (passcode !== secret && !(devSecret && passcode === devSecret)) {
+          const cur = attempts.get(ip) ?? { fails: 0, level: 0, lockUntil: 0 }
+          cur.fails += 1
+          if (cur.fails >= FAIL_THRESHOLD) {
+            cur.level += 1
+            const lockMs = BASE_LOCK_MS * Math.pow(2, Math.min(cur.level - 1, MAX_LOCK_LEVEL))
+            cur.lockUntil = Date.now() + lockMs
+            cur.fails = 0
+            attempts.set(ip, cur)
+            const retryAfter = Math.ceil(lockMs / 1000)
+            res.statusCode = 429
+            res.setHeader('retry-after', String(retryAfter))
+            res.end(JSON.stringify({ error: 'Too many failed attempts. Locked temporarily.', retryAfter }))
+            return
+          }
+          attempts.set(ip, cur)
           res.statusCode = 401
           res.end(JSON.stringify({ error: 'Incorrect passcode' }))
           return
         }
+        attempts.delete(ip)
         const expiresAt = String(Date.now() + TOKEN_TTL_MS)
         const sig = createHmac('sha256', secret).update(expiresAt).digest('hex')
         res.end(JSON.stringify({ token: `${expiresAt}.${sig}` }))
