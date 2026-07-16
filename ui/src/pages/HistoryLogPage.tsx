@@ -115,7 +115,7 @@ export function HistoryLogPage() {
   }
 
   // Gate submit (non-admin): validate the passcode by loading the view with it.
-  async function handleUnlock(pc: string, captchaToken?: string): Promise<{ ok: boolean; message?: string }> {
+  async function handleUnlock(pc: string, captchaToken?: string): Promise<{ ok: boolean; message?: string; captchaRequired?: boolean }> {
     if (!effectiveBrand) return { ok: false, message: 'No brand selected.' }
     const res = await fetchHistory(effectiveBrand, { mode: 'view', from, to, passcode: pc, isAdmin: false, captchaToken })
     if (res.status === 'OK') {
@@ -123,7 +123,7 @@ export function HistoryLogPage() {
       setPasscode(pc); setUnlocked(true); setShowGate(false); setRows(res.rows); setLoading(false)
       return { ok: true }
     }
-    if (res.status === 'AUTH_ERROR') return { ok: false, message: res.message ?? 'Incorrect passcode.' }
+    if (res.status === 'AUTH_ERROR') return { ok: false, message: res.message ?? 'Incorrect passcode.', captchaRequired: res.captchaRequired }
     return { ok: false, message: res.message ?? 'Could not load history.' }
   }
 

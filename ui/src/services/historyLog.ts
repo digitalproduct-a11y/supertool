@@ -97,6 +97,7 @@ export interface FetchHistoryResult {
   status: 'OK' | 'AUTH_ERROR' | 'RATE_LIMITED' | 'ERROR'
   rows: HistoryRow[]
   message?: string
+  captchaRequired?: boolean
 }
 
 function rateLimitMessage(retryAfter: number): string {
@@ -125,8 +126,8 @@ export async function fetchHistory(brand: string, params: FetchHistoryParams): P
       return { status: 'RATE_LIMITED', rows: [], message: rateLimitMessage(retryAfter) }
     }
     if (!res.ok) return { status: 'ERROR', rows: [], message: `HTTP ${res.status}` }
-    const data = await res.json() as { status?: string; rows?: HistoryRow[]; message?: string; retryAfter?: number }
-    if (data.status === 'AUTH_ERROR') return { status: 'AUTH_ERROR', rows: [], message: data.message ?? 'Invalid passcode.' }
+    const data = await res.json() as { status?: string; rows?: HistoryRow[]; message?: string; retryAfter?: number; captchaRequired?: boolean }
+    if (data.status === 'AUTH_ERROR') return { status: 'AUTH_ERROR', rows: [], message: data.message ?? 'Invalid passcode.', captchaRequired: data.captchaRequired }
     if (data.status === 'RATE_LIMITED') return { status: 'RATE_LIMITED', rows: [], message: data.message ?? rateLimitMessage(data.retryAfter ?? 0) }
     return { status: 'OK', rows: data.rows ?? [], message: data.message }
   } catch {

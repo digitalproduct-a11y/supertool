@@ -21,6 +21,7 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0) // seconds remaining after a 429
   const [attempts, setAttempts] = useState(0)
+  const [captchaRequired, setCaptchaRequired] = useState(false)
   const [captchaToken, setCaptchaToken] = useState('')
   const [captchaNonce, setCaptchaNonce] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -38,7 +39,7 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
   }, [cooldown])
 
   const locked = cooldown > 0
-  const showCaptcha = turnstileEnabled && attempts >= CAPTCHA_AFTER
+  const showCaptcha = turnstileEnabled && (attempts >= CAPTCHA_AFTER || captchaRequired)
   const captchaBlocking = showCaptcha && !captchaToken
 
   const handleSubmit = async () => {
@@ -51,7 +52,7 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brand, passcode: input.trim(), turnstileToken: captchaToken }),
       })
-      const data = await res.json().catch(() => ({})) as { success?: boolean; message?: string; retryAfter?: number }
+      const data = await res.json().catch(() => ({})) as { success?: boolean; message?: string; retryAfter?: number; captchaRequired?: boolean }
       if (res.status === 429 || data.retryAfter) {
         const retryAfter = data.retryAfter && data.retryAfter > 0
           ? data.retryAfter
@@ -62,7 +63,8 @@ export function BrandPasscodeModal({ brand, onSuccess, onClose }: BrandPasscodeM
         setBrandUnlocked(brandToSlug(brand))
         onSuccess()
       } else {
-        setError(data.message ?? 'Incorrect passcode.')
+        if (data.captchaRequired) setCaptchaRequired(true)
+        setError(data.captchaRequired ? 'Please complete the verification below.' : (data.message ?? 'Incorrect passcode.'))
         setAttempts(a => a + 1)
         setCaptchaToken('')
         setCaptchaNonce(n => n + 1)

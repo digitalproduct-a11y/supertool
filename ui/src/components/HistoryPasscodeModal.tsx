@@ -6,7 +6,7 @@ import { turnstileEnabled } from '../utils/turnstile'
 const CAPTCHA_AFTER = 3
 
 interface HistoryPasscodeModalProps {
-  onSubmit: (passcode: string, captchaToken?: string) => Promise<{ ok: boolean; message?: string }>
+  onSubmit: (passcode: string, captchaToken?: string) => Promise<{ ok: boolean; message?: string; captchaRequired?: boolean }>
   onClose: () => void
 }
 
@@ -15,13 +15,14 @@ export function HistoryPasscodeModal({ onSubmit, onClose }: HistoryPasscodeModal
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [attempts, setAttempts] = useState(0)
+  const [captchaRequired, setCaptchaRequired] = useState(false)
   const [captchaToken, setCaptchaToken] = useState('')
   const [captchaNonce, setCaptchaNonce] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
-  const showCaptcha = turnstileEnabled && attempts >= CAPTCHA_AFTER
+  const showCaptcha = turnstileEnabled && (attempts >= CAPTCHA_AFTER || captchaRequired)
   const captchaBlocking = showCaptcha && !captchaToken
 
   const handleSubmit = async () => {
@@ -31,7 +32,8 @@ export function HistoryPasscodeModal({ onSubmit, onClose }: HistoryPasscodeModal
     const res = await onSubmit(input, captchaToken)
     setLoading(false)
     if (!res.ok) {
-      setError(res.message ?? 'Incorrect passcode. Try again.')
+      if (res.captchaRequired) setCaptchaRequired(true)
+      setError(res.captchaRequired ? 'Please complete the verification below.' : (res.message ?? 'Incorrect passcode. Try again.'))
       setAttempts(a => a + 1)
       setCaptchaToken('')
       setCaptchaNonce(n => n + 1)

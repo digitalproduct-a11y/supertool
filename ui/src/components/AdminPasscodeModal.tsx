@@ -17,6 +17,7 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0) // seconds remaining after a 429
   const [attempts, setAttempts] = useState(0)
+  const [captchaRequired, setCaptchaRequired] = useState(false) // server demanded a CAPTCHA
   const [captchaToken, setCaptchaToken] = useState('')
   const [captchaNonce, setCaptchaNonce] = useState(0) // remount widget for a fresh token
   const inputRef = useRef<HTMLInputElement>(null)
@@ -33,7 +34,7 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
   }, [cooldown])
 
   const locked = cooldown > 0
-  const showCaptcha = turnstileEnabled && attempts >= CAPTCHA_AFTER
+  const showCaptcha = turnstileEnabled && (attempts >= CAPTCHA_AFTER || captchaRequired)
   const captchaBlocking = showCaptcha && !captchaToken
 
   const handleSubmit = async () => {
@@ -60,6 +61,7 @@ export function AdminPasscodeModal({ onSuccess, onClose }: AdminPasscodeModalPro
         setInput('')
       } else {
         const data = await res.json().catch(() => ({})) as { captchaRequired?: boolean }
+        if (data.captchaRequired) setCaptchaRequired(true)
         setError(data.captchaRequired ? 'Please complete the verification below.' : 'Incorrect passcode. Try again.')
         setAttempts(a => a + 1)
         setInput('')
