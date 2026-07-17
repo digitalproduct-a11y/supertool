@@ -144,6 +144,10 @@ vite.config.ts.timestamp-*
 # Superpowers brainstorming session files
 .superpowers/
 
+# Agent skills content (e.g. ImageKit skills installed via `skills add`)
+.agents/
+/agent/
+
 .mcp.json
 .claudeignore
 .vercel
