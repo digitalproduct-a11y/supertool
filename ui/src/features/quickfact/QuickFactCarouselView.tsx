@@ -3,7 +3,7 @@ import JSZip from 'jszip'
 import { toast } from '../../hooks/useToast'
 import { ScheduleModal } from '../../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../../utils/fbCredentials'
-import { uploadToCloudinary } from '../../utils/cloudinary'
+import { uploadToCloudinary } from '../../utils/imageProvider'
 import { logHistoryEvent } from '../../services/historyLog'
 import type { QuickFactData, QuickFactItem } from '../../types'
 import {

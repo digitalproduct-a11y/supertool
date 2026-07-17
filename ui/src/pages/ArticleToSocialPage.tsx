@@ -13,7 +13,8 @@ import {
   updateFactInImageUrl,
   uploadToCloudinary,
   replaceBaseImage,
-} from '../utils/cloudinary'
+  IMAGE_PROVIDER,
+} from '../utils/imageProvider'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
@@ -175,7 +176,11 @@ async function scheduleCarousel(
 async function generatePhoto(
   url: string, brand: string, cfg: PhotoConfig,
 ): Promise<{ imageUrl: string; caption: string; photoTitle: string; cloudinaryUrl?: string }> {
-  const webhookUrl = (import.meta.env.VITE_GENERATE_WEBHOOK_URL as string | undefined)?.trim()
+  const webhookUrl = (
+    (IMAGE_PROVIDER === 'imagekit'
+      ? import.meta.env.VITE_GENERATE_WEBHOOK_URL_IMAGEKIT
+      : import.meta.env.VITE_GENERATE_WEBHOOK_URL) as string | undefined
+  )?.trim()
   if (!webhookUrl) throw new Error('Photo webhook not configured')
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 120_000)

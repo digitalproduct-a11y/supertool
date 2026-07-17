@@ -23,7 +23,7 @@ import {
   type TextLayerStyle,
 } from "../../config/quoteCanvasConfig";
 import { BRAND_LOGO_IDS, getBrandHex } from "../../constants/brands";
-import { withSubjectAwareCrop } from "../../utils/cloudinary";
+import { withSubjectAwareCrop } from "../../utils/imageProvider";
 import { loadBrandFont, getBrandFontWeight } from "../../utils/brandFonts";
 
 export interface QuoteCanvasHandle {

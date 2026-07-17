@@ -8,7 +8,7 @@ import {
 } from "react";
 import { StaticCanvas, FabricImage, Rect, Circle, Text, Textbox } from "fabric";
 import { BRAND_LOGO_IDS } from "../../constants/brands";
-import { withSubjectAwareCrop } from "../../utils/cloudinary";
+import { withSubjectAwareCrop } from "../../utils/imageProvider";
 import { loadBrandFont } from "../../utils/brandFonts";
 import {
   QUICK_FACT_CANVAS,
