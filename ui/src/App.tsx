@@ -80,14 +80,14 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'clip-to-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis' | 'history-log'
+type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis' | 'history-log'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
   '/article-to-social': 'article-to-social',
   '/article-to-fb': 'fb-post',
   '/article-to-carousel': 'photo-carousel',
-  '/clip-to-carousel': 'clip-to-carousel',
+  '/engagement-posts/clip-to-carousel': 'engagement-posts',
   '/news-feed': 'latest-news',
   '/affiliate-links': 'affiliate-links',
   '/product-feed-generator': 'product-feed-generator',
@@ -134,7 +134,6 @@ const toolToPath: Record<ToolId, string> = {
   'article-to-social': '/article-to-social',
   'fb-post': '/article-to-fb',
   'photo-carousel': '/article-to-carousel',
-  'clip-to-carousel': '/clip-to-carousel',
   'latest-news': '/news-feed',
   'affiliate-links': '/affiliate-links',
   'product-feed-generator': '/product-feed-generator',
@@ -653,7 +652,7 @@ function App() {
         <Route path="article-to-social" element={<ArticleToSocialPage />} />
         <Route path="article-to-fb" element={<FbPostPage />} />
         <Route path="article-to-carousel" element={<CarouselPage />} />
-        <Route path="clip-to-carousel" element={<ClipToCarouselPage />} />
+        <Route path="engagement-posts/clip-to-carousel" element={<ClipToCarouselPage />} />
         <Route path="news-feed" element={<LatestNewsPage />} />
         <Route path="affiliate-links" element={<AffiliateLinksPage />} />
         <Route path="product-feed-generator" element={<ProductFeedGeneratorPage />} />

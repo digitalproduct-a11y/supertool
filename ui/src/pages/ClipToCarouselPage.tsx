@@ -1,10 +1,8 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams } from 'react-router-dom'
 import JSZip from 'jszip'
 import type { BrandName } from '../constants/brands'
-import { getBrandHex } from '../constants/brands'
-import { slugToBrand } from '../utils/brandSlug'
+import { BRANDS, getBrandHex } from '../constants/brands'
 import { useBrand } from '../context/BrandContext'
 import { toast } from '../hooks/useToast'
 import { uploadToCloudinary } from '../utils/cloudinary'
@@ -88,10 +86,11 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxW: number) {
 }
 
 export function ClipToCarouselPage() {
-  const { brandSlug } = useParams<{ brandSlug: string }>()
-  const { selectedBrand } = useBrand()
-  const resolved = brandSlug ? slugToBrand(brandSlug) : null
-  const brand: BrandName | null = (resolved && resolved !== 'Admin') ? resolved : ((selectedBrand && selectedBrand !== 'Admin') ? selectedBrand as BrandName : null)
+  const { selectedBrand, isAdmin } = useBrand()
+  // Admin has no fixed brand, so the tool provides its own brand picker.
+  const [brand, setBrand] = useState<BrandName | ''>(
+    (selectedBrand && selectedBrand !== 'Admin') ? (selectedBrand as BrandName) : ''
+  )
   const accent = brand ? getBrandHex(brand) : '#18181b'
 
   // hidden video used to grab frames from the uploaded file (never uploaded whole)
@@ -195,7 +194,7 @@ export function ClipToCarouselPage() {
       const tps: Topic[] = data.topics || []
       if (!tps.length) throw new Error('No topics returned for this transcript.')
       setTopics(tps); setTopicIdx(null); setLiveLang(data.language || '')
-      trackToolSubmit('clip-to-carousel', brandSlug || '')
+      trackToolSubmit('clip-to-carousel', brand)
       setPhase('idle')
     } catch (e) {
       setTopics([]); setPhase('idle'); toast.error('Analyze failed: ' + (e as Error).message)
@@ -300,7 +299,7 @@ export function ClipToCarouselPage() {
       if (json.success === true || json.status === 'SUCCESS' || json.status === 'DRAFT_SAVED') {
         if (passcode) saveCredentials(brandLower, passcode)
         logHistoryEvent({ eventType: 'scheduled', brand, toolPostType: 'carousel', sourcePage: 'clip_to_carousel', caption, imageUrl: urls[0], scheduledFor, status: 'success' })
-        trackPostScheduled('clip-to-carousel', brandSlug || '')
+        trackPostScheduled('clip-to-carousel', brand)
         setIsPosting(false); setShowSchedule(false); setPosted(true); toast.success('Carousel scheduled on Facebook!')
         return
       }
@@ -327,6 +326,20 @@ export function ClipToCarouselPage() {
 
   const fieldBase = 'w-full px-3 py-2 rounded-lg border border-neutral-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900'
 
+  // Admin-only tool: non-admins never see the CTA, and can't reach it via direct URL either.
+  if (!isAdmin) {
+    return (
+      <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6"><BackButton /></div>
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+            Clip to Carousel is currently available in <b>Admin</b> mode only.
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
       <style>{`
@@ -347,11 +360,19 @@ export function ClipToCarouselPage() {
           <div className="h-[3px] mt-4 rounded-full" style={{ background: accent }} />
         </div>
 
-        {!brand && <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">Pick a brand first (from the brand selector) to use this tool.</div>}
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* LEFT: inputs */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.06)] border border-neutral-200">
+            <label className="block text-base font-semibold text-neutral-900">Brand</label>
+            <div className="relative mt-3 mb-5">
+              <select value={brand} onChange={e => setBrand(e.target.value as BrandName)}
+                className="w-full appearance-none px-4 py-3 pr-10 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900">
+                <option value="">Select a brand…</option>
+                {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">▾</span>
+            </div>
+
             <label className="block text-base font-semibold text-neutral-900">Video file</label>
             <label className="mt-3 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-neutral-300 hover:border-neutral-900 cursor-pointer transition">
               <span className="text-lg">🎞️</span>

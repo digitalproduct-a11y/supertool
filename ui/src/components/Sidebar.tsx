@@ -43,7 +43,6 @@ export type ToolId =
   | 'shopee-top-products'
   | 'post-queue'
   | 'photo-carousel'
-  | 'clip-to-carousel'
   | 'social-affiliate-posting'
   | 'quick-fact'
   | 'prime-talk'
@@ -76,7 +75,6 @@ const navSections: { section: string | null; items: NavItem[] }[] = [
     section: "Tools",
     items: [
       { id: 'article-to-social', label: 'Article to Social Post', icon: IconStack2 },
-      { id: 'clip-to-carousel', label: 'Clip to Carousel', icon: IconStack2 },
       { id: 'engagement-posts', label: 'Engagement Posts', icon: IconHeart },
       { id: 'latest-news', label: 'News Feed', icon: IconNews },
       { id: 'election-results', label: 'Election Results', icon: IconChartPie },
@@ -136,7 +134,6 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'article-to-social': 'Article to Social Post',
   'fb-post': 'Photo post',
   'photo-carousel': 'Photo carousel post',
-  'clip-to-carousel': 'Clip to Carousel',
   'latest-news': 'News Feed',
   'affiliate-links': 'Shopee Affiliate Links',
   'product-feed-generator': 'Product Feed Generator',

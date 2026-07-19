@@ -5,7 +5,7 @@ const FEATURE_TITLES: Record<string, string> = {
   'article-to-social': 'Article to Social',
   'article-to-fb': 'Article to FB Photos',
   'article-to-carousel': 'Article to Carousel',
-  'clip-to-carousel': 'Clip to Carousel',
+  'engagement-posts/clip-to-carousel': 'Clip to Carousel',
   'news-feed': 'News Feed',
   'affiliate-links': 'Affiliate Links',
   'affiliate-article-editor': 'Affiliate Article Editor',
