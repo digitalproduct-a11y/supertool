@@ -20,6 +20,7 @@ import { ShopeeTopProductsPage } from './pages/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './pages/ZernioScheduledPostsPage'
 import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
 import { QuickFactPage } from './pages/QuickFactPage'
+import { ClipToCarouselPage } from './pages/ClipToCarouselPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
 import { NewsPosterPage } from './pages/NewsPosterPage'
@@ -86,6 +87,7 @@ const pathToTool: Record<string, ToolId> = {
   '/article-to-social': 'article-to-social',
   '/article-to-fb': 'fb-post',
   '/article-to-carousel': 'photo-carousel',
+  '/engagement-posts/clip-to-carousel': 'engagement-posts',
   '/news-feed': 'latest-news',
   '/affiliate-links': 'affiliate-links',
   '/product-feed-generator': 'product-feed-generator',
@@ -650,6 +652,7 @@ function App() {
         <Route path="article-to-social" element={<ArticleToSocialPage />} />
         <Route path="article-to-fb" element={<FbPostPage />} />
         <Route path="article-to-carousel" element={<CarouselPage />} />
+        <Route path="engagement-posts/clip-to-carousel" element={<ClipToCarouselPage />} />
         <Route path="news-feed" element={<LatestNewsPage />} />
         <Route path="affiliate-links" element={<AffiliateLinksPage />} />
         <Route path="product-feed-generator" element={<ProductFeedGeneratorPage />} />
