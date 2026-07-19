@@ -168,7 +168,7 @@ export function ClipToCarouselPage() {
     setVideoReady(false); setVideoName(f.name + ' · loading…')
     // loadedmetadata fires as soon as the header is read (duration known) — fast + reliable.
     v.onloadedmetadata = () => { setVideoReady(true); setVideoName(`${f.name} · ready (${Math.round(v.duration || 0)}s)`) }
-    v.onerror = () => { setVideoReady(false); setVideoName(`${f.name} · couldn't read this file`); toast.error('Could not read that video file — try re-exporting it as MP4.') }
+    v.onerror = () => { const code = v.error?.code; setVideoReady(false); setVideoName(`${f.name} · couldn't read (media error ${code ?? '?'})`); toast.error(`Could not read that video (media error ${code ?? '?'}). Try a standard MP4.`) }
     v.src = URL.createObjectURL(f)
     v.load()
   }
@@ -344,7 +344,9 @@ export function ClipToCarouselPage() {
 
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
-      <video ref={capVideoRef} muted playsInline preload="auto" style={{ display: 'none' }} />
+      {/* off-screen (not display:none — Chrome won't decode a display:none video for canvas capture) */}
+      <video ref={capVideoRef} muted playsInline preload="auto"
+        style={{ position: 'fixed', top: 0, left: 0, width: 1, height: 1, opacity: 0, pointerEvents: 'none', zIndex: -1 }} />
       <style>{`
         .ctc-card{aspect-ratio:4/5;border-radius:14px;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 18px 44px #00000033;background:#0d0a07}
         .ctc-pane{flex:1;position:relative;overflow:hidden;display:flex;align-items:flex-end}
