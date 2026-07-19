@@ -94,8 +94,7 @@ export function ClipToCarouselPage() {
   const accent = brand ? getBrandHex(brand) : '#18181b'
 
   // hidden video used to grab frames from the uploaded file (never uploaded whole)
-  const capVideoRef = useRef<HTMLVideoElement | null>(null)
-  if (!capVideoRef.current) { const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto'; capVideoRef.current = v }
+  const capVideoRef = useRef<HTMLVideoElement | null>(null)   // hidden <video> rendered in the JSX below
   const capChain = useRef<Promise<unknown>>(Promise.resolve())
 
   const [videoReady, setVideoReady] = useState(false)
@@ -128,7 +127,7 @@ export function ClipToCarouselPage() {
   const [fpPreview, setFpPreview] = useState<string | null>(null)
   const fpDataUrl = useRef<string | null>(null)
 
-  const topicReady = brand && videoReady && cues && cues.length
+  const topicReady = brand && cues && cues.length   // Analyze needs brand + transcript only (video is used at Generate)
   const total = cards.length
   const cardMissing = (i: number) => !frames[i + '_top'] || !frames[i + '_bot']
   const missingCount = cards.reduce((n, _c, i) => n + (cardMissing(i) ? 1 : 0), 0)
@@ -164,11 +163,14 @@ export function ClipToCarouselPage() {
   function captureSerial(sec: number) { const run = capChain.current.then(() => captureFrame(sec)); capChain.current = run.catch(() => {}); return run }
 
   function onVideo(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; const v = capVideoRef.current!
-    if (!f) { setVideoReady(false); setVideoName(''); return }
+    const f = e.target.files?.[0]; const v = capVideoRef.current
+    if (!f || !v) { setVideoReady(false); setVideoName(''); return }
     setVideoReady(false); setVideoName(f.name + ' · loading…')
+    // loadedmetadata fires as soon as the header is read (duration known) — fast + reliable.
+    v.onloadedmetadata = () => { setVideoReady(true); setVideoName(`${f.name} · ready (${Math.round(v.duration || 0)}s)`) }
+    v.onerror = () => { setVideoReady(false); setVideoName(`${f.name} · couldn't read this file`); toast.error('Could not read that video file — try re-exporting it as MP4.') }
     v.src = URL.createObjectURL(f)
-    v.addEventListener('loadeddata', () => { setVideoReady(true); setVideoName(`${f.name} · ready (${Math.round(v.duration)}s)`) }, { once: true })
+    v.load()
   }
   function onTranscript(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
@@ -342,6 +344,7 @@ export function ClipToCarouselPage() {
 
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
+      <video ref={capVideoRef} muted playsInline preload="auto" style={{ display: 'none' }} />
       <style>{`
         .ctc-card{aspect-ratio:4/5;border-radius:14px;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 18px 44px #00000033;background:#0d0a07}
         .ctc-pane{flex:1;position:relative;overflow:hidden;display:flex;align-items:flex-end}
@@ -411,10 +414,11 @@ export function ClipToCarouselPage() {
                     </button>
                   ))}
                 </div>
-                <button disabled={topicIdx == null || busy} onClick={handleGenerate}
+                <button disabled={topicIdx == null || !videoReady || busy} onClick={handleGenerate}
                   className="mt-5 w-full px-5 py-3.5 rounded-xl text-base font-medium transition disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 bg-neutral-900 text-white hover:bg-black">
                   {busy && phase === 'loading' && topics.length ? 'Generating…' : 'Generate carousel'}
                 </button>
+                {topicIdx != null && !videoReady && <p className="mt-2 text-xs text-neutral-500">Upload the video file above to generate frames.</p>}
               </div>
             )}
           </div>
