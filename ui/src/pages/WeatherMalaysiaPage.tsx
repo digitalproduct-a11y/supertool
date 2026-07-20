@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { trackToolSubmit, trackButtonClick } from '../utils/analytics'
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useBrand } from '../context/BrandContext'
-import { useBrandNavigate } from '../hooks/useBrandNavigate'
+import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -197,6 +197,7 @@ function ModeToggle({
 export function WeatherMalaysiaPage() {
   const navigate = useNavigate();
   const brandNavigate = useBrandNavigate()
+  const postQueuePath = useBrandPath('/post-queue')
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const { posts, fontUse: rawFontUse, brandColor, nationalSummary, regions, isLoading, error, generate } = useWeatherMalaysia();
   const [brand, setBrand] = useState((!isAdmin && globalBrand) ? globalBrand : "");
@@ -573,16 +574,23 @@ export function WeatherMalaysiaPage() {
                         </button>
                         <button
                           onClick={() => setShowScheduleModal(true)}
-                          disabled={isScheduling || scheduleStatus === "done"}
+                          disabled={isScheduling}
                           className="flex-1 px-4 py-3 bg-neutral-950 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 active:scale-[0.98]"
                         >
-                          {isScheduling
-                            ? "Scheduling…"
-                            : scheduleStatus === "done"
-                              ? "Scheduled!"
-                              : "Schedule on FB"}
+                          {isScheduling ? "Scheduling…" : "Schedule Post"}
                         </button>
                       </div>
+                      {scheduleStatus === 'done' && (
+                        <div className="text-center space-y-1 mt-1">
+                          <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                          <p className="text-xs text-neutral-400">
+                            To view or delete your scheduled post, check{' '}
+                            <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                              here
+                            </Link>.
+                          </p>
+                        </div>
+                      )}
                       {scheduleStatus === 'error' && (
                         <p className="text-xs text-red-500">Failed to schedule. Please try again.</p>
                       )}
@@ -1028,16 +1036,23 @@ export function WeatherMalaysiaPage() {
                     </button>
                     <button
                       onClick={() => setShowScheduleModal(true)}
-                      disabled={isScheduling || scheduleStatus === "done"}
+                      disabled={isScheduling}
                       className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
                     >
-                      {isScheduling
-                        ? "Scheduling…"
-                        : scheduleStatus === "done"
-                          ? "Scheduled!"
-                          : "Schedule on FB"}
+                      {isScheduling ? "Scheduling…" : "Schedule Post"}
                     </button>
                   </div>
+                  {scheduleStatus === 'done' && (
+                    <div className="text-center space-y-1 mt-1">
+                      <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                      <p className="text-xs text-neutral-400">
+                        To view or delete your scheduled post, check{' '}
+                        <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                          here
+                        </Link>.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Schedule modal */}

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from "react";
-import { useBrandNavigate } from '../hooks/useBrandNavigate'
+import { Link } from "react-router-dom";
+import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
 import {
   IconChevronLeft,
   IconDownload,
@@ -48,6 +49,7 @@ interface ResultData {
 
 export function FoodPlacesPage() {
   const brandNavigate = useBrandNavigate()
+  const postQueuePath = useBrandPath('/post-queue')
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
   const webhookUrl = import.meta.env.VITE_FOOD_PLACES_WEBHOOK_URL as
     | string
@@ -69,6 +71,7 @@ export function FoodPlacesPage() {
 
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduled, setScheduled] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -277,6 +280,7 @@ export function FoodPlacesPage() {
           data.status === "SUCCESS" ||
           data.status === "DRAFT_SAVED"
         ) {
+          setScheduled(true);
           toast.success("Food Places carousel scheduled!");
         } else {
           toast.error(data.message ?? "Something went wrong.");
@@ -689,9 +693,21 @@ export function FoodPlacesPage() {
                     disabled={isScheduling}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition bg-neutral-950 text-white hover:bg-neutral-800 disabled:opacity-50"
                   >
-                    {isScheduling ? "Scheduling…" : "Schedule on FB"}
+                    {isScheduling ? "Scheduling…" : "Schedule Post"}
                   </button>
                 </div>
+
+                {scheduled && (
+                  <div className="text-center space-y-1 mt-1">
+                    <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                    <p className="text-xs text-neutral-400">
+                      To view or delete your scheduled post, check{" "}
+                      <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                        here
+                      </Link>.
+                    </p>
+                  </div>
+                )}
 
                 {/* Meta line */}
                 <div className="pt-3 border-t border-neutral-100 flex items-center gap-2 text-[11px] text-neutral-400 flex-wrap">

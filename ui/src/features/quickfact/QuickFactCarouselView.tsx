@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import JSZip from 'jszip'
 import { toast } from '../../hooks/useToast'
+import { useBrandPath } from '../../hooks/useBrandNavigate'
 import { ScheduleModal } from '../../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../../utils/fbCredentials'
 import { uploadToCloudinary } from '../../utils/cloudinary'
@@ -75,6 +77,7 @@ export function QuickFactCarouselView({
   const [showSchedule, setShowSchedule] = useState(false)
   const [isPosting, setIsPosting] = useState(false)
   const [postStatus, setPostStatus] = useState<'idle' | 'posted' | 'error'>('idle')
+  const postQueuePath = useBrandPath('/post-queue')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slideRefs = useRef<Array<QuickFactSlideCanvasHandle | null>>([])
 
@@ -332,8 +335,19 @@ export function QuickFactCarouselView({
       {/* Schedule */}
       <button type="button" onClick={() => setShowSchedule(true)} disabled={isPosting}
         className="w-full px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-sm font-semibold transition disabled:opacity-50">
-        {isPosting ? 'Scheduling…' : postStatus === 'posted' ? 'Scheduled ✓' : 'Schedule Carousel on Facebook'}
+        {isPosting ? 'Scheduling…' : 'Schedule Post'}
       </button>
+      {postStatus === 'posted' && (
+        <div className="text-center space-y-1 mt-1">
+          <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+          <p className="text-xs text-neutral-400">
+            To view or delete your scheduled post, check{' '}
+            <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+              here
+            </Link>.
+          </p>
+        </div>
+      )}
     </div>
   )
 

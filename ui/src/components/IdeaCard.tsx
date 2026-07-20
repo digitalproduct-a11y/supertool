@@ -410,7 +410,7 @@ export default function IdeaCard({
                       </svg>
                       Scheduling…
                     </span>
-                  ) : 'Schedule on FB'}
+                  ) : 'Schedule Post'}
                 </button>
                 {scheduleStatus === 'done' && (
                   <div className="text-center space-y-1">

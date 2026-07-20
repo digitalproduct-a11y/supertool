@@ -319,7 +319,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
                   </svg>
                   Scheduling…
                 </span>
-              ) : 'Schedule on FB'}
+              ) : 'Schedule Post'}
             </button>
             {scheduleStatus === 'done' && (
               <div className="text-center space-y-1">

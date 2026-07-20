@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import JSZip from 'jszip'
 import type { BrandName } from '../constants/brands'
 import { BRANDS, getBrandHex } from '../constants/brands'
@@ -10,6 +11,7 @@ import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { logHistoryEvent } from '../services/historyLog'
 import { trackToolSubmit, trackPostScheduled } from '../utils/analytics'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 import { BackButton } from '../components/ds'
 
 // ── webhooks (env, with staging fallback so the preview works out-of-the-box) ──
@@ -92,6 +94,7 @@ export function ClipToCarouselPage() {
     (selectedBrand && selectedBrand !== 'Admin') ? (selectedBrand as BrandName) : ''
   )
   const accent = brand ? getBrandHex(brand) : '#18181b'
+  const postQueuePath = useBrandPath('/post-queue')
 
   // hidden video used to grab frames from the uploaded file (never uploaded whole)
   const capVideoRef = useRef<HTMLVideoElement | null>(null)   // hidden <video> rendered in the JSX below
@@ -533,8 +536,20 @@ export function ClipToCarouselPage() {
 
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <button disabled={shipBlocked || downloading} onClick={handleDownload} className="px-4 py-2.5 rounded-xl border border-neutral-300 text-sm font-medium hover:bg-neutral-100 transition disabled:opacity-50 disabled:cursor-not-allowed">{downloading ? 'Preparing…' : '⬇ Download All'}</button>
-                  <button disabled={shipBlocked || isPosting} onClick={() => setShowSchedule(true)} className="px-4 py-2.5 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed">{posted ? 'Scheduled ✓' : 'Schedule on FB'}</button>
+                  <button disabled={shipBlocked || isPosting} onClick={() => setShowSchedule(true)} className="px-4 py-2.5 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed">{isPosting ? 'Scheduling…' : 'Schedule Post'}</button>
                 </div>
+
+                {posted && (
+                  <div className="text-center space-y-1 mt-1">
+                    <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                    <p className="text-xs text-neutral-400">
+                      To view or delete your scheduled post, check{' '}
+                      <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                        here
+                      </Link>.
+                    </p>
+                  </div>
+                )}
 
                 {uploadedUrls && (
                   <div className="mt-3 text-xs bg-neutral-50 border border-neutral-200 rounded-lg p-3 break-all">

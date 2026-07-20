@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IconBrandFacebook, IconChevronLeft, IconDownload, IconX } from "@tabler/icons-react";
 import { useBrand } from "../context/BrandContext";
-import { useBrandNavigate } from "../hooks/useBrandNavigate";
+import { useBrandNavigate, useBrandPath } from "../hooks/useBrandNavigate";
 import { BRANDS } from "../constants/brands";
 import { trackButtonClick } from "../utils/analytics";
 import { logHistoryEvent } from "../services/historyLog";
@@ -32,6 +32,7 @@ const DEFAULT_BRAND = "Astro Awani";
 export function ElectionResultsPage() {
   const navigate = useNavigate();
   const brandNavigate = useBrandNavigate();
+  const postQueuePath = useBrandPath("/post-queue");
   const { selectedBrand: globalBrand, isAdmin } = useBrand();
   const [brand, setBrand] = useState<string>(!isAdmin && globalBrand ? globalBrand : DEFAULT_BRAND);
 
@@ -316,17 +317,20 @@ export function ElectionResultsPage() {
                         ) : (
                           <>
                             <IconBrandFacebook className="w-4 h-4" />
-                            Schedule on FB
+                            Schedule Post
                           </>
                         )}
                       </button>
                       {scheduled && (
-                        <p className="text-xs font-medium text-green-600 text-center">
-                          Scheduled on Facebook!{" "}
-                          <a href="/post-queue" className="underline hover:text-green-700">
-                            View queue
-                          </a>
-                        </p>
+                        <div className="text-center space-y-1 mt-1">
+                          <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                          <p className="text-xs text-neutral-400">
+                            To view or delete your scheduled post, check{" "}
+                            <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                              here
+                            </Link>.
+                          </p>
+                        </div>
                       )}
                     </>
                   )}

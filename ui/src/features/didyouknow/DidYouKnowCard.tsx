@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { IconDownload, IconChevronLeft } from '@tabler/icons-react'
+import { useBrandPath } from '../../hooks/useBrandNavigate'
 import { DidYouKnowCanvas, type DidYouKnowCanvasHandle } from './DidYouKnowCanvas'
 import type { DidYouKnowIdea } from '../../hooks/useDidYouKnow'
 import { toast } from '../../hooks/useToast'
@@ -33,6 +35,7 @@ export function DidYouKnowCard({
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [isScheduling, setIsScheduling] = useState(false)
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'done' | 'error'>('idle')
+  const postQueuePath = useBrandPath('/post-queue')
 
   const isMalay = language === 'ms' || language.startsWith('ms') || language?.toLowerCase().includes('malay')
   const translatedEdition = EDITION_TRANSLATIONS[edition]?.[isMalay ? 'ms' : 'en'] || edition
@@ -297,16 +300,19 @@ export function DidYouKnowCard({
                     Scheduling…
                   </>
                 ) : (
-                  'Schedule on FB'
+                  'Schedule Post'
                 )}
               </button>
 
               {scheduleStatus === 'done' && (
-                <div className="text-green-600 text-xs font-medium">
-                  Scheduled on Facebook!{' '}
-                  <a href="/post-queue" className="underline hover:text-green-700">
-                    View queue
-                  </a>
+                <div className="text-center space-y-1 mt-1">
+                  <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                  <p className="text-xs text-neutral-400">
+                    To view or delete your scheduled post, check{' '}
+                    <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                      here
+                    </Link>.
+                  </p>
                 </div>
               )}
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { useBrand } from '../context/BrandContext'
 import { BRANDS } from '../constants/brands'
 import { IconDownload } from '@tabler/icons-react'
@@ -8,6 +9,7 @@ import { toast } from '../hooks/useToast'
 import { ScheduleModal } from '../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { trackPostScheduled, trackToolSubmit } from '../utils/analytics'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 
 async function callZernioWebhook(
   imageUrl: string,
@@ -48,6 +50,7 @@ async function callZernioWebhook(
 export function LatestCurrencyRatePage() {
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const webhookUrl = import.meta.env.VITE_LATEST_CURRENCY_RATE_WEBHOOK_URL as string | undefined
+  const postQueuePath = useBrandPath('/post-queue')
 
   const [selectedBrand, setSelectedBrand] = useState<string>((!isAdmin && globalBrand) ? globalBrand : '')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -267,11 +270,22 @@ export function LatestCurrencyRatePage() {
                             </svg>
                             Scheduling…
                           </>
-                        ) : 'Schedule on FB'}
+                        ) : 'Schedule Post'}
                       </button>
                     </div>
                     {scheduleState === 'error' && (
                       <p className="text-xs text-red-500">Failed to schedule. Please try again.</p>
+                    )}
+                    {scheduleState === 'done' && (
+                      <div className="text-center space-y-1 mt-1">
+                        <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                        <p className="text-xs text-neutral-400">
+                          To view or delete your scheduled post, check{' '}
+                          <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                            here
+                          </Link>.
+                        </p>
+                      </div>
                     )}
                   </>
                 )}

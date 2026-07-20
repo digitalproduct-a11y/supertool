@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { trackToolSubmit, trackButtonClick } from '../utils/analytics'
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useBrand } from '../context/BrandContext'
-import { useBrandNavigate } from '../hooks/useBrandNavigate'
+import { useBrandNavigate, useBrandPath } from '../hooks/useBrandNavigate'
 import {
   IconChevronLeft,
   IconBlockquote,
@@ -75,6 +75,7 @@ const LOADING_STEPS = [
 export function QuotePage() {
   const navigate = useNavigate();
   const brandNavigate = useBrandNavigate()
+  const postQueuePath = useBrandPath('/post-queue')
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
   const [url, setUrl] = useState("");
   const [brand, setBrand] = useState((!isAdmin && globalBrand) ? globalBrand : "");
@@ -1056,16 +1057,24 @@ export function QuotePage() {
                   </button>
                   <button
                     onClick={() => setShowScheduleModal(true)}
-                    disabled={isScheduling || scheduleStatus === "done"}
+                    disabled={isScheduling}
                     className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
                   >
-                    {isScheduling
-                      ? "Scheduling..."
-                      : scheduleStatus === "done"
-                        ? "Scheduled!"
-                        : "Schedule on FB"}
+                    {isScheduling ? "Scheduling..." : "Schedule Post"}
                   </button>
                 </div>
+
+                {scheduleStatus === "done" && (
+                  <div className="text-center space-y-1 mt-1">
+                    <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                    <p className="text-xs text-neutral-400">
+                      To view or delete your scheduled post, check{' '}
+                      <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                        here
+                      </Link>.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

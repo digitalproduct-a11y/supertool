@@ -369,7 +369,7 @@ export function ResultPreview({
                 </svg>
                 Scheduling…
               </span>
-            ) : 'Schedule on FB'}
+            ) : 'Schedule Post'}
           </button>
           {draftState === 'done' && (
             <div className="text-center space-y-1 mt-1">

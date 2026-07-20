@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { BRANDS, type BrandName } from '../constants/brands'
 import { useBrand } from '../context/BrandContext'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 import type { QuickFactResult, QuickFactItem } from '../types'
 import { toast } from '../hooks/useToast'
 import { updateTitleInImageUrl, updateFactInImageUrl, uploadToCloudinary, replaceBaseImage } from '../utils/cloudinary'
@@ -75,6 +77,7 @@ async function callZernioWebhook(
 
 export function QuickFactPage() {
   const { selectedBrand: globalBrand, isAdmin } = useBrand()
+  const postQueuePath = useBrandPath('/post-queue')
   const [pageState, setPageState] = useState<PageState>('idle')
   const [url, setUrl] = useState('')
   const [brand, setBrand] = useState<BrandName | ''>((!isAdmin && globalBrand) ? globalBrand as BrandName : '')
@@ -525,11 +528,17 @@ export function QuickFactPage() {
                         </svg>
                         Scheduling…
                       </>
-                    ) : 'Schedule on FB'}
+                    ) : 'Schedule Post'}
                   </button>
                   {scheduleState === 'done' && (
-                    <div className="mt-2 flex items-center justify-between">
-                      <p className="text-xs text-green-600">✓ Scheduled on Facebook!</p>
+                    <div className="text-center space-y-1 mt-1">
+                      <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                      <p className="text-xs text-neutral-400">
+                        To view or delete your scheduled post, check{' '}
+                        <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                          here
+                        </Link>.
+                      </p>
                       <button onClick={handleReset} className="text-sm text-neutral-500 hover:text-neutral-900 transition">
                         ← Generate another
                       </button>

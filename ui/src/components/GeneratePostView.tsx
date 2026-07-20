@@ -522,7 +522,7 @@ export function GenerateView({ source, onBack }: GenerateViewProps) {
                         </svg>
                         Scheduling…
                       </span>
-                    ) : 'Schedule on FB'}
+                    ) : 'Schedule Post'}
                   </button>
                   {draftState === 'done' && (
                     <div className="text-center space-y-1 mt-1">

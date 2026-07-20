@@ -439,9 +439,6 @@ function SchedulePostButton({ isPosting, postStatus, postError, onOpen }: {
   scheduledFor: string
   onOpen: () => void
 }) {
-  if (postStatus === 'posted') {
-    return <ScheduledSuccessMessage />
-  }
   return (
     <div>
       <button
@@ -451,8 +448,11 @@ function SchedulePostButton({ isPosting, postStatus, postError, onOpen }: {
       >
         {isPosting ? (
           <span className="flex items-center justify-center gap-2"><Spin />Scheduling…</span>
-        ) : 'Schedule on FB'}
+        ) : 'Schedule Post'}
       </button>
+      {postStatus === 'posted' && (
+        <div className="mt-1"><ScheduledSuccessMessage /></div>
+      )}
       {postStatus === 'error' && postError && (
         <p className="text-xs text-red-500 mt-1.5 text-center">{postError}</p>
       )}
@@ -1560,9 +1560,9 @@ export function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
                 Copy caption
               </button>
               <button onClick={() => setShowScheduleModal(true)}
-                disabled={isPosting || postStatus === 'posted'}
+                disabled={isPosting}
                 className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-neutral-950 text-white hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]">
-                {isPosting ? 'Scheduling...' : postStatus === 'posted' ? 'Scheduled!' : 'Schedule on FB'}
+                {isPosting ? 'Scheduling...' : 'Schedule Post'}
               </button>
             </div>
             {postStatus === 'posted' && (

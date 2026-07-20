@@ -694,7 +694,7 @@ export function CarouselResultPreview({ result, articleUrl, onPostDraft }: Carou
                 </svg>
                 Scheduling…
               </span>
-            ) : 'Schedule on FB'}
+            ) : 'Schedule Post'}
           </button>
         )}
         {scheduleStatus === 'done' && (

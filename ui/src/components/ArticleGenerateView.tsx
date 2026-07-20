@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
+import { useBrandPath } from '../hooks/useBrandNavigate'
 import { IconChevronLeft, IconExternalLink, IconCopy, IconCheck, IconDownload, IconUpload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { ScheduleModal } from './ScheduleModal'
@@ -123,6 +125,7 @@ export function ArticleGenerateView({
   backLabel = 'Back',
   autoGenerate = false,
 }: ArticleGenerateViewProps) {
+  const postQueuePath = useBrandPath('/post-queue')
   const isCompetitor = isCompetitorProp ?? COMPETITOR_BRANDS.includes(article.sourceBrand)
   const isBrandMismatch = article.sourceBrand.toLowerCase() !== brand.toLowerCase()
   const titleMode = isBrandMismatch || isCompetitor ? 'ai' : 'original'
@@ -402,9 +405,19 @@ export function ArticleGenerateView({
                       </svg>
                       Scheduling…
                     </>
-                  ) : 'Schedule on FB'}
+                  ) : 'Schedule Post'}
                 </button>
-                {scheduleState === 'done' && <p className="text-xs text-green-600 text-center mt-1">✓ Scheduled on Facebook!</p>}
+                {scheduleState === 'done' && (
+                  <div className="text-center space-y-1 mt-1">
+                    <p className="text-xs text-green-600">✓ Scheduled on Facebook</p>
+                    <p className="text-xs text-neutral-400">
+                      To view or delete your scheduled post, check{' '}
+                      <Link to={postQueuePath} className="text-neutral-600 underline hover:text-neutral-900 transition-colors">
+                        here
+                      </Link>.
+                    </p>
+                  </div>
+                )}
                 {scheduleState === 'error' && <p className="text-xs text-red-500 text-center mt-1">✗ Failed to schedule. Try again.</p>}
               </div>
             )}
