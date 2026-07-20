@@ -35,28 +35,69 @@ const langLabel = (c?: string) => CODE_LABEL[(c || '').toLowerCase()] || (c || '
 
 function s2mmss(sec: number) { sec = Math.max(0, Math.round(+sec || 0)); const m = Math.floor(sec / 60), s = sec % 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s }
 function mmss2s(t: string) { const p = String(t).split(':').map(Number); return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1] }
-function cleanLine(s: string) { return (s || '').replace(/\[[^\]]*\]/g, '').replace(/\s+/g, ' ').trim() }
+function cleanLine(s: string) {
+  return (s || '')
+    .replace(/\[[^\]]*\]/g, ' ')   // [music] / [ketawa] tags
+    .replace(/>>/g, ' ')           // speaker-change arrows (YouTube transcript panel)
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
-// Parse YouTube-Studio .sbv (also .srt/.vtt): a new cue starts on any timecode line,
-// text accumulates until the next; [music]/[applause] tags + SRT index lines stripped.
+// Parse a transcript into timed cues. Two formats are accepted:
+//  A) Caption files (.sbv / .srt / .vtt) — a new cue starts on any timecode-RANGE
+//     line (0:00:01.500,0:00:04.000 or --> ), text accumulates until the next.
+//  B) YouTube transcript-panel copy — a single (M:SS) / (H:MM:SS) marker (or a
+//     bare M:SS at the start of a line) with the text running on after it, until
+//     the next marker. [music] tags, ">>" arrows and SRT index lines are stripped.
 function parseTranscript(text: string): Cue[] {
   text = text.replace(/\r/g, '')
-  const TS = /(\d{1,2}):(\d{2}):(\d{2})[.,](\d{1,3})\s*(?:,|-->)\s*\d{1,2}:\d{2}:\d{2}[.,]\d{1,3}/
   const SKIP = /^(WEBVTT|Transcript|Total entries:.*|Timestamp|Caption)$/i
-  const cues: Cue[] = []
-  let cur: { start: number; parts: string[] } | null = null
-  for (const line of text.split('\n')) {
-    const m = line.match(TS)
-    if (m) {
-      if (cur && cur.parts.length) cues.push({ start: cur.start, text: cleanLine(cur.parts.join(' ')) })
-      cur = { start: (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) + (+m[4]) / 1000, parts: [] }
-    } else if (cur) {
-      const s = line.trim()
-      if (s && !/^\d+$/.test(s) && !SKIP.test(s)) cur.parts.push(s)
+
+  // ── Strategy A: timecode ranges (.sbv / .srt / .vtt) ──
+  const RANGE = /(\d{1,2}):(\d{2}):(\d{2})[.,](\d{1,3})\s*(?:,|-->)\s*\d{1,2}:\d{2}:\d{2}[.,]\d{1,3}/
+  {
+    const cues: Cue[] = []
+    let cur: { start: number; parts: string[] } | null = null
+    for (const line of text.split('\n')) {
+      const m = line.match(RANGE)
+      if (m) {
+        if (cur && cur.parts.length) cues.push({ start: cur.start, text: cleanLine(cur.parts.join(' ')) })
+        cur = { start: (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) + (+m[4]) / 1000, parts: [] }
+      } else if (cur) {
+        const s = line.trim()
+        if (s && !/^\d+$/.test(s) && !SKIP.test(s)) cur.parts.push(s)
+      }
     }
+    if (cur && cur.parts.length) cues.push({ start: cur.start, text: cleanLine(cur.parts.join(' ')) })
+    const out = cues.filter(c => c.text)
+    if (out.length) return out
   }
-  if (cur && cur.parts.length) cues.push({ start: cur.start, text: cleanLine(cur.parts.join(' ')) })
-  return cues.filter(c => c.text)
+
+  // ── Strategy B: single (M:SS)/(H:MM:SS) markers, text runs until the next ──
+  // Parenthesized markers match anywhere; bare markers only at a line start.
+  const SINGLE = /\((\d{1,2}):(\d{2})(?::(\d{2}))?\)|(?:^|\n)[ \t]*(\d{1,2}):(\d{2})(?::(\d{2}))?(?=[ \t])/g
+  const marks: { start: number; markStart: number; textFrom: number }[] = []
+  for (const m of text.matchAll(SINGLE)) {
+    let h = 0, mi = 0, s = 0
+    if (m[1] !== undefined) {                 // (…) form
+      if (m[3] !== undefined) { h = +m[1]; mi = +m[2]; s = +m[3] } else { mi = +m[1]; s = +m[2] }
+    } else {                                  // bare, line-start form
+      if (m[6] !== undefined) { h = +m[4]; mi = +m[5]; s = +m[6] } else { mi = +m[4]; s = +m[5] }
+    }
+    marks.push({ start: h * 3600 + mi * 60 + s, markStart: m.index || 0, textFrom: (m.index || 0) + m[0].length })
+  }
+  if (marks.length) {
+    const cues: Cue[] = []
+    for (let i = 0; i < marks.length; i++) {
+      const end = i + 1 < marks.length ? marks[i + 1].markStart : text.length
+      const t = cleanLine(text.slice(marks[i].textFrom, end))
+      if (t && !SKIP.test(t)) cues.push({ start: marks[i].start, text: t })
+    }
+    const out = cues.filter(c => c.text)
+    if (out.length) return out
+  }
+
+  return []
 }
 
 // ── canvas compositing helpers ──
