@@ -172,13 +172,31 @@ export function ClipToCarouselPage() {
     v.src = URL.createObjectURL(f)
     v.load()
   }
-  function onTranscript(e: React.ChangeEvent<HTMLInputElement>) {
+  // .docx is a zip; pull the text out of word/document.xml (paragraphs -> newlines).
+  async function extractDocxText(file: File): Promise<string> {
+    const zip = await JSZip.loadAsync(await file.arrayBuffer())
+    const xml = (await zip.file('word/document.xml')?.async('string')) || ''
+    return xml
+      .replace(/<\/w:p>/g, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  }
+  async function onTranscript(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) { setCues(null); setTranscriptName(''); return }
-    if (/\.docx$/i.test(f.name)) { toast.error('Please export the transcript as .sbv (YouTube Studio) — .docx is not supported.'); return }
-    const r = new FileReader()
-    r.onload = ev => { const parsed = parseTranscript(String(ev.target?.result || '')); setCues(parsed); setTranscriptName(`${f.name} · ${parsed.length} lines`) }
-    r.readAsText(f)
+    try {
+      const text = /\.docx$/i.test(f.name) ? await extractDocxText(f) : await f.text()
+      const parsed = parseTranscript(text)
+      setCues(parsed)
+      if (!parsed.length) {
+        setTranscriptName(`${f.name} · no timecodes found`)
+        toast.error('No timecodes found — the transcript must include timestamps (e.g. the .sbv export from YouTube Studio).')
+      } else {
+        setTranscriptName(`${f.name} · ${parsed.length} lines`)
+      }
+    } catch {
+      setCues(null); setTranscriptName(''); toast.error('Could not read that transcript file.')
+    }
   }
 
   async function callWebhook(url: string, payload: unknown) {
@@ -395,11 +413,11 @@ export function ClipToCarouselPage() {
             </label>
             <p className="text-xs text-neutral-500 mt-1.5">Frames are captured in your browser at each timecode — the video never leaves your device.</p>
 
-            <label className="block text-base font-semibold text-neutral-900 mt-5">Transcript file <span className="text-neutral-400 font-normal text-sm">(.sbv from YouTube Studio)</span></label>
+            <label className="block text-base font-semibold text-neutral-900 mt-5">Transcript file <span className="text-neutral-400 font-normal text-sm">(.sbv / .srt / .vtt / .txt / .docx — must include timecodes)</span></label>
             <label className="mt-3 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-neutral-300 hover:border-neutral-900 cursor-pointer transition">
               <span className="text-lg">📄</span>
               <span className="flex-1 text-sm text-neutral-500">{transcriptName || 'Click to upload your transcript'}</span>
-              <input type="file" accept=".sbv,.vtt,.srt,.txt" className="hidden" onChange={onTranscript} />
+              <input type="file" accept=".sbv,.vtt,.srt,.txt,.docx" className="hidden" onChange={onTranscript} />
             </label>
 
             {lengthWarn && <div className="mt-4 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2.5 leading-snug">⚠ {lengthWarn}</div>}
@@ -413,7 +431,7 @@ export function ClipToCarouselPage() {
               <div className="mt-7 pt-6 border-t border-neutral-100">
                 <div className="flex items-center justify-between mb-3">
                   <label className="block text-base font-semibold text-neutral-900">Pick a topic</label>
-                  <span className="text-xs font-mono text-neutral-500">Language: {langLabel(liveLang)}</span>
+                  <span className="text-xs font-mono text-neutral-500">Video Language: {langLabel(liveLang)}</span>
                 </div>
                 <div className="space-y-2.5">
                   {topics.map((t, i) => (
