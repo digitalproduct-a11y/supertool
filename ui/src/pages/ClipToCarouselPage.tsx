@@ -355,6 +355,15 @@ export function ClipToCarouselPage() {
         .ctc-pidx{position:absolute;top:13px;right:13px;z-index:5;font-family:'JetBrains Mono',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.45);padding:2px 9px;border-radius:100px}
         .ctc-seam{height:2px;background:rgba(0,0,0,.55)}
         .ctc-nobadge{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;color:#7c2d12;background:#fcd34d;padding:3px 10px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+        .ctc-loader{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#ff3fbf,#00e5d4,#0055ee,#f05a35);background-size:300% 300%;box-shadow:0 10px 30px rgba(0,0,0,.15);animation:ctc-shift 3s ease infinite,ctc-pulse 1.6s ease-in-out infinite}
+        @keyframes ctc-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+        @keyframes ctc-pulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.08);opacity:1}}
+        .ctc-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+        .ctc-step{animation:ctc-fade 1.5s ease-in-out infinite}
+        @keyframes ctc-fade{0%,100%{opacity:.4}50%{opacity:1}}
+        .ctc-shimmer{position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);background-size:200% 100%;animation:ctc-sweep 1.8s linear infinite}
+        @keyframes ctc-sweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        @media (prefers-reduced-motion: reduce){.ctc-loader,.ctc-step,.ctc-shimmer{animation:none}.ctc-shimmer{display:none}}
       `}</style>
 
       <div className="max-w-6xl mx-auto">
@@ -433,10 +442,19 @@ export function ClipToCarouselPage() {
               </div>
             )}
             {phase === 'loading' && (
-              <div className="aspect-[4/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 border border-neutral-200 flex items-center justify-center">
-                <div className="text-center px-8">
-                  <p className="text-lg text-neutral-800 font-semibold mb-3">Working…</p>
-                  <div className="space-y-1.5 text-left text-xs text-neutral-700">{loadingSteps.map((s, i) => <div key={i}>• {s}</div>)}</div>
+              <div className="aspect-[4/5] rounded-xl bg-gradient-to-br from-neutral-50 to-neutral-200 border border-neutral-200 flex items-center justify-center overflow-hidden relative">
+                <div className="ctc-shimmer" />
+                <div className="text-center px-8 relative">
+                  <div className="ctc-loader mx-auto mb-4" />
+                  <p className="text-lg font-semibold text-neutral-800">Building your carousel…</p>
+                  <div className="mt-4 inline-block text-left space-y-2 text-xs text-neutral-600">
+                    {loadingSteps.map((s, i) => (
+                      <div key={i} className="ctc-step flex items-center gap-2" style={{ animationDelay: `${i * 0.28}s` }}>
+                        <span className="ctc-dot" style={{ background: ['#10b981', '#ec4899', '#3b82f6', '#f59e0b'][i % 4] }} />
+                        {s}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -480,8 +498,8 @@ export function ClipToCarouselPage() {
 
                 <div className="mt-5 space-y-2.5">
                   <label className="text-xs font-mono uppercase tracking-wider text-neutral-600">Subtitles on this card</label>
-                  <div className="flex gap-2"><input className={fieldBase + ' w-20 text-center font-mono text-xs'} value={cards[idx].topT} onChange={e => editCard('topT', e.target.value)} /><input className={fieldBase} value={cards[idx].topS} onChange={e => editCard('topS', e.target.value)} placeholder="Top subtitle" /></div>
-                  <div className="flex gap-2"><input className={fieldBase + ' w-20 text-center font-mono text-xs'} value={cards[idx].botT} onChange={e => editCard('botT', e.target.value)} /><input className={fieldBase} value={cards[idx].botS} onChange={e => editCard('botS', e.target.value)} placeholder="Bottom subtitle" /></div>
+                  <div className="flex gap-2"><input readOnly title="Timecode — set via 'Pick frame'" className={fieldBase + ' w-20 text-center font-mono text-xs bg-neutral-100 text-neutral-500 cursor-default'} value={cards[idx].topT} /><input className={fieldBase} value={cards[idx].topS} onChange={e => editCard('topS', e.target.value)} placeholder="Top subtitle" /></div>
+                  <div className="flex gap-2"><input readOnly title="Timecode — set via 'Pick frame'" className={fieldBase + ' w-20 text-center font-mono text-xs bg-neutral-100 text-neutral-500 cursor-default'} value={cards[idx].botT} /><input className={fieldBase} value={cards[idx].botS} onChange={e => editCard('botS', e.target.value)} placeholder="Bottom subtitle" /></div>
                 </div>
 
                 <div className="mt-4">
