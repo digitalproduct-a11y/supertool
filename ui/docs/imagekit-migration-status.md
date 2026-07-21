@@ -71,11 +71,16 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
     Minor cleanups: (a) 2 pilot assets also live under capital `/engagement-photos/EPL/` (dupes of
     lowercase); (b) `misc` holds 25 non-sport assets that were under the Cloudinary `Engagement Photos`
     parent (Stock Exchange/Fuel Prices/Did You Know/Gold Rate/Prime Talk + a video) — untagged, harmless.
-  - **A2 TODO:** re-point search n8n (`wucwc4YFdQWj2322`) → ImageKit list-by-tags (map fileId/url →
-    public_id/secure_url); flag-aware `bulkSearchPhotos`.
-  - **A3 TODO:** `PhotoPickerModal` upload → `imageProvider.signedUpload` with `{folder, tags}` (needs
-    `signedUpload` extended to pass tags to ImageKit).
-  - **A4 TODO:** n8n AI-imagen write path (`HvnKJqk5LCI2lr4P`) → ImageKit (verify if live first).
+  - **A2 DONE:** cloned search → `[ImageKit] Search Photos by Tags` (`UR2t08nciB5MYDhD`,
+    `/webhook/imagekit-search-photos`, active; `tags IN [...]` query, same response shape). Original
+    Cloudinary search untouched. `bulkSearchPhotos` now flag-aware; `VITE_IMAGEKIT_SEARCH_WEBHOOK_URL`
+    added to `.env.production`. Tested: Salah→20, Badminton→32.
+  - **A3 DONE:** `PhotoPickerModal` uploads via `imageProvider.signedUpload({folder,tags})` (ImageKit
+    when flag on).
+  - **A4 DONE (verified):** the n8n AI-imagen write path (`HvnKJqk5LCI2lr4P`) is NOT invoked by the live
+    UI (photos come only from picker search + user upload) → no re-point needed for cutover.
+  - **Phase A (photo bank → ImageKit) COMPLETE.** When `VITE_IMAGE_PROVIDER=imagekit`, the picker
+    searches + uploads to ImageKit.
 
 ---
 

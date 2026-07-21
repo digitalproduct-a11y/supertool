@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { EngagementIdea } from '../types'
 import { TOPIC_CONFIGS } from '../constants/topics'
+import { IMAGE_PROVIDER } from '../utils/imageProvider'
 
 export interface TrendingTopic {
   id: string
@@ -64,7 +65,13 @@ export function useEngagementPhotos() {
 
   const bulkSearchPhotos = async (keywords: Array<{ player: string; club: string }>, webhookUrlOverride?: string) => {
     try {
-      const webhookUrl = webhookUrlOverride || import.meta.env.VITE_CLOUDINARY_SEARCH_WEBHOOK_URL
+      // Search follows the image-provider flag: ImageKit tag-search when cut over,
+      // Cloudinary tag-search otherwise. Same request/response shape for both.
+      const webhookUrl = webhookUrlOverride || (
+        IMAGE_PROVIDER === 'imagekit'
+          ? import.meta.env.VITE_IMAGEKIT_SEARCH_WEBHOOK_URL
+          : import.meta.env.VITE_CLOUDINARY_SEARCH_WEBHOOK_URL
+      )
       if (!webhookUrl) {
         throw new Error('Photo search webhook URL not configured')
       }
