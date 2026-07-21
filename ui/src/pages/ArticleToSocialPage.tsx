@@ -216,7 +216,11 @@ async function generatePhoto(
 async function generateCarousel(
   url: string, brand: string, cfg: CarouselConfig,
 ): Promise<{ imageUrl: string; carouselImages: string[]; caption: string; carouselResult: CarouselResult }> {
-  const webhookUrl = (import.meta.env.VITE_CAROUSEL_WEBHOOK_URL as string | undefined)?.trim()
+  const webhookUrl = (
+    (IMAGE_PROVIDER === 'imagekit'
+      ? import.meta.env.VITE_CAROUSEL_WEBHOOK_URL_IMAGEKIT
+      : import.meta.env.VITE_CAROUSEL_WEBHOOK_URL) as string | undefined
+  )?.trim()
   if (!webhookUrl) throw new Error('Carousel webhook not configured')
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 180_000)
@@ -268,7 +272,11 @@ interface QuickFactResponse {
 async function generateQuickFact(
   url: string, brand: string,
 ): Promise<QuickFactResponse> {
-  const webhookUrl = (import.meta.env.VITE_QUICK_FACT_WEBHOOK_URL as string | undefined)?.trim()
+  const webhookUrl = (
+    (IMAGE_PROVIDER === 'imagekit'
+      ? import.meta.env.VITE_QUICK_FACT_WEBHOOK_URL_IMAGEKIT
+      : import.meta.env.VITE_QUICK_FACT_WEBHOOK_URL) as string | undefined
+  )?.trim()
   if (!webhookUrl) throw new Error('Quick Fact webhook not configured')
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 180_000)
@@ -336,7 +344,11 @@ function buildQuickFactData(brand: string, resp: QuickFactResponse): QuickFactDa
 async function generateQuote(
   url: string, brand: string, cfg: QuoteConfig,
 ): Promise<{ imageUrl: string; caption: string; quoteData: QuoteData; quotePexelsUrls: string[]; quoteFontUse?: string }> {
-  const webhookUrl = (import.meta.env.VITE_QUOTE_WEBHOOK_URL as string | undefined)?.trim()
+  const webhookUrl = (
+    (IMAGE_PROVIDER === 'imagekit'
+      ? import.meta.env.VITE_QUOTE_WEBHOOK_URL_IMAGEKIT
+      : import.meta.env.VITE_QUOTE_WEBHOOK_URL) as string | undefined
+  )?.trim()
   if (!webhookUrl) throw new Error('Quote webhook not configured')
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 120_000)

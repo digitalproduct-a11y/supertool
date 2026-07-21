@@ -3,7 +3,8 @@
 // imperative handle shape. Keeps the three card components lean.
 
 import { FabricImage, Rect, StaticCanvas, Text } from "fabric";
-import { BRAND_LOGO_URLS } from "../../constants/brands";
+import { BRAND_LOGO_IDS } from "../../constants/brands";
+import { brandLogoUrl } from "../../utils/imageProvider";
 import {
   ELECTION_BG_TEMPLATES,
   ELECTION_CANVAS,
@@ -186,7 +187,8 @@ export async function drawHeader(canvas: StaticCanvas, brand: string): Promise<n
 
   let logoBottom = y + 40;
 
-  const logoUrl = (BRAND_LOGO_URLS as Record<string, string>)[brand] ?? "";
+  const logoId = (BRAND_LOGO_IDS as Record<string, string>)[brand] ?? "";
+  const logoUrl = logoId ? brandLogoUrl(logoId) : "";
   if (logoUrl) {
     try {
       const img = await FabricImage.fromURL(logoUrl, { crossOrigin: "anonymous" });

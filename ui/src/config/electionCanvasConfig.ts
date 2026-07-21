@@ -4,6 +4,8 @@
 // gold accent, black rules. Astro Awani logo comes from constants/brands.ts;
 // party/coalition colours from constants/parties.ts.
 
+import { brandTemplateUrl } from "../utils/imageProvider";
+
 export const ELECTION_CANVAS = {
   width: 1080,
   height: 1350,
@@ -38,13 +40,13 @@ export interface ElectionTemplate {
 
 export const ELECTION_BG_TEMPLATES: Partial<Record<string, ElectionTemplate>> = {
   "Astro Awani": {
-    url: "https://res.cloudinary.com/dymmqtqyg/image/upload/prn2026_johor_bg",
+    url: brandTemplateUrl("astro_awani", "prn2026_johor_bg"),
     contentTop: 384,
     contentBottom: 1150,
     footerY: 1180,
   },
   Hotspot: {
-    url: "https://res.cloudinary.com/dymmqtqyg/image/upload/prn2026_johor_hotspot_bg",
+    url: brandTemplateUrl("hotspot", "prn2026_johor_hotspot_bg"),
     contentTop: 264,
     contentBottom: 1000,
     footerY: 1120,

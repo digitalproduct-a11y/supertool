@@ -94,6 +94,12 @@ export const SUBTITLE_BRANDS = cld.SUBTITLE_BRANDS;
 /** Raw text encoder (no URL to key off). */
 export const cloudinaryTextEncode = useIK ? ik.imagekitTextEncode : cld.cloudinaryTextEncode;
 
+/** Brand-logo delivery URL for the active provider (fresh build, follows the flag). */
+export const brandLogoUrl = useIK ? ik.brandLogoUrl : cld.brandLogoUrl;
+
+/** Brand template/background delivery URL for the active provider (follows the flag). */
+export const brandTemplateUrl = useIK ? ik.brandTemplateUrl : cld.brandTemplateUrl;
+
 /** Uploads a File, returns a base-image id (Cloudinary public_id / ImageKit filePath). */
 export const uploadToCloudinary = useIK ? ik.uploadImage : cld.uploadToCloudinary;
 
@@ -105,7 +111,7 @@ export const uploadUrlToCloudinary = useIK ? ik.uploadUrlImage : cld.uploadUrlTo
  * The ImageKit path adapts its response so call sites that read those fields
  * keep working.
  */
-export const signedUploadToCloudinary = useIK
+export const signedUpload = useIK
   ? async (
       fileOrUrl: File | string | Blob,
       _uploadPreset?: string,
@@ -117,3 +123,6 @@ export const signedUploadToCloudinary = useIK
       return { ...r, public_id: r.filePath.replace(/^\//, ""), secure_url: r.url };
     }
   : cld.signedUploadToCloudinary;
+
+/** @deprecated Cloudinary-era name kept for not-yet-migrated consumers; use `signedUpload`. */
+export const signedUploadToCloudinary = signedUpload;

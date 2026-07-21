@@ -26,13 +26,14 @@ export interface CmsGenInput {
 
 const CMS_TIMEOUT_MS = 180_000
 
-// Each post type now calls its dedicated engine webhook directly (the old unified
-// `cms-article-to-post` router is retired). The engines are dual-mode: `articleAPI: true`
-// tells them to use the pre-fetched article we send instead of scraping the URL.
+// Each post type calls its dedicated ImageKit engine webhook directly (the old unified
+// `cms-article-to-post` router is retired; the Cloudinary engines are superseded by the
+// ImageKit clones). The engines are dual-mode: `articleAPI: true` tells them to use the
+// pre-fetched article we send instead of scraping the URL.
 const WEBHOOK_BY_TYPE: Record<CmsPostType, { url: string | undefined; envVar: string }> = {
-  photo: { url: import.meta.env.VITE_GENERATE_WEBHOOK_URL as string | undefined, envVar: 'VITE_GENERATE_WEBHOOK_URL' },
-  quickfact: { url: import.meta.env.VITE_QUICK_FACT_WEBHOOK_URL as string | undefined, envVar: 'VITE_QUICK_FACT_WEBHOOK_URL' },
-  quote: { url: import.meta.env.VITE_QUOTE_WEBHOOK_URL as string | undefined, envVar: 'VITE_QUOTE_WEBHOOK_URL' },
+  photo: { url: import.meta.env.VITE_GENERATE_WEBHOOK_URL_IMAGEKIT as string | undefined, envVar: 'VITE_GENERATE_WEBHOOK_URL_IMAGEKIT' },
+  quickfact: { url: import.meta.env.VITE_QUICK_FACT_WEBHOOK_URL_IMAGEKIT as string | undefined, envVar: 'VITE_QUICK_FACT_WEBHOOK_URL_IMAGEKIT' },
+  quote: { url: import.meta.env.VITE_QUOTE_WEBHOOK_URL_IMAGEKIT as string | undefined, envVar: 'VITE_QUOTE_WEBHOOK_URL_IMAGEKIT' },
 }
 
 async function callCmsWebhook(

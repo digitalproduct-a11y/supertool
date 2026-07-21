@@ -10,6 +10,23 @@ export function cloudinaryTextEncode(str: string): string {
   return encoded.replace(/%/g, "%25");
 }
 
+/**
+ * Builds the delivery URL for a brand logo from its Cloudinary public_id
+ * (e.g. `astro_awani_logo`). Matches the pattern used across the Fabric canvases.
+ */
+export function brandLogoUrl(logoId: string): string {
+  return `https://res.cloudinary.com/dymmqtqyg/image/upload/${logoId}`;
+}
+
+/**
+ * Builds the delivery URL for a brand overlay/background template from its
+ * Cloudinary public_id. Cloudinary's library is flat, so `slug` is ignored here
+ * (it only shapes the ImageKit path). Mirrors the ImageKit counterpart's signature.
+ */
+export function brandTemplateUrl(_slug: string, templateId: string): string {
+  return `https://res.cloudinary.com/dymmqtqyg/image/upload/${templateId}`;
+}
+
 // Mirrors n8n's normalize() used across brand Image Layout nodes:
 // collapse whitespace, straight-quote smart quotes, hyphenate dashes.
 function normalizeTitle(s: string): string {

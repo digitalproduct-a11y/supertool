@@ -12,6 +12,9 @@
  * (e.g. `l-image,i-brands@@astro_awani@@templates@@POSTER-transparent_zdactl`).
  */
 
+import { InteractionRequiredAuthError } from "@azure/msal-browser";
+import { msalInstance, loginRequest } from "../auth/msalConfig";
+
 const ENDPOINT = (
   (import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT as string | undefined)?.trim() ||
   "https://ik.imagekit.io/clckj9ic2"
@@ -161,6 +164,28 @@ export function replaceBaseImage(originalUrl: string, newBasePath: string): stri
 }
 
 /**
+ * Builds the delivery URL for a brand logo. Logos are migrated to the brand-first
+ * layout `/brands/<slug>/logo/<logo_public_id>`, where the slug is the public_id
+ * minus its trailing `_logo`/`-logo` (e.g. `astro_awani_logo` → `astro_awani`,
+ * `pa_ma_logo` → `pa_ma`). Mirrors the `i-brands@@<slug>@@logo@@<id>` layer path
+ * the cloned n8n workflows use.
+ */
+export function brandLogoUrl(logoId: string): string {
+  const slug = logoId.replace(/[-_]logo$/i, "");
+  return `${ENDPOINT}/brands/${slug}/logo/${logoId}`;
+}
+
+/**
+ * Builds the delivery URL for a brand overlay/background template migrated to the
+ * brand-first layout `/brands/<slug>/templates/<templateId>` (e.g. the election
+ * bg templates `prn2026_johor_bg` under `astro_awani`). Mirrors the media-library
+ * path the cloned n8n workflows use.
+ */
+export function brandTemplateUrl(slug: string, templateId: string): string {
+  return `${ENDPOINT}/brands/${slug}/templates/${templateId}`;
+}
+
+/**
  * Prepends a subject-aware crop (`w-,h-,fo-auto` ≈ Cloudinary `c_fill,g_auto`)
  * to an ImageKit URL's transform chain. Passes through non-ImageKit inputs
  * (blob:, data:, external) and is idempotent for URLs already carrying such a crop.
@@ -217,17 +242,43 @@ interface ImageKitUploadResponse {
 }
 
 // Fetches a fresh upload auth (signature/token/expire) from the n8n signing webhook.
-// The webhook holds IMAGEKIT_PRIVATE_KEY as an n8n credential — never in the browser.
+// The webhook holds IMAGEKIT_PRIVATE_KEY as an n8n Variable — never in the browser.
+//
+// In production the request is routed through /api/n8n-proxy (same as useWorkflow.ts):
+// the proxy verifies the MSAL id_token server-side, restricts the target to the n8n host,
+// and injects the imagekit-sign-token header the signing workflow checks. This keeps the
+// signing endpoint from being callable by unauthenticated / non-@astro.com.my users.
 async function getUploadAuth(): Promise<ImageKitSignature> {
   const signWebhookUrl = (
     import.meta.env.VITE_IMAGEKIT_SIGN_WEBHOOK_URL as string | undefined
   )?.trim();
   if (!signWebhookUrl) throw new Error("ImageKit sign webhook not configured");
-  const res = await fetch(signWebhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
+
+  let fetchUrl = signWebhookUrl;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  let body = JSON.stringify({});
+
+  if (import.meta.env.PROD) {
+    const account =
+      msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
+    try {
+      const tokenResult = await msalInstance.acquireTokenSilent({
+        ...loginRequest,
+        account,
+      });
+      headers["Authorization"] = `Bearer ${tokenResult.idToken}`;
+    } catch (err) {
+      if (err instanceof InteractionRequiredAuthError) {
+        await msalInstance.loginRedirect(loginRequest);
+        throw new Error("Session expired. Redirecting to login…");
+      }
+      throw err;
+    }
+    fetchUrl = "/api/n8n-proxy";
+    body = JSON.stringify({ n8nUrl: signWebhookUrl });
+  }
+
+  const res = await fetch(fetchUrl, { method: "POST", headers, body });
   if (!res.ok) throw new Error(`Signature request failed: ${res.status}`);
   return (await res.json()) as ImageKitSignature;
 }

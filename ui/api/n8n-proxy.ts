@@ -66,6 +66,14 @@ const WEBHOOK_TOKENS: WebhookRule[] = [
     header: 'dashboard-webhook-token',
     method: 'GET',
   },
+  {
+    // ImageKit signed-upload auth. The injected header lets the n8n workflow confirm the
+    // call arrived through this MSAL-verified proxy and reject direct-to-n8n requests.
+    match: (path) => path.startsWith('/webhook/imagekit-sign') || path.startsWith('/webhook-test/imagekit-sign'),
+    token: process.env.IMAGEKIT_SIGN_WEBHOOK_TOKEN,
+    header: 'imagekit-sign-token',
+    method: 'POST',
+  },
 ]
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

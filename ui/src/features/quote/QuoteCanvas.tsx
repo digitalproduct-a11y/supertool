@@ -23,7 +23,7 @@ import {
   type TextLayerStyle,
 } from "../../config/quoteCanvasConfig";
 import { BRAND_LOGO_IDS, getBrandHex } from "../../constants/brands";
-import { withSubjectAwareCrop } from "../../utils/imageProvider";
+import { withSubjectAwareCrop, brandLogoUrl } from "../../utils/imageProvider";
 import { loadBrandFont, getBrandFontWeight } from "../../utils/brandFonts";
 
 export interface QuoteCanvasHandle {
@@ -355,7 +355,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
               BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] ?? "";
             if (logoId) {
               try {
-                const logoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${logoId}`;
+                const logoUrl = brandLogoUrl(logoId);
                 const logoImg = await FabricImage.fromURL(logoUrl, {
                   crossOrigin: "anonymous",
                 });
