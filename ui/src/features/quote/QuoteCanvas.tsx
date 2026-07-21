@@ -1105,7 +1105,7 @@ export const QuoteCanvas = forwardRef<QuoteCanvasHandle, QuoteCanvasProps>(
           const logoId =
             BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] ?? "";
           if (logoId) {
-            const logoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${logoId}`;
+            const logoUrl = brandLogoUrl(logoId);
             try {
               const logoImg = await FabricImage.fromURL(logoUrl, {
                 crossOrigin: "anonymous",

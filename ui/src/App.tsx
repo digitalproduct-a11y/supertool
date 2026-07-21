@@ -19,7 +19,6 @@ import { PageTitle } from './components/PageTitle'
 import { ShopeeTopProductsPage } from './pages/ShopeeTopProductsPage'
 import { ZernioScheduledPostsPage } from './pages/ZernioScheduledPostsPage'
 import { SocialAffiliatePostingPage } from './pages/SocialAffiliatePostingPage'
-import { QuickFactPage } from './pages/QuickFactPage'
 import { PrimeTalkPage } from './pages/PrimeTalkPage'
 import { DidYouKnowPage } from './pages/DidYouKnowPage'
 import { NewsPosterPage } from './pages/NewsPosterPage'
@@ -42,11 +41,6 @@ const OnThisDayPage = lazy(() =>
 const WeatherMalaysiaPage = lazy(() =>
   import('./pages/WeatherMalaysiaPage').then((m) => ({
     default: m.WeatherMalaysiaPage,
-  })),
-)
-const QuotePage = lazy(() =>
-  import('./pages/QuotePage').then((m) => ({
-    default: m.QuotePage,
   })),
 )
 const ElectionResultsPage = lazy(() =>
@@ -79,7 +73,7 @@ import type {
   CarouselResponse,
 } from './types'
 
-type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'quick-fact' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'quote' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis' | 'history-log'
+type ToolId = 'home' | 'article-to-social' | 'fb-post' | 'latest-news' | 'affiliate-links' | 'product-feed-generator' | 'article-generator' | 'engagement-posts' | 'engagement-photos' | 'scheduled-posts' | 'shopee-top-products' | 'post-queue' | 'photo-carousel' | 'social-affiliate-posting' | 'prime-talk' | 'on-this-day' | 'weather-malaysia' | 'election-results' | 'dashboard' | 'youtube-dashboard' | 'diagnosis' | 'history-log'
 
 const pathToTool: Record<string, ToolId> = {
   '/home': 'home',
@@ -99,11 +93,9 @@ const pathToTool: Record<string, ToolId> = {
   '/shopee-top-products': 'shopee-top-products',
   '/post-queue': 'post-queue',
   '/social-affiliate-posting': 'social-affiliate-posting',
-  '/quick-fact': 'quick-fact',
   '/engagement-photos/prime-talk': 'engagement-posts',
   '/engagement-posts/on-this-day-malaysia': 'on-this-day',
   '/engagement-posts/weather-malaysia': 'weather-malaysia',
-  '/engagement-posts/quote': 'quote',
   '/election-results': 'election-results',
   '/dashboard': 'dashboard',
   '/youtube-dashboard': 'youtube-dashboard',
@@ -142,11 +134,9 @@ const toolToPath: Record<ToolId, string> = {
   'shopee-top-products': '/shopee-top-products',
   'post-queue': '/post-queue',
   'social-affiliate-posting': '/social-affiliate-posting',
-  'quick-fact': '/quick-fact',
   'prime-talk': '/engagement-photos/prime-talk',
   'on-this-day': '/engagement-posts/on-this-day-malaysia',
   'weather-malaysia': '/engagement-posts/weather-malaysia',
-  'quote': '/engagement-posts/quote',
   'election-results': '/election-results',
   'dashboard': '/dashboard',
   'youtube-dashboard': '/youtube-dashboard',
@@ -675,11 +665,6 @@ function App() {
             <WeatherMalaysiaPage />
           </Suspense>
         } />
-        <Route path="engagement-posts/quote" element={
-          <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
-            <QuotePage />
-          </Suspense>
-        } />
         <Route path="election-results" element={
           <Suspense fallback={<div className="flex-1 pt-20 md:pt-10 flex items-center justify-center"><Spinner size="lg" /></div>}>
             <ElectionResultsPage />
@@ -693,7 +678,6 @@ function App() {
         <Route path="post-queue" element={<ZernioScheduledPostsPage />} />
         <Route path="history-log" element={<HistoryLogPage />} />
         <Route path="social-affiliate-posting" element={<SocialAffiliatePostingPage />} />
-        <Route path="quick-fact" element={<QuickFactPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="weekly-report" element={<WeeklyReportPage />} />
         <Route path="diagnosis" element={<DiagnosisPage />} />

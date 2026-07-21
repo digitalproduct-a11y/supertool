@@ -44,11 +44,9 @@ export type ToolId =
   | 'post-queue'
   | 'photo-carousel'
   | 'social-affiliate-posting'
-  | 'quick-fact'
   | 'prime-talk'
   | 'on-this-day'
   | 'weather-malaysia'
-  | 'quote'
   | 'election-results'
   | 'history-log'
 
@@ -144,11 +142,9 @@ const TOOL_NAMES: Record<ToolId, string> = {
   'scheduled-posts': 'News Bank',
   'post-queue': 'Scheduled queue',
   'social-affiliate-posting': 'Social Affiliate Posting',
-  'quick-fact': 'Quick Fact Generator',
   'prime-talk': 'TV Script to Post',
   'on-this-day': 'On This Day',
   'weather-malaysia': 'Weather Malaysia',
-  'quote': 'Quote',
   'election-results': 'Election Results',
   'history-log': 'History Log',
 }
