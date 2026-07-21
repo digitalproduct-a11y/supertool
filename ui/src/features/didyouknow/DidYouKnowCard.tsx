@@ -5,7 +5,7 @@ import type { DidYouKnowIdea } from '../../hooks/useDidYouKnow'
 import { toast } from '../../hooks/useToast'
 import { ScheduleModal } from '../../components/ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../../utils/fbCredentials'
-import { signedUploadToCloudinary } from '../../utils/cloudinary'
+import { signedUpload, IMAGE_PROVIDER } from '../../utils/imageProvider'
 import { EDITION_TRANSLATIONS } from './constants'
 
 interface DidYouKnowCardProps {
@@ -75,10 +75,11 @@ export function DidYouKnowCard({
     toast.success('Downloaded!')
   }
 
-  const uploadCanvasToCloudinary = async (dataUrl: string): Promise<string | null> => {
+  const uploadCanvasToImageHost = async (dataUrl: string): Promise<string | null> => {
     try {
       const uploadPreset = (import.meta.env.VITE_CLOUDINARY_DIDYOUKNOW_UPLOAD_PRESET as string | undefined)?.trim()
-      if (!uploadPreset) {
+      // Cloudinary needs a preset; ImageKit uses a folder instead (signed upload).
+      if (IMAGE_PROVIDER !== 'imagekit' && !uploadPreset) {
         console.error('Cloudinary config missing')
         return null
       }
@@ -88,10 +89,11 @@ export function DidYouKnowCard({
       const blob = await response.blob()
       const file = new File([blob], 'didyouknow.png', { type: blob.type })
 
-      const { secure_url } = await signedUploadToCloudinary(file, uploadPreset)
+      const extraParams = IMAGE_PROVIDER === 'imagekit' ? { folder: '/didyouknow-uploads' } : undefined
+      const { secure_url } = await signedUpload(file, uploadPreset, extraParams)
       return secure_url || null
     } catch (err) {
-      console.error('Cloudinary upload error:', err)
+      console.error('Image upload error:', err)
       return null
     }
   }
@@ -124,15 +126,15 @@ export function DidYouKnowCard({
         return { success: false }
       }
 
-      // Upload canvas to Cloudinary
-      const cloudinaryUrl = await uploadCanvasToCloudinary(imageDataUrl)
-      if (!cloudinaryUrl) {
+      // Upload canvas to the image host (Cloudinary or ImageKit, per the flag)
+      const hostedUrl = await uploadCanvasToImageHost(imageDataUrl)
+      if (!hostedUrl) {
         toast.error('Failed to upload image')
         return { success: false }
       }
 
       const payload = {
-        fb_ai_image_url: cloudinaryUrl,
+        fb_ai_image_url: hostedUrl,
         fb_ai_caption: `${captionHeader}\n\n${idea.caption}`,
         brand: brandLower,
         passcode: resolvedPasscode,

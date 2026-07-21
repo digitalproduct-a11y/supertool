@@ -15,6 +15,7 @@ import {
 } from 'fabric'
 import type { DidYouKnowIdea } from '../../hooks/useDidYouKnow'
 import { DEFAULT_DID_YOU_KNOW_CANVAS_CONFIG } from '../../config/didYouKnowCanvasConfig'
+import { brandLogoUrl } from '../../utils/imageProvider'
 
 export interface DidYouKnowCanvasHandle {
   downloadAsPng: () => void
@@ -133,7 +134,8 @@ export const DidYouKnowCanvas = forwardRef<
       if (brandLogoPublicId) {
         try {
           const logoHeight = 90
-          const logoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/h_${logoHeight},c_scale/${brandLogoPublicId}`
+          // Provider-aware logo delivery URL; Fabric scales to logoHeight below.
+          const logoUrl = brandLogoUrl(brandLogoPublicId)
           const logo = await FabricImage.fromURL(logoUrl, {
             crossOrigin: 'anonymous',
           })
