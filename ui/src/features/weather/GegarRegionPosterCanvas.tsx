@@ -18,7 +18,7 @@ import type { GegarRegion } from "../../hooks/useWeatherMalaysia";
 import type { WeatherSinglePostCanvasHandle } from "./WeatherSinglePostCanvas";
 import { BRAND_LOGO_IDS } from "../../constants/brands";
 import { loadBrandFont } from "../../utils/brandFonts";
-import { DEFAULT_WEATHER_CANVAS_CONFIG } from "../../config/weatherCanvasConfig";
+import { brandLogoUrl } from "../../utils/imageProvider";
 import { WEATHER_ICON_PATHS, type WeatherIconKey } from "./weatherConditionMap";
 
 interface GegarRegionPosterCanvasProps {
@@ -30,8 +30,6 @@ interface GegarRegionPosterCanvasProps {
   brandColor?: string | null;
   onClick?: () => void;
 }
-
-const CLOUD_NAME = DEFAULT_WEATHER_CANVAS_CONFIG.backgroundImage.cloudName;
 
 // ─── Fixed FB-friendly 4:5 portrait (no feed cropping) ───────────────────────
 const W = 1080;
@@ -258,7 +256,7 @@ export const GegarRegionPosterCanvas = forwardRef<
         if (logoId) {
           try {
             const logoImg = await FabricImage.fromURL(
-              `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${logoId}`,
+              brandLogoUrl(logoId),
               { crossOrigin: "anonymous" },
             );
             logoImg.scaleToWidth(96);

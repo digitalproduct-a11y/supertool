@@ -18,7 +18,7 @@ import {
 import type { WeatherPost } from "../../hooks/useWeatherMalaysia";
 import { BRAND_LOGO_IDS } from "../../constants/brands";
 import { loadBrandFont } from "../../utils/brandFonts";
-import { DEFAULT_WEATHER_CANVAS_CONFIG } from "../../config/weatherCanvasConfig";
+import { brandLogoUrl } from "../../utils/imageProvider";
 import {
   DEFAULT_WEATHER_SINGLE_POST_CONFIG,
   type WeatherSinglePostCanvasConfig,
@@ -45,8 +45,6 @@ interface WeatherSinglePostCanvasProps {
   config?: WeatherSinglePostCanvasConfig;
   onClick?: () => void;
 }
-
-const CLOUD_NAME = DEFAULT_WEATHER_CANVAS_CONFIG.backgroundImage.cloudName;
 
 function loadHTMLImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -300,7 +298,7 @@ export const WeatherSinglePostCanvas = forwardRef<
         const logoId =
           BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] ?? "";
         if (logoId) {
-          const logoUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${logoId}`;
+          const logoUrl = brandLogoUrl(logoId);
           try {
             const logoImg = await FabricImage.fromURL(logoUrl, {
               crossOrigin: "anonymous",
