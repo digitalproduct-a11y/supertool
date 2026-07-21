@@ -390,6 +390,7 @@ export function EngagementPhotosPage({ topic = 'epl' }: EngagementPhotosPageProp
                     downloadPrefix={config.downloadPrefix}
                     uploadPreset={uploadPreset}
                     useFabricCanvas={config.useFabricCanvas}
+                    useEngagementCanvas={topic === 'epl' || topic === 'ucl'}
                     playerLabel={config.personLabel}
                     topic={topic}
                   />

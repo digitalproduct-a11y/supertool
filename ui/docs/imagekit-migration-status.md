@@ -17,7 +17,7 @@
 
 A2S (4 types) · sign webhook · CMS `/cms/post` · Election (#7) · standalone pages (deleted) ·
 Trending News (#1) · shared photo-edit path (also fixed A2S edit/crop/custom-image) · Did You Know (#11) ·
-Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5)
+Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5) · Engagement (#8: photo bank + EPL/UCL→Fabric, visual-QA pending)
 
 _Food Places (#6) DROPPED (2026-07-21): frontend feature removed from the codebase
 (FoodPlacesPage, features/foodplaces/, foodPlacesCanvasConfig, VITE_FOOD_PLACES_WEBHOOK_URL in
@@ -36,7 +36,6 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 
 | #  | Feature                               | Wf ID                              | Effort   |
 |----|---------------------------------------|------------------------------------|----------|
-| 8  | Engagement (EPL/UCL/Badminton/MotoGP) | `HvnKJqk5LCI2lr4P`, `26i1eevFw5M6FQgU` | Med-High |
 | 9  | Gempak Entertainment                  | `iNnNB8lFkC1ofpBI`, `RME9FR4RrDno3AP9` | Med      |
 | 10 | Prime Talk                            | env → `webhook-test/…`             | Med      |
 
@@ -81,6 +80,13 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
     UI (photos come only from picker search + user upload) → no re-point needed for cutover.
   - **Phase A (photo bank → ImageKit) COMPLETE.** When `VITE_IMAGE_PROVIDER=imagekit`, the picker
     searches + uploads to ImageKit.
+  - **Phase B (EPL/UCL render → Fabric) COMPLETE (code; pending in-app visual QA).** New
+    `EngagementPostCanvas` + `engagementCanvasConfig`; `IdeaCard` renders EPL/UCL via the canvas
+    (gated by `useEngagementCanvas`, set for epl/ucl in `EngagementPhotosPage`), uploads the composed
+    PNG via `imageProvider`. Cloudinary `buildPreviewUrl` retained ONLY for PrimeTalk (#10, shares
+    `IdeaCard`). Badminton/MotoGP unchanged (dead; still on `BadmintonPostCanvas`). tsc + build clean.
+    **Remaining gate:** visual QA in the running app — confirm EPL canvas matches the old design and
+    Schedule uploads to ImageKit (prod/sign-webhook); tune `engagementCanvasConfig` for parity.
 
 ---
 

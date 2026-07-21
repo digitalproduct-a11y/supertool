@@ -8,7 +8,8 @@ import PhotoPickerModal from './PhotoPickerModal'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
 import GempakEntertainmentCanvas, { type GempakEntertainmentCanvasHandle } from '../features/engagement/GempakEntertainmentCanvas'
-import { uploadToCloudinary } from '../utils/cloudinary'
+import { EngagementPostCanvas, type EngagementPostCanvasHandle } from '../features/engagement/EngagementPostCanvas'
+import { uploadToCloudinary, uploadedImageUrl, brandLogoUrl as providerBrandLogoUrl } from '../utils/imageProvider'
 import { toast } from '../hooks/useToast'
 import BadmintonPostCanvas from './BadmintonPostCanvas'
 import type { BadmintonPostCanvasHandle } from './BadmintonPostCanvas'
@@ -52,6 +53,9 @@ interface IdeaCardProps {
   logoSize?: number
   showTypeOnImage?: boolean
   subtitleY?: number
+  /** Render EPL/UCL via the client Fabric EngagementPostCanvas (ImageKit path)
+   *  instead of the legacy Cloudinary buildPreviewUrl `<img>` (still used by PrimeTalk). */
+  useEngagementCanvas?: boolean
   // When true, the preview is rendered client-side via fabric.js
   // (GempakEntertainmentCanvas) and the Cloudinary URL is built lazily at
   // schedule-time. Default false → existing EPL Cloudinary URL preview path.
@@ -75,6 +79,7 @@ export default function IdeaCard({
   logoSize = 150,
   showTypeOnImage = false,
   subtitleY = 1100,
+  useEngagementCanvas = false,
   useFabricCanvas = false,
   topic = 'epl',
 }: IdeaCardProps) {
@@ -87,6 +92,7 @@ export default function IdeaCard({
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
   const gempakCanvasRef = useRef<GempakEntertainmentCanvasHandle>(null)
   const canvasRef = useRef<BadmintonPostCanvasHandle>(null)
+  const engagementRef = useRef<EngagementPostCanvasHandle>(null)
 
   // Text box position — edit this value to adjust headline/subtitle group position
   const TEXT_BOX_OFFSET = 160
@@ -152,8 +158,10 @@ export default function IdeaCard({
 
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
-  const brandLogoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${brandLogoId}`
+  const brandLogoUrl = providerBrandLogoUrl(brandLogoId)
 
+  // Legacy Cloudinary preview-URL builder — still used by PrimeTalk (#10, not yet
+  // migrated). EPL/UCL now render via EngagementPostCanvas (useEngagementCanvas).
   const buildPreviewUrl = (headline: string, subtitle: string, photoPublicId: string | null) => {
     const enc = (t: string) => encodeURIComponent(encodeURIComponent(t))
     const hFont = headlineFontSpec ?? 'Montserrat_90_bold_normal_center_line_spacing_-20'
@@ -173,7 +181,6 @@ export default function IdeaCard({
       finalPhotoId,
     ].filter(Boolean).join('/')
   }
-
   const previewUrl = buildPreviewUrl(committedHeadline, committedSubtitle, idea.photo_public_id)
 
   const headlineChars = idea.headline.length
@@ -237,6 +244,16 @@ export default function IdeaCard({
                 width: '100%',
                 height: '100%',
               }}
+            />
+          ) : useEngagementCanvas ? (
+            <EngagementPostCanvas
+              ref={engagementRef}
+              topic={topic}
+              headline={committedHeadline}
+              subtitle={committedSubtitle}
+              photoUrl={idea.photo_url}
+              brand={selectedBrand}
+              typeLabel={showTypeOnImage ? idea.type : undefined}
             />
           ) : (
             <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
@@ -334,6 +351,8 @@ export default function IdeaCard({
                   }
                   if (useCanvasTopic && canvasRef.current) {
                     canvasRef.current.downloadAsPng(`${fileBase}.png`)
+                  } else if (useEngagementCanvas) {
+                    engagementRef.current?.downloadAsPng(`${fileBase}.png`)
                   } else {
                     const res = await fetch(previewUrl)
                     const blob = await res.blob()
@@ -365,21 +384,21 @@ export default function IdeaCard({
                     onConfirm={async (scheduledFor, passcode) => {
                       setIsScheduling(true)
                       try {
+                        // Client-canvas topics (Gempak / Badminton-MotoGP / EPL-UCL):
+                        // render → PNG → upload via the active image provider (lazy, so
+                        // un-scheduled ideas never upload). PrimeTalk still uses the
+                        // Cloudinary preview URL directly.
                         let urlForFb: string
-                        if (useFabricCanvas) {
-                          // Render fabric canvas → PNG → upload to Cloudinary
-                          // → use returned public URL for FB scheduling. Upload
-                          // happens lazily here so un-scheduled ideas never
-                          // touch Cloudinary.
-                          const dataUrl = gempakCanvasRef.current?.getDataUrl()
+                        if (useFabricCanvas || useCanvasTopic || useEngagementCanvas) {
+                          const dataUrl = useFabricCanvas
+                            ? gempakCanvasRef.current?.getDataUrl()
+                            : useCanvasTopic
+                              ? canvasRef.current?.getDataUrl()
+                              : engagementRef.current?.getDataUrl()
                           if (!dataUrl) throw new Error('Canvas not ready')
                           const blob = await (await fetch(dataUrl)).blob()
                           const file = new File([blob], `${downloadPrefix}-${idea.type}.png`, { type: 'image/png' })
-                          const publicId = await uploadToCloudinary(file)
-                          const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined
-                          urlForFb = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
-                        } else if (useCanvasTopic && canvasRef.current) {
-                          urlForFb = canvasRef.current.getDataUrl()
+                          urlForFb = uploadedImageUrl(await uploadToCloudinary(file))
                         } else {
                           urlForFb = buildPreviewUrl(idea.headline, idea.subtitle, idea.photo_public_id)
                         }
