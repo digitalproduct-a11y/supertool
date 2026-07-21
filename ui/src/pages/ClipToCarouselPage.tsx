@@ -145,6 +145,8 @@ export function ClipToCarouselPage() {
   const [videoName, setVideoName] = useState('')
   const [cues, setCues] = useState<Cue[] | null>(null)
   const [transcriptName, setTranscriptName] = useState('')
+  const [sourceUrl, setSourceUrl] = useState('')
+  const [showName, setShowName] = useState('')
 
   const [phase, setPhase] = useState<'idle' | 'loading' | 'results'>('idle')
   const [loadingSteps, setLoadingSteps] = useState<string[]>([])
@@ -282,6 +284,7 @@ export function ClipToCarouselPage() {
       }
       const renderRes = await callWebhook(WH_RENDER, {
         brand, topic_title: tp.title, language: liveLang,
+        source_url: sourceUrl.trim(), show_name: showName.trim(),
         cards: newCards.map((c, i) => ({ index: i + 1, image_url: 'inbrowser-composite', top_subtitle: c.topS, bottom_subtitle: c.botS })),
       })
       setCards(newCards); setFrames(newFrames); setIdx(0); setCaption(renderRes.caption || ''); setUploadedUrls(null); setPosted(false)
@@ -463,6 +466,15 @@ export function ClipToCarouselPage() {
               <span className="flex-1 text-sm text-neutral-500">{transcriptName || 'Click to upload your transcript'}</span>
               <input type="file" accept=".sbv,.vtt,.srt,.txt,.docx" className="hidden" onChange={onTranscript} />
             </label>
+
+            <label className="block text-base font-semibold text-neutral-900 mt-5">Source video link <span className="text-neutral-400 font-normal text-sm">(optional — adds a “watch full episode” line to the caption)</span></label>
+            <input type="url" inputMode="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)}
+              placeholder="https://youtu.be/…"
+              className="mt-3 w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900" />
+            <input type="text" value={showName} onChange={e => setShowName(e.target.value)}
+              placeholder="Show name (optional — auto-detected from the link if left blank)"
+              className="mt-2.5 w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900" />
+            <p className="text-xs text-neutral-500 mt-1.5">Leave the link blank to keep the caption link-free, exactly as before.</p>
 
             {lengthWarn && <div className="mt-4 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2.5 leading-snug">⚠ {lengthWarn}</div>}
 
