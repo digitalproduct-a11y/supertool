@@ -13,7 +13,7 @@ import {
 import { Spinner } from '../components/ds/Spinner'
 import { ScheduleModal } from '../components/ScheduleModal'
 import { BRANDS } from '../constants/brands'
-import { uploadToCloudinary } from '../utils/cloudinary'
+import { uploadToCloudinary, uploadedImageUrl } from '../utils/imageProvider'
 import { getCredentials } from '../utils/fbCredentials'
 import { toast } from '../hooks/useToast'
 import {
@@ -302,8 +302,7 @@ export function OnThisDayPage() {
         { type: 'image/png' },
       )
       const publicId = await uploadToCloudinary(file)
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
-      const fb_ai_image_url = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
+      const fb_ai_image_url = uploadedImageUrl(publicId)
 
       const res = await fetch(draftWebhook, {
         method: 'POST',

@@ -17,7 +17,7 @@
 
 A2S (4 types) · sign webhook · CMS `/cms/post` · Election (#7) · standalone pages (deleted) ·
 Trending News (#1) · shared photo-edit path (also fixed A2S edit/crop/custom-image) · Did You Know (#11) ·
-Weather Malaysia (#3) · Weather Gegar (#4)
+Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5)
 
 _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCanvas.tsx`,
 `weatherCanvasConfig.ts`, `groupPostsByWeather`, `WeatherImageCard`, ModeToggle). Live render =
@@ -32,7 +32,6 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 
 | #  | Feature                               | Wf ID                              | Effort   |
 |----|---------------------------------------|------------------------------------|----------|
-| 5  | On This Day                           | `7bnyqch3TK8Ao77I`                 | Med      |
 | 6  | Food Places                           | `Po4YPX1Feiv05FPy`                 | Med      |
 | 8  | Engagement (EPL/UCL/Badminton/MotoGP) | `HvnKJqk5LCI2lr4P`, `26i1eevFw5M6FQgU` | Med-High |
 | 9  | Gempak Entertainment                  | `iNnNB8lFkC1ofpBI`, `RME9FR4RrDno3AP9` | Med      |
@@ -50,8 +49,8 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 
 ## 🟨 Cross-cutting sweeps (D–G)
 
-- **Canvas logo hardcodes → `brandLogoUrl`:** OnThisDayCanvas, GempakEntertainmentCanvas, FoodPlacesCanvas,
-  QuickFactSlideCanvas, IdeaCard (Weather/Gegar done ✅)
+- **Canvas logo hardcodes → `brandLogoUrl`:** GempakEntertainmentCanvas, FoodPlacesCanvas,
+  QuickFactSlideCanvas, IdeaCard (Weather/Gegar/OnThisDay done ✅)
 - **Constants/assets:** `BRAND_LOGO_URLS` (`<img>` thumbnails), `SHARED_TEMPLATE_IMAGES`
   (EPL/UCL/Gempak) → migrate + repoint (weather bg configs done ✅ — deleted)
 - **Presets (E):** all `VITE_CLOUDINARY_*` upload presets → ImageKit folders

@@ -13,6 +13,7 @@ import {
   type OnThisDayCanvasConfig,
 } from "../../config/onThisDayCanvasConfig";
 import { BRAND_LOGO_IDS } from "../../constants/brands";
+import { brandLogoUrl } from "../../utils/imageProvider";
 import {
   MONTH_NAMES,
   parseEventDate,
@@ -249,7 +250,7 @@ export const OnThisDayCanvas = forwardRef<
         const logoId = BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS];
         if (logoId) {
           try {
-            const logoUrl = `https://res.cloudinary.com/dymmqtqyg/image/upload/${logoId}`;
+            const logoUrl = brandLogoUrl(logoId);
             const logo = await FabricImage.fromURL(logoUrl, {
               crossOrigin: "anonymous",
             });
