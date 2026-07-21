@@ -324,7 +324,7 @@ async function getUploadAuth(): Promise<ImageKitSignature> {
  */
 export async function signedUpload(
   fileOrUrl: File | string | Blob,
-  options?: { folder?: string; fileName?: string; useUniqueFileName?: boolean },
+  options?: { folder?: string; fileName?: string; useUniqueFileName?: boolean; tags?: string[] },
 ): Promise<ImageKitUploadResponse> {
   const { signature, token, expire, publicKey } = await getUploadAuth();
 
@@ -340,6 +340,7 @@ export async function signedUpload(
   fd.append("expire", String(expire));
   fd.append("useUniqueFileName", String(options?.useUniqueFileName ?? true));
   if (options?.folder) fd.append("folder", options.folder);
+  if (options?.tags?.length) fd.append("tags", options.tags.join(","));
 
   const res = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
     method: "POST",

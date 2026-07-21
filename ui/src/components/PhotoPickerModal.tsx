@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { TOPIC_CONFIGS } from '../constants/topics'
-import { signedUploadToCloudinary } from '../utils/cloudinary'
+import { signedUpload } from '../utils/imageProvider'
+
+// Map an engagement topic to its ImageKit photo-bank folder (search is tag-based,
+// so this is organizational; Cloudinary dual-run still tags identically).
+function engagementFolder(topic?: string): string {
+  const sport = topic === 'gempak-entertainment' ? 'entertainment' : (topic ?? 'misc')
+  return `/engagement-photos/${sport}`
+}
 
 interface PhotoPickerModalProps {
   playerName: string
@@ -93,7 +100,7 @@ export default function PhotoPickerModal({
     setUploadError(null)
 
     try {
-      const data = await signedUploadToCloudinary(uploadFile, uploadPreset, { tags })
+      const data = await signedUpload(uploadFile, uploadPreset, { tags, folder: engagementFolder(topic) })
       onSelect({ url: data.secure_url, publicId: data.public_id })
     } catch (err) {
       setUploadError(

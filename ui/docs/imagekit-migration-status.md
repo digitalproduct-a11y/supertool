@@ -57,8 +57,25 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 - **Constants/assets:** `BRAND_LOGO_URLS` (`<img>` thumbnails), `SHARED_TEMPLATE_IMAGES`
   (EPL/UCL/Gempak) → migrate + repoint (weather bg configs done ✅ — deleted)
 - **Presets (E):** all `VITE_CLOUDINARY_*` upload presets → ImageKit folders
-- **Search (F):** "Search Cloudinary Photos by Tags" (`wucwc4YFdQWj2322`) → ImageKit media-search +
-  migrate searchable library
+- **Search (F) — CUTOVER BLOCKER for Engagement:** the engagement photo picker is backed by a
+  Cloudinary tag-searchable **photo bank** (~225 assets under `Engagement Photos/<Sport>`, each tagged
+  `[player, club]`; EPL 111 · Badminton 33 · Entertainment 26 · UCL 16 · MotoGP 14). Path:
+  search = n8n `wucwc4YFdQWj2322` (`/webhook/search-photos`, `VITE_CLOUDINARY_SEARCH_WEBHOOK_URL`) →
+  returns `{public_id, secure_url}`; upload = `signedUpload` w/ per-sport presets → folder + tags.
+  Kill Cloudinary without migrating this → picker empties + past photos 404.
+  **Replication:** mirror assets → ImageKit `/engagement-photos/<sport>/` with tags preserved
+  (upload-from-URL ✓, `tags IN [...]` search ✓), then re-point search + upload n8n to ImageKit.
+  - **A1 DONE (2026-07-21): all 225 assets mirrored** to ImageKit `/engagement-photos/<sport>/`, tags
+    preserved, tag-search validated (Arsenal→25, Badminton→33). Per-sport: epl 111 · badminton 33 ·
+    entertainment 26 · ucl 16 · motogp 14 · misc 25. Cloudinary originals untouched (dual-run).
+    Minor cleanups: (a) 2 pilot assets also live under capital `/engagement-photos/EPL/` (dupes of
+    lowercase); (b) `misc` holds 25 non-sport assets that were under the Cloudinary `Engagement Photos`
+    parent (Stock Exchange/Fuel Prices/Did You Know/Gold Rate/Prime Talk + a video) — untagged, harmless.
+  - **A2 TODO:** re-point search n8n (`wucwc4YFdQWj2322`) → ImageKit list-by-tags (map fileId/url →
+    public_id/secure_url); flag-aware `bulkSearchPhotos`.
+  - **A3 TODO:** `PhotoPickerModal` upload → `imageProvider.signedUpload` with `{folder, tags}` (needs
+    `signedUpload` extended to pass tags to ImageKit).
+  - **A4 TODO:** n8n AI-imagen write path (`HvnKJqk5LCI2lr4P`) → ImageKit (verify if live first).
 
 ---
 

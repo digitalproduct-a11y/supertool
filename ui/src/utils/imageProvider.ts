@@ -129,6 +129,9 @@ export const signedUpload = useIK
     ) => {
       const r = await ik.signedUpload(fileOrUrl, {
         folder: extraParams?.folder ?? "/uploads",
+        tags: extraParams?.tags
+          ? extraParams.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          : undefined,
       });
       return { ...r, public_id: r.filePath.replace(/^\//, ""), secure_url: r.url };
     }
