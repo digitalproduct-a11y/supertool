@@ -30,8 +30,23 @@ type Cue = { start: number; text: string }
 type Topic = { id?: string; title: string; summary: string; start_seconds: number; end_seconds: number }
 type Card = { topT: string; topS: string; botT: string; botS: string }
 
-const CODE_LABEL: Record<string, string> = { zh: '中文 (zh)', ms: 'Melayu (ms)', ta: 'தமிழ் (ta)', en: 'English (en)' }
+const CODE_LABEL: Record<string, string> = { zh: '中文 (zh)', ms: 'Bahasa Melayu (ms)', ta: 'தமிழ் (ta)', en: 'English (en)' }
 const langLabel = (c?: string) => CODE_LABEL[(c || '').toLowerCase()] || (c || '—')
+
+// Brand → audience language (from the Brand Tone & Voice table). Only the non-Malay
+// brands are listed; everything else is Malay. Drives the "watch full episode" CTA line.
+const BRAND_LANG: Record<string, 'ms' | 'en' | 'zh'> = {}
+for (const b of ['Astro Ulagam', 'Rojak Daily', 'Lite', 'Hitz', 'Mix', 'Raaga', 'Stadium Astro', 'SYOK EN']) BRAND_LANG[b] = 'en'
+for (const b of ['XUAN', 'Hotspot', 'MY', 'Melody', 'Goxuan', 'SYOK CHI']) BRAND_LANG[b] = 'zh'
+const CTA_PREFIX: Record<string, string> = {
+  ms: 'Tonton episod penuh di YouTube sini:',
+  en: 'Watch the full episode on YouTube here:',
+  zh: '完整节目请看 YouTube：',
+}
+const ctaLine = (brand: string, url: string) => {
+  const code = BRAND_LANG[brand] || 'ms'
+  return CTA_PREFIX[code] + ' ' + url
+}
 
 function s2mmss(sec: number) { sec = Math.max(0, Math.round(+sec || 0)); const m = Math.floor(sec / 60), s = sec % 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s }
 function mmss2s(t: string) { const p = String(t).split(':').map(Number); return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1] }
@@ -121,7 +136,6 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, dx: num
   ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
 }
 function fillDark(ctx: CanvasRenderingContext2D, y: number) { const g = ctx.createLinearGradient(0, y, 0, y + PANE_H); g.addColorStop(0, '#2a2320'); g.addColorStop(1, '#0d0a07'); ctx.fillStyle = g; ctx.fillRect(0, y, CARD_W, PANE_H) }
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath() }
 function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxW: number) {
   const words = String(text || '').split(/\s+/).filter(Boolean); const lines: string[] = []; let cur = ''
   for (const w of words) { const test = cur ? cur + ' ' + w : w; if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w } else cur = test }
@@ -146,7 +160,6 @@ export function ClipToCarouselPage() {
   const [cues, setCues] = useState<Cue[] | null>(null)
   const [transcriptName, setTranscriptName] = useState('')
   const [sourceUrl, setSourceUrl] = useState('')
-  const [showName, setShowName] = useState('')
 
   const [phase, setPhase] = useState<'idle' | 'loading' | 'results'>('idle')
   const [loadingSteps, setLoadingSteps] = useState<string[]>([])
@@ -284,10 +297,12 @@ export function ClipToCarouselPage() {
       }
       const renderRes = await callWebhook(WH_RENDER, {
         brand, topic_title: tp.title, language: liveLang,
-        source_url: sourceUrl.trim(), show_name: showName.trim(),
         cards: newCards.map((c, i) => ({ index: i + 1, image_url: 'inbrowser-composite', top_subtitle: c.topS, bottom_subtitle: c.botS })),
       })
-      setCards(newCards); setFrames(newFrames); setIdx(0); setCaption(renderRes.caption || ''); setUploadedUrls(null); setPosted(false)
+      // Append a fixed "watch full episode" CTA (brand-language) when a source link was given.
+      const link = sourceUrl.trim()
+      const finalCaption = link ? (renderRes.caption || '') + '\n\n' + ctaLine(brand, link) : (renderRes.caption || '')
+      setCards(newCards); setFrames(newFrames); setIdx(0); setCaption(finalCaption); setUploadedUrls(null); setPosted(false)
       setPhase('results')
     } catch (e) {
       setPhase('idle'); toast.error('Generate failed: ' + (e as Error).message)
@@ -316,12 +331,8 @@ export function ClipToCarouselPage() {
     await drawPane('top', 0, c.topS)
     await drawPane('bot', PANE_H, c.botS)
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, PANE_H - 2, CARD_W, 4)
-    // page index (top-right)
-    const pidx = (i + 1) + '/' + total
-    ctx.font = '600 28px "JetBrains Mono",monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
-    const pw = ctx.measureText(pidx).width + 36, px = CARD_W - 36 - pw
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; roundRect(ctx, px, 36, pw, 46, 100); ctx.fill()
-    ctx.fillStyle = '#fff'; ctx.fillText(pidx, CARD_W - 54, 60)
+    // NOTE: the "i/N" page index is intentionally NOT drawn on the exported PNG — it stays
+    // on the on-screen preview only (CSS .ctc-pidx), so downloads/published cards are clean.
     return canvas
   }
   const canvasBlob = (cnv: HTMLCanvasElement) => new Promise<Blob>((res, rej) => cnv.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/png'))
@@ -471,10 +482,7 @@ export function ClipToCarouselPage() {
             <input type="url" inputMode="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)}
               placeholder="https://youtu.be/…"
               className="mt-3 w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900" />
-            <input type="text" value={showName} onChange={e => setShowName(e.target.value)}
-              placeholder="Show name (optional — auto-detected from the link if left blank)"
-              className="mt-2.5 w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900" />
-            <p className="text-xs text-neutral-500 mt-1.5">Leave the link blank to keep the caption link-free, exactly as before.</p>
+            <p className="text-xs text-neutral-500 mt-1.5">Leave blank to keep the caption link-free. When set, a “watch full episode” line + link is added to the caption in the brand’s language.</p>
 
             {lengthWarn && <div className="mt-4 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2.5 leading-snug">⚠ {lengthWarn}</div>}
 
