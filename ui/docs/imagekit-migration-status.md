@@ -19,6 +19,10 @@ A2S (4 types) · sign webhook · CMS `/cms/post` · Election (#7) · standalone 
 Trending News (#1) · shared photo-edit path (also fixed A2S edit/crop/custom-image) · Did You Know (#11) ·
 Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5)
 
+_Food Places (#6) DROPPED (2026-07-21): frontend feature removed from the codebase
+(FoodPlacesPage, features/foodplaces/, foodPlacesCanvasConfig, VITE_FOOD_PLACES_WEBHOOK_URL in
+.env files). It was already unrouted/orphaned. n8n workflow `Po4YPX1Feiv05FPy` left AS-IS (not migrated, not touched)._
+
 _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCanvas.tsx`,
 `weatherCanvasConfig.ts`, `groupPostsByWeather`, `WeatherImageCard`, ModeToggle). Live render =
 `WeatherSinglePostCanvas` + `GegarRegionPosterCanvas`. Left flagged: n8n `Weather Post`
@@ -32,7 +36,6 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 
 | #  | Feature                               | Wf ID                              | Effort   |
 |----|---------------------------------------|------------------------------------|----------|
-| 6  | Food Places                           | `Po4YPX1Feiv05FPy`                 | Med      |
 | 8  | Engagement (EPL/UCL/Badminton/MotoGP) | `HvnKJqk5LCI2lr4P`, `26i1eevFw5M6FQgU` | Med-High |
 | 9  | Gempak Entertainment                  | `iNnNB8lFkC1ofpBI`, `RME9FR4RrDno3AP9` | Med      |
 | 10 | Prime Talk                            | env → `webhook-test/…`             | Med      |
@@ -49,8 +52,8 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 
 ## 🟨 Cross-cutting sweeps (D–G)
 
-- **Canvas logo hardcodes → `brandLogoUrl`:** GempakEntertainmentCanvas, FoodPlacesCanvas,
-  QuickFactSlideCanvas, IdeaCard (Weather/Gegar/OnThisDay done ✅)
+- **Canvas logo hardcodes → `brandLogoUrl`:** GempakEntertainmentCanvas,
+  QuickFactSlideCanvas, IdeaCard (Weather/Gegar/OnThisDay done ✅; FoodPlaces dropped)
 - **Constants/assets:** `BRAND_LOGO_URLS` (`<img>` thumbnails), `SHARED_TEMPLATE_IMAGES`
   (EPL/UCL/Gempak) → migrate + repoint (weather bg configs done ✅ — deleted)
 - **Presets (E):** all `VITE_CLOUDINARY_*` upload presets → ImageKit folders
