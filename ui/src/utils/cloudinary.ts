@@ -27,6 +27,38 @@ export function brandTemplateUrl(_slug: string, templateId: string): string {
   return `https://res.cloudinary.com/dymmqtqyg/image/upload/${templateId}`;
 }
 
+const CLOUD_NAME =
+  (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ||
+  "dymmqtqyg";
+
+/**
+ * Delivery URL for a freshly-uploaded image from its Cloudinary public_id
+ * (the raw asset, no transforms). Mirrors the ImageKit counterpart's signature.
+ */
+export function uploadedImageUrl(publicId: string): string {
+  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${publicId}`;
+}
+
+/**
+ * Applies an explicit rectangular crop region (in source pixels) to a Cloudinary
+ * URL by inserting `c_crop` before the first `c_fill` sizing step, then re-filling
+ * to the same canvas size. Returns the URL unchanged if no such sizing step exists.
+ * Synchronous (no cache-buster) — callers add one when needed.
+ */
+export function applyRegionCrop(
+  url: string,
+  region: { x: number; y: number; width: number; height: number },
+): string {
+  const x = Math.round(region.x);
+  const y = Math.round(region.y);
+  const w = Math.round(region.width);
+  const h = Math.round(region.height);
+  return url.replace(
+    /c_fill,g_[^,/]+,w_(\d+),h_(\d+)/,
+    `c_crop,x_${x},y_${y},w_${w},h_${h}/c_fill,g_center,w_$1,h_$2`,
+  );
+}
+
 // Mirrors n8n's normalize() used across brand Image Layout nodes:
 // collapse whitespace, straight-quote smart quotes, hyphenate dashes.
 function normalizeTitle(s: string): string {

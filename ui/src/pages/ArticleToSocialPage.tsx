@@ -12,6 +12,7 @@ import {
   updateTitleInImageUrl,
   updateFactInImageUrl,
   uploadToCloudinary,
+  uploadedImageUrl,
   replaceBaseImage,
   IMAGE_PROVIDER,
 } from '../utils/imageProvider'
@@ -491,10 +492,10 @@ async function downloadImage(imageUrl: string, filename: string) {
 }
 
 function getCropSourceUrl(imageUrl: string, uploadedPublicId: string | null): string {
+  if (uploadedPublicId) return uploadedImageUrl(uploadedPublicId)
+  // ImageKit: the raw base image is the URL without its `?tr` chain (CORS-safe, no overlays).
+  if (imageUrl.includes('ik.imagekit.io')) return imageUrl.split('?')[0]
   const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? ''
-  if (uploadedPublicId) {
-    return `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
-  }
   const fetchPrefix = '/image/fetch/'
   const fetchIdx = imageUrl.indexOf(fetchPrefix)
   if (fetchIdx !== -1) {
@@ -1397,8 +1398,7 @@ export function QuoteSingleView({ card, brand, articleUrl, onCaptionChange }: {
       const blob = await (await fetch(dataUrl)).blob()
       const file = new File([blob], `quote-${brandLower}-${Date.now()}.png`, { type: 'image/png' })
       const publicId = await uploadToCloudinary(file)
-      const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined) ?? ''
-      const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
+      const imageUrl = uploadedImageUrl(publicId)
       const editedFields: string[] = []
       if (card.caption !== initialCaptionRef.current) editedFields.push('caption')
       const { authError } = await postToFacebook(
@@ -2013,8 +2013,7 @@ function QuoteBulkContent({ card, brand, onCaptionChange }: {
       const blob = await (await fetch(dataUrl)).blob()
       const file = new File([blob], `quote-${bl}-${Date.now()}.png`, { type: 'image/png' })
       const publicId = await uploadToCloudinary(file)
-      const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined) ?? ''
-      const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`
+      const imageUrl = uploadedImageUrl(publicId)
       const { authError } = await postToFacebook(imageUrl, card.caption, brand, scheduledFor, rp, { toolPostType: 'quote', articleUrl: undefined, title: '' })
       if (authError) { clearCredentials(bl); setIsPosting(false); setShowScheduleModal(true); toast.error('Invalid passcode.'); return }
       if (passcode) saveCredentials(bl, passcode)

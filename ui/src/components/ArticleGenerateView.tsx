@@ -6,7 +6,7 @@ import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { trackButtonClick, trackToolSubmit } from '../utils/analytics'
 import { COMPETITOR_BRANDS } from '../constants/rssFeedsByBrand'
-import { updateTitleInImageUrl, uploadToCloudinary } from '../utils/cloudinary'
+import { updateTitleInImageUrl, uploadToCloudinary, uploadedImageUrl } from '../utils/imageProvider'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
@@ -163,9 +163,8 @@ export function ArticleGenerateView({
     ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || (generated?.title ?? ''), committedTitle)
     : previewImageUrl
 
-  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? 'dymmqtqyg'
   const cropSourceUrl = uploadedPublicId
-    ? `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
+    ? uploadedImageUrl(uploadedPublicId)
     : generated?.cloudinary_url || previewImageUrl || null
 
   const handleGenerate = async () => {

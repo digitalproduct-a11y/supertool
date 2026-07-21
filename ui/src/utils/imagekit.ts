@@ -208,6 +208,40 @@ export function withSubjectAwareCrop(
 }
 
 /**
+ * Delivery URL for a freshly-uploaded image from its ImageKit filePath (the raw
+ * asset, no transforms). Mirrors the Cloudinary counterpart's signature.
+ */
+export function uploadedImageUrl(filePath: string): string {
+  return `${ENDPOINT}/${filePath.replace(/^\//, "")}`;
+}
+
+/**
+ * Applies an explicit rectangular crop region (in source pixels) to an ImageKit URL.
+ * Replaces the leading sizing step (`w-W,h-H,fo-…`) with an extract of the region
+ * (`cm-extract` at x,y sized w×h ≈ Cloudinary `c_crop`) then a chained resize back
+ * to the canvas W×H (≈ `c_fill`). Returns the URL unchanged when the first `tr`
+ * step isn't a `w-`/`h-` sizing. Synchronous (no cache-buster).
+ */
+export function applyRegionCrop(
+  url: string,
+  region: { x: number; y: number; width: number; height: number },
+): string {
+  const split = splitTr(url);
+  if (!split || !split.tr) return url;
+  const steps = split.tr.split(":");
+  const m = steps[0].match(/w-(\d+),h-(\d+)/);
+  if (!m) return url;
+  const [, W, H] = m;
+  const x = Math.round(region.x);
+  const y = Math.round(region.y);
+  const w = Math.round(region.width);
+  const h = Math.round(region.height);
+  steps[0] = `w-${w},h-${h},cm-extract,x-${x},y-${y}`;
+  steps.splice(1, 0, `w-${W},h-${H}`);
+  return joinTr(split.base, steps.join(":"), split.rest);
+}
+
+/**
  * Recovers the origin URL from an ImageKit remote-image layer (`l-image,ie-<b64url>`).
  * Returns null when the URL carries no such fetched layer.
  */

@@ -4,13 +4,26 @@ import type {
   SchedulePostPayload,
 } from '../types'
 import { trackPostScheduled } from '../utils/analytics'
+import { replaceBaseImage } from '../utils/imageProvider'
 
-// ─── Cloudinary URL builder ───────────────────────────────────────────────────
+// ─── Composed image-URL builder ───────────────────────────────────────────────
 // Modifies the webhook-provided URL by replacing only the headline text
 // Preserves all brand-specific transformations (template, fonts, positioning, colors, etc.)
-// This works across all brands because it respects the webhook's built transformation chain
+// This works across all brands because it respects the webhook's built transformation chain.
+//
+// ImageKit URLs can't use the Cloudinary `l_text` rewrite below, so we only swap the
+// base image when a custom upload replaced it; the title is (re)applied separately by
+// every caller via updateTitleInImageUrl (provider-aware). Keeps the same signature.
 
 export function buildCloudinaryUrl(photoPublicId: string, title: string, imageUrl: string): string {
+  if (imageUrl.includes('ik.imagekit.io')) {
+    const oldId = imageUrl.split('?')[0].match(/\/([^/]+)$/)?.[1] ?? null
+    if (photoPublicId && oldId && oldId !== photoPublicId) {
+      return replaceBaseImage(imageUrl, photoPublicId)
+    }
+    return imageUrl
+  }
+
   const encodedTitle = encodeURIComponent(encodeURIComponent(title))
 
   // Extract the old public ID from the URL to check if it's changed

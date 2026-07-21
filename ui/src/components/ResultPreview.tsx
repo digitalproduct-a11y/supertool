@@ -5,7 +5,7 @@ import { useBrandPath } from '../hooks/useBrandNavigate'
 import { IconUpload } from '@tabler/icons-react'
 import type { WorkflowResult } from '../types'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl, uploadToCloudinary } from '../utils/cloudinary'
+import { updateTitleInImageUrl, uploadToCloudinary, uploadedImageUrl } from '../utils/imageProvider'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { applyFocalCrop } from '../features/photo/cropUtils'
 import { ScheduleModal } from './ScheduleModal'
@@ -83,9 +83,8 @@ export function ResultPreview({
     ? updateTitleInImageUrl(adjustedImageUrl, adjustedAtTitle || result.title || '', committedTitle)
     : previewImageUrl
 
-  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? 'dymmqtqyg'
   const cropSourceUrl = uploadedPublicId
-    ? `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
+    ? uploadedImageUrl(uploadedPublicId)
     : result.cloudinary_url || null
 
   async function handleDownload() {

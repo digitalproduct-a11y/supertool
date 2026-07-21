@@ -86,6 +86,13 @@ export function extractBaseImageUrl(url: string): string | null {
   return (isImageKitUrl(url) ? ik : cld).extractBaseImageUrl(url);
 }
 
+export function applyRegionCrop(
+  url: string,
+  region: { x: number; y: number; width: number; height: number },
+): string {
+  return (isImageKitUrl(url) ? ik : cld).applyRegionCrop(url, region);
+}
+
 /** Same brand set regardless of provider. */
 export const SUBTITLE_BRANDS = cld.SUBTITLE_BRANDS;
 
@@ -102,6 +109,9 @@ export const brandTemplateUrl = useIK ? ik.brandTemplateUrl : cld.brandTemplateU
 
 /** Uploads a File, returns a base-image id (Cloudinary public_id / ImageKit filePath). */
 export const uploadToCloudinary = useIK ? ik.uploadImage : cld.uploadToCloudinary;
+
+/** Delivery URL for a freshly-uploaded image id (raw asset, follows the flag). */
+export const uploadedImageUrl = useIK ? ik.uploadedImageUrl : cld.uploadedImageUrl;
 
 /** Uploads from a URL, returns a base-image id. */
 export const uploadUrlToCloudinary = useIK ? ik.uploadUrlImage : cld.uploadUrlToCloudinary;

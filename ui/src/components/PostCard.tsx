@@ -5,7 +5,7 @@ import { useBrandPath } from '../hooks/useBrandNavigate'
 import { IconUpload, IconDownload } from '@tabler/icons-react'
 import { toast } from '../hooks/useToast'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
-import { updateTitleInImageUrl, uploadToCloudinary } from '../utils/cloudinary'
+import { updateTitleInImageUrl, uploadToCloudinary, uploadedImageUrl, applyRegionCrop } from '../utils/imageProvider'
 import { ScheduleModal } from './ScheduleModal'
 import { getCredentials, saveCredentials, clearCredentials } from '../utils/fbCredentials'
 import { trackButtonClick } from '../utils/analytics'
@@ -56,24 +56,19 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
   const [cropLoading, setCropLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const cloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined)?.trim() ?? 'dymmqtqyg'
-
-  // Cloudinary preview URL — only updates when user commits title (on blur)
+  // Preview URL — only updates when user commits title (on blur)
   const previewPublicId = uploadedPublicId ?? post.photoPublicId
   const urlWithPhoto = buildCloudinaryUrl(previewPublicId, committedTitle, post.imageUrl)
   const previewUrl = updateTitleInImageUrl(urlWithPhoto, post.title ?? '', committedTitle)
 
   // Apply crop region to the current previewUrl so title changes are always reflected
   const displayUrl = appliedCropRegion
-    ? previewUrl.replace(
-        /c_fill,g_[^,/]+,w_(\d+),h_(\d+)/,
-        `c_crop,x_${Math.round(appliedCropRegion.x)},y_${Math.round(appliedCropRegion.y)},w_${Math.round(appliedCropRegion.width)},h_${Math.round(appliedCropRegion.height)}/c_fill,g_center,w_$1,h_$2`
-      )
+    ? applyRegionCrop(previewUrl, appliedCropRegion)
     : previewUrl
 
   // Crop source: use uploaded image (raw, no overlays) when available, else original
   const cropSourceUrl = uploadedPublicId
-    ? `https://res.cloudinary.com/${cloudName}/image/upload/${uploadedPublicId}`
+    ? uploadedImageUrl(uploadedPublicId)
     : post.cloudinary_url ?? null
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -135,10 +130,7 @@ export function PostCard({ post, onSchedule: _onSchedule }: PostCardProps) {
       const finalUrlWithPhoto = buildCloudinaryUrl(finalPublicId, editTitle, post.imageUrl)
       const latestUrl = updateTitleInImageUrl(finalUrlWithPhoto, post.title ?? '', editTitle)
       const finalImageUrl = appliedCropRegion
-        ? latestUrl.replace(
-            /c_fill,g_[^,/]+,w_(\d+),h_(\d+)/,
-            `c_crop,x_${Math.round(appliedCropRegion.x)},y_${Math.round(appliedCropRegion.y)},w_${Math.round(appliedCropRegion.width)},h_${Math.round(appliedCropRegion.height)}/c_fill,g_center,w_$1,h_$2`
-          )
+        ? applyRegionCrop(latestUrl, appliedCropRegion)
         : latestUrl
       const res = await fetch(webhookUrl, {
         method: 'POST',

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useBrandPath } from '../hooks/useBrandNavigate'
 import { toast } from '../hooks/useToast'
-import { updateTitleInImageUrl } from '../utils/cloudinary'
+import { updateTitleInImageUrl, IMAGE_PROVIDER } from '../utils/imageProvider'
 import { buildCloudinaryUrl } from '../hooks/useScheduledPosts'
 import { BRANDS, detectBrandFromUrl } from '../constants/brands'
 import type { TitleMode, CaptionTitleMode } from '../types'
@@ -20,7 +20,12 @@ import { useBrand } from '../context/BrandContext'
 // ─── API helper ───────────────────────────────────────────────────────────────
 
 export async function callGenerateWebhook(body: Record<string, unknown>) {
-  const webhookUrl = (import.meta.env.VITE_GENERATE_WEBHOOK_URL as string | undefined)?.trim()
+  // Photo GEN engine — same webhook A2S uses; picks the ImageKit clone when the flag is on.
+  const webhookUrl = (
+    (IMAGE_PROVIDER === 'imagekit'
+      ? import.meta.env.VITE_GENERATE_WEBHOOK_URL_IMAGEKIT
+      : import.meta.env.VITE_GENERATE_WEBHOOK_URL) as string | undefined
+  )?.trim()
   if (!webhookUrl) throw new Error('VITE_GENERATE_WEBHOOK_URL is not configured.')
   try { new URL(webhookUrl) } catch { throw new Error(`Invalid webhook URL: "${webhookUrl}"`) }
   const controller = new AbortController()
