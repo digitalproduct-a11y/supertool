@@ -22,6 +22,10 @@ const WH_RENDER = env.VITE_CLIP_TO_CAROUSEL_RENDER_WEBHOOK_URL?.trim() || 'https
 const PUBLISHER = env.VITE_POST_DRAFT_WEBHOOK_URL?.trim() || 'https://astroproduct.app.n8n.cloud/webhook/zernio-post-publisher-staging'
 const CLOUD_NAME = env.VITE_CLOUDINARY_CLOUD_NAME
 
+// ── upload limits (video is processed in-browser, so these are practical caps we enforce) ──
+const MAX_VIDEO_BYTES = 1024 * 1024 * 1024   // 1 GB
+const MAX_TRANSCRIPT_BYTES = 5 * 1024 * 1024 // 5 MB
+
 // ── card geometry (matches the composited output) ──
 const CARD_W = 1080, CARD_H = 1350, PANE_H = CARD_H / 2
 const SUB_FONT = '"Noto Sans","Noto Sans SC","Noto Sans Tamil",sans-serif'
@@ -224,6 +228,10 @@ export function ClipToCarouselPage() {
   function onVideo(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; const v = capVideoRef.current
     if (!f || !v) { setVideoReady(false); setVideoName(''); return }
+    if (f.size > MAX_VIDEO_BYTES) {
+      setVideoReady(false); setVideoName(''); e.target.value = ''
+      toast.error('Video is too large (max 1 GB). Please upload a smaller clip.'); return
+    }
     setVideoReady(false); setVideoName(f.name + ' · loading…')
     // loadedmetadata fires as soon as the header is read (duration known) — fast + reliable.
     v.onloadedmetadata = () => { setVideoReady(true); setVideoName(`${f.name} · ready (${Math.round(v.duration || 0)}s)`) }
@@ -243,6 +251,10 @@ export function ClipToCarouselPage() {
   async function onTranscript(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) { setCues(null); setTranscriptName(''); return }
+    if (f.size > MAX_TRANSCRIPT_BYTES) {
+      setCues(null); setTranscriptName(''); e.target.value = ''
+      toast.error('Transcript is too large (max 5 MB).'); return
+    }
     try {
       const text = /\.docx$/i.test(f.name) ? await extractDocxText(f) : await f.text()
       const parsed = parseTranscript(text)
@@ -469,9 +481,9 @@ export function ClipToCarouselPage() {
               <span className="flex-1 text-sm text-neutral-500">{videoName || 'Upload the episode video file'}</span>
               <input type="file" accept="video/*" className="hidden" onChange={onVideo} />
             </label>
-            <p className="text-xs text-neutral-500 mt-1.5">Frames are captured in your browser at each timecode — the video never leaves your device.</p>
+            <p className="text-xs text-neutral-500 mt-1.5">Frames are captured in your browser at each timecode — the video never leaves your device. Max file size: 1 GB.</p>
 
-            <label className="block text-base font-semibold text-neutral-900 mt-5">Transcript file <span className="text-neutral-400 font-normal text-sm">(.sbv / .srt / .vtt / .txt / .docx — must include timecodes)</span></label>
+            <label className="block text-base font-semibold text-neutral-900 mt-5">Transcript file <span className="text-neutral-400 font-normal text-sm">(.sbv / .srt / .vtt / .txt / .docx — must include timecodes · max 5 MB)</span></label>
             <label className="mt-3 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-neutral-300 hover:border-neutral-900 cursor-pointer transition">
               <span className="text-lg">📄</span>
               <span className="flex-1 text-sm text-neutral-500">{transcriptName || 'Click to upload your transcript'}</span>
