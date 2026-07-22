@@ -77,6 +77,7 @@ const TOOL_CARDS = [
     sharedLinks: [
       { label: "News Poster", path: "/engagement-posts/news-poster" },
       { label: "Image Editor", path: "/engagement-posts/image-editor" },
+      { label: "Clip to Carousel", path: "/engagement-posts/clip-to-carousel" },
     ] as { label: string; path: string }[],
     brandSpecific: true,
   },
@@ -127,10 +128,6 @@ export function EngagementPostsLanding({
               : card.links;
             const links = [...(card.sharedLinks ?? []), ...brandLinks]
               .filter((link) => link.path !== "/engagement-posts/gold-rate" || isAdmin || selectedBrand === "Astro Ulagam");
-            // Clip to Carousel — Admin only (hidden from every brand profile)
-            if (isAdmin && card.title === "Custom Post") {
-              links.push({ label: "Clip to Carousel", path: "/engagement-posts/clip-to-carousel" });
-            }
             return (
               <div
                 key={card.title}

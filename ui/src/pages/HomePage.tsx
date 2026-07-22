@@ -168,6 +168,7 @@ const TOOL_CARDS = [
     sharedLinks: [
       { label: 'News Poster', path: '/engagement-posts/news-poster' },
       { label: 'Image Editor', path: '/engagement-posts/image-editor' },
+      { label: 'Clip to Carousel', path: '/engagement-posts/clip-to-carousel' },
       { label: 'Election Results', path: '/election-results' },
     ] as { label: string; path: string }[],
     brandSpecific: true,

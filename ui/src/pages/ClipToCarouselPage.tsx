@@ -416,20 +416,6 @@ export function ClipToCarouselPage() {
 
   const fieldBase = 'w-full px-3 py-2 rounded-lg border border-neutral-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900'
 
-  // Admin-only tool: non-admins never see the CTA, and can't reach it via direct URL either.
-  if (!isAdmin) {
-    return (
-      <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6"><BackButton /></div>
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
-            Clip to Carousel is currently available in <b>Admin</b> mode only.
-          </div>
-        </div>
-      </main>
-    )
-  }
-
   return (
     <main className="pt-20 md:pt-10 px-4 md:px-8 pb-8">
       {/* off-screen (not display:none — Chrome won't decode a display:none video for canvas capture) */}
@@ -467,8 +453,8 @@ export function ClipToCarouselPage() {
           <div className="bg-white rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.06)] border border-neutral-200">
             <label className="block text-base font-semibold text-neutral-900">Brand</label>
             <div className="relative mt-3 mb-5">
-              <select value={brand} onChange={e => setBrand(e.target.value as BrandName)}
-                className="w-full appearance-none px-4 py-3 pr-10 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900">
+              <select value={brand} onChange={e => setBrand(e.target.value as BrandName)} disabled={!isAdmin}
+                className="w-full appearance-none px-4 py-3 pr-10 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed">
                 <option value="">Select a brand…</option>
                 {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
