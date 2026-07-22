@@ -31,69 +31,59 @@ export interface EngagementCanvasConfig {
   typeLabel?: Omit<EngagementTextLayer, "fontWeight"> & { fontWeight?: number };
 }
 
-const EPL_UCL: EngagementCanvasConfig = {
+// Each topic has its OWN config object so tweaking one never affects another.
+// EPL/UCL start identical (bottom-center logo, dark fade, headline @y900); Badminton/
+// MotoGP start identical (top-right logo, black→blue gradient, text near the bottom).
+// Edit any block below independently.
+
+const EPL_CANVAS: EngagementCanvasConfig = {
   width: 1080,
   height: 1350,
   photoCrop: "auto",
   // Approximates Cloudinary `l_black_fade` — transparent upper, dark lower third.
   gradient: { startFraction: 0.35, from: "rgba(0,0,0,0)", to: "rgba(0,0,0,0.85)" },
   logo: { position: "bottom-center", width: 150, margin: 35 },
-  headline: {
-    fontFamily: "Montserrat",
-    fontSize: 90,
-    fontWeight: 700,
-    fill: "#FFFFFF",
-    maxWidth: 900,
-    anchor: "top",
-    y: 900,
-  },
-  subtitle: {
-    fontFamily: "Montserrat",
-    fontSize: 38,
-    fontWeight: 400,
-    fill: "#FFFFFF",
-    maxWidth: 850,
-    anchor: "top",
-    y: 1100,
-  },
+  headline: { fontFamily: "Montserrat", fontSize: 90, fontWeight: 700, fill: "#FFFFFF", maxWidth: 900, anchor: "top", y: 900 },
+  subtitle: { fontFamily: "Montserrat", fontSize: 38, fontWeight: 400, fill: "#FFFFFF", maxWidth: 850, anchor: "top", y: 1100 },
 };
 
-// Badminton/MotoGP kept close to the previous renderImageOnCanvas look
-// (top-right logo, black→blue gradient, text grouped near the bottom). These
-// topics have no live webhook today, so exact parity is non-critical.
-const SPORT_CANVAS: EngagementCanvasConfig = {
+const UCL_CANVAS: EngagementCanvasConfig = {
+  width: 1080,
+  height: 1350,
+  photoCrop: "auto",
+  gradient: { startFraction: 0.35, from: "rgba(0,0,0,0)", to: "rgba(0,0,0,0.85)" },
+  logo: { position: "bottom-center", width: 150, margin: 35 },
+  headline: { fontFamily: "Montserrat", fontSize: 90, fontWeight: 700, fill: "#FFFFFF", maxWidth: 900, anchor: "top", y: 900 },
+  subtitle: { fontFamily: "Montserrat", fontSize: 38, fontWeight: 400, fill: "#FFFFFF", maxWidth: 850, anchor: "top", y: 1100 },
+};
+
+const BADMINTON_CANVAS: EngagementCanvasConfig = {
   width: 1080,
   height: 1350,
   photoCrop: "auto",
   gradient: { startFraction: 0.3, from: "rgba(0,0,0,0)", to: "rgba(0,13,26,1)" },
   logo: { position: "top-right", width: 150, margin: 20 },
-  headline: {
-    fontFamily: "Montserrat",
-    fontSize: 64,
-    fontWeight: 900,
-    fill: "#FFFFFF",
-    maxWidth: 900,
-    anchor: "bottom",
-    y: 300,
-  },
-  subtitle: {
-    fontFamily: "Montserrat",
-    fontSize: 36,
-    fontWeight: 300,
-    fill: "#FFFFFF",
-    maxWidth: 900,
-    anchor: "bottom",
-    y: 220,
-  },
+  headline: { fontFamily: "Montserrat", fontSize: 64, fontWeight: 900, fill: "#FFFFFF", maxWidth: 900, anchor: "bottom", y: 300 },
+  subtitle: { fontFamily: "Montserrat", fontSize: 36, fontWeight: 300, fill: "#FFFFFF", maxWidth: 900, anchor: "bottom", y: 220 },
+};
+
+const MOTOGP_CANVAS: EngagementCanvasConfig = {
+  width: 1080,
+  height: 1350,
+  photoCrop: "auto",
+  gradient: { startFraction: 0.3, from: "rgba(0,0,0,0)", to: "rgba(0,13,26,1)" },
+  logo: { position: "top-right", width: 150, margin: 20 },
+  headline: { fontFamily: "Montserrat", fontSize: 64, fontWeight: 900, fill: "#FFFFFF", maxWidth: 900, anchor: "bottom", y: 300 },
+  subtitle: { fontFamily: "Montserrat", fontSize: 36, fontWeight: 300, fill: "#FFFFFF", maxWidth: 900, anchor: "bottom", y: 220 },
 };
 
 export const ENGAGEMENT_CANVAS_CONFIGS: Record<string, EngagementCanvasConfig> = {
-  epl: EPL_UCL,
-  ucl: EPL_UCL,
-  badminton: SPORT_CANVAS,
-  motogp: SPORT_CANVAS,
+  epl: EPL_CANVAS,
+  ucl: UCL_CANVAS,
+  badminton: BADMINTON_CANVAS,
+  motogp: MOTOGP_CANVAS,
 };
 
 export function getEngagementCanvasConfig(topic: string): EngagementCanvasConfig {
-  return ENGAGEMENT_CANVAS_CONFIGS[topic] ?? EPL_UCL;
+  return ENGAGEMENT_CANVAS_CONFIGS[topic] ?? EPL_CANVAS;
 }
