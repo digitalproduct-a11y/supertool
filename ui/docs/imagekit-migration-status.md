@@ -17,7 +17,18 @@
 
 A2S (4 types) · sign webhook · CMS `/cms/post` · Election (#7) · standalone pages (deleted) ·
 Trending News (#1) · shared photo-edit path (also fixed A2S edit/crop/custom-image) · Did You Know (#11) ·
-Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5) · Engagement (#8: photo bank + EPL/UCL→Fabric, visual-QA pending)
+Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5) · **Engagement (#8 — CLOSED)**
+
+_Engagement (#8) CLOSED 2026-07-22: photo bank (~225) on ImageKit (mirror + tag search + tagged upload);
+all four sports (EPL/UCL/Badminton/MotoGP) render through one config-driven `EngagementPostCanvas`
+(per-topic configs) with provider-aware `fo-auto` fill-crop; `BadmintonPostCanvas` + `canvasRenderingUtils`
+retired. EPL + MotoGP visually verified. **Follow-ups (NOT migration — separate):** (a) Badminton
+`fetch-ideas` returns empty because it keyword-filters general Astro sports RSS and finds no badminton
+articles — needs dedicated badminton news sources + an empty-safe Respond (content/n8n work); (b) UCL
+has no webhook env vars (dead until its n8n trending/generate workflows are wired); (c) PrimeTalk (#10)
+still shares `IdeaCard` on the Cloudinary `buildPreviewUrl` path. **Cutover TODO:** add
+`VITE_IMAGEKIT_SEARCH_WEBHOOK_URL` to Vercel + confirm `VITE_EPL_IDEA_GENERATION_WEBHOOK_URL` →
+`generate-posts-staging`._
 
 _Food Places (#6) DROPPED (2026-07-21): frontend feature removed from the codebase
 (FoodPlacesPage, features/foodplaces/, foodPlacesCanvasConfig, VITE_FOOD_PLACES_WEBHOOK_URL in
