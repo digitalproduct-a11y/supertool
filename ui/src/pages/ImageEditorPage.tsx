@@ -4,6 +4,7 @@ import { BackButton } from '../components/ds'
 import { FabricCropPicker } from '../features/photo/FabricCropPicker'
 import type { CropRegion } from '../features/quote/ImageCropAdjuster'
 import { useBrand } from '../context/BrandContext'
+import { IMAGE_PROVIDER } from '../utils/imageProvider'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,10 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 async function callEnhanceWebhook(file: File, brand: string): Promise<string> {
-  const url = import.meta.env.VITE_IMAGE_ENHANCE_WEBHOOK_URL
+  const url =
+    IMAGE_PROVIDER === 'imagekit'
+      ? import.meta.env.VITE_IMAGE_ENHANCE_WEBHOOK_URL_IMAGEKIT
+      : import.meta.env.VITE_IMAGE_ENHANCE_WEBHOOK_URL
   if (!url) throw new Error('VITE_IMAGE_ENHANCE_WEBHOOK_URL is not set')
   const base64 = await fileToBase64(file)
   const res = await fetch(url, {
