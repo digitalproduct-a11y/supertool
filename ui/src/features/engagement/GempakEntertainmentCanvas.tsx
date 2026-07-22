@@ -19,6 +19,7 @@ import {
   type TextLayerStyle,
 } from '../../config/gempakEntertainmentCanvasConfig'
 import { BRAND_LOGO_IDS, getBrandHex } from '../../constants/brands'
+import { brandLogoUrl, fitPhotoUrl } from '../../utils/imageProvider'
 
 export interface GempakEntertainmentCanvasHandle {
   downloadAsPng: (filename?: string) => void
@@ -29,36 +30,15 @@ export interface GempakEntertainmentCanvasProps {
   headline: string
   subtitle: string
   brand: string
-  // Either a Cloudinary public_id (e.g. "celebrity_xyz_abc") or a full URL
-  // (e.g. "https://images.pexels.com/..."). Internally we always render via a
-  // Cloudinary URL so face-aware crop applies. Null/empty leaves a brand-color
-  // fallback fill.
-  photoPublicId: string | null
+  // Full photo delivery URL (ImageKit, Cloudinary, or external). It's fill-cropped
+  // to the canvas face-first via imageProvider.fitPhotoUrl. Null/empty leaves the
+  // brand-color fallback fill.
+  photoUrl: string | null
   // Optional kicker label above the headline (drives the typeLabel layer).
   // Leave empty to hide.
   typeLabel?: string
   config?: GempakEntertainmentCanvasConfig
   onClick?: () => void
-}
-
-const CLOUDINARY_CLOUD = 'dymmqtqyg'
-const FALLBACK_PHOTO_PUBLIC_ID = 'placeholder_img_cveevd'
-
-// Build a Cloudinary URL with face-aware crop. Mirrors EPL's IdeaCard
-// `c_fill,g_face,w_1080,h_1350` segment. Handles both stored public IDs and
-// external URLs (the latter via Cloudinary's `fetch` delivery type — same path
-// EPL takes when the user uploads a Pexels image).
-function buildPhotoUrl(
-  photoPublicId: string | null,
-  width: number,
-  height: number,
-): string {
-  const id = photoPublicId || FALLBACK_PHOTO_PUBLIC_ID
-  const isExternal = id.startsWith('http')
-  const deliveryType = isExternal ? 'fetch' : 'upload'
-  const finalId = isExternal ? encodeURIComponent(id) : id
-  const transform = `c_fill,g_face,w_${width},h_${height},f_auto,q_auto`
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/${deliveryType}/${transform}/${finalId}`
 }
 
 function applyTextStyle(style: TextLayerStyle) {
@@ -79,7 +59,7 @@ export const GempakEntertainmentCanvas = forwardRef<
   GempakEntertainmentCanvasHandle,
   GempakEntertainmentCanvasProps
 >(function GempakEntertainmentCanvas(
-  { headline, subtitle, brand, photoPublicId, typeLabel, config: configProp, onClick },
+  { headline, subtitle, brand, photoUrl, typeLabel, config: configProp, onClick },
   ref,
 ) {
   const config = configProp ?? DEFAULT_GEMPAK_ENT_CANVAS_CONFIG
@@ -125,29 +105,31 @@ export const GempakEntertainmentCanvas = forwardRef<
           }),
         )
 
-        // Layer 2: full-bleed face-aware photo. Cloudinary handles the crop;
-        // fabric just blits the resulting 1080×1350 image.
-        try {
-          const photoUrl = buildPhotoUrl(photoPublicId, width, height)
-          const photo = await FabricImage.fromURL(photoUrl, {
-            crossOrigin: 'anonymous',
-          })
-          if (isCancelled()) return false
-          // Cover-scale defensively in case Cloudinary returned slightly off
-          // dimensions (e.g. fetch type sometimes preserves source aspect).
-          const scale = Math.max(width / photo.width!, height / photo.height!)
-          photo.scale(scale)
-          photo.set({
-            left: width / 2,
-            top: height / 2,
-            originX: 'center',
-            originY: 'center',
-            selectable: false,
-            evented: false,
-          })
-          canvas.add(photo)
-        } catch {
-          // Photo failed — fallback fill remains visible. User can pick again.
+        // Layer 2: full-bleed face-aware photo. imageProvider.fitPhotoUrl does the
+        // provider-aware crop (ImageKit fo-face / Cloudinary g_face) → 1080×1350;
+        // fabric just blits it. No photo → brand-color fallback fill stays visible.
+        if (photoUrl) {
+          try {
+            const photoSrc = fitPhotoUrl(photoUrl, width, height, 'face')
+            const photo = await FabricImage.fromURL(photoSrc, {
+              crossOrigin: 'anonymous',
+            })
+            if (isCancelled()) return false
+            // Cover-scale defensively in case the crop returned slightly off dims.
+            const scale = Math.max(width / photo.width!, height / photo.height!)
+            photo.scale(scale)
+            photo.set({
+              left: width / 2,
+              top: height / 2,
+              originX: 'center',
+              originY: 'center',
+              selectable: false,
+              evented: false,
+            })
+            canvas.add(photo)
+          } catch {
+            // Photo failed — fallback fill remains visible. User can pick again.
+          }
         }
 
         // Layer 3: bottom darkening gradient — gives white text contrast.
@@ -262,8 +244,7 @@ export const GempakEntertainmentCanvas = forwardRef<
             BRAND_LOGO_IDS[brand as keyof typeof BRAND_LOGO_IDS] ?? ''
           if (logoId) {
             try {
-              const logoUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/upload/${logoId}`
-              const loaded = await FabricImage.fromURL(logoUrl, {
+              const loaded = await FabricImage.fromURL(brandLogoUrl(logoId), {
                 crossOrigin: 'anonymous',
               })
               if (isCancelled()) return false
@@ -317,7 +298,7 @@ export const GempakEntertainmentCanvas = forwardRef<
         return false
       }
     },
-    [headline, subtitle, brand, photoPublicId, typeLabel, config],
+    [headline, subtitle, brand, photoUrl, typeLabel, config],
   )
 
   // Double-buffered render: build the new frame on a detached canvas, then
@@ -370,7 +351,7 @@ export const GempakEntertainmentCanvas = forwardRef<
       if (prev) prev.dispose()
       setReady(true)
     })
-  }, [headline, subtitle, brand, photoPublicId, typeLabel, config, renderCanvas])
+  }, [headline, subtitle, brand, photoUrl, typeLabel, config, renderCanvas])
 
   useEffect(() => {
     return () => {

@@ -93,6 +93,42 @@ export function applyRegionCrop(
   return (isImageKitUrl(url) ? ik : cld).applyRegionCrop(url, region);
 }
 
+/**
+ * Fill-crop a photo URL to exactly width×height for a Fabric canvas base image,
+ * provider-aware and auto-detected from the URL:
+ *   - ImageKit  → `?tr=w-,h-,fo-face|fo-auto`
+ *   - Cloudinary → `/c_fill,g_face|g_auto,w_,h_/` (idempotent)
+ *   - external / blob / data → returned unchanged (canvas cover-fills it)
+ * `focus: "face"` ≈ the old Cloudinary g_face (players/celebrities); "auto" = smart crop.
+ * Shared by EngagementPostCanvas + GempakEntertainmentCanvas.
+ */
+export function fitPhotoUrl(
+  url: string,
+  width: number,
+  height: number,
+  focus: "face" | "auto" = "auto",
+): string {
+  if (!url) return url;
+  const face = focus === "face";
+  if (url.includes("ik.imagekit.io")) {
+    const step = `w-${width},h-${height},fo-${face ? "face" : "auto"}`;
+    const [base, query] = url.split("?");
+    if (query?.startsWith("tr=")) return `${base}?tr=${step}:${query.slice(3)}`;
+    return `${base}?tr=${step}${query ? `&${query}` : ""}`;
+  }
+  const marker = url.includes("/image/upload/")
+    ? "/image/upload/"
+    : url.includes("/image/fetch/")
+      ? "/image/fetch/"
+      : null;
+  if (marker) {
+    if (/\/(c_fill|g_face|g_auto)[,/]/.test(url)) return url;
+    const g = face ? "g_face" : "g_auto";
+    return url.replace(marker, `${marker}c_fill,${g},w_${width},h_${height}/`);
+  }
+  return url;
+}
+
 /** Same brand set regardless of provider. */
 export const SUBTITLE_BRANDS = cld.SUBTITLE_BRANDS;
 

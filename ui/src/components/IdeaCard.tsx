@@ -170,7 +170,7 @@ export default function IdeaCard({
               headline={idea.headline}
               subtitle={idea.subtitle}
               brand={selectedBrand}
-              photoPublicId={idea.photo_public_id}
+              photoUrl={idea.photo_url}
               typeLabel={showTypeOnImage ? idea.type : undefined}
             />
           ) : useEngagementCanvas ? (
