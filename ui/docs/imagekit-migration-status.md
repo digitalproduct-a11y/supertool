@@ -17,7 +17,7 @@
 
 A2S (4 types) · sign webhook · CMS `/cms/post` · Election (#7) · standalone pages (deleted) ·
 Trending News (#1) · shared photo-edit path (also fixed A2S edit/crop/custom-image) · Did You Know (#11) ·
-Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5) · **Engagement (#8 — CLOSED)**
+Weather Malaysia (#3) · Weather Gegar (#4) · On This Day (#5) · **Engagement (#8 — CLOSED)** · Gempak Entertainment (#9)
 
 _Engagement (#8) CLOSED 2026-07-22: photo bank (~225) on ImageKit (mirror + tag search + tagged upload);
 all four sports (EPL/UCL/Badminton/MotoGP) render through one config-driven `EngagementPostCanvas`
@@ -47,8 +47,12 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 
 | #  | Feature                               | Wf ID                              | Effort   |
 |----|---------------------------------------|------------------------------------|----------|
-| 9  | Gempak Entertainment                  | `iNnNB8lFkC1ofpBI`, `RME9FR4RrDno3AP9` | Med      |
 | 10 | Prime Talk                            | env → `webhook-test/…`             | Med      |
+
+_Gempak Entertainment (#9) DONE 2026-07-22: kept its richer `GempakEntertainmentCanvas`; repointed
+photo → `imageProvider.fitPhotoUrl` (provider-aware fo-face/g_face) + logo → `brandLogoUrl`; extracted
+shared `fitPhotoUrl` (also used by `EngagementPostCanvas`). Entertainment photos celebrity-tagged →
+default search finds them on ImageKit. "Malay Entertainment" display kept; internal id stays `gempak-entertainment`._
 
 ### B4 — Server-side image ops (n8n uploads to Cloudinary)
 
@@ -62,8 +66,8 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
 
 ## 🟨 Cross-cutting sweeps (D–G)
 
-- **Canvas logo hardcodes → `brandLogoUrl`:** GempakEntertainmentCanvas,
-  QuickFactSlideCanvas, IdeaCard (Weather/Gegar/OnThisDay done ✅; FoodPlaces dropped)
+- **Canvas logo hardcodes → `brandLogoUrl`:** QuickFactSlideCanvas, IdeaCard
+  (Weather/Gegar/OnThisDay/Gempak done ✅; FoodPlaces dropped)
 - **Constants/assets:** `BRAND_LOGO_URLS` (`<img>` thumbnails), `SHARED_TEMPLATE_IMAGES`
   (EPL/UCL/Gempak) → migrate + repoint (weather bg configs done ✅ — deleted)
 - **Presets (E):** all `VITE_CLOUDINARY_*` upload presets → ImageKit folders
