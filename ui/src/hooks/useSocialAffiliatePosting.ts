@@ -4,6 +4,7 @@ import type {
   SocialAffiliateFormData,
   SocialAffiliateGenerationResult,
 } from '../types'
+import { IMAGE_PROVIDER } from '../utils/imageProvider'
 
 const MOCK_RESULT: SocialAffiliateGenerationResult = {
   sessionId: 'sess_mock123',
@@ -64,7 +65,11 @@ export function useSocialAffiliatePosting() {
         await new Promise((resolve) => setTimeout(resolve, 2000))
         generationResult = MOCK_RESULT
       } else {
-        const generateUrl = import.meta.env.VITE_SOCIAL_AFFILIATE_POSTING_WEBHOOK_URL as string | undefined
+        const generateUrl = (
+          IMAGE_PROVIDER === 'imagekit'
+            ? import.meta.env.VITE_SOCIAL_AFFILIATE_POSTING_WEBHOOK_URL_IMAGEKIT
+            : import.meta.env.VITE_SOCIAL_AFFILIATE_POSTING_WEBHOOK_URL
+        ) as string | undefined
         if (!generateUrl) {
           throw new Error('Content generation webhook URL is not configured')
         }
