@@ -258,6 +258,99 @@ export function extractBaseImageUrl(imagekitUrl: string): string | null {
   }
 }
 
+// ── Engagement preview composite (Prime Talk) ─────────────────────────────────
+
+/**
+ * Options for the engagement post-image composite. Shared shape with the
+ * Cloudinary counterpart so `imageProvider` can dispatch either by the flag.
+ */
+export interface EngagementPreviewOptions {
+  headline: string;
+  subtitle: string;
+  /** ImageKit filePath (from the photo picker) OR an external http(s) URL. */
+  photoPublicId: string | null;
+  /** Post type kicker (e.g. idea.type) — shown when showTypeOnImage is true. */
+  type?: string;
+  showTypeOnImage: boolean;
+  /** Cloudinary-era logo public_id (e.g. `hotspot_logo`) — mapped to the IK path. */
+  brandLogoId: string;
+  logoSize: number;
+  subtitleY: number;
+  headlineFontSpec?: string;
+  subtitleFontSpec?: string;
+}
+
+// Cloudinary `font_use` spec → ImageKit media-library font path (`ff-` value,
+// `/` → `@@`). The Chinese Hotspot font is already in the library as
+// hotspot_font.ttf (byte-identical to Cloudinary's 方正兰亭特黑简体.ttf).
+const IK_FONT_PATHS: Record<string, string> = {
+  "Fonts:方正兰亭特黑简体.ttf": "fonts@@hotspot_font.ttf",
+};
+
+// Parses a Cloudinary font spec ("Fonts:X.ttf_90_bold_normal_center") into an
+// ImageKit `ff` path and font size. Unknown families fall back to a built-in
+// ImageKit font (Montserrat); plain family names (e.g. "Montserrat") pass through.
+function parseFontSpec(
+  spec: string | undefined,
+  fallbackSize: number,
+): { ff: string; fs: number } {
+  if (!spec) return { ff: "Montserrat", fs: fallbackSize };
+  const parts = spec.split("_");
+  const name = parts[0];
+  const sizeTok = parts.find((p) => /^\d+$/.test(p));
+  const fs = sizeTok ? parseInt(sizeTok, 10) : fallbackSize;
+  const ff =
+    IK_FONT_PATHS[name] ??
+    (name.includes(":") || name.includes(".") ? "Montserrat" : name);
+  return { ff, fs };
+}
+
+/** Base segment for the composite: an IK filePath, or an encoded remote URL
+ *  (Web Proxy origin) when the photo is an external http(s) link. */
+function previewBaseSegment(photoPublicId: string | null): string {
+  if (!photoPublicId) return "default-image.jpg";
+  if (/^https?:\/\//i.test(photoPublicId)) return encodeURIComponent(photoPublicId);
+  return photoPublicId.replace(/^\//, "");
+}
+
+/**
+ * Builds the ImageKit composite delivery URL for an engagement post image
+ * (Prime Talk). Reproduces the legacy Cloudinary `buildPreviewUrl` layout as a
+ * query-style transform chain: face-cropped 1080×1350 photo → bottom gradient →
+ * optional gold type kicker → white headline → white subtitle → bottom-center
+ * brand logo. Query-style (`?tr=`) is required: base64 text (`ie-`) can contain
+ * `%2F`, which breaks path-style transforms.
+ */
+export function buildEngagementPreviewUrl(o: EngagementPreviewOptions): string {
+  const slug = o.brandLogoId.replace(/[-_]logo$/i, "");
+  const head = parseFontSpec(o.headlineFontSpec, 90);
+  const subt = parseFontSpec(o.subtitleFontSpec, 38);
+  const base = previewBaseSegment(o.photoPublicId);
+
+  const steps: string[] = [
+    "w-1080,h-1350,fo-face",
+    // Bottom fade (transparent→black over the lower 60%), replaces Cloudinary's
+    // `l_black_fade_pexvn5` — no uploaded asset needed.
+    "l-image,i-ik_canvas,e-gradient-ld-bottom_from-00000000_to-000000,w-bw,h-bh_mul_0.6,lfo-bottom,l-end",
+  ];
+  if (o.showTypeOnImage && o.type) {
+    steps.push(
+      `l-text,ie-${imagekitTextEncode(o.type)},ff-${subt.ff},fs-${subt.fs},co-FFD700,w-800,ia-center,lxc-bw_mul_0.5,ly-845,l-end`,
+    );
+  }
+  steps.push(
+    `l-text,ie-${imagekitTextEncode(o.headline)},ff-${head.ff},fs-${head.fs},co-FFFFFF,w-1000,ia-center,lxc-bw_mul_0.5,ly-900,l-end`,
+  );
+  steps.push(
+    `l-text,ie-${imagekitTextEncode(o.subtitle)},ff-${subt.ff},fs-${subt.fs},co-FFFFFF,w-950,ia-center,lxc-bw_mul_0.5,ly-${o.subtitleY},l-end`,
+  );
+  steps.push(
+    `l-image,i-brands@@${slug}@@logo@@${o.brandLogoId},w-${o.logoSize},lfo-bottom,l-end`,
+  );
+
+  return `${ENDPOINT}/${base}?tr=${steps.join(":")}`;
+}
+
 // ── Upload (client-side signed upload via n8n sign webhook) ────────────────────
 
 interface ImageKitSignature {

@@ -132,6 +132,18 @@ export function fitPhotoUrl(
 /** Same brand set regardless of provider. */
 export const SUBTITLE_BRANDS = cld.SUBTITLE_BRANDS;
 
+/** Shared options for the engagement post-image composite (Prime Talk). */
+export type EngagementPreviewOptions = cld.EngagementPreviewOptions;
+
+/**
+ * Builds the engagement post-image composite URL for the active provider
+ * (follows the VITE_IMAGE_PROVIDER flag). ImageKit rebuilds the composite as a
+ * `?tr=` layer chain; Cloudinary keeps the legacy `buildPreviewUrl` output.
+ */
+export const buildEngagementPreviewUrl = useIK
+  ? ik.buildEngagementPreviewUrl
+  : cld.buildEngagementPreviewUrl;
+
 // ── Uploads + text encoder: follow the VITE_IMAGE_PROVIDER cutover flag ─────────
 
 /** Raw text encoder (no URL to key off). */

@@ -9,7 +9,7 @@ import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
 import GempakEntertainmentCanvas, { type GempakEntertainmentCanvasHandle } from '../features/engagement/GempakEntertainmentCanvas'
 import { EngagementPostCanvas, type EngagementPostCanvasHandle } from '../features/engagement/EngagementPostCanvas'
-import { uploadToCloudinary, uploadedImageUrl } from '../utils/imageProvider'
+import { uploadToCloudinary, uploadedImageUrl, buildEngagementPreviewUrl } from '../utils/imageProvider'
 import { toast } from '../hooks/useToast'
 
 const FORMAT_BADGES: Record<string, string> = {
@@ -96,30 +96,25 @@ export default function IdeaCard({
     setCommittedSubtitle(idea.subtitle)
   }, [idea.id])
 
-  const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
 
-  // Legacy Cloudinary preview-URL builder — still used by PrimeTalk (#10, not yet
-  // migrated). EPL/UCL now render via EngagementPostCanvas (useEngagementCanvas).
-  const buildPreviewUrl = (headline: string, subtitle: string, photoPublicId: string | null) => {
-    const enc = (t: string) => encodeURIComponent(encodeURIComponent(t))
-    const hFont = headlineFontSpec ?? 'Montserrat_90_bold_normal_center_line_spacing_-20'
-    const sFont = subtitleFontSpec ?? 'Montserrat_38_normal_center_line_spacing_0'
-    const isExternalUrl = photoPublicId?.startsWith('http')
-    const uploadType = isExternalUrl ? 'fetch' : 'upload'
-    const finalPhotoId = isExternalUrl ? encodeURIComponent(photoPublicId!) : (photoPublicId || DEFAULT_PHOTO)
-    return [
-      `https://res.cloudinary.com/dymmqtqyg/image/${uploadType}`,
-      'c_fill,g_face,w_1080,h_1350',
-      'c_pad,w_1080,h_1350,g_north',
-      'l_black_fade_pexvn5,c_fill,w_1080,h_1350/fl_layer_apply,g_south,y_0',
-      showTypeOnImage && idea.type ? `l_text:${sFont}:${enc(idea.type)},co_rgb:FFD700,c_fit,w_700/fl_layer_apply,g_north,x_0,y_845` : null,
-      `l_text:${hFont}:${enc(headline)},co_rgb:FFFFFF,c_fit,w_900/fl_layer_apply,g_north,x_0,y_900`,
-      `l_text:${sFont}:${enc(subtitle)},co_rgb:FFFFFF,c_fit,w_850/fl_layer_apply,g_north,x_0,y_${subtitleY}`,
-      `l_${brandLogoId},w_${logoSize}/fl_layer_apply,g_south,y_35`,
-      finalPhotoId,
-    ].filter(Boolean).join('/')
-  }
+  // Provider-aware engagement composite (Prime Talk / #10). ImageKit rebuilds it
+  // as a `?tr=` layer chain; Cloudinary keeps the legacy buildPreviewUrl output.
+  // EPL/UCL/Gempak render via their Fabric canvases instead (useEngagementCanvas/
+  // useFabricCanvas), so this only drives the PrimeTalk `<img>` path.
+  const buildPreviewUrl = (headline: string, subtitle: string, photoPublicId: string | null) =>
+    buildEngagementPreviewUrl({
+      headline,
+      subtitle,
+      photoPublicId,
+      type: idea.type,
+      showTypeOnImage,
+      brandLogoId,
+      logoSize,
+      subtitleY,
+      headlineFontSpec,
+      subtitleFontSpec,
+    })
   const previewUrl = buildPreviewUrl(committedHeadline, committedSubtitle, idea.photo_public_id)
 
   const headlineChars = idea.headline.length

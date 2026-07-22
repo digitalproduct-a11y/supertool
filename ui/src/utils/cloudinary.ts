@@ -400,6 +400,57 @@ export async function uploadUrlToCloudinary(url: string): Promise<string> {
 }
 
 /**
+ * Options for the engagement post-image composite. Shared shape with the
+ * ImageKit counterpart so `imageProvider` can dispatch either by the flag.
+ */
+export interface EngagementPreviewOptions {
+  headline: string;
+  subtitle: string;
+  photoPublicId: string | null;
+  type?: string;
+  showTypeOnImage: boolean;
+  brandLogoId: string;
+  logoSize: number;
+  subtitleY: number;
+  headlineFontSpec?: string;
+  subtitleFontSpec?: string;
+}
+
+const DEFAULT_PREVIEW_PHOTO = "placeholder_img_cveevd";
+
+/**
+ * Builds the Cloudinary composite delivery URL for an engagement post image
+ * (Prime Talk). Extracted verbatim from IdeaCard's former inline `buildPreviewUrl`
+ * so behaviour is unchanged when `VITE_IMAGE_PROVIDER=cloudinary`.
+ */
+export function buildEngagementPreviewUrl(o: EngagementPreviewOptions): string {
+  const enc = (t: string) => encodeURIComponent(encodeURIComponent(t));
+  const hFont =
+    o.headlineFontSpec ?? "Montserrat_90_bold_normal_center_line_spacing_-20";
+  const sFont = o.subtitleFontSpec ?? "Montserrat_38_normal_center_line_spacing_0";
+  const isExternalUrl = o.photoPublicId?.startsWith("http");
+  const uploadType = isExternalUrl ? "fetch" : "upload";
+  const finalPhotoId = isExternalUrl
+    ? encodeURIComponent(o.photoPublicId!)
+    : o.photoPublicId || DEFAULT_PREVIEW_PHOTO;
+  return [
+    `https://res.cloudinary.com/dymmqtqyg/image/${uploadType}`,
+    "c_fill,g_face,w_1080,h_1350",
+    "c_pad,w_1080,h_1350,g_north",
+    "l_black_fade_pexvn5,c_fill,w_1080,h_1350/fl_layer_apply,g_south,y_0",
+    o.showTypeOnImage && o.type
+      ? `l_text:${sFont}:${enc(o.type)},co_rgb:FFD700,c_fit,w_700/fl_layer_apply,g_north,x_0,y_845`
+      : null,
+    `l_text:${hFont}:${enc(o.headline)},co_rgb:FFFFFF,c_fit,w_900/fl_layer_apply,g_north,x_0,y_900`,
+    `l_text:${sFont}:${enc(o.subtitle)},co_rgb:FFFFFF,c_fit,w_850/fl_layer_apply,g_north,x_0,y_${o.subtitleY}`,
+    `l_${o.brandLogoId},w_${o.logoSize}/fl_layer_apply,g_south,y_35`,
+    finalPhotoId,
+  ]
+    .filter(Boolean)
+    .join("/");
+}
+
+/**
  * Builds a Cloudinary transformation URL for "Did You Know" cards (Tribune design).
  * Layout: full-bleed photo → gradient overlay → headline (serif italic) → fact with accent rule.
  */
