@@ -5,6 +5,7 @@ import type {
   ThumbnailPromptResponse,
   ThumbnailGenerateResponse,
 } from "../types";
+import { IMAGE_PROVIDER } from "../utils/imageProvider";
 
 const INTAKE_WEBHOOK_URL = import.meta.env
   .VITE_ARTICLE_INTAKE_WEBHOOK_URL as string;
@@ -12,8 +13,13 @@ const GENERATE_WEBHOOK_URL = import.meta.env
   .VITE_ARTICLE_GENERATE_WEBHOOK_URL as string;
 const THUMBNAIL_PROMPT_WEBHOOK_URL = import.meta.env
   .VITE_ARTICLE_THUMBNAIL_PROMPT_WEBHOOK_URL as string;
-const THUMBNAIL_GENERATE_WEBHOOK_URL = import.meta.env
-  .VITE_ARTICLE_THUMBNAIL_GENERATE_WEBHOOK_URL as string;
+// Thumbnail image is hosted by the generate step, so it follows the provider flag.
+// (The prompt step only returns text, so it stays provider-agnostic.)
+const THUMBNAIL_GENERATE_WEBHOOK_URL = (
+  IMAGE_PROVIDER === "imagekit"
+    ? import.meta.env.VITE_ARTICLE_THUMBNAIL_GENERATE_WEBHOOK_URL_IMAGEKIT
+    : import.meta.env.VITE_ARTICLE_THUMBNAIL_GENERATE_WEBHOOK_URL
+) as string;
 
 export function useArticleGenerator() {
   const [isLoading, setIsLoading] = useState(false);
