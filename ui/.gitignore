@@ -25,3 +25,6 @@ dist-ssr
 .env*
 !.env.example
 .vercel
+
+# Local-only ImageKit migration status board (personal working doc, not for the repo)
+docs/imagekit-migration-status.md
