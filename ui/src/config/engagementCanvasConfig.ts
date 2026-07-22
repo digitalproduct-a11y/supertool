@@ -20,8 +20,8 @@ export interface EngagementTextLayer {
 export interface EngagementCanvasConfig {
   width: number;
   height: number;
-  /** photo fill focus: face-aware (players) or plain center */
-  photoCrop: "face" | "center";
+  /** photo fill focus: face-aware (fo-face/g_face) or content-aware smart crop (fo-auto/g_auto) */
+  photoCrop: "face" | "auto";
   /** bottom→up darkening overlay for text legibility */
   gradient: { startFraction: number; from: string; to: string };
   logo: { position: "top-right" | "bottom-center"; width: number; margin: number };
@@ -34,7 +34,7 @@ export interface EngagementCanvasConfig {
 const EPL_UCL: EngagementCanvasConfig = {
   width: 1080,
   height: 1350,
-  photoCrop: "face",
+  photoCrop: "auto",
   // Approximates Cloudinary `l_black_fade` — transparent upper, dark lower third.
   gradient: { startFraction: 0.35, from: "rgba(0,0,0,0)", to: "rgba(0,0,0,0.85)" },
   logo: { position: "bottom-center", width: 150, margin: 35 },
@@ -64,7 +64,7 @@ const EPL_UCL: EngagementCanvasConfig = {
 const SPORT_CANVAS: EngagementCanvasConfig = {
   width: 1080,
   height: 1350,
-  photoCrop: "center",
+  photoCrop: "auto",
   gradient: { startFraction: 0.3, from: "rgba(0,0,0,0)", to: "rgba(0,13,26,1)" },
   logo: { position: "top-right", width: 150, margin: 20 },
   headline: {

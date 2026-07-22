@@ -29,6 +29,31 @@ interface EngagementPostCanvasProps {
   onClick?: () => void;
 }
 
+// Fit the base photo to the canvas with a face-aware fill crop, provider-aware:
+// ImageKit `fo-face`, Cloudinary `c_fill,g_face` (≈ the old buildPreviewUrl). This
+// makes it arrive already sized. External URLs pass through → Fabric cover-fills.
+function fittedPhotoUrl(url: string, cfg: EngagementCanvasConfig): string {
+  if (!url) return url;
+  const face = cfg.photoCrop === "face";
+  if (url.includes("ik.imagekit.io")) {
+    const step = `w-${cfg.width},h-${cfg.height},fo-${face ? "face" : "auto"}`;
+    const [base, query] = url.split("?");
+    if (query?.startsWith("tr=")) return `${base}?tr=${step}:${query.slice(3)}`;
+    return `${base}?tr=${step}${query ? `&${query}` : ""}`;
+  }
+  const marker = url.includes("/image/upload/")
+    ? "/image/upload/"
+    : url.includes("/image/fetch/")
+      ? "/image/fetch/"
+      : null;
+  if (marker) {
+    if (/\/(c_fill|g_face|g_auto)[,/]/.test(url)) return url; // already cropped
+    const g = face ? "g_face" : "g_auto";
+    return url.replace(marker, `${marker}c_fill,${g},w_${cfg.width},h_${cfg.height}/`);
+  }
+  return url;
+}
+
 // Word-wrap `text` into lines that fit `maxWidth` at the given font.
 function wrapLines(text: string, font: string, maxWidth: number): string[] {
   if (!text) return [];
@@ -94,9 +119,12 @@ async function renderEngagementCanvas(
   await document.fonts.load(`700 ${cfg.headline.fontSize}px ${cfg.headline.fontFamily}`);
   await document.fonts.load(`400 ${cfg.subtitle.fontSize}px ${cfg.subtitle.fontFamily}`);
 
-  // Base photo — cover-fill, centered.
+  // Base photo — subject-aware crop to the canvas size (ImageKit fo-auto ≈ the old
+  // Cloudinary g_face), so it arrives already fitted; external URLs pass through and
+  // fall back to cover-fill below.
   try {
-    const img = await FabricImage.fromURL(props.photoUrl, { crossOrigin: "anonymous" });
+    const src = fittedPhotoUrl(props.photoUrl, cfg);
+    const img = await FabricImage.fromURL(src, { crossOrigin: "anonymous" });
     const iw = img.width || cfg.width;
     const ih = img.height || cfg.height;
     const scale = Math.max(cfg.width / iw, cfg.height / ih);
@@ -191,6 +219,13 @@ export const EngagementPostCanvas = forwardRef<EngagementPostCanvasHandle, Engag
         height: cfg.height,
         backgroundColor: "#111111",
       });
+      // Fabric sets the element's inline CSS to logical px (1080x1350), which
+      // overflows the small (overflow-hidden) card container and shows a zoomed
+      // top-left slice. Force it back to fill so the preview scales down cleanly.
+      if (elRef.current) {
+        elRef.current.style.width = "100%";
+        elRef.current.style.height = "100%";
+      }
       render(canvas).then(() => {
         const prev = fabricRef.current;
         fabricRef.current = canvas;
