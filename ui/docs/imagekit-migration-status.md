@@ -85,8 +85,19 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
     (gated by `useEngagementCanvas`, set for epl/ucl in `EngagementPhotosPage`), uploads the composed
     PNG via `imageProvider`. Cloudinary `buildPreviewUrl` retained ONLY for PrimeTalk (#10, shares
     `IdeaCard`). Badminton/MotoGP unchanged (dead; still on `BadmintonPostCanvas`). tsc + build clean.
-    **Remaining gate:** visual QA in the running app — confirm EPL canvas matches the old design and
-    Schedule uploads to ImageKit (prod/sign-webhook); tune `engagementCanvasConfig` for parity.
+  - **Phase B VISUAL QA PASSED (2026-07-22):** EPL renders end-to-end on ImageKit — preview + download
+    match (player framed via `fo-auto` crop, gradient, headline/subtitle, brand logo). Fixes:
+    `fittedPhotoUrl` (provider-aware fill-crop to 1080x1350) + forced preview `<canvas>` to 100%.
+  - **Badminton/MotoGP:** now folded onto the shared `EngagementPostCanvas` (SPORT_CANVAS config);
+    `BadmintonPostCanvas` + `canvasRenderingUtils` retired. Badminton webhooks wired (`/webhook/badminton-news/*`);
+    MotoGP still needs its 3 env vars. NOTE: their photo picker uses a Cloudinary search override
+    (`VITE_BADMINTON_PHOTOS_WEBHOOK_URL`) — photos are still Cloudinary-sourced (cropped via g_auto);
+    to fully move them to ImageKit, drop the override so they use the flag-aware ImageKit tag search.
+  - **Local-env fixes made while testing (Vercel is source of truth):** `VITE_ENGAGEMENT_TRENDING_TOPICS_WEBHOOK_URL`
+    = `/webhook/epl-engagement/fetch-ideas`; `VITE_EPL_IDEA_GENERATION_WEBHOOK_URL` corrected to
+    `/webhook/epl-engagement/generate-posts-staging` (old `/webhook/engagement/generate` is dead).
+  - **CUTOVER TODO:** add `VITE_IMAGEKIT_SEARCH_WEBHOOK_URL` to Vercel; confirm the EPL generate URL in
+    Vercel points at `generate-posts-staging`.
 
 ---
 

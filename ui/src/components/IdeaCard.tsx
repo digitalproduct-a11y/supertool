@@ -9,12 +9,8 @@ import { ScheduleModal } from './ScheduleModal'
 import { getCredentials } from '../utils/fbCredentials'
 import GempakEntertainmentCanvas, { type GempakEntertainmentCanvasHandle } from '../features/engagement/GempakEntertainmentCanvas'
 import { EngagementPostCanvas, type EngagementPostCanvasHandle } from '../features/engagement/EngagementPostCanvas'
-import { uploadToCloudinary, uploadedImageUrl, brandLogoUrl as providerBrandLogoUrl } from '../utils/imageProvider'
+import { uploadToCloudinary, uploadedImageUrl } from '../utils/imageProvider'
 import { toast } from '../hooks/useToast'
-import BadmintonPostCanvas from './BadmintonPostCanvas'
-import type { BadmintonPostCanvasHandle } from './BadmintonPostCanvas'
-import { StaticCanvas } from 'fabric'
-import { renderImageOnCanvas } from '../utils/canvasRenderingUtils'
 
 const FORMAT_BADGES: Record<string, string> = {
   challenge: '🏆',
@@ -91,20 +87,8 @@ export default function IdeaCard({
   const [committedHeadline, setCommittedHeadline] = useState(idea.headline)
   const [committedSubtitle, setCommittedSubtitle] = useState(idea.subtitle)
   const gempakCanvasRef = useRef<GempakEntertainmentCanvasHandle>(null)
-  const canvasRef = useRef<BadmintonPostCanvasHandle>(null)
   const engagementRef = useRef<EngagementPostCanvasHandle>(null)
-
-  // Text box position — edit this value to adjust headline/subtitle group position
-  const TEXT_BOX_OFFSET = 160
-  const previewCanvasElRef = useRef<HTMLCanvasElement>(null)
-  const previewFabricRef = useRef<StaticCanvas | null>(null)
   const topicConfig = TOPIC_CONFIGS[topic] || null
-  // useCanvas = motogp/badminton style canvas (BadmintonPostCanvas)
-  // useFabricCanvas = gempak-entertainment style canvas (GempakEntertainmentCanvas)
-  const useCanvasTopic = topicConfig?.useCanvas ?? false
-
-  const PREVIEW_WIDTH = 1080
-  const PREVIEW_HEIGHT = 1350
 
   // Sync committed values when a new idea is generated (idea.id changes)
   useEffect(() => {
@@ -112,53 +96,8 @@ export default function IdeaCard({
     setCommittedSubtitle(idea.subtitle)
   }, [idea.id])
 
-  // Listen for HMR updates from canvasRenderingUtils
-  const [renderKey, setRenderKey] = useState(0)
-  useEffect(() => {
-    const handler = () => setRenderKey(prev => prev + 1)
-    window.addEventListener('canvas-utils-updated', handler)
-    return () => window.removeEventListener('canvas-utils-updated', handler)
-  }, [])
-
-  // Initialize and render preview canvas for badminton/motogp topics
-  useEffect(() => {
-    if (!useCanvasTopic || !previewCanvasElRef.current) return
-
-    const canvas = new StaticCanvas(previewCanvasElRef.current, {
-      width: PREVIEW_WIDTH,
-      height: PREVIEW_HEIGHT,
-      backgroundColor: '#f3f4f6',
-    })
-
-    // Override fabric's inline width/height styles so canvas scales with container
-    if (previewCanvasElRef.current) {
-      previewCanvasElRef.current.style.width = '100%'
-      previewCanvasElRef.current.style.height = '100%'
-    }
-
-    const renderPreview = async () => {
-      if (idea.photo_url) {
-        await renderImageOnCanvas(canvas, idea.photo_url, PREVIEW_WIDTH, PREVIEW_HEIGHT, idea.headline, idea.subtitle, TEXT_BOX_OFFSET, TEXT_BOX_OFFSET, brandLogoUrl)
-      } else {
-        canvas.clear()
-        canvas.renderAll()
-      }
-    }
-
-    renderPreview()
-
-    const prev = previewFabricRef.current
-    previewFabricRef.current = canvas
-    if (prev) prev.dispose()
-
-    return () => {
-      if (canvas) canvas.dispose()
-    }
-  }, [useCanvasTopic, previewCanvasElRef, idea, TEXT_BOX_OFFSET, renderKey])
-
   const DEFAULT_PHOTO = 'placeholder_img_cveevd'
   const brandLogoId = BRAND_LOGO_IDS[selectedBrand as keyof typeof BRAND_LOGO_IDS] || 'stadium_astro_logo'
-  const brandLogoUrl = providerBrandLogoUrl(brandLogoId)
 
   // Legacy Cloudinary preview-URL builder — still used by PrimeTalk (#10, not yet
   // migrated). EPL/UCL now render via EngagementPostCanvas (useEngagementCanvas).
@@ -234,17 +173,6 @@ export default function IdeaCard({
               photoPublicId={idea.photo_public_id}
               typeLabel={showTypeOnImage ? idea.type : undefined}
             />
-          ) : useCanvasTopic ? (
-            <canvas
-              ref={previewCanvasElRef}
-              width={PREVIEW_WIDTH}
-              height={PREVIEW_HEIGHT}
-              style={{
-                display: 'block',
-                width: '100%',
-                height: '100%',
-              }}
-            />
           ) : useEngagementCanvas ? (
             <EngagementPostCanvas
               ref={engagementRef}
@@ -259,21 +187,6 @@ export default function IdeaCard({
             <img src={previewUrl} alt="Live preview" className="w-full h-full object-cover" />
           )}
         </div>
-
-        {/* Hidden download canvas (1080x1350) for badminton/motogp */}
-        {useCanvasTopic && (
-          <div style={{ display: 'none' }}>
-            <BadmintonPostCanvas
-              ref={canvasRef}
-              headline={committedHeadline}
-              content={committedSubtitle}
-              photoUrl={idea.photo_url}
-              brandLogoUrl={brandLogoUrl}
-              headlineOffset={TEXT_BOX_OFFSET}
-              subtitleOffset={TEXT_BOX_OFFSET}
-            />
-          </div>
-        )}
 
         <button
           onClick={() => setShowPhotoModal(true)}
@@ -349,9 +262,7 @@ export default function IdeaCard({
                     gempakCanvasRef.current?.downloadAsPng(`${fileBase}.png`)
                     return
                   }
-                  if (useCanvasTopic && canvasRef.current) {
-                    canvasRef.current.downloadAsPng(`${fileBase}.png`)
-                  } else if (useEngagementCanvas) {
+                  if (useEngagementCanvas) {
                     engagementRef.current?.downloadAsPng(`${fileBase}.png`)
                   } else {
                     const res = await fetch(previewUrl)
@@ -389,12 +300,10 @@ export default function IdeaCard({
                         // un-scheduled ideas never upload). PrimeTalk still uses the
                         // Cloudinary preview URL directly.
                         let urlForFb: string
-                        if (useFabricCanvas || useCanvasTopic || useEngagementCanvas) {
+                        if (useFabricCanvas || useEngagementCanvas) {
                           const dataUrl = useFabricCanvas
                             ? gempakCanvasRef.current?.getDataUrl()
-                            : useCanvasTopic
-                              ? canvasRef.current?.getDataUrl()
-                              : engagementRef.current?.getDataUrl()
+                            : engagementRef.current?.getDataUrl()
                           if (!dataUrl) throw new Error('Canvas not ready')
                           const blob = await (await fetch(dataUrl)).blob()
                           const file = new File([blob], `${downloadPrefix}-${idea.type}.png`, { type: 'image/png' })
