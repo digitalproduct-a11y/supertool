@@ -159,10 +159,12 @@ export function useEngagementPhotos() {
 
         // Fetch photos based on topic config
         const topicConfig = topic ? TOPIC_CONFIGS[topic] : null
-        if (topicConfig?.photosWebhookEnvVar && topicConfig?.photosCacheKey) {
-          // For badminton/motogp: fetch from topic-specific photos webhook
-          const photosWebhookUrl = import.meta.env[topicConfig.photosWebhookEnvVar] as string | undefined
-          await bulkSearchPhotos([{ player: topicConfig.photosCacheKey, club: '' }], photosWebhookUrl)
+        if (topicConfig?.photosCacheKey) {
+          // Badminton/MotoGP: search the photo bank by the fixed tag (e.g. "Badminton")
+          // via the flag-aware search — ImageKit tag search when VITE_IMAGE_PROVIDER=imagekit
+          // (photos mirrored to /engagement-photos/<sport>), Cloudinary otherwise. The old
+          // per-topic Cloudinary override (photosWebhookEnvVar) is no longer used.
+          await bulkSearchPhotos([{ player: topicConfig.photosCacheKey, club: '' }])
         } else {
           // For EPL/UCL: extract unique player/club combos and fetch all photos at once
           const uniqueKeywords = new Set(

@@ -90,9 +90,10 @@ _Weather note (2026-07-21): deleted the dead grouped/individual path (`WeatherCa
     `fittedPhotoUrl` (provider-aware fill-crop to 1080x1350) + forced preview `<canvas>` to 100%.
   - **Badminton/MotoGP:** now folded onto the shared `EngagementPostCanvas` (SPORT_CANVAS config);
     `BadmintonPostCanvas` + `canvasRenderingUtils` retired. Badminton webhooks wired (`/webhook/badminton-news/*`);
-    MotoGP still needs its 3 env vars. NOTE: their photo picker uses a Cloudinary search override
-    (`VITE_BADMINTON_PHOTOS_WEBHOOK_URL`) — photos are still Cloudinary-sourced (cropped via g_auto);
-    to fully move them to ImageKit, drop the override so they use the flag-aware ImageKit tag search.
+    Both Badminton + MotoGP webhooks wired. **Photos now ImageKit:** dropped the per-topic Cloudinary
+    search override — badminton/motogp search the bank by fixed tag (`Badminton`/`MotoGP`) via the
+    flag-aware ImageKit search (verified: MotoGP→photos under `/engagement-photos/motogp/`). The unused
+    `photosWebhookEnvVar` config field remains but is no longer read.
   - **Local-env fixes made while testing (Vercel is source of truth):** `VITE_ENGAGEMENT_TRENDING_TOPICS_WEBHOOK_URL`
     = `/webhook/epl-engagement/fetch-ideas`; `VITE_EPL_IDEA_GENERATION_WEBHOOK_URL` corrected to
     `/webhook/epl-engagement/generate-posts-staging` (old `/webhook/engagement/generate` is dead).
