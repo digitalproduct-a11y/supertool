@@ -176,7 +176,6 @@ export function ClipToCarouselPage() {
   const [idx, setIdx] = useState(0)
   const [frames, setFrames] = useState<Record<string, string>>({})
   const [caption, setCaption] = useState('')
-  const [uploadedUrls, setUploadedUrls] = useState<string[] | null>(null)
 
   const [showSchedule, setShowSchedule] = useState(false)
   const [isPosting, setIsPosting] = useState(false)
@@ -314,7 +313,7 @@ export function ClipToCarouselPage() {
       // Append a fixed "watch full episode" CTA (brand-language) when a source link was given.
       const link = sourceUrl.trim()
       const finalCaption = link ? (renderRes.caption || '') + '\n\n' + ctaLine(brand, link) : (renderRes.caption || '')
-      setCards(newCards); setFrames(newFrames); setIdx(0); setCaption(finalCaption); setUploadedUrls(null); setPosted(false)
+      setCards(newCards); setFrames(newFrames); setIdx(0); setCaption(finalCaption); setPosted(false)
       setPhase('results')
     } catch (e) {
       setPhase('idle'); toast.error('Generate failed: ' + (e as Error).message)
@@ -379,7 +378,6 @@ export function ClipToCarouselPage() {
         const file = new File([blob], `ctc-${i + 1}.png`, { type: 'image/png' })
         urls.push(`https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${await uploadToCloudinary(file)}`)
       }
-      setUploadedUrls(urls)
       const res = await fetch(PUBLISHER, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fb_ai_image_url: urls[0], carousel_images: urls, fb_ai_caption: caption, brand: brandLower, ...(scheduledFor ? { scheduled_for: scheduledFor } : {}), passcode: resolvedPass }),
@@ -451,15 +449,20 @@ export function ClipToCarouselPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* LEFT: inputs */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.06)] border border-neutral-200">
-            <label className="block text-base font-semibold text-neutral-900">Brand</label>
-            <div className="relative mt-3 mb-5">
-              <select value={brand} onChange={e => setBrand(e.target.value as BrandName)} disabled={!isAdmin}
-                className="w-full appearance-none px-4 py-3 pr-10 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed">
-                <option value="">Select a brand…</option>
-                {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">▾</span>
-            </div>
+            {/* Brand picker is only meaningful in Admin mode; a brand profile is already fixed to its own brand. */}
+            {isAdmin && (
+              <>
+                <label className="block text-base font-semibold text-neutral-900">Brand</label>
+                <div className="relative mt-3 mb-5">
+                  <select value={brand} onChange={e => setBrand(e.target.value as BrandName)}
+                    className="w-full appearance-none px-4 py-3 pr-10 rounded-xl border border-neutral-300 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900">
+                    <option value="">Select a brand…</option>
+                    {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">▾</span>
+                </div>
+              </>
+            )}
 
             <label className="block text-base font-semibold text-neutral-900">Video file</label>
             <label className="mt-3 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-neutral-300 hover:border-neutral-900 cursor-pointer transition">
@@ -607,13 +610,6 @@ export function ClipToCarouselPage() {
                         here
                       </Link>.
                     </p>
-                  </div>
-                )}
-
-                {uploadedUrls && (
-                  <div className="mt-3 text-xs bg-neutral-50 border border-neutral-200 rounded-lg p-3 break-all">
-                    <div className="font-semibold text-neutral-800 mb-1.5">✓ {uploadedUrls.length} cards uploaded</div>
-                    {uploadedUrls.map((u, i) => <div key={i} className="mt-0.5"><span className="text-neutral-400 font-mono">card {i + 1}</span> <a href={u} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{u}</a></div>)}
                   </div>
                 )}
               </>
